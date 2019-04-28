@@ -30,8 +30,8 @@ class Loader {
 	protected function get_path( $project_path ) {
 
 		$path = $project_path . '/src/models/';
-		if ( has_filter( 'sober/models/path' ) ) {
-			$path = apply_filters( 'sober/models/path', $path );
+		if ( has_filter( 'saltus/framework/models/path' ) ) {
+			$path = apply_filters( 'saltus/framework/models/path', $path );
 		}
 
 		if ( file_exists( $path ) ) {
