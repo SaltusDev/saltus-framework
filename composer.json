@@ -22,12 +22,12 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"Saltus\\WP\\Plugin\\Saltus\\Framework\\": "src/"
+			"Saltus\\WP\\Framework\\": "src/"
 		}
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"Saltus\\WP\\Plugin\\Saltus\\Framework\\Tests\\": "tests/"
+			"Saltus\\WP\\Framework\\Tests\\": "tests/"
 		}
 	},
 	"require": {

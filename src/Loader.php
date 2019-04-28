@@ -4,11 +4,12 @@
  *
  * This is a simplified version of soberwp/Models
  */
+namespace Saltus\WP\Framework;
 
-namespace Saltus\WP\Plugin\Saltus\Framework;
+use Saltus\WP\Framework\Models\ConfigNoFile;
 
 use Noodlehaus\Config;
-//use Sober\Models\ConfigNoFile;
+
 //use Sober\Models\Model\PostType;
 //use Sober\Models\Model\Taxonomy;
 

@@ -3,7 +3,7 @@
  * Saltus Framework
  *
  */
-namespace Saltus\WP\Plugin\Saltus\Framework;
+namespace Saltus\WP\Framework;
 
 class Core {
 
