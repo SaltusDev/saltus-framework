@@ -9,7 +9,12 @@ class Core {
 
 	public function __construct( string $project_path ) {
 
-		new Loader( $project_path );
+		add_action(
+			'init',
+			function () use ( $project_path ) {
+				new Loader( $project_path );
+			}
+		);
 	}
 
 }
