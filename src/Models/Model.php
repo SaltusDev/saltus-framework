@@ -10,8 +10,6 @@ class Model {
 	protected $args;
 
 	// data req for computations
-	protected $config = [];
-	protected $labels = [];
 	protected $one;
 	protected $many;
 	protected $i18n;
@@ -45,16 +43,6 @@ class Model {
 		$this->name = $this->data['name'];
 	}
 
-	/**
-	 * Set config
-	 *
-	 * Merge and/or replace defaults with user config
-	 */
-	protected function setConfig() {
-		if ( $this->data['config'] ) {
-			$this->config = array_replace( $this->config, $this->data['config'] );
-		}
-	}
 
 	/**
 	 * Set required labels
@@ -68,13 +56,26 @@ class Model {
 	}
 
 	/**
+	 * Set config
+	 *
+	 * Merge and/or replace defaults with user config
+	 */
+	protected function setConfig( array $config ) {
+		if ( $this->data['config'] ) {
+			$config = array_replace( $config, $this->data['config'] );
+		}
+		$this->args['config'] = $config;
+	}
+
+	/**
 	 * Set label overrides
 	 *
 	 * If key labels.overrides exists, add to or replace label defaults
 	 */
-	protected function setLabels() {
+	protected function setLabels( array $labels ) {
 		if ( $this->data['labels.overrides'] ) {
-			$this->labels = array_replace( $this->labels, $this->data['labels.overrides'] );
+			$labels = array_replace( $labels, $this->data['labels.overrides'] );
 		}
+		$this->args['labels'] = $labels;
 	}
 }

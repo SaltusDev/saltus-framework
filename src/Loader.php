@@ -10,8 +10,8 @@ use Saltus\WP\Framework\Models\ConfigNoFile;
 
 use Noodlehaus\Config;
 
-//use Sober\Models\Model\PostType;
-//use Sober\Models\Model\Taxonomy;
+use Saltus\WP\Framework\Models\PostType;
+use Saltus\WP\Framework\Models\Taxonomy;
 
 class Loader {
 
@@ -20,6 +20,7 @@ class Loader {
 	protected $config;
 
 	public function __construct( $project_path ) {
+
 		$this->get_path( $project_path );
 		$this->load();
 	}
@@ -78,7 +79,7 @@ class Loader {
 	protected function route( $config ) {
 		if ( in_array( $config['type'], [ 'post-type', 'cpt', 'posttype', 'post_type' ] ) ) {
 
-			//( new PostType( $config ) )->run();
+			( new PostType( $config ) )->run();
 		}
 		if ( in_array( $config['type'], [ 'taxonomy', 'tax', 'category', 'cat', 'tag' ] ) ) {
 			//( new Taxonomy( $config ) )->run();
