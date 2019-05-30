@@ -1,7 +1,7 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
-class Model {
+class Model implements ModelInterface {
 
 	protected $data;
 
@@ -78,4 +78,14 @@ class Model {
 		}
 		$this->args['labels'] = $labels;
 	}
+
+
+	/**
+	 * Get the type of the model
+	 *
+	 * @return string The type of Model
+	 */
+/* 	protected function get_type() {
+		return '';
+	} */
 }

@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
-//use Sober\Models\Model;
-
 class PostType extends Model {
 
 	// data req for register_post_type()
@@ -87,6 +85,15 @@ class PostType extends Model {
 			return;
 		}
 		register_post_type( $this->name, $this->args );
+	}
+
+	/**
+	 * Get the type of the model
+	 *
+	 * @return string The type of Model
+	 */
+	protected function get_type() {
+		return 'post_type';
 	}
 }
 
