@@ -7,6 +7,7 @@ class Model implements ModelInterface {
 
 	// data req for register_post_type() and register_taxonomy()
 	protected $name;
+	protected $config;
 	protected $args;
 
 	// data req for computations
@@ -21,8 +22,10 @@ class Model implements ModelInterface {
 			return;
 		}
 
-		$this->setName();
-		$this->setNameLabels();
+		$this->setName( $data['name'] );
+
+		// pass only labels
+		$this->setNameLabels( $data );
 	}
 
 	/**
@@ -39,8 +42,8 @@ class Model implements ModelInterface {
 	 *
 	 * Required to register post type
 	 */
-	protected function setName() {
-		$this->name = $this->data['name'];
+	protected function setName( $name ) {
+		$this->name = $name;
 	}
 
 
@@ -49,10 +52,10 @@ class Model implements ModelInterface {
 	 *
 	 * Based on name, or keys labels.has-one and labels.has-many
 	 */
-	protected function setNameLabels() {
-		$this->one  = ( $this->data['labels.has_one'] ? $this->data['labels.has_one'] : ucfirst( $this->name ) );
-		$this->many = ( $this->data['labels.has_many'] ? $this->data['labels.has_many'] : ucfirst( $this->name . 's' ) );
-		$this->i18n = ( $this->data['labels.text_domain'] ? $this->data['labels.text_domain'] : 'sober' );
+	protected function setNameLabels( $data ) {
+		$this->one  = ( $data['labels.has_one'] ? $data['labels.has_one'] : ucfirst( $this->name ) );
+		$this->many = ( $data['labels.has_many'] ? $data['labels.has_many'] : ucfirst( $this->name . 's' ) );
+		$this->i18n = ( $data['labels.text_domain'] ? $data['labels.text_domain'] : 'saltus' );
 	}
 
 	/**
@@ -64,7 +67,7 @@ class Model implements ModelInterface {
 		if ( $this->data['config'] ) {
 			$config = array_replace( $config, $this->data['config'] );
 		}
-		$this->args['config'] = $config;
+		$this->config = $config;
 	}
 
 	/**
@@ -85,7 +88,7 @@ class Model implements ModelInterface {
 	 *
 	 * @return string The type of Model
 	 */
-/* 	protected function get_type() {
+	public function get_type() {
 		return '';
-	} */
+	}
 }

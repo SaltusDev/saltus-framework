@@ -9,5 +9,5 @@ interface ModelInterface {
 	 *
 	 * @return string The type of Model
 	 */
-	public function get_type(): string;
+	public function get_type();
 }

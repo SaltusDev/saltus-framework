@@ -8,15 +8,17 @@ class Taxonomy extends Model {
 	// data req for register_taxonomy()
 	protected $links = 'post';
 
-	public function run() {
+	public function setup() {
 		if ( $this->isDisabled() ) {
 			return;
 		}
 
-		$this->setDefaultConfig()->setConfig();
-		$this->setDefaultLabels()->setLabels();
+		$this->setConfig( $this->getDefaultConfig() );
 
-		$this->merge();
+		$this->setLabels( $this->getDefaultLabels() );
+
+		$this->setAssociations( $this->getDefaultAssociations() );
+
 		$this->register();
 	}
 
@@ -24,30 +26,33 @@ class Taxonomy extends Model {
 	 * Set config defaults
 	 *
 	 * Make public and change menu position
-	 * @return $this
+	 *
+	 * @return array The list of config settings
 	 */
-	protected function setDefaultConfig() {
-		if ( $this->data['config'] ) {
-			$this->config = $this->data['config'];
-		}
-		if ( in_array( $this->data['type'], [ 'cat', 'category' ] ) ) {
-			$this->config = [ 'hierarchical' => true ];
-		}
-		if ( $this->data['links'] ) {
-			$this->links = $this->data['links'];
+	protected function getDefaultConfig() {
+		$config = [];
+		if ( ! $this->data->has( 'type' ) ) {
+			return $config;
 		}
 
-		return $this;
+		if ( in_array( $this->data->get( 'type' ), [ 'cat', 'category' ], true ) ) {
+			$config['hierarchical'] = true;
+		} else {
+			$config['hierarchical'] = false;
+		}
+
+		return $config;
 	}
 
 	/**
 	 * Set default labels
 	 *
 	 * Create an labels array and implement default singular and plural labels
-	 * @return $this
+	 *
+	 * @return array The list of Labels
 	 */
-	protected function setDefaultLabels() {
-		$this->labels = [
+	protected function getDefaultLabels() {
+		$labels = [
 			'name'                       => _x( $this->many, 'Taxonomy general name', $this->i18n ),
 			'singular_name'              => _x( $this->one, 'Taxonomy singular name', $this->i18n ),
 			'search_items'               => __( 'Search ' . $this->many, $this->i18n ),
@@ -69,20 +74,31 @@ class Taxonomy extends Model {
 			'items_list'                 => __( $this->many . ' list', $this->i18n ),
 		];
 
-		return $this;
+		return $labels;
+	}
+
+	protected function getDefaultAssociations() {
+		return [];
 	}
 
 	/**
-	 * Merge
+	 * Set Object types association to this taxonomy
 	 *
-	 * Args to be passed to WP register_taxonomy()
-	 * @return $this
 	 */
-	protected function merge() {
-		$this->args = [
-			'labels' => $this->labels,
-		];
-		$this->args = array_merge( $this->args, $this->config );
+	protected function setAssociations( array $associations ) {
+		if ( ! $this->data->has( 'associations' ) ) {
+			$this->associations = $associations;
+			return;
+		}
+
+		$custom_associations = $this->data->get( 'associations' );
+		if ( is_array( $custom_associations ) ) {
+			$associations = array_replace( $associations, $custom_associations );
+		} else {
+			$associations = $custom_associations;
+		}
+		$this->associations = $associations;
+
 	}
 
 	/**
@@ -94,10 +110,21 @@ class Taxonomy extends Model {
 	 * @return void
 	 */
 	protected function register() {
+		$args = array_merge( $this->args, $this->config );
+
 		if ( function_exists( 'register_extended_taxonomy' ) ) {
-			register_extended_taxonomy( $this->name, $this->links, $this->args );
+			register_extended_taxonomy( $this->name, $this->associations, $args );
 		} else {
-			register_taxonomy( $this->name, $this->links, $this->args );
+			register_taxonomy( $this->name, $this->associations, $args );
 		}
+	}
+
+	/**
+	 * Get the type of the model
+	 *
+	 * @return string The type of Model
+	 */
+	public function get_type() {
+		return 'post_type';
 	}
 }

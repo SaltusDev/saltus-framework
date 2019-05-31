@@ -4,32 +4,34 @@ namespace Saltus\WP\Framework\Models;
 class PostType extends Model {
 
 	// data req for register_post_type()
-	protected $supports = [];
-
-	public function run() {
+	public function setup() {
 		if ( $this->isDisabled() ) {
 			return;
 		}
 
 		$this->setConfig( $this->getDefaultConfig() );
+
 		$this->setLabels( $this->getDefaultLabels() );
 
 		$this->register();
 	}
 
 	/**
-	 * Set config defaults
+	 * Get config defaults
 	 *
 	 * Make public and change menu position
-	 * @return $this
+	 *
+	 * @return array The list of config settings
 	 */
 	protected function getDefaultConfig() {
-		$config   = [
+		$config = [
 			'public'        => true,
 			'menu_position' => 5,
 		];
-		//$this->args['supports'] = $this->data['supports'];
 
+		if ( $this->data->has( 'supports' ) ) {
+			$config['supports'] = $this->data->get( 'supports' );
+		}
 		return $config;
 	}
 
@@ -37,7 +39,8 @@ class PostType extends Model {
 	 * Set default labels
 	 *
 	 * Create an labels array and implement default singular and plural labels
-	 * @return $this
+	 *
+	 * @return array The list of Labels
 	 */
 	protected function getDefaultLabels() {
 
@@ -80,11 +83,13 @@ class PostType extends Model {
 	 * @return void
 	 */
 	protected function register() {
+		$args = array_merge( $this->args, $this->config );
+
 		if ( function_exists( 'register_extended_post_type' ) ) {
-			register_extended_post_type( $this->name, $this->args );
+			register_extended_post_type( $this->name, $args );
 			return;
 		}
-		register_post_type( $this->name, $this->args );
+		register_post_type( $this->name, $args );
 	}
 
 	/**
@@ -92,7 +97,7 @@ class PostType extends Model {
 	 *
 	 * @return string The type of Model
 	 */
-	protected function get_type() {
+	public function get_type() {
 		return 'post_type';
 	}
 }
