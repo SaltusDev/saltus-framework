@@ -87,11 +87,14 @@ class Modeler {
 
 	protected function create( $config ) {
 		$model = $this->model_factory->create( $config );
+		if ( $model === false ) {
+			return false;
+		}
 		$this->add( $model );
 	}
 
 	protected function add( $model ) {
-		$model_list[ $model->get_type() ] = $model;
+		$this->model_list[ $model->get_type() ] = $model;
 	}
 
 }
