@@ -7,7 +7,7 @@
 namespace Saltus\WP\Framework;
 
 use Noodlehaus\Config;
-use Saltus\WP\Framework\Models\ConfigNoFile;
+use Saltus\WP\Framework\Models\Config\NoFile;
 
 class Modeler {
 
@@ -81,7 +81,7 @@ class Modeler {
 	 */
 	protected function iterate_multiple( $config ) {
 		foreach ( $config as $single_config ) {
-			$this->create( new ConfigNoFile( $single_config ) );
+			$this->create( new NoFile( $single_config ) );
 		}
 	}
 
