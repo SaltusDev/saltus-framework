@@ -8,6 +8,10 @@ class Taxonomy extends Model {
 	// data req for register_taxonomy()
 	protected $links = 'post';
 
+	/**
+	 * Setup the data needed to register
+	 *
+	 */
 	public function setup() {
 		if ( $this->isDisabled() ) {
 			return;

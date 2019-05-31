@@ -28,6 +28,8 @@ class Model implements ModelInterface {
 		$this->setNameLabels( $data );
 	}
 
+	public function setup() {}
+
 	/**
 	 * Check to see if model has been disabled
 	 *

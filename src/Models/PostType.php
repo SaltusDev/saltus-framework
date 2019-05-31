@@ -3,7 +3,10 @@ namespace Saltus\WP\Framework\Models;
 
 class PostType extends Model {
 
-	// data req for register_post_type()
+		/**
+	 * Setup the data needed to register
+	 *
+	 */
 	public function setup() {
 		if ( $this->isDisabled() ) {
 			return;
