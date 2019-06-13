@@ -6,7 +6,8 @@ class Model implements ModelInterface {
 	protected $data;
 
 	// data req for register_post_type() and register_taxonomy()
-	protected $name;
+	public $name;
+
 	protected $config;
 	protected $args;
 
