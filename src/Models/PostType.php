@@ -3,7 +3,7 @@ namespace Saltus\WP\Framework\Models;
 
 class PostType extends Model {
 
-		/**
+	/**
 	 * Setup the data needed to register
 	 *
 	 */
@@ -15,6 +15,8 @@ class PostType extends Model {
 		$this->setConfig( $this->getDefaultConfig() );
 
 		$this->setLabels( $this->getDefaultLabels() );
+
+		$this->set_meta();
 
 		$this->register();
 	}
@@ -37,6 +39,30 @@ class PostType extends Model {
 		}
 		return $config;
 	}
+
+
+	/**
+	 *
+	 *
+	 */
+	protected function set_meta() {
+
+		$meta = [];
+		if ( $this->data->has( 'meta' ) ) {
+			$meta = $this->data->get( 'meta' );
+		}
+		$this->args['meta'] = $meta;
+	}
+
+	/**
+	 * Checks if has any meta fields
+	 *
+	 */
+	public function has_meta() {
+
+		return count( $this->args['meta'] ) > 0;
+	}
+
 
 	/**
 	 * Set default labels
