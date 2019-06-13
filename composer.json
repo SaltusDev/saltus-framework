@@ -45,9 +45,6 @@
 			"vendor/bin/phpcs"
 		]
 	},
-	"config": {
-		"vendor-dir": "lib/"
-	},
 	"minimum-stability": "dev",
 	"prefer-stable": true
 }
