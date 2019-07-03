@@ -9,7 +9,6 @@ final class CMB2Fields {
 
 	/**
 	 * Instantiate the CMB2 Fields object.
-	 *
 	 */
 	public function __construct() {
 
@@ -33,7 +32,7 @@ final class CMB2Fields {
 				$this->create_section( $section );
 				continue;
 			}
-			//TODO by pcarvalho: can meta have only fields without a section?
+			// TODO by pcarvalho: can meta have only fields without a section?
 		}
 	}
 
@@ -54,12 +53,19 @@ final class CMB2Fields {
 	}
 
 	private function create_field( $cmb, $id, $field ) {
+
+		// set args and defaults
 		$args = array(
-			'id'   => $id,
-			'name' => $field['name'],
-			'desc' => $field['description'],
-			'type' => $field['type'],
+			'id'         => $id,
+			'name'       => $field['name'] ?? $id,
+			'desc'       => $field['description'] ?? '',
+			'type'       => $field['type'] ?? 'text',
+			'classes'    => $field['classes'] ?? '',
+			'default'    => $field['default'] ?? '',
+			'options'    => $field['options'] ?? [],
+			'attributes' => $field['attributes'] ?? [],
 		);
+
 		$cmb->add_field( $args );
 	}
 
