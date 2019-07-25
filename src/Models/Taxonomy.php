@@ -45,6 +45,9 @@ class Taxonomy extends Model {
 			$config['hierarchical'] = false;
 		}
 
+		// show in rest api by default
+		$config['show_in_rest'] = true;
+
 		return $config;
 	}
 
