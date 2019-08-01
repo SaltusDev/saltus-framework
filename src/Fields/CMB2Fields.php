@@ -54,17 +54,15 @@ final class CMB2Fields {
 
 	private function create_field( $cmb, $id, $field ) {
 
-		// set args and defaults
-		$args = array(
+		// set default args
+		$default_args = array(
 			'id'         => $id,
-			'name'       => $field['name'] ?? $id,
-			'desc'       => $field['description'] ?? '',
-			'type'       => $field['type'] ?? 'text',
-			'classes'    => $field['classes'] ?? '',
-			'default'    => $field['default'] ?? '',
-			'options'    => $field['options'] ?? [],
-			'attributes' => $field['attributes'] ?? [],
+			'name'       => $id,
+			'type'       => 'text',
 		);
+
+		// set custom parameters considering the defaults
+		$args = array_merge( $default_args, $field );
 
 		$cmb->add_field( $args );
 	}
