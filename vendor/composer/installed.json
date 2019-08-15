@@ -1,8 +1,8 @@
 [
     {
         "name": "cmb2/cmb2",
-        "version": "v2.6.0",
-        "version_normalized": "2.6.0.0",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
         "source": {
             "type": "git",
             "url": "https://github.com/CMB2/CMB2.git",
@@ -27,7 +27,7 @@
         },
         "time": "2019-01-21T04:30:08+00:00",
         "type": "wordpress-plugin",
-        "installation-source": "dist",
+        "installation-source": "source",
         "notification-url": "https://packagist.org/downloads/",
         "license": [
             "GPL-2.0-or-later"
