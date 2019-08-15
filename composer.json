@@ -36,8 +36,8 @@
 	"require": {
 		"php": ">=7.2",
 		"johnbillion/extended-cpts": "^4.2",
-		"soberwp/models": "^1.1",
-		"cmb2/cmb2": "dev-master"
+		"hassankhan/config": "^1.0",
+		"cmb2/cmb2": "2.6"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^8.0.0",

@@ -4,22 +4,16 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitca85a93313c52e7aabe1f9e7696e5190
+class ComposerStaticInit9a800e0924d41fefb219470411a155e1
 {
     public static $files = array (
-        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         'a2c48002d05f7782d8b603bd2bcb5252' => __DIR__ . '/..' . '/johnbillion/extended-cpts/extended-cpts.php',
-        '90abbbd1b4ec36aebe50d92b3788f45e' => __DIR__ . '/..' . '/soberwp/models/models.php',
         'd70f8fc80e961ed86086ea29d733e9b4' => __DIR__ . '/..' . '/cmb2/cmb2/init.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
-            'Symfony\\Polyfill\\Ctype\\' => 23,
-            'Symfony\\Component\\Yaml\\' => 23,
-            'Sober\\Models\\Model\\' => 19,
-            'Sober\\Models\\' => 13,
             'Saltus\\WP\\Framework\\' => 20,
         ),
         'N' => 
@@ -30,29 +24,9 @@ class ComposerStaticInitca85a93313c52e7aabe1f9e7696e5190
         array (
             'ExtCPTs\\Tests\\' => 14,
         ),
-        'C' => 
-        array (
-            'Composer\\Installers\\' => 20,
-        ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Symfony\\Polyfill\\Ctype\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
-        ),
-        'Symfony\\Component\\Yaml\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/yaml',
-        ),
-        'Sober\\Models\\Model\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/soberwp/models/src/Model',
-        ),
-        'Sober\\Models\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/soberwp/models/src',
-        ),
         'Saltus\\WP\\Framework\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src',
@@ -65,17 +39,13 @@ class ComposerStaticInitca85a93313c52e7aabe1f9e7696e5190
         array (
             0 => __DIR__ . '/..' . '/johnbillion/extended-cpts/tests/phpunit',
         ),
-        'Composer\\Installers\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers',
-        ),
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitca85a93313c52e7aabe1f9e7696e5190::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitca85a93313c52e7aabe1f9e7696e5190::$prefixDirsPsr4;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit9a800e0924d41fefb219470411a155e1::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit9a800e0924d41fefb219470411a155e1::$prefixDirsPsr4;
 
         }, null, ClassLoader::class);
     }
