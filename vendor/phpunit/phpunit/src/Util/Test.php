@@ -71,7 +71,7 @@ final class Test
     /**
      * @var string
      */
-    private const REGEX_REQUIRES_VERSION_CONSTRAINT = '/@requires\s+(?P<name>PHP(?:Unit)?)\s+(?P<constraint>[\d\t -.|~^]+)[ \t]*\r?$/m';
+    private const REGEX_REQUIRES_VERSION_CONSTRAINT = '/@requires\s+(?P<name>PHP(?:Unit)?)\s+(?P<constraint>[\d\t \-.|~^]+)[ \t]*\r?$/m';
 
     /**
      * @var string
@@ -697,15 +697,6 @@ final class Test
         }
 
         return \array_unique($dependencies);
-    }
-
-    public static function getErrorHandlerSettings(string $className, ?string $methodName): ?bool
-    {
-        return self::getBooleanAnnotationSetting(
-            $className,
-            $methodName,
-            'errorHandler'
-        );
     }
 
     public static function getGroups(string $className, ?string $methodName = ''): array

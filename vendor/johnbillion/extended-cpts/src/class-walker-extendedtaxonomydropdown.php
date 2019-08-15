@@ -9,13 +9,21 @@ declare( strict_types=1 );
 class Walker_ExtendedTaxonomyDropdown extends Walker {
 
 	/**
-	 * Some member variables you don't need to worry too much about:
+	 * @var string
 	 */
 	public $tree_type = 'category';
+
+	/**
+	 * @var array
+	 */
 	public $db_fields = [
 		'parent' => 'parent',
 		'id'     => 'term_id',
 	];
+
+	/**
+	 * @var string
+	 */
 	public $field = null;
 
 	/**
@@ -39,7 +47,6 @@ class Walker_ExtendedTaxonomyDropdown extends Walker {
 	 * @param int    $current_object_id Current object ID.
 	 */
 	public function start_el( &$output, $object, $depth = 0, $args = [], $current_object_id = 0 ) {
-
 		$pad = str_repeat( '&nbsp;', $depth * 3 );
 		$tax = get_taxonomy( $args['taxonomy'] );
 
@@ -64,9 +71,11 @@ class Walker_ExtendedTaxonomyDropdown extends Walker {
 
 		$output .= '>';
 		$output .= $pad . esc_html( $cat_name );
+
 		if ( $args['show_count'] ) {
 			$output .= '&nbsp;&nbsp;(' . esc_html( number_format_i18n( $object->count ) ) . ')';
 		}
+
 		$output .= "</option>\n";
 	}
 

@@ -11,6 +11,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         'a2c48002d05f7782d8b603bd2bcb5252' => __DIR__ . '/..' . '/johnbillion/extended-cpts/extended-cpts.php',
         '90abbbd1b4ec36aebe50d92b3788f45e' => __DIR__ . '/..' . '/soberwp/models/models.php',
+        'd70f8fc80e961ed86086ea29d733e9b4' => __DIR__ . '/..' . '/cmb2/cmb2/init.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -31,9 +32,17 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
             'Saltus\\WP\\Framework\\Tests\\' => 26,
             'Saltus\\WP\\Framework\\' => 20,
         ),
+        'P' => 
+        array (
+            'Prophecy\\' => 9,
+        ),
         'N' => 
         array (
             'Noodlehaus\\' => 11,
+        ),
+        'E' => 
+        array (
+            'ExtCPTs\\Tests\\' => 14,
         ),
         'D' => 
         array (
@@ -81,9 +90,17 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
+        'Prophecy\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpspec/prophecy/src/Prophecy',
+        ),
         'Noodlehaus\\' => 
         array (
             0 => __DIR__ . '/..' . '/hassankhan/config/src',
+        ),
+        'ExtCPTs\\Tests\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/johnbillion/extended-cpts/tests/phpunit',
         ),
         'Doctrine\\Instantiator\\' => 
         array (
@@ -96,16 +113,6 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'Composer\\Installers\\' => 
         array (
             0 => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers',
-        ),
-    );
-
-    public static $prefixesPsr0 = array (
-        'P' => 
-        array (
-            'Prophecy\\' => 
-            array (
-                0 => __DIR__ . '/..' . '/phpspec/prophecy/src',
-            ),
         ),
     );
 
@@ -176,6 +183,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHPUnit\\Framework\\InvalidCoversTargetException' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Exception/InvalidCoversTargetException.php',
         'PHPUnit\\Framework\\InvalidDataProviderException' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Exception/InvalidDataProviderException.php',
         'PHPUnit\\Framework\\MissingCoversAnnotationException' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Exception/MissingCoversAnnotationException.php',
+        'PHPUnit\\Framework\\MockObject\\Api' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Api/Api.php',
         'PHPUnit\\Framework\\MockObject\\BadMethodCallException' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Exception/BadMethodCallException.php',
         'PHPUnit\\Framework\\MockObject\\Builder\\Identity' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Builder/Identity.php',
         'PHPUnit\\Framework\\MockObject\\Builder\\InvocationMocker' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Builder/InvocationMocker.php',
@@ -185,7 +193,6 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHPUnit\\Framework\\MockObject\\Builder\\ParametersMatch' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Builder/ParametersMatch.php',
         'PHPUnit\\Framework\\MockObject\\Builder\\Stub' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Builder/Stub.php',
         'PHPUnit\\Framework\\MockObject\\ConfigurableMethod' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/ConfigurableMethod.php',
-        'PHPUnit\\Framework\\MockObject\\ConfigurableMethods' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/ConfigurableMethods.php',
         'PHPUnit\\Framework\\MockObject\\ConfigurableMethodsAlreadyInitializedException' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Exception/ConfigurableMethodsAlreadyInitializedException.php',
         'PHPUnit\\Framework\\MockObject\\Exception' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Exception/Exception.php',
         'PHPUnit\\Framework\\MockObject\\Generator' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Generator.php',
@@ -208,6 +215,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHPUnit\\Framework\\MockObject\\Matcher\\MethodName' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Matcher/MethodName.php',
         'PHPUnit\\Framework\\MockObject\\Matcher\\Parameters' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Matcher/Parameters.php',
         'PHPUnit\\Framework\\MockObject\\Matcher\\StatelessInvocation' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Matcher/StatelessInvocation.php',
+        'PHPUnit\\Framework\\MockObject\\Method' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Api/Method.php',
         'PHPUnit\\Framework\\MockObject\\MockBuilder' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/MockBuilder.php',
         'PHPUnit\\Framework\\MockObject\\MockClass' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/MockClass.php',
         'PHPUnit\\Framework\\MockObject\\MockMethod' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/MockMethod.php',
@@ -215,6 +223,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHPUnit\\Framework\\MockObject\\MockObject' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/MockObject.php',
         'PHPUnit\\Framework\\MockObject\\MockTrait' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/MockTrait.php',
         'PHPUnit\\Framework\\MockObject\\MockType' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/MockType.php',
+        'PHPUnit\\Framework\\MockObject\\MockedCloneMethod' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Api/MockedCloneMethod.php',
         'PHPUnit\\Framework\\MockObject\\RuntimeException' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Exception/RuntimeException.php',
         'PHPUnit\\Framework\\MockObject\\Stub' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Stub.php',
         'PHPUnit\\Framework\\MockObject\\Stub\\ConsecutiveCalls' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Stub/ConsecutiveCalls.php',
@@ -226,6 +235,8 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHPUnit\\Framework\\MockObject\\Stub\\ReturnSelf' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Stub/ReturnSelf.php',
         'PHPUnit\\Framework\\MockObject\\Stub\\ReturnStub' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Stub/ReturnStub.php',
         'PHPUnit\\Framework\\MockObject\\Stub\\ReturnValueMap' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Stub/ReturnValueMap.php',
+        'PHPUnit\\Framework\\MockObject\\Stub\\Stub' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Stub/Stub.php',
+        'PHPUnit\\Framework\\MockObject\\UnmockedCloneMethod' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Api/UnmockedCloneMethod.php',
         'PHPUnit\\Framework\\MockObject\\Verifiable' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/MockObject/Verifiable.php',
         'PHPUnit\\Framework\\OutputError' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Exception/OutputError.php',
         'PHPUnit\\Framework\\PHPTAssertionFailedError' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Exception/PHPTAssertionFailedError.php',
@@ -347,6 +358,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHP_Token_CLOSE_SQUARE' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_CLOSE_TAG' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_COALESCE' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
+        'PHP_Token_COALESCE_EQUAL' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_COLON' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_COMMA' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_COMMENT' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
@@ -392,6 +404,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHP_Token_FILE' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_FINAL' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_FINALLY' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
+        'PHP_Token_FN' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_FOR' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_FOREACH' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_FUNCTION' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
@@ -482,6 +495,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'PHP_Token_UNSET_CAST' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_USE' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_USE_FUNCTION' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
+        'PHP_Token_Util' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token/Util.php',
         'PHP_Token_VAR' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_VARIABLE' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
         'PHP_Token_WHILE' => __DIR__ . '/..' . '/phpunit/php-token-stream/src/Token.php',
@@ -657,6 +671,7 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         'SebastianBergmann\\Timer\\Timer' => __DIR__ . '/..' . '/phpunit/php-timer/src/Timer.php',
         'SebastianBergmann\\Type\\CallableType' => __DIR__ . '/..' . '/sebastian/type/src/CallableType.php',
         'SebastianBergmann\\Type\\Exception' => __DIR__ . '/..' . '/sebastian/type/src/exception/Exception.php',
+        'SebastianBergmann\\Type\\GenericObjectType' => __DIR__ . '/..' . '/sebastian/type/src/GenericObjectType.php',
         'SebastianBergmann\\Type\\IterableType' => __DIR__ . '/..' . '/sebastian/type/src/IterableType.php',
         'SebastianBergmann\\Type\\NullType' => __DIR__ . '/..' . '/sebastian/type/src/NullType.php',
         'SebastianBergmann\\Type\\ObjectType' => __DIR__ . '/..' . '/sebastian/type/src/ObjectType.php',
@@ -683,7 +698,6 @@ class ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e::$prefixesPsr0;
             $loader->classMap = ComposerStaticInitdc45c5c0c484311a6ae7ab10f819558e::$classMap;
 
         }, null, ClassLoader::class);

@@ -6,6 +6,9 @@ declare( strict_types=1 );
  */
 class Extended_CPT_Rewrite_Testing extends Extended_Rewrite_Testing {
 
+	/**
+	 * @var Extended_CPT
+	 */
 	public $cpt;
 
 	public function __construct( Extended_CPT $cpt ) {
@@ -13,7 +16,6 @@ class Extended_CPT_Rewrite_Testing extends Extended_Rewrite_Testing {
 	}
 
 	public function get_tests() : array {
-
 		global $wp_rewrite;
 
 		if ( ! $wp_rewrite->using_permalinks() ) {
@@ -54,7 +56,6 @@ class Extended_CPT_Rewrite_Testing extends Extended_Rewrite_Testing {
 		return [
 			$name => $this->get_rewrites( $struct, $additional ),
 		];
-
 	}
 
 }

@@ -26,7 +26,6 @@ use Saltus\WP\Framework\Infrastructure\{
 
 class Core implements PluginInterface {
 
-
 	// Main filters to control the flow of the plugin from outside code.
 	public const SERVICES_FILTER = 'services';
 
@@ -138,7 +137,6 @@ class Core implements PluginInterface {
 
 		// Add the injector as the very first service.
 		//TODO by pcarvalho: add injectors
-
 		$services = $this->get_service_classes();
 
 		if ( $this->enable_filters ) {

@@ -569,13 +569,14 @@ final class TestCaseTest extends TestCase
     /**
      * @backupGlobals enabled
      * @backupStaticAttributes enabled
+     * @depends testGlobalsBackupPost
      *
      * @doesNotPerformAssertions
      */
     public function testStaticAttributesBackupPre(): void
     {
         $GLOBALS['singleton'] = \Singleton::getInstance();
-        $GLOBALS['i']         = 'not reset by backup';
+        $GLOBALS['i']         = 'set by testStaticAttributesBackupPre';
 
         $GLOBALS['j']         = 'reset by backup';
         self::$testStatic     = 123;
@@ -588,7 +589,7 @@ final class TestCaseTest extends TestCase
     {
         // Snapshots made by @backupGlobals
         $this->assertSame(\Singleton::getInstance(), $GLOBALS['singleton']);
-        $this->assertSame('not reset by backup', $GLOBALS['i']);
+        $this->assertSame('set by testStaticAttributesBackupPre', $GLOBALS['i']);
 
         // Reset global
         $this->assertArrayNotHasKey('j', $GLOBALS);
@@ -854,6 +855,26 @@ final class TestCaseTest extends TestCase
 
         $this->assertTrue($mock->mockableMethod());
         $this->assertTrue($mock->anotherMockableMethod());
+    }
+
+    public function testCreatePartialMockWithFakeMethods(): void
+    {
+        $test = new \TestWithDifferentStatuses('testWithCreatePartialMockWarning');
+
+        $test->run();
+
+        $this->assertSame(BaseTestRunner::STATUS_WARNING, $test->getStatus());
+        $this->assertFalse($test->hasFailed());
+    }
+
+    public function testCreatePartialMockWithRealMethods(): void
+    {
+        $test = new \TestWithDifferentStatuses('testWithCreatePartialMockPassesNoWarning');
+
+        $test->run();
+
+        $this->assertSame(BaseTestRunner::STATUS_PASSED, $test->getStatus());
+        $this->assertFalse($test->hasFailed());
     }
 
     public function testCreateMockSkipsConstructor(): void

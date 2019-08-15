@@ -9,11 +9,11 @@
  */
 namespace PHPUnit\TestFixture\MockObject;
 
-use PHPUnit\Framework\MockObject\ConfigurableMethods;
+use PHPUnit\Framework\MockObject\Api;
 
 class MockClassWithConfigurableMethods
 {
-    use ConfigurableMethods;
+    use Api;
 
     public static function getConfigurableMethods(): array
     {

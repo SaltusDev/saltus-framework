@@ -100,7 +100,22 @@ final class TestResult implements Countable
     /**
      * @var bool
      */
+    private $convertDeprecationsToExceptions = true;
+
+    /**
+     * @var bool
+     */
     private $convertErrorsToExceptions = true;
+
+    /**
+     * @var bool
+     */
+    private $convertNoticesToExceptions = true;
+
+    /**
+     * @var bool
+     */
+    private $convertWarningsToExceptions = true;
 
     /**
      * @var bool
@@ -612,19 +627,15 @@ final class TestResult implements Countable
 
         $this->startTest($test);
 
-        $errorHandlerSet = false;
-
-        if ($this->convertErrorsToExceptions) {
-            $oldErrorHandler = \set_error_handler(
-                [ErrorHandler::class, 'handleError'],
-                \E_ALL | \E_STRICT
+        if ($this->convertDeprecationsToExceptions || $this->convertErrorsToExceptions || $this->convertNoticesToExceptions || $this->convertWarningsToExceptions) {
+            $errorHandler = new ErrorHandler(
+                $this->convertDeprecationsToExceptions,
+                $this->convertErrorsToExceptions,
+                $this->convertNoticesToExceptions,
+                $this->convertWarningsToExceptions
             );
 
-            if ($oldErrorHandler === null) {
-                $errorHandlerSet = true;
-            } else {
-                \restore_error_handler();
-            }
+            $errorHandler->register();
         }
 
         $collectCodeCoverage = $this->codeCoverage !== null &&
@@ -831,8 +842,10 @@ final class TestResult implements Countable
             }
         }
 
-        if ($errorHandlerSet) {
-            \restore_error_handler();
+        if (isset($errorHandler)) {
+            $errorHandler->unregister();
+
+            unset($errorHandler);
         }
 
         if ($error) {
@@ -867,13 +880,16 @@ final class TestResult implements Countable
                     );
                 }
             }
+
             $this->addFailure(
                 $test,
-                new RiskyTestError(\sprintf(
-                    "This test did not perform any assertions\n\n%s:%d",
-                    $reflected->getFileName(),
-                    $reflected->getStartLine()
-                )),
+                new RiskyTestError(
+                    \sprintf(
+                        "This test did not perform any assertions\n\n%s:%d",
+                        $reflected->getFileName(),
+                        $reflected->getStartLine()
+                    )
+                ),
                 $time
             );
         } elseif ($this->beStrictAboutTestsThatDoNotTestAnything &&
@@ -881,10 +897,12 @@ final class TestResult implements Countable
             $test->getNumAssertions() > 0) {
             $this->addFailure(
                 $test,
-                new RiskyTestError(\sprintf(
-                    'This test is annotated with "@doesNotPerformAssertions" but performed %d assertions',
-                    $test->getNumAssertions()
-                )),
+                new RiskyTestError(
+                    \sprintf(
+                        'This test is annotated with "@doesNotPerformAssertions" but performed %d assertions',
+                        $test->getNumAssertions()
+                    )
+                ),
                 $time
             );
         } elseif ($this->beStrictAboutOutputDuringTests && $test->hasOutput()) {
@@ -956,6 +974,22 @@ final class TestResult implements Countable
     }
 
     /**
+     * Enables or disables the deprecation-to-exception conversion.
+     */
+    public function convertDeprecationsToExceptions(bool $flag): void
+    {
+        $this->convertDeprecationsToExceptions = $flag;
+    }
+
+    /**
+     * Returns the deprecation-to-exception conversion setting.
+     */
+    public function getConvertDeprecationsToExceptions(): bool
+    {
+        return $this->convertDeprecationsToExceptions;
+    }
+
+    /**
      * Enables or disables the error-to-exception conversion.
      */
     public function convertErrorsToExceptions(bool $flag): void
@@ -969,6 +1003,38 @@ final class TestResult implements Countable
     public function getConvertErrorsToExceptions(): bool
     {
         return $this->convertErrorsToExceptions;
+    }
+
+    /**
+     * Enables or disables the notice-to-exception conversion.
+     */
+    public function convertNoticesToExceptions(bool $flag): void
+    {
+        $this->convertNoticesToExceptions = $flag;
+    }
+
+    /**
+     * Returns the notice-to-exception conversion setting.
+     */
+    public function getConvertNoticesToExceptions(): bool
+    {
+        return $this->convertNoticesToExceptions;
+    }
+
+    /**
+     * Enables or disables the warning-to-exception conversion.
+     */
+    public function convertWarningsToExceptions(bool $flag): void
+    {
+        $this->convertWarningsToExceptions = $flag;
+    }
+
+    /**
+     * Returns the warning-to-exception conversion setting.
+     */
+    public function getConvertWarningsToExceptions(): bool
+    {
+        return $this->convertWarningsToExceptions;
     }
 
     /**

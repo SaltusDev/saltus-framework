@@ -13,6 +13,7 @@ final class TestWithDifferentSizes extends TestCase
 {
     public function testWithSizeUnknown(): void
     {
+        $this->assertTrue(true);
     }
 
     /**
@@ -20,13 +21,16 @@ final class TestWithDifferentSizes extends TestCase
      */
     public function testWithSizeLarge(): void
     {
+        $this->assertTrue(true);
     }
 
     /**
+     * @depends testDataProviderWithSizeMedium
      * @medium
      */
     public function testWithSizeMedium(): void
     {
+        $this->assertTrue(true);
     }
 
     /**
@@ -34,5 +38,32 @@ final class TestWithDifferentSizes extends TestCase
      */
     public function testWithSizeSmall(): void
     {
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @dataProvider provider
+     * @small
+     */
+    public function testDataProviderWithSizeSmall(bool $value): void
+    {
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @dataProvider provider
+     * @medium
+     */
+    public function testDataProviderWithSizeMedium(bool $value): void
+    {
+        $this->assertTrue(true);
+    }
+
+    public function provider(): array
+    {
+        return [
+            [false],
+            [true],
+        ];
     }
 }
