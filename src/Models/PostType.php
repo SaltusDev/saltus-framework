@@ -130,8 +130,7 @@ class PostType extends Model {
 		return 'post_type';
 	}
 
-	/** Disable block editor
-	 * string
+	/** Disable block editor for this custom post type
 	 *
 	 * @return string status
 	 */
