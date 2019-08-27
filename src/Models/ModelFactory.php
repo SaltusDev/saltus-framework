@@ -22,11 +22,11 @@ class ModelFactory {
 		if ( in_array( $config->get( 'type' ), [ 'post-type', 'cpt', 'posttype', 'post_type' ], true ) ) {
 			$cpt = new PostType( $config );
 			$cpt->setup();
-			if ( $config->has( 'meta' ) ) {
-				$meta = $this->fields_service->get_new();
-				$meta->setup( $cpt->name, $config->get( 'meta' ) );
+			if ( $config->has( 'meta' ) || $config->has( 'settings' ) ) {
+				$fields = $this->fields_service->get_new();
+				$fields->setup( $cpt->name, $config->get( 'meta' ), $config->get( 'settings' ) );
 
-				add_action( 'cmb2_admin_init', array( $meta, 'init' ), 0 );
+				add_action( 'cmb2_admin_init', array( $fields, 'init' ), 0 );
 			}
 			return $cpt;
 

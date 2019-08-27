@@ -14,10 +14,11 @@ final class CMB2Fields {
 
 	}
 
-	public function setup( $name, $meta ) {
+	public function setup( $name, $meta = array(), $settings = array() ) {
 
-		$this->name = $name;
-		$this->meta = $meta;
+		$this->name     = $name;
+		$this->meta     = $meta;
+		$this->settings = $settings;
 	}
 
 	public function init() {
@@ -33,6 +34,16 @@ final class CMB2Fields {
 				continue;
 			}
 			// TODO by pcarvalho: can meta have only fields without a section?
+		}
+
+		/**
+		 * Create Settings pages
+		*/
+		foreach ( $this->settings as $settings_page ) {
+			if ( ! empty( $settings_page['fields'] ) ) {
+				$this->create_settings_page( $settings_page );
+				continue;
+			}
 		}
 	}
 
@@ -52,13 +63,31 @@ final class CMB2Fields {
 		}
 	}
 
+	private function create_settings_page( $settings_page ) {
+
+		$default_args = array(
+			'id'           => $settings_page['id'],
+			'object_types' => array( 'options-page' ),
+			'option_key'   => $settings_page['id'],
+			'capability'   => 'manage_options',
+			'parent_slug'  => 'edit.php?post_type=' . $this->name,
+		);
+
+		$args = array_merge( $default_args, $settings_page );
+
+		$cmb = \new_cmb2_box( $args );
+		foreach ( $settings_page['fields'] as $id => $fields ) {
+			$this->create_field( $cmb, $id, $fields );
+		}
+	}
+
 	private function create_field( $cmb, $id, $field ) {
 
 		// set default args
 		$default_args = array(
-			'id'         => $id,
-			'name'       => $id,
-			'type'       => 'text',
+			'id'   => $id,
+			'name' => $id,
+			'type' => 'text',
 		);
 
 		// set custom parameters considering the defaults
