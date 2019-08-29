@@ -84,7 +84,7 @@ class Core implements PluginInterface {
 			'init',
 			function () use ( $project_path ) {
 				$this->modeler->init( $project_path );
-			}
+			}, 1
 		);
 	}
 

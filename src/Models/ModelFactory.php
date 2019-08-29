@@ -26,7 +26,8 @@ class ModelFactory {
 				$fields = $this->fields_service->get_new();
 				$fields->setup( $cpt->name, $config->get( 'meta' ), $config->get( 'settings' ) );
 
-				add_action( 'cmb2_admin_init', array( $fields, 'init' ), 0 );
+				add_action( 'init', array( $fields, 'init' ), 2 );
+
 			}
 			return $cpt;
 
