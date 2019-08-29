@@ -29,10 +29,10 @@ final class CMB2Fields {
 		 * Start by setting up Sections, which in turn will create fields
 		*/
 		foreach ( $this->meta as $section ) {
-			if ( ! empty( $section['fields'] ) ) {
-				$this->create_section( $section );
+			if ( empty( $section['fields'] ) ) {
 				continue;
 			}
+			$this->create_section( $section );
 			// TODO by pcarvalho: can meta have only fields without a section?
 		}
 
@@ -40,10 +40,10 @@ final class CMB2Fields {
 		 * Create Settings pages
 		*/
 		foreach ( $this->settings as $settings_page ) {
-			if ( ! empty( $settings_page['fields'] ) ) {
-				$this->create_settings_page( $settings_page );
+			if ( empty( $settings_page['fields'] ) ) {
 				continue;
 			}
+			$this->create_settings_page( $settings_page );
 		}
 	}
 
