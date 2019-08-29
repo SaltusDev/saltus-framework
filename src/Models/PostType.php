@@ -5,7 +5,6 @@ class PostType extends Model {
 
 	/**
 	 * Setup the data needed to register
-	 *
 	 */
 	public function setup() {
 		if ( $this->isDisabled() ) {
@@ -56,7 +55,6 @@ class PostType extends Model {
 
 	/**
 	 * Checks if has any meta fields
-	 *
 	 */
 	public function has_meta() {
 
@@ -107,6 +105,7 @@ class PostType extends Model {
 	 * Register Post Type
 	 *
 	 * Uses extended-cpts if available.
+	 *
 	 * @see https://github.com/johnbillion/extended-cpts
 	 *
 	 * @return void
@@ -130,4 +129,3 @@ class PostType extends Model {
 		return 'post_type';
 	}
 }
-
