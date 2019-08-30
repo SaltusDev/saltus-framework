@@ -59,10 +59,11 @@ final class CodestarFields {
 	private function create_settings_page( $settings_id, $settings_page ) {
 
 		$default_args = array(
-			'menu_slug'   => $settings_id,
-			'menu_parent' => 'edit.php?post_type=' . $this->name,
-			'menu_type'   => 'submenu',
-			'theme'       => 'light',
+			'menu_slug'       => $settings_id,
+			'menu_parent'     => 'edit.php?post_type=' . $this->name,
+			'menu_type'       => 'submenu',
+			'theme'           => 'light',
+			'framework_title' => isset( $settings_page['title'] ) ? $settings_page['title'] : '',
 		);
 
 		$args = array_merge( $default_args, $settings_page );
@@ -155,7 +156,6 @@ final class CodestarFields {
 				$field['fields'] = $this->prepare_fields( $field['fields'] );
 
 			}
-
 		}
 
 		return $fields;

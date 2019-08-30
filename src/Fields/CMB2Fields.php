@@ -196,12 +196,13 @@ final class CMB2Fields {
 
 		// array for original => converted
 		$keys = [
-			'name' => 'title',
+			'title' => 'name',
 			'button_title' => 'add_button',
 		];
 
 		$values = [
 			'code_editor' => 'textarea_code',
+			'switcher' => 'checkbox',
 		];
 
 		// set keys and values to be recognized by CMB2
