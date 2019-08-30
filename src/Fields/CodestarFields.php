@@ -63,6 +63,7 @@ final class CodestarFields {
 			'menu_parent'     => 'edit.php?post_type=' . $this->name,
 			'menu_type'       => 'submenu',
 			'theme'           => 'light',
+			'footer_credit'   => ' ', // removes codestar default credit
 			'framework_title' => isset( $settings_page['title'] ) ? $settings_page['title'] : '',
 		);
 
