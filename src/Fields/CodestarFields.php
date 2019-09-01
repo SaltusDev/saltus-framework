@@ -150,6 +150,7 @@ final class CodestarFields {
 
 		foreach ( $fields as $key => &$field ) {
 
+			// we need each field array to have an id
 			$fields[ $key ]['id'] = $key;
 
 			if ( isset( $field['fields'] ) ) {
@@ -159,7 +160,8 @@ final class CodestarFields {
 			}
 		}
 
-		return $fields;
+		// codestar framework 'prefers' keys to be a numeric index, so we return the array_values
+		return array_values( $fields );
 	}
 
 
