@@ -41,7 +41,8 @@ final class Service implements ServiceInterface, Conditional {
 	}
 
 	public function get_new() {
-		return new CMB2Fields();
+		//return new CMB2Fields();
+		return new CodestarFields();
 	}
 
 }

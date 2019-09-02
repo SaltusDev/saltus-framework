@@ -22,35 +22,38 @@ final class CMB2Fields {
 	}
 
 	public function init() {
+		add_action( 'cmb2_admin_init', array( $this, 'init_fields' ), 2 );
+	}
+
+	public function init_fields() {
 
 		/**
-		 * Create Fields
+		 * Create Metaboxes
 		 *
-		 * Start by setting up Sections, which in turn will create fields
+		 * Start by setting up metaboxes, which in turn will create sections or fields
 		*/
-		foreach ( $this->meta as $section ) {
-			if ( empty( $section['fields'] ) ) {
+		foreach ( $this->meta as $box ) {
+			if ( empty( $box['fields'] ) && empty( $box['sections'] ) ) {
 				continue;
 			}
-			$this->create_section( $section );
-			// TODO by pcarvalho: can meta have only fields without a section?
+			$this->create_metabox( $box );
 		}
 
 		/**
 		 * Create Settings pages
 		*/
 		foreach ( $this->settings as $settings_page ) {
-			if ( empty( $settings_page['fields'] ) ) {
+			if ( empty( $box['fields'] ) && empty( $box['sections'] ) ) {
 				continue;
 			}
 			$this->create_settings_page( $settings_page );
 		}
 	}
 
-	private function create_section( $section ) {
+	private function create_metabox( $box ) {
 		$args = array(
-			'id'           => $section['id'],
-			'title'        => $section['title'],
+			'id'           => $box['id'],
+			'title'        => $box['title'],
 			'object_types' => $this->name,
 			'context'      => 'normal',
 			'priority'     => 'high',
@@ -58,8 +61,31 @@ final class CMB2Fields {
 		);
 
 		$cmb = \new_cmb2_box( $args );
-		foreach ( $section['fields'] as $id => $fields ) {
-			$this->create_field( $cmb, $id, $fields );
+
+		if ( isset( $box['fields'] ) ) {
+			foreach ( $box['fields'] as $id => $field ) {
+				$field = $this->prepare_field( $id, $field );
+				$this->create_field( $cmb, $id, $field );
+			}
+			return;
+		}
+
+		// Tabs logic would go here
+		foreach ( $box['sections'] as $section_id => $section ) {
+
+			// while we don't have tabs, set a title to separate the sections
+			$title_field = array(
+				'name' => $section['title'],
+				'desc' => $section['desc'],
+				'type' => 'title',
+				'id'   => $section_id,
+			);
+			$this->create_field( $cmb, $section_id, $title_field );
+
+			foreach ( $section['fields'] as $id => $field ) {
+				$field = $this->prepare_field( $id, $field );
+				$this->create_field( $cmb, $id, $field );
+			}
 		}
 	}
 
@@ -76,12 +102,40 @@ final class CMB2Fields {
 		$args = array_merge( $default_args, $settings_page );
 
 		$cmb = \new_cmb2_box( $args );
-		foreach ( $settings_page['fields'] as $id => $fields ) {
-			$this->create_field( $cmb, $id, $fields );
+
+		if ( isset( $settings_page['fields'] ) ) {
+			foreach ( $settings_page['fields'] as $id => $field ) {
+				$field = $this->prepare_field( $id, $field );
+				$this->create_field( $cmb, $id, $field );
+			}
+			return;
+		}
+
+		// Tabs logic would go here
+		foreach ( $settings_page['sections'] as $section_id => $section ) {
+
+			// while we don't have tabs, set a title to separate the sections
+			$title_field = array(
+				'name' => $section['title'],
+				'desc' => $section['desc'],
+				'type' => 'title',
+				'id'   => $section_id,
+			);
+			$this->create_field( $cmb, $section_id, $title_field );
+
+			foreach ( $section['fields'] as $id => $field ) {
+				$field = $this->prepare_field( $id, $field );
+				$this->create_field( $cmb, $id, $field );
+			}
 		}
 	}
 
 	private function create_field( $cmb, $id, $field ) {
+
+		if ( $field['type'] === 'group' ) {
+			$this->create_group_field( $cmb, $id, $field );
+			return;
+		}
 
 		// set default args
 		$default_args = array(
@@ -94,6 +148,71 @@ final class CMB2Fields {
 		$args = array_merge( $default_args, $field );
 
 		$cmb->add_field( $args );
+	}
+
+	/**
+	 * Create group field
+	 * //TODO - Needs improving
+	 *
+	 * @param object $cmb - new_cmb2_box instance
+	 * @param string $id - identifier for the group field
+	 * @param array $field - array with field arguments
+	 * @return void
+	 */
+	private function create_group_field( $cmb, $id, $field ) {
+
+		$default_args = [
+			'id'      => $id,
+			'name'    => $id,
+			'type'    => $group,
+			'options' => array_diff_key( $field, array_flip( [ 'name', 'type', 'fields' ] ) ),
+		];
+
+		// set custom parameters considering the defaults
+		$args = array_merge( $default_args, $field );
+
+		$group_field_id = $cmb->add_field( $args );
+
+
+		foreach ( $args['fields'] as $id => $field ) {
+			$field = $this->prepare_field( $id, $field );
+			$cmb->add_group_field(
+				$group_field_id,
+				$field
+			);
+		}
+
+	}
+
+	/**
+	 * Prepare fields to make sure they have all necessary parameters
+	 * //TODO - might need review for edge cases
+	 *
+	 * @param string $id identifier of the field
+	 * @param array  $field array of field arguments
+	 * @return array $fields array of prepared field to be rendered by CMB2
+	 */
+	private function prepare_field( $id, $field ) {
+
+		// array for original => converted
+		$keys = [
+			'title' => 'name',
+			'button_title' => 'add_button',
+		];
+
+		$values = [
+			'code_editor' => 'textarea_code',
+			'switcher' => 'checkbox',
+		];
+
+		// set keys and values to be recognized by CMB2
+		foreach ($field as $key => $value) {
+			$field[ strtr( $key, $keys ) ] = is_array( $value ) ? $value : strtr( $value, $values );
+		}
+
+		$field['id']   = $id;
+
+		return $field;
 	}
 
 }
