@@ -29,6 +29,11 @@ class ModelFactory {
 				add_action( 'init', array( $fields, 'init' ), 2 );
 
 			}
+
+			// disable block editor only if 'block_editor' is false
+			if( $config->has( 'block_editor' ) && ! $config->get( 'block_editor' ) ){
+				add_filter('use_block_editor_for_post_type', array( $cpt, 'disable_block_editor'), 10, 2);
+			}
 			return $cpt;
 
 		}

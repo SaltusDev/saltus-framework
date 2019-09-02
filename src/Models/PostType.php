@@ -128,4 +128,14 @@ class PostType extends Model {
 	public function get_type() {
 		return 'post_type';
 	}
+
+	/**
+	 * Disable block editor for this custom post type
+	 *
+	 * @return boolean status
+	 */
+	public function disable_block_editor($current_status, $post_type) {
+		if ($post_type === $this->name) return false;
+		return $current_status;
+	}
 }
