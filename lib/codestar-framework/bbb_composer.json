@@ -1,0 +1,27 @@
+{
+	"name": "codestar/framework",
+	"type": "project",
+	"license": "GPLv3",
+	"description": "",
+	"homepage": "https://codestarframework.com/",
+	"authors": [
+		{
+			"name": "Codestar Plugin Framework",
+			"email": "info@codestarthemes.com",
+			"homepage": "https://codestarframework.com"
+		}
+	],
+	"keywords": [
+		"wordpress", "composer"
+	],
+	"require": {
+		"php": ">=7.2"
+	},
+	"scripts": {
+		"test": [
+			"vendor/bin/phpcs"
+		]
+	},
+	"minimum-stability": "dev",
+	"prefer-stable": true
+}
