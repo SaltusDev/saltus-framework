@@ -114,7 +114,14 @@ class PostType extends Model {
 		$args = array_merge( $this->args, $this->config );
 
 		if ( function_exists( 'register_extended_post_type' ) ) {
-			register_extended_post_type( $this->name, $args );
+
+			// include the third parameter with the names, which will influence the messages
+			$names = [
+				'singular' => $this->one,
+				'plural'   => $this->many,
+			];
+
+			register_extended_post_type( $this->name, $args, $names );
 			return;
 		}
 		register_post_type( $this->name, $args );
