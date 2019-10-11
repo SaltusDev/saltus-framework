@@ -2,6 +2,8 @@
 
 namespace Saltus\WP\Framework\Models;
 
+use Noodlehaus\AbstractConfig;
+
 class ModelFactory {
 
 	protected $fields_service;
@@ -13,8 +15,9 @@ class ModelFactory {
 	/**
 	 * Route to class
 	 */
-	public function create( $config ) {
+	public function create( AbstractConfig $config ) {
 
+		// soft fail
 		if ( ! $config->has( 'type' ) ) {
 			return false;
 		}
@@ -22,12 +25,29 @@ class ModelFactory {
 		if ( in_array( $config->get( 'type' ), [ 'post-type', 'cpt', 'posttype', 'post_type' ], true ) ) {
 			$cpt = new PostType( $config );
 			$cpt->setup();
-			if ( $config->has( 'meta' ) || $config->has( 'settings' ) ) {
+
+			$meta = array();
+			$has_meta = false;
+
+			$settings = array();
+			$has_settings = false;
+
+			if ( $config->has( 'meta' ) ) {
+				$has_meta = true;
+				$meta = $config->get( 'meta' );
+			}
+			if ( $config->has( 'settings' ) ) {
+				$has_settings = true;
+				$settings = $config->get( 'settings' );
+			}
+
+			if ( $has_meta || $has_settings ) {
 				$fields = $this->fields_service->get_new();
-				$fields->setup( $cpt->name, $config->get( 'meta' ), $config->get( 'settings' ) );
-
-				add_action( 'init', array( $fields, 'init' ), 2 );
-
+				$fields->setup(
+					$cpt->name,
+					$meta,
+					$settings
+				);
 			}
 
 			// disable block editor only if 'block_editor' is false

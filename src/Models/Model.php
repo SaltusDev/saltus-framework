@@ -1,14 +1,31 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
+use Noodlehaus\AbstractConfig;
+
 class Model implements ModelInterface {
 
+	/**
+	 * The full CPT configuration.
+	 *
+	 * Includes cache.
+	 *
+	 * @var [type]
+	 */
+	protected $config;
+
+	/**
+	 * the actual cpt data.
+	 *
+	 * Includes Name, Type, etc
+	 *
+	 * @var [type]
+	 */
 	protected $data;
 
-	// data req for register_post_type() and register_taxonomy()
+	// name is required by register_post_type() and register_taxonomy()
 	public $name;
 
-	protected $config;
 	protected $args;
 
 	// data req for computations
@@ -16,17 +33,18 @@ class Model implements ModelInterface {
 	protected $many;
 	protected $i18n;
 
-	public function __construct( $data ) {
-		$this->data = $data;
+	public function __construct( AbstractConfig $config_data ) {
+		$this->data   = $config_data->all();
+		$this->config = $config_data;
 
 		if ( $this->isDisabled() ) {
 			return;
 		}
 
-		$this->setName( $data['name'] );
+		$this->setName( $config_data->get( 'name' ) );
 
 		// pass only labels
-		$this->setNameLabels( $data );
+		$this->setNameLabels( $config_data );
 	}
 
 	public function setup() {}
@@ -37,7 +55,10 @@ class Model implements ModelInterface {
 	 * @return boolean
 	 */
 	protected function isDisabled() {
-		return ( ( $this->data['active'] === false ) ? true : false );
+		if ( empty( $this->data['active'] ) || $this->data['active'] === true ) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -45,7 +66,7 @@ class Model implements ModelInterface {
 	 *
 	 * Required to register post type
 	 */
-	protected function setName( $name ) {
+	protected function setName( string $name ) {
 		$this->name = $name;
 	}
 
@@ -55,10 +76,10 @@ class Model implements ModelInterface {
 	 *
 	 * Based on name, or keys labels.has-one and labels.has-many
 	 */
-	protected function setNameLabels( $data ) {
-		$this->one  = ( $data['labels.has_one'] ? $data['labels.has_one'] : ucfirst( $this->name ) );
-		$this->many = ( $data['labels.has_many'] ? $data['labels.has_many'] : ucfirst( $this->name . 's' ) );
-		$this->i18n = ( $data['labels.text_domain'] ? $data['labels.text_domain'] : 'saltus' );
+	protected function setNameLabels( AbstractConfig $config ) {
+		$this->one  = ( $config['labels.has_one'] ? $config['labels.has_one'] : ucfirst( $this->name ) );
+		$this->many = ( $config['labels.has_many'] ? $config['labels.has_many'] : ucfirst( $this->name . 's' ) );
+		$this->i18n = ( $config['labels.text_domain'] ? $config['labels.text_domain'] : 'saltus' );
 	}
 
 	/**
@@ -66,11 +87,15 @@ class Model implements ModelInterface {
 	 *
 	 * Merge and/or replace defaults with user config
 	 */
-	protected function setConfig( array $config ) {
-		if ( $this->data['config'] ) {
-			$config = array_replace( $config, $this->data['config'] );
+	protected function set_options( array $options ) {
+		if ( empty( $this->data['options'] ) ) {
+			$this->options = $options;
+			return;
 		}
-		$this->config = $config;
+		if ( $this->data['options'] ) {
+			$options = array_replace( $options, $this->data['options'] );
+		}
+		$this->options = $options;
 	}
 
 	/**
@@ -79,8 +104,12 @@ class Model implements ModelInterface {
 	 * If key labels.overrides exists, add to or replace label defaults
 	 */
 	protected function setLabels( array $labels ) {
-		if ( $this->data['labels.overrides'] ) {
-			$labels = array_replace( $labels, $this->data['labels.overrides'] );
+		if ( empty( $this->config['labels.overrides'] ) ) {
+			$labels = $labels;
+			return;
+		}
+		if ( $this->config['labels.overrides'] ) {
+			$labels = array_replace( $labels, $this->config['labels.overrides'] );
 		}
 		$this->args['labels'] = $labels;
 	}

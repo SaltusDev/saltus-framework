@@ -8,11 +8,6 @@
   <exclude-pattern>*/node_modules/*</exclude-pattern>
   <exclude-pattern>*/vendor/*</exclude-pattern>
 
-  <!-- Yoda conditions, we must ignore -->
-  <rule ref="WordPress.PHP.YodaConditions.NotYoda">
-    <severity>0</severity>
-  </rule>
-
   <!-- Ignore lowercase filenames -->
   <rule ref="Generic.Files.LowercasedFilename.NotFound">
     <severity>0</severity>

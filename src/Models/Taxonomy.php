@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
-//use Sober\Models\Model;
-
 class Taxonomy extends Model {
 
 	// data req for register_taxonomy()
@@ -17,11 +15,13 @@ class Taxonomy extends Model {
 			return;
 		}
 
-		$this->setConfig( $this->getDefaultConfig() );
+		$this->set_options( $this->getDefaultOptions() );
 
 		$this->setLabels( $this->getDefaultLabels() );
 
 		$this->setAssociations( $this->getDefaultAssociations() );
+
+		$this->set_meta();
 
 		$this->register();
 	}
@@ -33,16 +33,15 @@ class Taxonomy extends Model {
 	 *
 	 * @return array The list of config settings
 	 */
-	protected function getDefaultConfig() {
-		$config = [];
-		if ( ! $this->data->has( 'type' ) ) {
-			return $config;
+	protected function getDefaultOptions() {
+		$options = [];
+		if ( ! $this->config->has( 'type' ) ) {
+			return $options;
 		}
 
-		if ( in_array( $this->data->get( 'type' ), [ 'cat', 'category' ], true ) ) {
+		$config['hierarchical'] = false;
+		if ( in_array( $this->config->get( 'type' ), [ 'cat', 'category' ], true ) ) {
 			$config['hierarchical'] = true;
-		} else {
-			$config['hierarchical'] = false;
 		}
 
 		// show in rest api by default
@@ -93,12 +92,12 @@ class Taxonomy extends Model {
 	 *
 	 */
 	protected function setAssociations( array $associations ) {
-		if ( ! $this->data->has( 'associations' ) ) {
+		if ( ! $this->config->has( 'associations' ) ) {
 			$this->associations = $associations;
 			return;
 		}
 
-		$custom_associations = $this->data->get( 'associations' );
+		$custom_associations = $this->config->get( 'associations' );
 		if ( is_array( $custom_associations ) ) {
 			$associations = array_replace( $associations, $custom_associations );
 		} else {
@@ -109,6 +108,18 @@ class Taxonomy extends Model {
 	}
 
 	/**
+	 *
+	 *
+	 */
+	protected function set_meta() {
+
+		$meta = [];
+		if ( $this->config->has( 'meta' ) ) {
+			$meta = $this->config->get( 'meta' );
+		}
+		$this->args['meta'] = $meta;
+	}
+	/**
 	 * Register Taxonomy
 	 *
 	 * Uses extended-cpts if available.
@@ -117,7 +128,7 @@ class Taxonomy extends Model {
 	 * @return void
 	 */
 	protected function register() {
-		$args = array_merge( $this->args, $this->config );
+		$args = array_merge( $this->args, $this->options );
 
 		if ( function_exists( 'register_extended_taxonomy' ) ) {
 			register_extended_taxonomy( $this->name, $this->associations, $args );

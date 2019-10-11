@@ -15,11 +15,13 @@ final class CodestarFields {
 
 	}
 
-	public function setup( $name, $meta = array(), $settings = array() ) {
+	public function setup( string $name, array $meta = array(), array $settings = array() ) {
 
 		$this->name     = $name;
 		$this->meta     = $meta;
 		$this->settings = $settings;
+
+		$this->init();
 	}
 
 	public function init() {

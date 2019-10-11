@@ -11,7 +11,7 @@ class PostType extends Model {
 			return;
 		}
 
-		$this->setConfig( $this->getDefaultConfig() );
+		$this->set_options( $this->getDefaultOptions() );
 
 		$this->setLabels( $this->getDefaultLabels() );
 
@@ -21,22 +21,22 @@ class PostType extends Model {
 	}
 
 	/**
-	 * Get config defaults
+	 * Get default Options
 	 *
-	 * Make public and change menu position
+	 * Turn it public, change menu position and add `supports` list.
 	 *
-	 * @return array The list of config settings
+	 * @return array The list of options settings
 	 */
-	protected function getDefaultConfig() {
-		$config = [
+	protected function getDefaultOptions() {
+		$options = [
 			'public'        => true,
 			'menu_position' => 5,
 		];
 
-		if ( $this->data->has( 'supports' ) ) {
-			$config['supports'] = $this->data->get( 'supports' );
+		if ( $this->config->has( 'supports' ) ) {
+			$options['supports'] = $this->config->get( 'supports' );
 		}
-		return $config;
+		return $options;
 	}
 
 
@@ -47,8 +47,8 @@ class PostType extends Model {
 	protected function set_meta() {
 
 		$meta = [];
-		if ( $this->data->has( 'meta' ) ) {
-			$meta = $this->data->get( 'meta' );
+		if ( $this->config->has( 'meta' ) ) {
+			$meta = $this->config->get( 'meta' );
 		}
 		$this->args['meta'] = $meta;
 	}
@@ -76,26 +76,26 @@ class PostType extends Model {
 
 		$labels = [
 			'name'                  => $this->many,
-			'singular_name'         => _x( $this->one, 'Post type singular name', $this->i18n ),
-			'menu_name'             => _x( $this->many, 'Admin Menu text', $this->i18n ),
-			'name_admin_bar'        => _x( $this->one, 'Add New on Toolbar', $this->i18n ),
-			'add_new_item'          => __( 'Add New ' . $this->one, $this->i18n ),
-			'edit_item'             => __( 'Edit ' . $this->one, $this->i18n ),
-			'new_item'              => __( 'New ' . $this->one, $this->i18n ),
-			'view_item'             => __( 'View ' . $this->one, $this->i18n ),
-			'view_items'            => __( 'View ' . $this->many, $this->i18n ),
-			'search_items'          => __( 'Search ' . $this->many, $this->i18n ),
-			'not_found'             => __( 'No ' . $many_lower . ' found.', $this->i18n ),
-			'not_found_in_trash'    => __( 'No ' . $many_lower . ' found in Trash.', $this->i18n ),
-			'parent_item_colon'     => __( 'Parent ' . $this->many . ':', $this->i18n ),
-			'all_items'             => __( 'All ' . $this->many, $this->i18n ),
-			'archives'              => __( $this->one . ' Archives', $this->i18n ),
-			'attributes'            => __( $this->one . ' Attributes', $this->i18n ),
-			'insert_into_item'      => __( 'Insert into ' . $one_lower, $this->i18n ),
-			'uploaded_to_this_item' => __( 'Uploaded to this ' . $one_lower, $this->i18n ),
-			'filter_items_list'     => __( 'Filter ' . $many_lower . ' list', $this->i18n ),
-			'items_list_navigation' => __( $this->many . ' list navigation', $this->i18n ),
-			'items_list'            => __( $this->many . ' list', $this->i18n ),
+			'singular_name'         => $this->one,
+			'menu_name'             => $this->many,
+			'name_admin_bar'        => $this->one,
+			'add_new_item'          => 'Add New ' . $this->one,
+			'edit_item'             => 'Edit ' . $this->one,
+			'new_item'              => 'New ' . $this->one,
+			'view_item'             => 'View ' . $this->one,
+			'view_items'            => 'View ' . $this->many,
+			'search_items'          => 'Search ' . $this->many,
+			'not_found'             => 'No ' . $many_lower . ' found.',
+			'not_found_in_trash'    => 'No ' . $many_lower . ' found in Trash',
+			'parent_item_colon'     => 'Parent ' . $this->many . ':',
+			'all_items'             => 'All ' . $this->many,
+			'archives'              => $this->one . ' Archives',
+			'attributes'            => $this->one . ' Attributes',
+			'insert_into_item'      => 'Insert into ' . $one_lower,
+			'uploaded_to_this_item' => 'Uploaded to this ' . $one_lower,
+			'filter_items_list'     => 'Filter ' . $many_lower . ' list',
+			'items_list_navigation' => $this->many . ' list navigation',
+			'items_list'            => $this->many . ' list',
 		];
 
 		return $labels;
@@ -111,7 +111,7 @@ class PostType extends Model {
 	 * @return void
 	 */
 	protected function register() {
-		$args = array_merge( $this->args, $this->config );
+		$args = array_merge( $this->args, $this->options );
 
 		if ( function_exists( 'register_extended_post_type' ) ) {
 
