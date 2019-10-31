@@ -19,4 +19,8 @@
     <severity>0</severity>
   </rule>
   <rule ref="WordPress-Extra" />
+
+
+  <config name="testVersion" value="7.0-"/>
+
 </ruleset>

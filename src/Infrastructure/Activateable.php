@@ -17,5 +17,5 @@ interface Activateable {
 	 *
 	 * @return void
 	 */
-	public function activate(): void;
+	public function activate();
 }

@@ -27,11 +27,11 @@ use Saltus\WP\Framework\Infrastructure\{
 class Core implements PluginInterface {
 
 	// Main filters to control the flow of the plugin from outside code.
-	public const SERVICES_FILTER = 'services';
+	const SERVICES_FILTER = 'services';
 
 	// Prefixes to use.
-	protected const HOOK_PREFIX    = '';
-	protected const SERVICE_PREFIX = '';
+	const HOOK_PREFIX    = '';
+	const SERVICE_PREFIX = '';
 
 
 	/** @var bool */
@@ -78,7 +78,7 @@ class Core implements PluginInterface {
 	 *
 	 * @return void
 	 */
-	public function register(): void {
+	public function register() {
 		$project_path = $this->project['path'];
 		add_action(
 			'init',
@@ -93,7 +93,7 @@ class Core implements PluginInterface {
 	 *
 	 * @return void
 	 */
-	public function activate(): void {
+	public function activate() {
 		$this->register_services();
 
 		foreach ( $this->service_container as $service ) {
@@ -110,7 +110,7 @@ class Core implements PluginInterface {
 	 *
 	 * @return void
 	 */
-	public function deactivate(): void {
+	public function deactivate() {
 		$this->register_services();
 
 		foreach ( $this->service_container as $service ) {
@@ -129,7 +129,7 @@ class Core implements PluginInterface {
 	 *
 	 * @return void
 	 */
-	public function register_services(): void {
+	public function register_services() {
 		// Bail early so we don't instantiate services twice.
 		if ( count( $this->service_container ) > 0 ) {
 			return;
@@ -169,7 +169,7 @@ class Core implements PluginInterface {
 	 * @param string $id
 	 * @param string $class
 	 */
-	protected function register_service( string $id, string $class ): void {
+	protected function register_service( string $id, string $class ) {
 		// Only instantiate services that are actually needed.
 		if ( is_a( $class, Conditional::class, true ) &&
 			! $class::is_needed() ) {
@@ -241,7 +241,7 @@ class Core implements PluginInterface {
 	 *                                   empty array.
 	 * @return object Instantiated object.
 	 */
-	public function make( string $class ): object {
+	public function make( string $class ) {
 
 		$reflection = $this->get_class_reflection( $class );
 		$this->ensure_is_instantiable( $reflection );
@@ -276,7 +276,7 @@ class Core implements PluginInterface {
 	 * @return void
 	 * @throws FailedToMakeInstance If the interface could not be resolved.
 	 */
-	private function ensure_is_instantiable( ReflectionClass $reflection ): void {
+	private function ensure_is_instantiable( ReflectionClass $reflection ) {
 		if ( ! $reflection->isInstantiable() ) {
 			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() );
 		}
@@ -298,7 +298,7 @@ class Core implements PluginInterface {
 			 * @param array  $dependencies Optional. Dependencies of the class.
 			 * @return object Instantiated object.
 			 */
-			public function instantiate( string $class, array $dependencies = [] ): object {
+			public function instantiate( string $class, array $dependencies = [] ) {
 				return new $class( ...$dependencies );
 			}
 		};
