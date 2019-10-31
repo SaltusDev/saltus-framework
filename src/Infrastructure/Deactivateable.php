@@ -17,5 +17,5 @@ interface Deactivateable {
 	 *
 	 * @return void
 	 */
-	public function deactivate(): void;
+	public function deactivate();
 }

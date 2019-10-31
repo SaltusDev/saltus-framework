@@ -60,7 +60,7 @@ final class ServiceContainer
 	 *                         container.
 	 * @param ServiceInterface $service Service to put into the container.
 	 */
-	public function put( string $id, ServiceInterface $service ): void {
+	public function put( string $id, ServiceInterface $service ) {
 		$this->offsetSet( $id, $service );
 	}
 }
