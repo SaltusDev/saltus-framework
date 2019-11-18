@@ -1,7 +1,6 @@
 <?php
-namespace Saltus\WP\Framework\Infrastructure;
+namespace Saltus\WP\Framework\Infrastructure\Service;
 
-use Saltus\WP\Framework\Exception\InvalidService;
 use ArrayAccess;
 use Countable;
 use Traversable;
@@ -15,18 +14,18 @@ use Traversable;
  *
  * @see https://www.php-fig.org/psr/psr-11/
  */
-interface ServiceContainerInterface extends Traversable, Countable, ArrayAccess {
+interface ServiceContainer extends Traversable, Countable, ArrayAccess {
 
 	/**
 	 * Find a service of the container by its identifier and return it.
 	 *
 	 * @param string $id Identifier of the service to look for.
 	 *
-	 * @throws InvalidService If the service could not be found.
+	 * @throws Invalid If the service could not be found.
 	 *
 	 * @return Service Service that was requested.
 	 */
-	public function get( string $id ): ServiceInterface;
+	public function get( string $id ): Service;
 
 	/**
 	 * Check whether the container can return a service for the given
@@ -43,7 +42,7 @@ interface ServiceContainerInterface extends Traversable, Countable, ArrayAccess 
 	 *
 	 * @param string  $id      Identifier of the service to put into the
 	 *                         container.
-	 * @param ServiceInterface $service Service to put into the container.
+	 * @param Service $service Service to put into the container.
 	 */
-	public function put( string $id, ServiceInterface $service );
+	public function put( string $id, Service $service );
 }

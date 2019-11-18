@@ -1,5 +1,5 @@
 <?php
-namespace Saltus\WP\Framework\Infrastructure;
+namespace Saltus\WP\Framework\Infrastructure\Plugin;
 
 /**
  * Something that can be registered.

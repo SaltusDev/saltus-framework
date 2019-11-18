@@ -26,23 +26,23 @@ class ModelFactory {
 			$cpt = new PostType( $config );
 			$cpt->setup();
 
-			$meta = array();
+			$meta     = array();
 			$has_meta = false;
 
-			$settings = array();
+			$settings     = array();
 			$has_settings = false;
 
 			if ( $config->has( 'meta' ) ) {
+				$meta     = $config->get( 'meta' );
 				$has_meta = true;
-				$meta = $config->get( 'meta' );
 			}
 			if ( $config->has( 'settings' ) ) {
+				$settings     = $config->get( 'settings' );
 				$has_settings = true;
-				$settings = $config->get( 'settings' );
 			}
 
 			if ( $has_meta || $has_settings ) {
-				$fields = $this->fields_service->get_new();
+				$fields = $this->fields_service->make();
 				$fields->setup(
 					$cpt->name,
 					$meta,
@@ -51,8 +51,8 @@ class ModelFactory {
 			}
 
 			// disable block editor only if 'block_editor' is false
-			if( $config->has( 'block_editor' ) && ! $config->get( 'block_editor' ) ){
-				add_filter('use_block_editor_for_post_type', array( $cpt, 'disable_block_editor'), 10, 2);
+			if ( $config->has( 'block_editor' ) && ! $config->get( 'block_editor' ) ) {
+				add_filter( 'use_block_editor_for_post_type', array( $cpt, 'disable_block_editor'), 10, 2 );
 			}
 			return $cpt;
 

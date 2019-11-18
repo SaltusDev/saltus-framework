@@ -1,7 +1,7 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
-class Taxonomy extends Model {
+class Taxonomy extends BaseModel implements Model {
 
 	// data req for register_taxonomy()
 	protected $links = 'post';
@@ -11,15 +11,15 @@ class Taxonomy extends Model {
 	 *
 	 */
 	public function setup() {
-		if ( $this->isDisabled() ) {
+		if ( $this->is_disabled() ) {
 			return;
 		}
 
-		$this->set_options( $this->getDefaultOptions() );
+		$this->set_options( $this->get_default_options() );
 
-		$this->setLabels( $this->getDefaultLabels() );
+		$this->set_labels( $this->get_default_labels() );
 
-		$this->setAssociations( $this->getDefaultAssociations() );
+		$this->set_associations( $this->get_default_associations() );
 
 		$this->set_meta();
 
@@ -33,7 +33,7 @@ class Taxonomy extends Model {
 	 *
 	 * @return array The list of config settings
 	 */
-	protected function getDefaultOptions() {
+	protected function get_default_options() {
 		$options = [];
 		if ( ! $this->config->has( 'type' ) ) {
 			return $options;
@@ -57,7 +57,7 @@ class Taxonomy extends Model {
 	 *
 	 * @return array The list of Labels
 	 */
-	protected function getDefaultLabels() {
+	protected function get_default_labels() {
 		$labels = [
 			'name'                       => _x( $this->many, 'Taxonomy general name', $this->i18n ),
 			'singular_name'              => _x( $this->one, 'Taxonomy singular name', $this->i18n ),
@@ -83,7 +83,7 @@ class Taxonomy extends Model {
 		return $labels;
 	}
 
-	protected function getDefaultAssociations() {
+	protected function get_default_associations() {
 		return [];
 	}
 
@@ -91,7 +91,7 @@ class Taxonomy extends Model {
 	 * Set Object types association to this taxonomy
 	 *
 	 */
-	protected function setAssociations( array $associations ) {
+	protected function set_associations( array $associations ) {
 		if ( ! $this->config->has( 'associations' ) ) {
 			$this->associations = $associations;
 			return;
@@ -99,12 +99,10 @@ class Taxonomy extends Model {
 
 		$custom_associations = $this->config->get( 'associations' );
 		if ( is_array( $custom_associations ) ) {
-			$associations = array_replace( $associations, $custom_associations );
-		} else {
-			$associations = $custom_associations;
+			$this->associations = array_replace( $associations, $custom_associations );
+			return;
 		}
-		$this->associations = $associations;
-
+		$this->associations = $custom_associations;
 	}
 
 	/**
@@ -119,6 +117,7 @@ class Taxonomy extends Model {
 		}
 		$this->args['meta'] = $meta;
 	}
+
 	/**
 	 * Register Taxonomy
 	 *
@@ -132,9 +131,9 @@ class Taxonomy extends Model {
 
 		if ( function_exists( 'register_extended_taxonomy' ) ) {
 			register_extended_taxonomy( $this->name, $this->associations, $args );
-		} else {
-			register_taxonomy( $this->name, $this->associations, $args );
+			return;
 		}
+		register_taxonomy( $this->name, $this->associations, $args );
 	}
 
 	/**

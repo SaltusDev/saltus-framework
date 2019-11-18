@@ -1,11 +1,13 @@
 <?php
-namespace Saltus\WP\Framework\Exception;
+namespace Saltus\WP\Framework\Infrastructure\Service;
+
+use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 
 use RuntimeException;
 
 class FailedToMakeInstance
 	extends RuntimeException
-	implements SaltusFrameworkException {
+	implements SaltusFrameworkThrowable {
 
 	// These constants are public so you can use them to find out what exactly
 	// happened when you catch a "FailedToMakeInstance" exception.

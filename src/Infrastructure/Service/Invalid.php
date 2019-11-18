@@ -1,11 +1,12 @@
 <?php
-namespace Saltus\WP\Framework\Exception;
+namespace Saltus\WP\Framework\Infrastructure\Service;
 
+use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 use InvalidArgumentException;
 
-class InvalidService
+class Invalid
 	extends InvalidArgumentException
-	implements SaltusFrameworkException {
+	implements SaltusFrameworkThrowable {
 
 	/**
 	 * Create a new instance of the exception for a service class name that is
