@@ -1,5 +1,5 @@
 <?php
-namespace Saltus\WP\Framework\Infrastructure;
+namespace Saltus\WP\Framework\Features;
 
 /**
  * A conceptual service.
@@ -8,6 +8,7 @@ namespace Saltus\WP\Framework\Infrastructure;
  * assembling a plugin more systematic and scalable and lowers the cognitive
  * load when the code base increases in size.
  */
-interface ServiceInterface {
+interface FeaturesInterface {
 
+	public function get_new();
 }

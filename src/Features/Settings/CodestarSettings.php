@@ -1,42 +1,23 @@
 <?php
-namespace Saltus\WP\Framework\Fields;
+namespace Saltus\WP\Framework\Features\Settings;
 
-final class CodestarFields {
+final class CodestarSettings {
 
 	private $name;
-	private $meta;
+	private $project;
 	private $settings;
 
 
-	/**
-	 * Instantiate the Codestar Framework Fields object.
-	 */
-	public function __construct() {
-
-	}
-
-	public function setup( string $name, array $meta = array(), array $settings = array() ) {
+	public function __construct( string $name, array $project, array $settings = array() ) {
 
 		$this->name     = $name;
-		$this->meta     = $meta;
+		$this->project  = $project;
 		$this->settings = $settings;
 
 		$this->init();
 	}
 
-	public function init() {
-
-		/**
-		 * Create Metaboxes
-		 */
-		foreach ( $this->meta as $box_id => $box ) {
-			if ( empty( $box['fields'] ) && empty( $box['sections'] ) ) {
-				continue;
-			}
-
-			// else add just the fields
-			$this->create_metabox( $box_id, $box );
-		}
+	private function init() {
 
 		/**
 		 * Create Settings pages
@@ -84,46 +65,6 @@ final class CodestarFields {
 			foreach ( $settings_page['sections'] as $section ) {
 				$section['fields'] = $this->prepare_fields( $section['fields'] );
 				$this->create_section( $settings_id, $section );
-			}
-		}
-
-	}
-
-	/**
-	 * Create metabox
-	 *
-	 * @param int   $box_id identifier of the metabox
-	 * @param array $box_settings paramaters for the page
-	 * @return void
-	 */
-	private function create_metabox( $box_id, $box_settings ) {
-
-		$default_args = array(
-			'post_type' => $this->name,
-			'priority'  => 'high',
-			'context'   => 'normal',
-			'theme'     => 'light',
-			'data_type' => 'unserialize',
-		);
-
-		$args = array_merge( $default_args, $box_settings );
-
-		// Create options
-		\CSF::createMetabox( $box_id, $args );
-
-		if ( isset( $box_settings['fields'] ) ) {
-
-			$box_settings['fields'] = $this->prepare_fields( $box_settings['fields'] );
-
-			$this->create_section( $box_id, $box_settings );
-			return;
-		}
-
-		if ( isset( $box_settings['sections'] ) ) {
-			foreach ( $box_settings['sections'] as $section ) {
-
-				$section['fields'] = $this->prepare_fields( $section['fields'] );
-				$this->create_section( $box_id, $section );
 			}
 		}
 
