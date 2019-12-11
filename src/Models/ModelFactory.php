@@ -6,10 +6,12 @@ use Noodlehaus\AbstractConfig;
 
 class ModelFactory {
 
-	protected $fields_service;
+	protected $app;
+	protected $project;
 
-	public function __construct( $fields_service ) {
-		$this->fields_service = $fields_service;
+	public function __construct( $app, $project ) {
+		$this->app     = $app;
+		$this->project = $project;
 	}
 
 	/**
@@ -26,28 +28,42 @@ class ModelFactory {
 			$cpt = new PostType( $config );
 			$cpt->setup();
 
-			$meta     = array();
-			$has_meta = false;
+			$service_name = 'meta';
+			if ( $config->has( $service_name ) &&
+				$this->app->has( $service_name ) ) {
 
-			$settings     = array();
-			$has_settings = false;
-
-			if ( $config->has( 'meta' ) ) {
-				$meta     = $config->get( 'meta' );
-				$has_meta = true;
-			}
-			if ( $config->has( 'settings' ) ) {
-				$settings     = $config->get( 'settings' );
-				$has_settings = true;
+				$meta         = $config->get( 'meta' );
+				$meta_service = $this->app->get( $service_name );
+				$meta_service->make( $cpt->name, $this->project, $meta );
 			}
 
-			if ( $has_meta || $has_settings ) {
-				$fields = $this->fields_service->make();
-				$fields->setup(
-					$cpt->name,
-					$meta,
-					$settings
-				);
+			$service_name = 'settings';
+			if ( $config->has( $service_name ) &&
+				$this->app->has( $service_name ) ) {
+
+				$settings         = $config->get( $service_name );
+				$settings_service = $this->app->get( $service_name );
+				$settings_service->make( $cpt->name, $this->project, $settings );
+			}
+
+			$service_name = 'features';
+			if ( $config->has( $service_name ) ) {
+				$features = $config->get( $service_name );
+
+				foreach ( $features as $feature_name => $status ) {
+					if ( ! $status ) {
+						continue;
+					}
+					$normalized_feature_name = strtolower( $feature_name );
+
+					// Feature is not available
+					if ( ! $this->app->has( $normalized_feature_name ) ) {
+						continue;
+					}
+
+					$service = $this->app->get( $normalized_feature_name );
+					$service->make( $cpt->name, $this->project, [] );
+				}
 			}
 
 			// disable block editor only if 'block_editor' is false
