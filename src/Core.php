@@ -29,10 +29,6 @@ use Saltus\WP\Framework\Features\Meta\Meta;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
 
-use Saltus\WP\Framework\Infrastructure\Feature\{
-	EnqueueAssets,
-};
-
 class Core implements Plugin {
 
 	// Main filters to control the flow of the plugin from outside code.

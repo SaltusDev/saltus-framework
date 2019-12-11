@@ -6,7 +6,7 @@ use Saltus\WP\Framework\Infrastructure\Feature\{
 	EnqueueAssets,
 };
 
-final class CustomTypeDragAndDrop implements Feature, EnqueueAssets {
+final class CustomTypeDragAndDrop implements EnqueueAssets {
 
 	private $name;
 	private $project;
@@ -21,10 +21,6 @@ final class CustomTypeDragAndDrop implements Feature, EnqueueAssets {
 		$this->register();
 
 		$this->enqueue_assets();
-	}
-
-	/** This is the start of the process */
-	public function setup( string $name, ...$args ) {
 	}
 
 	public function enqueue_assets() {
