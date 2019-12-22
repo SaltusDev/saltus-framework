@@ -6,25 +6,28 @@
 namespace Saltus\WP\Framework;
 
 use Saltus\WP\Framework\Models\ModelFactory;
-use Saltus\WP\Framework\Infrastructure\ServiceContainer;
-use Saltus\WP\Framework\Infrastructure\PluginInterface;
-use Saltus\WP\Framework\Infrastructure\ServiceInterface;
-use Saltus\WP\Framework\Infrastructure\ServiceContainerInterface;
-
-use Saltus\WP\Framework\Infrastructure\Instantiator;
-
-use Saltus\WP\Framework\Exception\FailedToMakeInstance;
-use Saltus\WP\Framework\Exception\InvalidService;
+use Saltus\WP\Framework\Infrastructure\Service\App;
+use Saltus\WP\Framework\Infrastructure\Service\Service;
+use Saltus\WP\Framework\Infrastructure\Service\ServiceContainer;
+use Saltus\WP\Framework\Infrastructure\Service\Conditional;
+use Saltus\WP\Framework\Infrastructure\Service\Instantiator;
+// Exceptions
+use Saltus\WP\Framework\Infrastructure\Service\FailedToMakeInstance;
+use Saltus\WP\Framework\Infrastructure\Service\Invalid;
+use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 
 use ReflectionClass;
-use Throwable;
 
-use Saltus\WP\Framework\Infrastructure\{
-	Conditional,
-	Registerable
+use Saltus\WP\Framework\Infrastructure\Plugin\{
+	Plugin,
+	Registerable,
+	Activateable,
+	Deactivateable
 };
 
-class Core implements PluginInterface {
+use Saltus\WP\Framework\Features\Fields\FieldService;
+
+class Core implements Plugin {
 
 	// Main filters to control the flow of the plugin from outside code.
 	const SERVICES_FILTER = 'services';
@@ -53,7 +56,7 @@ class Core implements PluginInterface {
 
 		$this->instantiator = $this->get_fallback_instantiator();
 
-		$this->service_container = new ServiceContainer();
+		$this->service_container = new App();
 
 		$this->register_services();
 
@@ -125,7 +128,7 @@ class Core implements PluginInterface {
 	/**
 	 * Register the individual services of this plugin.
 	 *
-	 * @throws InvalidService If a service is not valid.
+	 * @throws Invalid If a service is not valid.
 	 *
 	 * @return void
 	 */
@@ -190,9 +193,9 @@ class Core implements PluginInterface {
 	 * Get the service container that contains the services that make up the
 	 * plugin.
 	 *
-	 * @return ServiceContainerInterface Service container of the plugin.
+	 * @return ServiceContainer Service container of the plugin.
 	 */
-	public function get_container(): ServiceContainerInterface {
+	public function get_container(): ServiceContainer {
 		return $this->service_container;
 	}
 
@@ -201,17 +204,17 @@ class Core implements PluginInterface {
 	 *
 	 * @param string $class Service class to instantiate.
 	 *
-	 * @throws InvalidService If the service could not be properly instantiated.
+	 * @throws Invalid If the service could not be properly instantiated.
 	 *
-	 * @return ServiceInterface Instantiated service.
+	 * @return Service Instantiated service.
 	 */
-	protected function instantiate_service( $class ): ServiceInterface {
+	protected function instantiate_service( $class ): Service {
 
 		// The service needs to be registered, so instantiate right away.
 		$service = $this->make( $class );
 
-		if ( ! $service instanceof ServiceInterface ) {
-			throw InvalidService::from_service( $service );
+		if ( ! $service instanceof Service ) {
+			throw Invalid::from_service( $service );
 		}
 
 		return $service;
@@ -226,7 +229,7 @@ class Core implements PluginInterface {
 	protected function get_service_classes(): array {
 		return [
 			// maybe register also for cpt_fields, taxonomy_fields
-			'fields' => Fields\Service::class,
+			'fields' => FieldService::class,
 		];
 	}
 
@@ -241,14 +244,14 @@ class Core implements PluginInterface {
 	 *                                   empty array.
 	 * @return object Instantiated object.
 	 */
-	public function make( string $class ) {
+	public function make( string $interface_or_class, array $arguments = [] ): object {
 
-		$reflection = $this->get_class_reflection( $class );
+		$reflection = $this->get_class_reflection( $interface_or_class );
 		$this->ensure_is_instantiable( $reflection );
 
 		$dependencies = [];
 
-		$object = $this->instantiator->instantiate( $class, $dependencies );
+		$object = $this->instantiator->instantiate( $interface_or_class, $dependencies );
 
 		return $object;
 	}
@@ -263,7 +266,7 @@ class Core implements PluginInterface {
 	private function get_class_reflection( string $class ): ReflectionClass {
 		try {
 			return new ReflectionClass( $class );
-		} catch ( Throwable $exception ) {
+		} catch ( SaltusFrameworkThrowable $exception ) {
 			throw FailedToMakeInstance::for_unreflectable_class( $class );
 		}
 	}

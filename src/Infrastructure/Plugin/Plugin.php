@@ -1,6 +1,7 @@
 <?php
+namespace Saltus\WP\Framework\Infrastructure\Plugin;
 
-namespace Saltus\WP\Framework\Infrastructure;
+use Saltus\WP\Framework\Infrastructure\Service\ServiceContainer;
 
 /**
  * A plugin is basically nothing more than a convention on how manage the
@@ -16,13 +17,13 @@ namespace Saltus\WP\Framework\Infrastructure;
  * collects all the services it is made up of. This allows direct access to the
  * services to outside code if needed.
  */
-interface PluginInterface extends Activateable, Deactivateable, Registerable {
+interface Plugin extends Activateable, Deactivateable, Registerable {
 
 	/**
 	 * Get the service container that contains the services that make up the
 	 * plugin.
 	 *
-	 * @return ServiceContainerInterface Service container of the plugin.
+	 * @return ServiceContainer Service container of the plugin.
 	 */
-	public function get_container(): ServiceContainerInterface;
+	public function get_container(): ServiceContainer;
 }

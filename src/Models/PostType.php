@@ -1,19 +1,19 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
-class PostType extends Model {
+class PostType extends BaseModel implements Model {
 
 	/**
 	 * Setup the data needed to register
 	 */
 	public function setup() {
-		if ( $this->isDisabled() ) {
+		if ( $this->is_disabled() ) {
 			return;
 		}
 
-		$this->set_options( $this->getDefaultOptions() );
+		$this->set_options( $this->get_default_options() );
 
-		$this->setLabels( $this->getDefaultLabels() );
+		$this->set_labels( $this->get_default_labels() );
 
 		$this->set_meta();
 
@@ -27,7 +27,7 @@ class PostType extends Model {
 	 *
 	 * @return array The list of options settings
 	 */
-	protected function getDefaultOptions() {
+	protected function get_default_options() {
 		$options = [
 			'public'        => true,
 			'menu_position' => 5,
@@ -69,7 +69,7 @@ class PostType extends Model {
 	 *
 	 * @return array The list of Labels
 	 */
-	protected function getDefaultLabels() {
+	protected function get_default_labels() {
 
 		$many_lower = strtolower( $this->many );
 		$one_lower  = strtolower( $this->one );
@@ -141,8 +141,10 @@ class PostType extends Model {
 	 *
 	 * @return boolean status
 	 */
-	public function disable_block_editor($current_status, $post_type) {
-		if ($post_type === $this->name) return false;
+	public function disable_block_editor( $current_status, $post_type ) {
+		if ( $post_type === $this->name ) {
+			return false;
+		}
 		return $current_status;
 	}
 }
