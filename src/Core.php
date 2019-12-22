@@ -68,13 +68,7 @@ class Core implements Plugin {
 		$this->project['root_path'] = dirname( __DIR__ );
 
 		// the 'plugin-dir' part is just to fool plugins_url to consider the full path
-		// wp-content/plugins/framework-demo/vendor/saltus/framework/assets/Features/DragAndDrop/order.css
 		$this->project['root_url'] = plugins_url( 'vendor/saltus/framework/assets/', $project_path . '/plugin-dir' );
-
-		//define( 'FRAMEWORK_PATH', dirname( __DIR__ ) );
-
-		//define( 'FRAMEWORK_URL', plugins_url( , $project_path ) );
-		//define( 'FRAMEWORK_VERSION', '2.4.7' );
 
 		$this->instantiator = $this->get_fallback_instantiator();
 
@@ -88,15 +82,6 @@ class Core implements Plugin {
 	 */
 	public function register() {
 		// Todo validate key:
-		$project_path = $this->project['path'];
-		add_action(
-			'init',
-			function () use ( $project_path ) {
-				$this->modeler->init( $project_path );
-			},
-			1
-		);
-
 		\register_activation_hook(
 			__FILE__,
 			function () {
@@ -121,6 +106,14 @@ class Core implements Plugin {
 
 		// 3- Create a "store" with a factory
 		$this->modeler = new Modeler( $model_factory );
+		$project_path  = $this->project['path'];
+		add_action(
+			'init',
+			function () use ( $project_path ) {
+				$this->modeler->init( $project_path );
+			},
+			1
+		);
 
 		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
 		// and stores the result in either list (cpt or tax list )
@@ -169,6 +162,7 @@ class Core implements Plugin {
 	 * @return void
 	 */
 	public function register_services() {
+
 		// Bail early so we don't instantiate services twice.
 		if ( count( $this->service_container ) > 0 ) {
 			return;
@@ -222,6 +216,7 @@ class Core implements Plugin {
 	 * @param string $class
 	 */
 	protected function register_service( string $id, string $class ) {
+
 		// Only instantiate services that are actually needed.
 		if ( is_a( $class, Conditional::class, true ) &&
 			! $class::is_needed() ) {
