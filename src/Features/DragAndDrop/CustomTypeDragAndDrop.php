@@ -2,7 +2,6 @@
 namespace Saltus\WP\Framework\Features\DragAndDrop;
 
 use Saltus\WP\Framework\Infrastructure\Feature\{
-	Feature,
 	EnqueueAssets,
 };
 
@@ -18,6 +17,7 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 	public function __construct( string $name, array $project, ...$args ) {
 		$this->project = $project;
 		$this->name    = $name;
+
 		$this->register();
 
 		$this->enqueue_assets();
@@ -32,17 +32,14 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 	public function register() {
 
 		add_action( 'admin_init', array( $this, 'refresh' ) );
-		// TODO
-		add_action( 'wp_ajax_update-menu-order', array( $this, 'update_menu_order' ) );
 
-		//done
 		add_action( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
 		add_filter( 'get_previous_post_where', array( $this, 'previous_post_where' ) );
 		add_filter( 'get_previous_post_sort', array( $this, 'previous_post_sort' ) );
 		add_filter( 'get_next_post_where', array( $this, 'next_post_where' ) );
 		add_filter( 'get_next_post_sort', array( $this, 'next_post_sort' ) );
-
 	}
+
 	private function check_load_script_css() {
 		$active = false;
 
@@ -67,6 +64,11 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'jquery-ui-sortable' );
 		wp_enqueue_script( 'drag_drop_orderjs', $this->project['root_url'] . '/Feature/DragAndDrop/order.js', array( 'jquery' ), '1', true );
+		wp_localize_script(
+			'drag_drop_orderjs',
+			'ajax_object',
+			array( 'ajaxurl' => admin_url('admin-ajax.php') )
+		);
 
 		wp_enqueue_style( 'drag_drop_order', $this->project['root_url'] . '/Feature/DragAndDrop/order.css', array(), '1' );
 
@@ -117,58 +119,32 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 		}
 		return $orderby;
 	}
-	public function update_menu_order() {
-		global $wpdb;
-
-		parse_str( $_POST['order'], $data );
-
-		if ( ! is_array( $data ) ) {
-			return false;
-		}
-
-		$id_arr = array();
-		// ugh could have duplicated?!
-		foreach ( $data as $key => $values ) {
-			foreach ( $values as $position => $id ) {
-				$id_arr[] = $id;
-			}
-		}
-
-		// remove duplicated
-		$id_arr = array_merge( ...array_values( $data ) );
-
-		// sanitize to int
-		$id_arr = array_map( 'intval', $id_arr );
-
-		// convert to string 1,2,3 etc
-		$id_list = implode( $id_arr );
-
-		$prepare = $wpdb->prepare(
-			'SELECT menu_order FROM $wpdb->posts WHERE ID in ( %s )',
-			$id_list
-		);
-		$results = $wpdb->get_results( $prepare );
-
-		$menu_order_arr = array();
-		foreach ( $results as $result ) {
-			$menu_order_arr[] = $result->menu_order;
-		}
-
-		sort( $menu_order_arr );
-
-		foreach ( $data as $key => $values ) {
-			foreach ( $values as $position => $id ) {
-				$wpdb->update(
-					$wpdb->posts, // table
-					array( 'menu_order' => intval( $menu_order_arr[ $position ] ) ), // data
-					array( 'ID' => intval( $id ) ) // where clause
-				);
-			}
-		}
-	}
 
 	public function refresh() {
+		global $wpdb;
+		$result = $wpdb->get_results(
+			"SELECT count(*) as cnt, max(menu_order) as max, min(menu_order) as min
+			FROM $wpdb->posts
+			WHERE post_type = '" . $this->name . "' AND post_status IN ('publish', 'pending', 'draft', 'private', 'future')
+		"
+		);
 
+		if ( $result[0]->cnt == 0 || $result[0]->cnt == $result[0]->max ) {
+			return;
+		}
+
+		// Here's the optimization
+		$wpdb->query( 'SET @row_number = 0;' );
+		$wpdb->query(
+			"UPDATE $wpdb->posts as pt JOIN (
+			SELECT ID, (@row_number:=@row_number + 1) AS `rank`
+			FROM $wpdb->posts
+			WHERE post_type = '$this->name' AND post_status IN ( 'publish', 'pending', 'draft', 'private', 'future' )
+			ORDER BY menu_order ASC
+			) as pt2
+			ON pt.id = pt2.id
+			SET pt.menu_order = pt2.`rank`;"
+		);
 	}
 
 	public function pre_get_posts( $wp_query ) {

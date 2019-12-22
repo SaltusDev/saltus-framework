@@ -6,14 +6,17 @@
 namespace Saltus\WP\Framework;
 
 use Saltus\WP\Framework\Models\ModelFactory;
-use Saltus\WP\Framework\Infrastructure\Service\App;
-use Saltus\WP\Framework\Infrastructure\Service\Service;
-use Saltus\WP\Framework\Infrastructure\Service\ServiceContainer;
-use Saltus\WP\Framework\Infrastructure\Service\Conditional;
-use Saltus\WP\Framework\Infrastructure\Service\Instantiator;
-// Exceptions
-use Saltus\WP\Framework\Infrastructure\Service\FailedToMakeInstance;
-use Saltus\WP\Framework\Infrastructure\Service\Invalid;
+use Saltus\WP\Framework\Infrastructure\Service\{
+	App,
+	Service,
+	ServiceContainer,
+	Conditional,
+	Instantiator,
+	// Exceptions:
+	FailedToMakeInstance,
+	Invalid,
+};
+
 use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 
 use ReflectionClass;
@@ -25,9 +28,14 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Deactivateable
 };
 
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Actionable,
+};
+
 use Saltus\WP\Framework\Features\Meta\Meta;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
+use Saltus\WP\Framework\Features\DragAndDrop\DragAndDropAjax;
 
 class Core implements Plugin {
 
@@ -226,6 +234,16 @@ class Core implements Plugin {
 
 		if ( $service instanceof Registerable ) {
 			$service->register();
+		}
+
+		if ( $service instanceof Actionable ) {
+			add_action(
+				'init',
+				function () use ( $service ) {
+					$service->add_action();
+				},
+				1
+			);
 		}
 
 	}

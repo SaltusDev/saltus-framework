@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\DragAndDrop;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Actionable,
 	Service,
 	Conditional,
 };
@@ -11,20 +12,23 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Deactivateable,
 };
 
-use Saltus\WP\Framework\Infrastructure\Feature\{
-	EnqueueAssets,
-};
-
-
 /**
  */
-final class DragAndDrop implements Service, Conditional, Activateable, Deactivateable {
+class DragAndDrop implements Service, Conditional, Activateable, Deactivateable, Actionable {
 
 	/**
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct() {
+	public function __construct() {}
+
+	/**
+	 * Create a new instance of the service provider
+	 *
+	 * @return object The new instance
+	 */
+	public function make( $name, $project, $args ) : object {
+		return new CustomTypeDragAndDrop( $name, $project, $args );
 	}
 
 	/**
@@ -35,11 +39,12 @@ final class DragAndDrop implements Service, Conditional, Activateable, Deactivat
 	public static function is_needed(): bool {
 
 		/*
-		 * Only load this sample service on the admin backend.
-		 * If this conditional returns false, the service is never even
-		 * instantiated.
+		 * This service loads in most screens:
+		 * - admin: in the edit screen
+		 * - ajax:  while updating menu order
+		 * - front: during pre_get_posts, etc
 		 */
-		return \is_admin() && ! \wp_doing_ajax();
+		return true; //\is_admin() || \wp_doing_ajax();
 	}
 
 	public function activate() {
@@ -49,14 +54,9 @@ final class DragAndDrop implements Service, Conditional, Activateable, Deactivat
 
 	}
 
-	/**
-	 * Create a new instance of the service provider
-	 *
-	 * @return object The new instance
-	 */
-	public static function make( $name, $project, $args ) : object {
-		return new CustomTypeDragAndDrop( $name, $project, $args );
+	public function add_action() : void {
+		$actions = new UpdateMenuDragAndDrop();
+		$actions->add_action();
 	}
 
 }
-
