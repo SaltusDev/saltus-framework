@@ -2,7 +2,7 @@
 namespace Saltus\WP\Framework\Features\DragAndDrop;
 
 use Saltus\WP\Framework\Infrastructure\Feature\{
-	EnqueueAssets,
+	EnqueueAssets
 };
 
 final class CustomTypeDragAndDrop implements EnqueueAssets {

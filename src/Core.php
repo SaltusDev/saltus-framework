@@ -14,7 +14,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Instantiator,
 	// Exceptions:
 	FailedToMakeInstance,
-	Invalid,
+	Invalid
 };
 
 use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
@@ -29,13 +29,12 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 };
 
 use Saltus\WP\Framework\Infrastructure\Service\{
-	Actionable,
+	Actionable
 };
 
 use Saltus\WP\Framework\Features\Meta\Meta;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
-use Saltus\WP\Framework\Features\DragAndDrop\DragAndDropAjax;
 
 class Core implements Plugin {
 
@@ -285,7 +284,7 @@ class Core implements Plugin {
 	 *                                   empty array.
 	 * @return object Instantiated object.
 	 */
-	public function make( string $interface_or_class, array $arguments = [] ): object {
+	public function make( string $interface_or_class, array $arguments = [] ) {
 
 		$reflection = $this->get_class_reflection( $interface_or_class );
 		$this->ensure_is_instantiable( $reflection );

@@ -15,5 +15,5 @@ interface Service {
 	 *
 	 * @return object The new instance
 	 */
-	public function make( $name, $project, $args ): object;
+	public static function make( $name, $project, $args );
 }

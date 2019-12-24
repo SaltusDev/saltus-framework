@@ -37,7 +37,7 @@ final class Settings implements Service, Conditional {
 	 *
 	 * @return object The new instance
 	 */
-	public static function make( $name, $project, $args ) : object {
+	public static function make( $name, $project, $args ) {
 		return new CodestarSettings( $name, $project, $args );
 	}
 

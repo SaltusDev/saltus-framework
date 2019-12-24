@@ -4,12 +4,12 @@ namespace Saltus\WP\Framework\Features\DragAndDrop;
 use Saltus\WP\Framework\Infrastructure\Service\{
 	Actionable,
 	Service,
-	Conditional,
+	Conditional
 };
 
 use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Activateable,
-	Deactivateable,
+	Deactivateable
 };
 
 /**
@@ -27,7 +27,7 @@ class DragAndDrop implements Service, Conditional, Activateable, Deactivateable,
 	 *
 	 * @return object The new instance
 	 */
-	public function make( $name, $project, $args ) : object {
+	public static function make( $name, $project, $args ) {
 		return new CustomTypeDragAndDrop( $name, $project, $args );
 	}
 
@@ -54,9 +54,10 @@ class DragAndDrop implements Service, Conditional, Activateable, Deactivateable,
 
 	}
 
-	public function add_action() : void {
+	public function add_action() {
 		$actions = new UpdateMenuDragAndDrop();
 		$actions->add_action();
+		return;
 	}
 
 }
