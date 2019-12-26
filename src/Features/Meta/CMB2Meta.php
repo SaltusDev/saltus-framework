@@ -1,7 +1,7 @@
 <?php
-namespace Saltus\WP\Framework\Fields;
+namespace Saltus\WP\Framework\Features\Meta;
 
-final class CMB2Fields {
+final class CMB2Meta {
 
 	private $name;
 	private $meta;

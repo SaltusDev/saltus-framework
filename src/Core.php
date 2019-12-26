@@ -6,14 +6,17 @@
 namespace Saltus\WP\Framework;
 
 use Saltus\WP\Framework\Models\ModelFactory;
-use Saltus\WP\Framework\Infrastructure\Service\App;
-use Saltus\WP\Framework\Infrastructure\Service\Service;
-use Saltus\WP\Framework\Infrastructure\Service\ServiceContainer;
-use Saltus\WP\Framework\Infrastructure\Service\Conditional;
-use Saltus\WP\Framework\Infrastructure\Service\Instantiator;
-// Exceptions
-use Saltus\WP\Framework\Infrastructure\Service\FailedToMakeInstance;
-use Saltus\WP\Framework\Infrastructure\Service\Invalid;
+use Saltus\WP\Framework\Infrastructure\Service\{
+	App,
+	Service,
+	ServiceContainer,
+	Conditional,
+	Instantiator,
+	// Exceptions:
+	FailedToMakeInstance,
+	Invalid
+};
+
 use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 
 use ReflectionClass;
@@ -25,7 +28,13 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Deactivateable
 };
 
-use Saltus\WP\Framework\Features\Fields\FieldService;
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Actionable
+};
+
+use Saltus\WP\Framework\Features\Meta\Meta;
+use Saltus\WP\Framework\Features\Settings\Settings;
+use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
 
 class Core implements Plugin {
 
@@ -54,26 +63,15 @@ class Core implements Plugin {
 		//TODO by pcarvalho: move to project class
 		$this->project['path'] = $project_path;
 
+		// the framework root path
+		$this->project['root_path'] = dirname( __DIR__ );
+
+		// the 'plugin-dir' part is just to fool plugins_url to consider the full path
+		$this->project['root_url'] = plugins_url( 'vendor/saltus/framework/assets/', $project_path . '/plugin-dir' );
+
 		$this->instantiator = $this->get_fallback_instantiator();
 
 		$this->service_container = new App();
-
-		$this->register_services();
-
-		// loads models and stores the list
-
-		// 1- Get the service for 'fields'
-		$fields_service = $this->service_container->get( 'fields' );
-
-		// 2- Create a Model Factory with fields service
-		// For now its the only Service it needs
-		$model_factory = new ModelFactory( $fields_service );
-
-		// 3- Create a "store" with a factory
-		$this->modeler = new Modeler( $model_factory );
-
-		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
-		// and stores the result in either list (cpt or tax list )
 	}
 
 	/**
@@ -82,13 +80,43 @@ class Core implements Plugin {
 	 * @return void
 	 */
 	public function register() {
-		$project_path = $this->project['path'];
+		// Todo validate key:
+		\register_activation_hook(
+			__FILE__,
+			function () {
+				$this->activate();
+			}
+		);
+
+		\register_deactivation_hook(
+			__FILE__,
+			function () {
+				$this->deactivate();
+			}
+		);
+
+		// loads models and stores the list
+
+		// 1- Loads Services
+		$this->register_services();
+
+		// 2- Create a Model Factory with services container
+		$model_factory = new ModelFactory( $this->service_container, $this->project );
+
+		// 3- Create a "store" with a factory
+		$this->modeler = new Modeler( $model_factory );
+		$project_path  = $this->project['path'];
 		add_action(
 			'init',
 			function () use ( $project_path ) {
 				$this->modeler->init( $project_path );
-			}, 1
+			},
+			1
 		);
+
+		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
+		// and stores the result in either list (cpt or tax list )
+		// TODO
 	}
 
 	/**
@@ -133,6 +161,7 @@ class Core implements Plugin {
 	 * @return void
 	 */
 	public function register_services() {
+
 		// Bail early so we don't instantiate services twice.
 		if ( count( $this->service_container ) > 0 ) {
 			return;
@@ -165,6 +194,19 @@ class Core implements Plugin {
 		}
 	}
 
+	/**
+	 * Get the list of services to register.
+	 *
+	 * @return array<string> Associative array of identifiers mapped to fully
+	 *                       qualified class names.
+	 */
+	protected function get_service_classes(): array {
+		return [
+			'meta'        => Meta::class,
+			'settings'    => Settings::class,
+			'draganddrop' => DragAndDrop::class,
+		];
+	}
 
 	/**
 	 * Register a single service.
@@ -173,6 +215,7 @@ class Core implements Plugin {
 	 * @param string $class
 	 */
 	protected function register_service( string $id, string $class ) {
+
 		// Only instantiate services that are actually needed.
 		if ( is_a( $class, Conditional::class, true ) &&
 			! $class::is_needed() ) {
@@ -186,6 +229,17 @@ class Core implements Plugin {
 		if ( $service instanceof Registerable ) {
 			$service->register();
 		}
+
+		if ( $service instanceof Actionable ) {
+			add_action(
+				'init',
+				function () use ( $service ) {
+					$service->add_action();
+				},
+				1
+			);
+		}
+
 	}
 
 
@@ -221,20 +275,6 @@ class Core implements Plugin {
 	}
 
 	/**
-	 * Get the list of services to register.
-	 *
-	 * @return array<string> Associative array of identifiers mapped to fully
-	 *                       qualified class names.
-	 */
-	protected function get_service_classes(): array {
-		return [
-			// maybe register also for cpt_fields, taxonomy_fields
-			'fields' => FieldService::class,
-		];
-	}
-
-
-	/**
 	 * Make an object instance out of an interface or class.
 	 *
 	 * @param string $interface_or_class Interface or class to make an object
@@ -244,7 +284,7 @@ class Core implements Plugin {
 	 *                                   empty array.
 	 * @return object Instantiated object.
 	 */
-	public function make( string $interface_or_class, array $arguments = [] ): object {
+	public function make( string $interface_or_class, array $arguments = [] ) {
 
 		$reflection = $this->get_class_reflection( $interface_or_class );
 		$this->ensure_is_instantiable( $reflection );

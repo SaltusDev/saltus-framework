@@ -1,30 +1,25 @@
 <?php
-namespace Saltus\WP\Framework\Fields;
+namespace Saltus\WP\Framework\Features\Meta;
 
-final class CodestarFields {
+final class CodestarMeta {
 
 	private $name;
 	private $meta;
-	private $settings;
-
+	private $project;
 
 	/**
 	 * Instantiate the Codestar Framework Fields object.
 	 */
-	public function __construct() {
-
-	}
-
-	public function setup( string $name, array $meta = array(), array $settings = array() ) {
-
-		$this->name     = $name;
-		$this->meta     = $meta;
-		$this->settings = $settings;
+	public function __construct( string $name, array $project, array $meta = array() ) {
+		$this->name    = $name;
+		$this->project = $project;
+		$this->meta    = $meta;
 
 		$this->init();
+
 	}
 
-	public function init() {
+	private function init() {
 
 		/**
 		 * Create Metaboxes
@@ -36,55 +31,6 @@ final class CodestarFields {
 
 			// else add just the fields
 			$this->create_metabox( $box_id, $box );
-		}
-
-		/**
-		 * Create Settings pages
-		*/
-		foreach ( $this->settings as $settings_id => $settings_page ) {
-			if ( empty( $settings_page['fields'] ) && empty( $settings_page['sections'] ) ) {
-				continue;
-			}
-
-			// else add just the fields
-			$this->create_settings_page( $settings_id, $settings_page );
-		}
-	}
-
-	/**
-	 * Create settings page
-	 *
-	 * @param int   $settings_id identifier of the settings
-	 * @param array $settings_page paramaters for the page
-	 * @return void
-	 */
-	private function create_settings_page( $settings_id, $settings_page ) {
-
-		$default_args = array(
-			'menu_slug'       => $settings_id,
-			'menu_parent'     => 'edit.php?post_type=' . $this->name,
-			'menu_type'       => 'submenu',
-			'theme'           => 'light',
-			'footer_credit'   => ' ', // removes codestar default credit
-			'framework_title' => isset( $settings_page['title'] ) ? $settings_page['title'] : '',
-		);
-
-		$args = array_merge( $default_args, $settings_page );
-
-		// Create options
-		\CSF::createOptions( $settings_id, $args );
-
-		if ( isset( $settings_page['fields'] ) ) {
-			$settings_page['fields'] = $this->prepare_fields( $settings_page['fields'] );
-			$this->create_section( $settings_id, $settings_page );
-			return;
-		}
-
-		if ( isset( $settings_page['sections'] ) ) {
-			foreach ( $settings_page['sections'] as $section ) {
-				$section['fields'] = $this->prepare_fields( $section['fields'] );
-				$this->create_section( $settings_id, $section );
-			}
 		}
 
 	}
