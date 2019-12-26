@@ -5,9 +5,10 @@
         'axis': 'y',
         'helper': fixHelper,
         'update': function (e, ui) {
-            $.post( ajax_object.ajaxurl, {
+            $.post( drag_drop_object.ajaxurl, {
                 action: 'dda-update-menu-order',
                 order: $('#the-list').sortable('serialize'),
+                nonce: drag_drop_object.nonce,
             } );
         }
     });

@@ -44,7 +44,7 @@ class DragAndDrop implements Service, Conditional, Activateable, Deactivateable,
 		 * - ajax:  while updating menu order
 		 * - front: during pre_get_posts, etc
 		 */
-		return true; //\is_admin() || \wp_doing_ajax();
+		return true;
 	}
 
 	public function activate() {
@@ -57,7 +57,6 @@ class DragAndDrop implements Service, Conditional, Activateable, Deactivateable,
 	public function add_action() {
 		$actions = new UpdateMenuDragAndDrop();
 		$actions->add_action();
-		return;
 	}
 
 }

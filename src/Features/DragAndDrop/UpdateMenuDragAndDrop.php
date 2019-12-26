@@ -19,16 +19,21 @@ class UpdateMenuDragAndDrop implements Actionable {
 		add_action( 'wp_ajax_dda-update-menu-order', array( $this, 'update_menu_order' ) );
 	}
 
-
 	public function update_menu_order() {
 		global $wpdb;
+
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'drag-drop-nonce' ) ) {
+			return;
+		}
 
 		if ( empty( $_POST['order'] ) ) {
 			return;
 		}
 
-		// TODO: check user capabilities
-		// TODO: add and check nonce
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
 		parse_str( $_POST['order'], $data );
 
 		if ( ! is_array( $data ) ) {
@@ -44,8 +49,13 @@ class UpdateMenuDragAndDrop implements Actionable {
 
 		$menu_order_arr = array();
 		foreach ( $id_arr as $key => $id ) {
-			$results = $wpdb->get_results( "SELECT menu_order FROM $wpdb->posts WHERE ID = " . intval( $id ) );
-			foreach ( $results as $result ) {
+			$query = "SELECT menu_order FROM $wpdb->posts WHERE ID = %s";
+			// phpcs:: ignore
+			$query_prepared = $wpdb->prepare( $query, intval( $id ) );
+			// phpcs:: ignore
+			$query_result = $wpdb->get_results( $query_prepared );
+
+			foreach ( $query_result as $result ) {
 				$menu_order_arr[] = $result->menu_order;
 			}
 		}

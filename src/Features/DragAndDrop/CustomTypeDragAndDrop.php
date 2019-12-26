@@ -43,6 +43,10 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 	private function check_load_script_css() {
 		$active = false;
 
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
 		if ( isset( $_GET['orderby'] ) || strstr( $_SERVER['REQUEST_URI'], 'action=edit' ) || strstr( $_SERVER['REQUEST_URI'], 'wp-admin/post-new.php' ) ) {
 			return false;
 		}
@@ -66,8 +70,11 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 		wp_enqueue_script( 'drag_drop_orderjs', $this->project['root_url'] . '/Feature/DragAndDrop/order.js', array( 'jquery' ), '1', true );
 		wp_localize_script(
 			'drag_drop_orderjs',
-			'ajax_object',
-			array( 'ajaxurl' => admin_url('admin-ajax.php') )
+			'drag_drop_object',
+			array(
+				'ajaxurl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'drag-drop-nonce' ),
+			)
 		);
 
 		wp_enqueue_style( 'drag_drop_order', $this->project['root_url'] . '/Feature/DragAndDrop/order.css', array(), '1' );
@@ -95,11 +102,6 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 	public function next_post_where( $where ) {
 		global $post;
 
-		$objects = $this->get_options_objects();
-		if ( empty( $objects ) ) {
-			return $where;
-		}
-
 		if ( isset( $post->post_type ) && $post->post_type === $this->name ) {
 			$where = preg_replace( "/p.post_date > \'[0-9\-\s\:]+\'/i", "p.menu_order < '" . $post->menu_order . "'", $where );
 		}
@@ -109,11 +111,6 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 	public function next_post_sort( $orderby ) {
 		global $post;
 
-		$objects = $this->get_options_objects();
-		if ( empty( $objects ) ) {
-			return $orderby;
-		}
-
 		if ( isset( $post->post_type ) && $post->post_type === $this->name ) {
 			$orderby = 'ORDER BY p.menu_order DESC LIMIT 1';
 		}
@@ -122,29 +119,36 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 
 	public function refresh() {
 		global $wpdb;
-		$result = $wpdb->get_results(
-			"SELECT count(*) as cnt, max(menu_order) as max, min(menu_order) as min
-			FROM $wpdb->posts
-			WHERE post_type = '" . $this->name . "' AND post_status IN ('publish', 'pending', 'draft', 'private', 'future')
-		"
-		);
 
-		if ( $result[0]->cnt == 0 || $result[0]->cnt == $result[0]->max ) {
+		$query = "SELECT count(*) as cnt, max(menu_order) as max, min(menu_order) as min
+			FROM {$wpdb->posts}
+			WHERE post_type = %s AND post_status IN ('publish', 'pending', 'draft', 'private', 'future')
+		";
+		// phpcs:: ignore
+		$query_prepared = $wpdb->prepare( $query, $this->name );
+		// phpcs:: ignore
+		$query_result = $wpdb->get_results( $query_prepared );
+
+		if ( empty( $query_result ) || $query_result[0]->cnt === 0 || $query_result[0]->cnt === $query_result[0]->max ) {
 			return;
 		}
 
 		// Here's the optimization
 		$wpdb->query( 'SET @row_number = 0;' );
-		$wpdb->query(
-			"UPDATE $wpdb->posts as pt JOIN (
+		$query = "UPDATE $wpdb->posts as pt JOIN (
 			SELECT ID, (@row_number:=@row_number + 1) AS `rank`
 			FROM $wpdb->posts
-			WHERE post_type = '$this->name' AND post_status IN ( 'publish', 'pending', 'draft', 'private', 'future' )
+			WHERE post_type = %s AND post_status IN ( 'publish', 'pending', 'draft', 'private', 'future' )
 			ORDER BY menu_order ASC
 			) as pt2
 			ON pt.id = pt2.id
-			SET pt.menu_order = pt2.`rank`;"
-		);
+			SET pt.menu_order = pt2.`rank`;
+		";
+		// phpcs:: ignore
+		$query_prepared = $wpdb->prepare( $query, $this->name );
+		// phpcs:: ignore
+		$query_result = $wpdb->query( $query_prepared );
+
 	}
 
 	public function pre_get_posts( $wp_query ) {
