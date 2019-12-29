@@ -28,7 +28,7 @@ class DragAndDrop implements Service, Conditional, Activateable, Deactivateable,
 	 * @return object The new instance
 	 */
 	public static function make( $name, $project, $args ) {
-		return new CustomTypeDragAndDrop( $name, $project, $args );
+		return new SaltusDragAndDrop( $name, $project, $args );
 	}
 
 	/**
