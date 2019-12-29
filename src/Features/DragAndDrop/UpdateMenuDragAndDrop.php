@@ -34,6 +34,7 @@ class UpdateMenuDragAndDrop implements Actionable {
 			return;
 		}
 
+		// can't trust much parse_str
 		parse_str( $_POST['order'], $data );
 
 		if ( ! is_array( $data ) ) {
@@ -41,31 +42,38 @@ class UpdateMenuDragAndDrop implements Actionable {
 		}
 
 		$id_arr = array();
-		foreach ( $data as $key => $values ) {
-			foreach ( $values as $position => $id ) {
-				$id_arr[] = $id;
+		foreach ( $data as $id_sorted ) {
+			foreach ( $id_sorted as $position => $id ) {
+				$id_arr[ absint( $position ) ] = absint( $id );
 			}
 		}
 
-		$menu_order_arr = array();
-		foreach ( $id_arr as $key => $id ) {
-			$query = "SELECT menu_order FROM $wpdb->posts WHERE ID = %s";
-			// phpcs:: ignore
-			$query_prepared = $wpdb->prepare( $query, intval( $id ) );
-			// phpcs:: ignore
-			$query_result = $wpdb->get_results( $query_prepared );
+		// Deals with paginated view
+		$id_list        = implode( ',', array_map( 'absint', $id_arr ) );
+		$query          = "SELECT menu_order FROM $wpdb->posts WHERE ID IN (%s)";
+		$query_prepared = sprintf( $query, $id_list );
 
-			foreach ( $query_result as $result ) {
-				$menu_order_arr[] = $result->menu_order;
-			}
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$query_result    = $wpdb->get_results( $query_prepared );
+		$menu_order_list = [];
+		foreach ( $query_result as $result ) {
+			$menu_order_list[] = $result->menu_order;
 		}
 
-		sort( $menu_order_arr );
+		sort( $menu_order_list );
 
-		foreach ( $data as $key => $values ) {
-			foreach ( $values as $position => $id ) {
-				$wpdb->update( $wpdb->posts, array( 'menu_order' => $menu_order_arr[ $position ] ), array( 'ID' => intval( $id ) ) );
+		// This should be just one request using query()
+		foreach ( $id_arr as $position => $id ) {
+			if ( ! isset( $menu_order_list[ $position ] ) ) {
+				continue;
 			}
+			$data  = array( 'menu_order' => $menu_order_list[ $position ] );
+			$where = array( 'ID' => absint( $id ) );
+			$wpdb->update(
+				$wpdb->posts,
+				$data,
+				$where
+			);
 		}
 
 		do_action( 'dda_update_menu_order' );
