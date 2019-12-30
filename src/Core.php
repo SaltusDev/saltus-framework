@@ -35,6 +35,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 use Saltus\WP\Framework\Features\Meta\Meta;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
+use Saltus\WP\Framework\Features\Duplicate\Duplicate;
 
 class Core implements Plugin {
 
@@ -205,6 +206,7 @@ class Core implements Plugin {
 			'meta'        => Meta::class,
 			'settings'    => Settings::class,
 			'draganddrop' => DragAndDrop::class,
+			'duplicate'   => Duplicate::class,
 		];
 	}
 
