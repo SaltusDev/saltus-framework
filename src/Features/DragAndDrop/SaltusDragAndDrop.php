@@ -5,7 +5,7 @@ use Saltus\WP\Framework\Infrastructure\Feature\{
 	EnqueueAssets
 };
 
-final class CustomTypeDragAndDrop implements EnqueueAssets {
+final class SaltusDragAndDrop implements EnqueueAssets {
 
 	private $name;
 	private $project;
@@ -124,9 +124,9 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 			FROM {$wpdb->posts}
 			WHERE post_type = %s AND post_status IN ('publish', 'pending', 'draft', 'private', 'future')
 		";
-		// phpcs:: ignore
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query_prepared = $wpdb->prepare( $query, $this->name );
-		// phpcs:: ignore
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query_result = $wpdb->get_results( $query_prepared );
 
 		if ( empty( $query_result ) || $query_result[0]->cnt === 0 || $query_result[0]->cnt === $query_result[0]->max ) {
@@ -137,16 +137,16 @@ final class CustomTypeDragAndDrop implements EnqueueAssets {
 		$wpdb->query( 'SET @row_number = 0;' );
 		$query = "UPDATE $wpdb->posts as pt JOIN (
 			SELECT ID, (@row_number:=@row_number + 1) AS `rank`
-			FROM $wpdb->posts
+			FROM {$wpdb->posts}
 			WHERE post_type = %s AND post_status IN ( 'publish', 'pending', 'draft', 'private', 'future' )
 			ORDER BY menu_order ASC
 			) as pt2
 			ON pt.id = pt2.id
 			SET pt.menu_order = pt2.`rank`;
 		";
-		// phpcs:: ignore
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query_prepared = $wpdb->prepare( $query, $this->name );
-		// phpcs:: ignore
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query_result = $wpdb->query( $query_prepared );
 
 	}
