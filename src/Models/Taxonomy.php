@@ -134,6 +134,13 @@ class Taxonomy extends BaseModel implements Model {
 			return;
 		}
 		register_taxonomy( $this->name, $this->associations, $args );
+		add_action( 'init', array( $this, 'register_associations' ) );
+	}
+
+	public function register_associations() {
+		foreach ( $this->associations as $association ) {
+			register_taxonomy_for_object_type( $this->name, $association );
+		}
 	}
 
 	/**
@@ -142,6 +149,6 @@ class Taxonomy extends BaseModel implements Model {
 	 * @return string The type of Model
 	 */
 	public function get_type() {
-		return 'post_type';
+		return 'taxonomy';
 	}
 }
