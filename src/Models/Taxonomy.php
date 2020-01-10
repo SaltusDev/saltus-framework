@@ -131,9 +131,10 @@ class Taxonomy extends BaseModel implements Model {
 
 		if ( function_exists( 'register_extended_taxonomy' ) ) {
 			register_extended_taxonomy( $this->name, $this->associations, $args );
-			return;
+		} else {
+			register_taxonomy( $this->name, $this->associations, $args );
 		}
-		register_taxonomy( $this->name, $this->associations, $args );
+
 		add_action( 'init', array( $this, 'register_associations' ) );
 	}
 
