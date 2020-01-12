@@ -11,12 +11,8 @@ final class SaltusSingleExport {
 	private $name;
 	private $project;
 
-	/**
-	 * Unlikely date to match
-	 *
-	 * @var string
-	 */
-	public $fake_date;
+	// unlikely date match for filters
+	const FAKE_DATE = '1970-01-05'; // Y-m-d
 
 	/**
 	 * Instantiate this Service object.
@@ -30,10 +26,6 @@ final class SaltusSingleExport {
 	}
 
 	public function register() {
-
-		// due to a lack of hooks, we're using what we hope is an unlikely date match
-		$this->fake_date = '1970-01-05'; // Y-m-d
-
 		add_action( 'init', array( $this, 'init' ) );
 	}
 
@@ -85,7 +77,8 @@ final class SaltusSingleExport {
 			<?php
 				$export_url = add_query_arg( array(
 					'download'      => '',
-					'export_single' => get_the_ID(),
+					'export_single' => $post->ID,
+					'_wpnonce' => wp_create_nonce( 'single_export' )
 				), admin_url( 'export.php' ) );
 			?>
 			<a href="<?php echo esc_url( $export_url ); ?>"><?php esc_html_e( 'Export This', 'saltus' ); ?></a>
@@ -100,6 +93,7 @@ final class SaltusSingleExport {
 	 * @return $args Modified query
 	 */
 	public function export_args( $args ) {
+
 		// if no export_single var, it's a normal export - don't interfere
 		if ( ! isset( $_GET['export_single'] ) ) {
 			return $args;
@@ -107,8 +101,8 @@ final class SaltusSingleExport {
 
 		// use our fake date so the query is easy to find (because we don't have a good hook to use)
 		$args['content']    = 'post';
-		$args['start_date'] = $this->fake_date;
-		$args['end_date']   = $this->fake_date;
+		$args['start_date'] = self::FAKE_DATE;
+		$args['end_date']   = self::FAKE_DATE;
 
 		return $args;
 	}
@@ -125,6 +119,11 @@ final class SaltusSingleExport {
 			return $query;
 		}
 
+		// verify nonce
+		if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'single_export' ) ) {
+			return $query;
+		}
+
 		global $wpdb;
 
 		// This is the query WP will build (given our arg filtering above)
@@ -132,8 +131,8 @@ final class SaltusSingleExport {
 		// to see if it matches, then if it is we replace it
 		$test = $wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.post_type = 'post' AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= %s AND {$wpdb->posts}.post_date < %s",
-			date( 'Y-m-d', strtotime( $this->fake_date ) ),
-			date( 'Y-m-d', strtotime( '+1 month', strtotime( $this->fake_date ) ) )
+			date( 'Y-m-d', strtotime( self::FAKE_DATE ) ),
+			date( 'Y-m-d', strtotime( '+1 month', strtotime( self::FAKE_DATE ) ) )
 		);
 
 		if ( $test !== $query ) {
