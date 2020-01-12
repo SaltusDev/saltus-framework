@@ -50,9 +50,7 @@ final class SaltusSingleExport {
 	 * Insert our action link into the submit box
 	 *
 	 */
-	public function post_submitbox_misc_actions() {
-
-		global $post;
+	public function post_submitbox_misc_actions( $post ) {
 
 		// if it's not out cpt, do nothing
 		if ( ! isset( $post->post_type ) || $post->post_type !== $this->name ) {
