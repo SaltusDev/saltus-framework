@@ -93,8 +93,11 @@ final class CodestarSettings {
 
 		foreach ( $fields as $key => &$field ) {
 
-			// we need each field array to have an id
-			$fields[ $key ]['id'] = $key;
+			// Each field array needs to have an id,
+			// but only if it wasn't provided
+			$field_id = $field['id'] ?? $key;
+
+			$fields[ $key ]['id'] = $field_id;
 
 			if ( isset( $field['fields'] ) ) {
 
