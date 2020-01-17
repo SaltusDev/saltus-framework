@@ -34,10 +34,7 @@ class SingleExport implements Service, Conditional {
 	public static function is_needed(): bool {
 
 		/*
-		 * This service loads in most screens:
-		 * - admin: in the edit screen
-		 * - ajax:  while updating menu order
-		 * - front: during pre_get_posts, etc
+		 * This service loads only in the admin edit screen
 		 */
 		return is_admin();
 	}
