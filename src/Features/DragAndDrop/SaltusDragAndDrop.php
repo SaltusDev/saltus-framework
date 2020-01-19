@@ -47,6 +47,7 @@ final class SaltusDragAndDrop implements EnqueueAssets {
 			return;
 		}
 
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['orderby'] ) || strstr( $_SERVER['REQUEST_URI'], 'action=edit' ) || strstr( $_SERVER['REQUEST_URI'], 'wp-admin/post-new.php' ) ) {
 			return false;
 		}
@@ -56,6 +57,7 @@ final class SaltusDragAndDrop implements EnqueueAssets {
 			$_GET['post_type'] === $this->name ) { // if custom post types
 				return true;
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		return $active;
 	}
@@ -159,6 +161,7 @@ final class SaltusDragAndDrop implements EnqueueAssets {
 
 		if ( is_admin() ) {
 			// skip if its already being sorted
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( isset( $_GET['orderby'] ) ) {
 				return;
 			}
@@ -201,10 +204,5 @@ final class SaltusDragAndDrop implements EnqueueAssets {
 		if ( ! $wp_query->get( 'order' ) ) {
 			$wp_query->set( 'order', 'ASC' );
 		}
-
 	}
-
 }
-
-
-

@@ -54,6 +54,10 @@ final class CodestarMeta {
 
 		$args = array_merge( $default_args, $box_settings );
 
+		if ( ! class_exists( '\CSF' ) ) {
+			return;
+		}
+
 		// Create options
 		\CSF::createMetabox( $box_id, $args );
 
@@ -84,6 +88,9 @@ final class CodestarMeta {
 	 */
 	private function create_section( $id, $section ) {
 
+		if ( ! class_exists( '\CSF' ) ) {
+			return;
+		}
 		\CSF::createSection( $id, $section );
 
 	}
