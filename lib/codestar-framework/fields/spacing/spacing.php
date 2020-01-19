@@ -46,18 +46,22 @@ if( ! class_exists( 'CSF_Field_spacing' ) ) {
         'unit'   => 'px',
       );
 
-      $value = wp_parse_args( $this->value, $default_values );
+      $value   = wp_parse_args( $this->value, $default_values );
+      $unit    = ( count( $args['units'] ) === 1 && ! empty( $args['unit'] ) ) ? $args['units'][0] : '';
+      $is_unit = ( ! empty( $unit ) ) ? ' csf--is-unit' : '';
 
       echo $this->field_before();
+
+      echo '<div class="csf--inputs">';
 
       if( ! empty( $args['all'] ) ) {
 
         $placeholder = ( ! empty( $args['all_placeholder'] ) ) ? ' placeholder="'. $args['all_placeholder'] .'"' : '';
 
         echo '<div class="csf--input">';
-        echo ( ! empty( $args['all_icon'] ) ) ? '<span class="csf--label csf--label-icon">'. $args['all_icon'] .'</span>' : '';
-        echo '<input type="text" name="'. $this->field_name('[all]') .'" value="'. $value['all'] .'"'. $placeholder .' class="csf-number" />';
-        echo ( count( $args['units'] ) === 1 && ! empty( $args['unit'] ) ) ? '<span class="csf--label csf--label-unit">'. $args['units'][0] .'</span>' : '';
+        echo ( ! empty( $args['all_icon'] ) ) ? '<span class="csf--label csf--icon">'. $args['all_icon'] .'</span>' : '';
+        echo '<input type="number" name="'. $this->field_name('[all]') .'" value="'. $value['all'] .'"'. $placeholder .' class="csf-input-number'. $is_unit .'" />';
+        echo ( $unit ) ? '<span class="csf--label csf--unit">'. $args['units'][0] .'</span>' : '';
         echo '</div>';
 
       } else {
@@ -77,9 +81,9 @@ if( ! class_exists( 'CSF_Field_spacing' ) ) {
           $placeholder = ( ! empty( $args[$property.'_placeholder'] ) ) ? ' placeholder="'. $args[$property.'_placeholder'] .'"' : '';
 
           echo '<div class="csf--input">';
-          echo ( ! empty( $args[$property.'_icon'] ) ) ? '<span class="csf--label csf--label-icon">'. $args[$property.'_icon'] .'</span>' : '';
-          echo '<input type="text" name="'. $this->field_name('['. $property .']') .'" value="'. $value[$property] .'"'. $placeholder .' class="csf-number" />';
-          echo ( count( $args['units'] ) === 1 && ! empty( $args['unit'] ) ) ? '<span class="csf--label csf--label-unit">'. $args['units'][0] .'</span>' : '';
+          echo ( ! empty( $args[$property.'_icon'] ) ) ? '<span class="csf--label csf--icon">'. $args[$property.'_icon'] .'</span>' : '';
+          echo '<input type="number" name="'. $this->field_name('['. $property .']') .'" value="'. $value[$property] .'"'. $placeholder .' class="csf-input-number'. $is_unit .'" />';
+          echo ( $unit ) ? '<span class="csf--label csf--unit">'. $args['units'][0] .'</span>' : '';
           echo '</div>';
 
         }
@@ -87,15 +91,17 @@ if( ! class_exists( 'CSF_Field_spacing' ) ) {
       }
 
       if( ! empty( $args['unit'] ) && ! empty( $args['show_units'] ) && count( $args['units'] ) > 1 ) {
+        echo '<div class="csf--input">';
         echo '<select name="'. $this->field_name('[unit]') .'">';
         foreach( $args['units'] as $unit ) {
           $selected = ( $value['unit'] === $unit ) ? ' selected' : '';
           echo '<option value="'. $unit .'"'. $selected .'>'. $unit .'</option>';
         }
         echo '</select>';
+        echo '</div>';
       }
 
-      echo '<div class="clear"></div>';
+      echo '</div>';
 
       echo $this->field_after();
 

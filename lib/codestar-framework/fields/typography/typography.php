@@ -218,9 +218,9 @@ if( ! class_exists( 'CSF_Field_typography' ) ) {
           if( ! empty( $args['font_size'] ) ) {
             echo '<div class="csf--block">';
             echo '<div class="csf--title">'. esc_html__( 'Font Size', 'csf' ) .'</div>';
-            echo '<div class="csf--blocks">';
-            echo '<div class="csf--block"><input type="text" name="'. $this->field_name( '[font-size]' ) .'" class="csf--font-size csf--input csf-number" value="'. $this->value['font-size'] .'" /></div>';
-            echo '<div class="csf--block csf--unit">'. $args['unit'] .'</div>';
+            echo '<div class="csf--input-wrap">';
+            echo '<input type="number" name="'. $this->field_name( '[font-size]' ) .'" class="csf--font-size csf--input csf-input-number" value="'. $this->value['font-size'] .'" />';
+            echo '<span class="csf--unit">'. $args['unit'] .'</span>';
             echo '</div>';
             echo '</div>';
           }
@@ -230,9 +230,9 @@ if( ! class_exists( 'CSF_Field_typography' ) ) {
           if( ! empty( $args['line_height'] ) ) {
             echo '<div class="csf--block">';
             echo '<div class="csf--title">'. esc_html__( 'Line Height', 'csf' ) .'</div>';
-            echo '<div class="csf--blocks">';
-            echo '<div class="csf--block"><input type="text" name="'. $this->field_name( '[line-height]' ) .'" class="csf--line-height csf--input csf-number" value="'. $this->value['line-height'] .'" /></div>';
-            echo '<div class="csf--block csf--unit">'. $args['unit'] .'</div>';
+            echo '<div class="csf--input-wrap">';
+            echo '<input type="number" name="'. $this->field_name( '[line-height]' ) .'" class="csf--line-height csf--input csf-input-number" value="'. $this->value['line-height'] .'" />';
+            echo '<span class="csf--unit">'. $args['unit'] .'</span>';
             echo '</div>';
             echo '</div>';
           }
@@ -242,9 +242,9 @@ if( ! class_exists( 'CSF_Field_typography' ) ) {
           if( ! empty( $args['letter_spacing'] ) ) {
             echo '<div class="csf--block">';
             echo '<div class="csf--title">'. esc_html__( 'Letter Spacing', 'csf' ) .'</div>';
-            echo '<div class="csf--blocks">';
-            echo '<div class="csf--block"><input type="text" name="'. $this->field_name( '[letter-spacing]' ) .'" class="csf--letter-spacing csf--input csf-number" value="'. $this->value['letter-spacing'] .'" /></div>';
-            echo '<div class="csf--block csf--unit">'. $args['unit'] .'</div>';
+            echo '<div class="csf--input-wrap">';
+            echo '<input type="number" name="'. $this->field_name( '[letter-spacing]' ) .'" class="csf--letter-spacing csf--input csf-input-number" value="'. $this->value['letter-spacing'] .'" />';
+            echo '<span class="csf--unit">'. $args['unit'] .'</span>';
             echo '</div>';
             echo '</div>';
           }
@@ -254,9 +254,9 @@ if( ! class_exists( 'CSF_Field_typography' ) ) {
           if( ! empty( $args['word_spacing'] ) ) {
             echo '<div class="csf--block">';
             echo '<div class="csf--title">'. esc_html__( 'Word Spacing', 'csf' ) .'</div>';
-            echo '<div class="csf--blocks">';
-            echo '<div class="csf--block"><input type="text" name="'. $this->field_name( '[word-spacing]' ) .'" class="csf--word-spacing csf--input csf-number" value="'. $this->value['word-spacing'] .'" /></div>';
-            echo '<div class="csf--block csf--unit">'. $args['unit'] .'</div>';
+            echo '<div class="csf--input-wrap">';
+            echo '<input type="number" name="'. $this->field_name( '[word-spacing]' ) .'" class="csf--word-spacing csf--input csf-input-number" value="'. $this->value['word-spacing'] .'" />';
+            echo '<span class="csf--unit">'. $args['unit'] .'</span>';
             echo '</div>';
             echo '</div>';
           }

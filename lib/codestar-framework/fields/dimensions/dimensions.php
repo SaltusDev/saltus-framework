@@ -34,44 +34,44 @@ if( ! class_exists( 'CSF_Field_dimensions' ) ) {
         'unit'   => 'px',
       );
 
-      $value = wp_parse_args( $this->value, $default_values );
+      $value   = wp_parse_args( $this->value, $default_values );
+      $unit    = ( count( $args['units'] ) === 1 && ! empty( $args['unit'] ) ) ? $args['units'][0] : '';
+      $is_unit = ( ! empty( $unit ) ) ? ' csf--is-unit' : '';
 
       echo $this->field_before();
 
+      echo '<div class="csf--inputs">';
+
       if( ! empty( $args['width'] ) ) {
-
         $placeholder = ( ! empty( $args['width_placeholder'] ) ) ? ' placeholder="'. $args['width_placeholder'] .'"' : '';
-
         echo '<div class="csf--input">';
-        echo ( ! empty( $args['width_icon'] ) ) ? '<span class="csf--label csf--label-icon">'. $args['width_icon'] .'</span>' : '';
-        echo '<input type="text" name="'. $this->field_name('[width]') .'" value="'. $value['width'] .'"'. $placeholder .' class="csf-number" />';
-        echo ( count( $args['units'] ) === 1 && ! empty( $args['unit'] ) ) ? '<span class="csf--label csf--label-unit">'. $args['units'][0] .'</span>' : '';
+        echo ( ! empty( $args['width_icon'] ) ) ? '<span class="csf--label csf--icon">'. $args['width_icon'] .'</span>' : '';
+        echo '<input type="number" name="'. $this->field_name('[width]') .'" value="'. $value['width'] .'"'. $placeholder .' class="csf-input-number'. $is_unit .'" />';
+        echo ( ! empty( $unit ) ) ? '<span class="csf--label csf--unit">'. $args['units'][0] .'</span>' : '';
         echo '</div>';
-
       }
 
       if( ! empty( $args['height'] ) ) {
-
         $placeholder = ( ! empty( $args['height_placeholder'] ) ) ? ' placeholder="'. $args['height_placeholder'] .'"' : '';
-
         echo '<div class="csf--input">';
-        echo ( ! empty( $args['height_icon'] ) ) ? '<span class="csf--label csf--label-icon">'. $args['height_icon'] .'</span>' : '';
-        echo '<input type="text" name="'. $this->field_name('[height]') .'" value="'. $value['height'] .'"'. $placeholder .' class="csf-number" />';
-        echo ( count( $args['units'] ) === 1 && ! empty( $args['unit'] ) ) ? '<span class="csf--label csf--label-unit">'. $args['units'][0] .'</span>' : '';
+        echo ( ! empty( $args['height_icon'] ) ) ? '<span class="csf--label csf--icon">'. $args['height_icon'] .'</span>' : '';
+        echo '<input type="number" name="'. $this->field_name('[height]') .'" value="'. $value['height'] .'"'. $placeholder .' class="csf-input-number'. $is_unit .'" />';
+        echo ( ! empty( $unit ) ) ? '<span class="csf--label csf--unit">'. $args['units'][0] .'</span>' : '';
         echo '</div>';
-
       }
 
       if( ! empty( $args['unit'] ) && ! empty( $args['show_units'] ) && count( $args['units'] ) > 1 ) {
+        echo '<div class="csf--input">';
         echo '<select name="'. $this->field_name('[unit]') .'">';
         foreach( $args['units'] as $unit ) {
           $selected = ( $value['unit'] === $unit ) ? ' selected' : '';
           echo '<option value="'. $unit .'"'. $selected .'>'. $unit .'</option>';
         }
         echo '</select>';
+        echo '</div>';
       }
 
-      echo '<div class="clear"></div>';
+      echo '</div>';
 
       echo $this->field_after();
 

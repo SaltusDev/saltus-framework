@@ -104,9 +104,9 @@ if( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
         delete_term_meta( $term_id, '_csf_errors' );
       }
 
-      echo '<div class="csf csf-taxonomy csf-show-all csf-onload csf-taxonomy-'. $classname .'-fields'. $class .'">';
-
       wp_nonce_field( 'csf_taxonomy_nonce', 'csf_taxonomy_nonce'. $this->unique );
+
+      echo '<div class="csf csf-taxonomy csf-show-all csf-onload csf-taxonomy-'. $classname .'-fields'. $class .'">';
 
       foreach( $this->sections as $section ) {
 

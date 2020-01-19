@@ -119,6 +119,7 @@ if( ! class_exists( 'CSF_Welcome' ) ) {
           CSF::include_plugin_file( 'samples/shortcoder.samples.php'        );
           CSF::include_plugin_file( 'samples/taxonomy-options.samples.php'  );
           CSF::include_plugin_file( 'samples/widgets.samples.php'           );
+          CSF::include_plugin_file( 'samples/comment-metabox.samples.php'   );
 
         }
 

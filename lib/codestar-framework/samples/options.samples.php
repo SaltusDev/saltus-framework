@@ -366,7 +366,7 @@ CSF::createSection( $prefix, array(
     array(
       'id'          => 'opt-select-5',
       'type'        => 'select',
-      'title'       => 'Select with chosen style',
+      'title'       => 'Select with Chosen',
       'chosen'      => true,
       'placeholder' => 'Select an option',
       'options'     => array(
@@ -382,7 +382,7 @@ CSF::createSection( $prefix, array(
     array(
       'id'          => 'opt-select-6',
       'type'        => 'select',
-      'title'       => 'Select with multiple chosen style',
+      'title'       => 'Select with multiple Chosen',
       'chosen'      => true,
       'multiple'    => true,
       'placeholder' => 'Select an option',
@@ -397,13 +397,66 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
+      'id'          => 'opt-select-7',
+      'type'        => 'select',
+      'title'       => 'Select with multiple Chosen and Sortable',
+      'chosen'      => true,
+      'multiple'    => true,
+      'sortable'    => true,
+      'placeholder' => 'Select an option',
+      'options'     => array(
+        'opt-1'     => 'Option 1',
+        'opt-2'     => 'Option 2',
+        'opt-3'     => 'Option 3',
+        'opt-4'     => 'Option 4',
+        'opt-5'     => 'Option 5',
+        'opt-6'     => 'Option 6',
+      ),
+      'default'     => array( 'opt-1', 'opt-2', 'opt-3' )
+    ),
+
+    array(
+      'id'          => 'opt-select-8',
+      'type'        => 'select',
+      'title'       => 'Select with multiple AJAX search Pages',
+      'chosen'      => true,
+      'multiple'    => true,
+      'sortable'    => true,
+      'ajax'        => true,
+      'options'     => 'pages',
+      'placeholder' => 'Select pages',
+    ),
+
+    array(
+      'id'          => 'opt-select-9',
+      'type'        => 'select',
+      'title'       => 'Select with multiple AJAX search Posts',
+      'chosen'      => true,
+      'multiple'    => true,
+      'sortable'    => true,
+      'ajax'        => true,
+      'options'     => 'posts',
+      'placeholder' => 'Select posts',
+    ),
+
+    array(
+      'id'          => 'opt-select-10',
+      'type'        => 'select',
+      'title'       => 'Select with AJAX search Category',
+      'chosen'      => true,
+      'ajax'        => true,
+      'options'     => 'category',
+      'placeholder' => 'Select a category',
+    ),
+
+    array(
       'type'    => 'notice',
       'style'   => 'info',
       'content' => 'Select with <strong>predefined wp query</strong> options.',
     ),
 
     array(
-      'id'          => 'opt-select-7',
+      'id'          => 'opt-select-11',
       'type'        => 'select',
       'title'       => 'Select with pages',
       'placeholder' => 'Select a page',
@@ -411,7 +464,7 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
-      'id'          => 'opt-select-8',
+      'id'          => 'opt-select-12',
       'type'        => 'select',
       'title'       => 'Select with posts',
       'placeholder' => 'Select a post',
@@ -419,7 +472,7 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
-      'id'          => 'opt-select-9',
+      'id'          => 'opt-select-13',
       'type'        => 'select',
       'title'       => 'Select with categories',
       'placeholder' => 'Select a category',
@@ -427,7 +480,7 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
-      'id'          => 'opt-select-10',
+      'id'          => 'opt-select-14',
       'type'        => 'select',
       'title'       => 'Select with menus',
       'placeholder' => 'Select a menu',
@@ -435,7 +488,7 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
-      'id'          => 'opt-select-11',
+      'id'          => 'opt-select-15',
       'type'        => 'select',
       'title'       => 'Select with sidebars',
       'placeholder' => 'Select a sidebar',
@@ -443,7 +496,7 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
-      'id'          => 'opt-select-12',
+      'id'          => 'opt-select-16',
       'type'        => 'select',
       'title'       => 'Select with wp roles',
       'placeholder' => 'Select a role',
@@ -451,7 +504,23 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
-      'id'          => 'opt-select-13',
+      'id'          => 'opt-select-17',
+      'type'        => 'select',
+      'title'       => 'Select with users',
+      'placeholder' => 'Select a user',
+      'options'     => 'users',
+    ),
+
+    array(
+      'id'          => 'opt-select-18',
+      'type'        => 'select',
+      'title'       => 'Select with post type',
+      'placeholder' => 'Select a post type',
+      'options'     => 'post_types',
+    ),
+
+    array(
+      'id'          => 'opt-select-19',
       'type'        => 'select',
       'title'       => 'Select with CPT (custom post type) posts',
       'placeholder' => 'Select a post',
@@ -462,13 +531,12 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
-      'id'          => 'opt-select-14',
+      'id'          => 'opt-select-20',
       'type'        => 'select',
       'title'       => 'Select with CPT (custom post type) categories',
       'placeholder' => 'Select a category',
       'options'     => 'categories',
       'query_args'  => array(
-        'type'      => 'your_post_type_name',
         'taxonomy'  => 'your_taxonomy_name',
       ),
     ),
@@ -1598,6 +1666,13 @@ CSF::createSection( $prefix, array(
       'library' => 'video',
     ),
 
+    array(
+      'id'      => 'opt-media-6',
+      'type'    => 'media',
+      'title'   => 'Media with only audio type',
+      'library' => 'audio',
+    ),
+
   )
 ) );
 
@@ -1637,6 +1712,14 @@ CSF::createSection( $prefix, array(
       'title'        => 'Upload with only video type',
       'library'      => 'video',
       'button_title' => 'Upload Video',
+    ),
+
+    array(
+      'id'           => 'opt-upload-5',
+      'type'         => 'upload',
+      'title'        => 'Upload with only audio type',
+      'library'      => 'audio',
+      'button_title' => 'Upload Audio',
     ),
 
   )
@@ -2242,6 +2325,20 @@ CSF::createSection( $prefix, array(
     ),
 
     array(
+      'id'       => 'opt-spacing-2',
+      'type'     => 'spacing',
+      'title'    => 'Spacing without unit selector',
+      'units'    => array( 'px' ),
+      'default'  => array(
+        'top'    => '50',
+        'right'  => '100',
+        'bottom' => '50',
+        'left'   => '100',
+        'unit'   => 'px',
+      ),
+    ),
+
+    array(
       'id'     => 'opt-spacing-3',
       'type'   => 'spacing',
       'title'  => 'Spacing with only left and right',
@@ -2363,6 +2460,37 @@ CSF::createSection( $prefix, array(
       'step'     => 0.1,
       'unit'     => 'px',
       'default'  => 0.5,
+    ),
+
+  )
+) );
+
+//
+// Field: number
+//
+CSF::createSection( $prefix, array(
+  'parent'      => 'design_fields',
+  'title'       => 'Number',
+  'description' => 'Visit documentation for more details on this field: <a href="http://codestarframework.com/documentation/#/fields?id=number" target="_blank">Field: number</a>',
+  'fields'      => array(
+
+    array(
+      'id'      => 'opt-number-1',
+      'type'    => 'number',
+      'title'   => 'Number',
+    ),
+    array(
+      'id'      => 'opt-number-2',
+      'type'    => 'number',
+      'title'   => 'Number with unit',
+      'unit'    => 'px',
+    ),
+    array(
+      'id'      => 'opt-number-3',
+      'type'    => 'number',
+      'title'   => 'Number with default',
+      'unit'    => 'width',
+      'default' => 100,
     ),
 
   )
@@ -2628,6 +2756,57 @@ CSF::createSection( $prefix, array(
 ) );
 
 //
+// Field: map
+//
+CSF::createSection( $prefix, array(
+  'parent'      => 'additional_fields',
+  'title'       => 'Map',
+  'icon'        => 'fa fa-map-marker',
+  'description' => 'Visit documentation for more details on this field: <a href="http://codestarframework.com/documentation/#/fields?id=map" target="_blank">Field: map</a>',
+  'fields'      => array(
+
+    array(
+      'id'            => 'opt-map-1',
+      'type'          => 'map',
+      'title'         => 'Map',
+    ),
+
+    array(
+      'id'            => 'opt-map-2',
+      'type'          => 'map',
+      'title'         => 'Map with Default',
+      'default'       => array(
+        'address'     => 'New York, United States of America',
+        'latitude'    => '40.7127281',
+        'longitude'   => '-74.0060152',
+        'zoom'        => '12',
+      )
+    ),
+
+    array(
+      'type'          => 'submessage',
+      'style'         => 'info',
+      'content'       => 'Using custom <strong>address_field</strong> field in below example.',
+    ),
+
+    array(
+      'id'            => 'my-address-text',
+      'type'          => 'text',
+      'title'         => 'Address',
+    ),
+
+    array(
+      'id'            => 'opt-map-3',
+      'type'          => 'map',
+      'title'         => 'Map',
+      'desc'          => 'Using custom <strong>address_field</strong> field',
+      'address_field' => 'my-address-text',
+    ),
+
+  )
+) );
+
+//
 // Field: date
 //
 CSF::createSection( $prefix, array(
@@ -2776,10 +2955,9 @@ CSF::createSection( $prefix, array(
       'title'      => 'Button Set with default',
       'options'    => array(
         'enabled'  => 'Enabled',
-        'default'  => 'Disabled',
+        ''         => 'Default',
         'disabled' => 'Disabled',
       ),
-      'default'    => 'default'
     ),
 
     array(

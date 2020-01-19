@@ -36,11 +36,11 @@ if( ! function_exists( 'csf_get_icons' ) ) {
 
       }
 
-      wp_send_json_success( array( 'success' => true, 'content' => ob_get_clean() ) );
+      wp_send_json_success( array( 'content' => ob_get_clean() ) );
 
     } else {
 
-      wp_send_json_error( array( 'success' => false, 'error' => esc_html__( 'Error while saving.', 'csf' ), 'debug' => $_REQUEST ) );
+      wp_send_json_error( array( 'error' => esc_html__( 'Error: Nonce verification has failed. Please try again.', 'csf' ) ) );
 
     }
 
@@ -76,7 +76,6 @@ if( ! function_exists( 'csf_export' ) ) {
   add_action( 'wp_ajax_csf-export', 'csf_export' );
 }
 
-
 /**
  *
  * Import Ajax
@@ -95,13 +94,13 @@ if( ! function_exists( 'csf_import_ajax' ) ) {
       if( is_array( $import_data ) ) {
 
         update_option( wp_unslash( $_POST['unique'] ), wp_unslash( $import_data ) );
-        wp_send_json_success( array( 'success' => true ) );
+        wp_send_json_success();
 
       }
 
     }
 
-    wp_send_json_error( array( 'success' => false, 'error' => esc_html__( 'Error while saving.', 'csf' ), 'debug' => $_REQUEST ) );
+    wp_send_json_error( array( 'error' => esc_html__( 'Error: Nonce verification has failed. Please try again.', 'csf' ) ) );
 
   }
   add_action( 'wp_ajax_csf-import', 'csf_import_ajax' );
@@ -120,12 +119,49 @@ if( ! function_exists( 'csf_reset_ajax' ) ) {
 
     if( ! empty( $_POST['unique'] ) && ! empty( $_POST['nonce'] ) && wp_verify_nonce( $_POST['nonce'], 'csf_backup_nonce' ) ) {
       delete_option( wp_unslash( $_POST['unique'] ) );
-      wp_send_json_success( array( 'success' => true ) );
+      wp_send_json_success();
     }
 
-    wp_send_json_error( array( 'success' => false, 'error' => esc_html__( 'Error while saving.', 'csf' ), 'debug' => $_REQUEST ) );
+    wp_send_json_error( array( 'error' => esc_html__( 'Error: Nonce verification has failed. Please try again.', 'csf' ) ) );
+
   }
   add_action( 'wp_ajax_csf-reset', 'csf_reset_ajax' );
+}
+
+/**
+ *
+ * Chosen Ajax
+ *
+ * @since 1.0.0
+ * @version 1.0.0
+ *
+ */
+if( ! function_exists( 'csf_chosen_ajax' ) ) {
+  function csf_chosen_ajax() {
+
+    if( ! empty( $_POST['term'] ) && ! empty( $_POST['type'] ) && ! empty( $_POST['nonce'] ) && wp_verify_nonce( $_POST['nonce'], 'csf_chosen_ajax_nonce' ) ) {
+
+      $capability = apply_filters( 'csf_chosen_ajax_capability', 'manage_options' );
+
+      if( current_user_can( $capability ) ) {
+
+        $type       = $_POST['type'];
+        $term       = $_POST['term'];
+        $query_args = ( ! empty( $_POST['query_args'] ) ) ? $_POST['query_args'] : array();
+        $options    = CSF_Fields::field_data( $type, $term, $query_args );
+
+        wp_send_json_success( $options );
+
+      } else {
+        wp_send_json_error( array( 'error' => esc_html__( 'You do not have required permissions to access.', 'csf' ) ) );
+      }
+
+    } else {
+      wp_send_json_error( array( 'error' => esc_html__( 'Error: Nonce verification has failed. Please try again.', 'csf' ) ) );
+    }
+
+  }
+  add_action( 'wp_ajax_csf-chosen', 'csf_chosen_ajax' );
 }
 
 /**

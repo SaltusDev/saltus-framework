@@ -111,6 +111,13 @@ if( ! class_exists( 'CSF_Widget' ) ) {
     // Sanitize widget form values as they are saved.
     public function update( $new_instance, $old_instance ) {
 
+      // auto sanitize
+      foreach( $this->args['fields'] as $field ) {
+        if( ! empty( $field['id'] ) && ( ! isset( $new_instance[$field['id']] ) || is_null( $new_instance[$field['id']] ) ) ) {
+          $new_instance[$field['id']] = '';
+        }
+      }
+
       $new_instance = apply_filters( "csf_{$this->unique}_save", $new_instance, $this->args, $this );
 
       do_action( "csf_{$this->unique}_save_before", $new_instance, $this->args, $this );

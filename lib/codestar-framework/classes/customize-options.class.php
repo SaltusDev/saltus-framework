@@ -41,7 +41,7 @@ if( ! class_exists( 'CSF_Customize_Options' ) ) {
       $this->save_defaults();
 
       add_action( 'customize_register', array( &$this, 'add_customize_options' ) );
-      add_action( 'customize_save_after', array( &$this, 'add_customize_save' ) );
+      add_action( 'customize_save_after', array( &$this, 'add_customize_save_after' ) );
 
       // Get options for enqueue actions
       if( is_customize_preview() ) {
@@ -58,18 +58,17 @@ if( ! class_exists( 'CSF_Customize_Options' ) ) {
       return new self( $key, $params );
     }
 
-    public function add_customize_save( $wp_customize ) {
+    public function add_customize_save_after( $wp_customize ) {
       do_action( "csf_{$this->unique}_save_before", $this->get_options(), $this, $wp_customize );
       do_action( "csf_{$this->unique}_saved", $this->get_options(), $this, $wp_customize );
       do_action( "csf_{$this->unique}_save_after", $this->get_options(), $this, $wp_customize );
     }
 
     // get default value
-    public function get_default( $field, $options = array() ) {
+    public function get_default( $field ) {
 
-      $default = ( isset( $this->args['defaults'][$field['id']] ) ) ? $this->args['defaults'][$field['id']] : '';
+      $default = ( isset( $this->args['defaults'][$field['id']] ) ) ? $this->args['defaults'][$field['id']] : null;
       $default = ( isset( $field['default'] ) ) ? $field['default'] : $default;
-      $default = ( isset( $options[$field['id']] ) ) ? $options[$field['id']] : $default;
 
       return $default;
 
@@ -100,7 +99,7 @@ if( ! class_exists( 'CSF_Customize_Options' ) ) {
       if( ! empty( $this->pre_fields ) ) {
         foreach( $this->pre_fields as $field ) {
           if( ! empty( $field['id'] ) ) {
-            $this->options[$field['id']] = $this->get_default( $field, $this->options );
+            $this->options[$field['id']] = ( isset( $this->options[$field['id']] ) ) ? $this->options[$field['id']] : $this->get_default( $field );
           }
         }
       }
@@ -230,14 +229,18 @@ if( ! class_exists( 'CSF_Customize_Options' ) ) {
 
         foreach( $section_args['fields'] as $field ) {
 
+          if( isset( $field['id'] ) ) {
+            $field['default'] = $this->get_default( $field );
+          }
+
           $field_id        = ( isset( $field['id'] ) ) ? $field['id'] : '_nonce-'. $section_id .'-'. $field_key;
           $setting_id      = $this->unique .'['. $field_id .']';
           $setting_args    = ( isset( $field['setting_args'] ) ) ? $field['setting_args'] : array();
           $control_args    = ( isset( $field['control_args'] ) ) ? $field['control_args'] : array();
-          $field_default   = ( isset( $field['default'] ) ) ? $field['default'] : null;
           $field_transport = ( isset( $field['transport'] ) ) ? $field['transport'] : $this->args['transport'];
           $field_sanitize  = ( isset( $field['sanitize'] ) ) ? $field['sanitize'] : null;
           $field_validate  = ( isset( $field['validate'] ) ) ? $field['validate'] : null;
+          $field_default   = ( isset( $field['default'] ) ) ? $field['default'] : null;
           $has_selective   = ( isset( $field['selective_refresh'] ) && isset( $wp_customize->selective_refresh ) ) ? true : false;
 
           $wp_customize->add_setting( $setting_id,
