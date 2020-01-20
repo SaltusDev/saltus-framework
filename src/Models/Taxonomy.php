@@ -4,7 +4,8 @@ namespace Saltus\WP\Framework\Models;
 class Taxonomy extends BaseModel implements Model {
 
 	// data req for register_taxonomy()
-	protected $links = 'post';
+	private $links = 'post';
+	private $associations;
 
 	/**
 	 * Setup the data needed to register
@@ -33,7 +34,7 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 * @return array The list of config settings
 	 */
-	protected function get_default_options() {
+	private function get_default_options() {
 		$options = [];
 		if ( ! $this->config->has( 'type' ) ) {
 			return $options;
@@ -57,7 +58,7 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 * @return array The list of Labels
 	 */
-	protected function get_default_labels() {
+	private function get_default_labels() {
 		$labels = [
 			'name'                       => _x( $this->many, 'Taxonomy general name', $this->i18n ),
 			'singular_name'              => _x( $this->one, 'Taxonomy singular name', $this->i18n ),
@@ -83,7 +84,7 @@ class Taxonomy extends BaseModel implements Model {
 		return $labels;
 	}
 
-	protected function get_default_associations() {
+	private function get_default_associations() {
 		return [];
 	}
 
@@ -91,7 +92,7 @@ class Taxonomy extends BaseModel implements Model {
 	 * Set Object types association to this taxonomy
 	 *
 	 */
-	protected function set_associations( array $associations ) {
+	private function set_associations( array $associations ) {
 		if ( ! $this->config->has( 'associations' ) ) {
 			$this->associations = $associations;
 			return;
@@ -109,7 +110,7 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 *
 	 */
-	protected function set_meta() {
+	private function set_meta() {
 
 		$meta = [];
 		if ( $this->config->has( 'meta' ) ) {
@@ -126,7 +127,7 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 * @return void
 	 */
-	protected function register() {
+	private function register() {
 		$args = array_merge( $this->args, $this->options );
 
 		if ( function_exists( 'register_extended_taxonomy' ) ) {
@@ -139,6 +140,10 @@ class Taxonomy extends BaseModel implements Model {
 	}
 
 	public function register_associations() {
+		if ( $this->associations === null || ! is_array( $this->associations ) ) {
+			return;
+		}
+
 		foreach ( $this->associations as $association ) {
 			register_taxonomy_for_object_type( $this->name, $association );
 		}

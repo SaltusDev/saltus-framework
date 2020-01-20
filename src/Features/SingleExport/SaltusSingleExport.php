@@ -35,14 +35,12 @@ final class SaltusSingleExport {
 	 */
 	public function init() {
 
-		global $post;
-
 		if ( ! current_user_can( 'export' ) ) {
 			return;
 		}
 
 		add_filter( 'export_args', array( $this, 'export_args' ) );
-		add_filter( 'query',       array( $this, 'query' ) );
+		add_filter( 'query', array( $this, 'query' ) );
 		add_action( 'post_submitbox_misc_actions', array( $this, 'post_submitbox_misc_actions' ) );
 
 	}
@@ -73,14 +71,18 @@ final class SaltusSingleExport {
 		</style>
 		<div class="misc-pub-section export-one-post">
 			<?php
-				$export_url = add_query_arg( array(
+			$export_url = add_query_arg(
+				array(
 					'download'      => '',
 					'export_single' => $post->ID,
-					'_wpnonce' => wp_create_nonce( 'single_export' )
-				), admin_url( 'export.php' ) );
+					'_wpnonce'      => wp_create_nonce( 'single_export' ),
+				),
+				admin_url( 'export.php' )
+			);
 			?>
 			<a href="<?php echo esc_url( $export_url ); ?>"><?php esc_html_e( 'Export This', 'saltus' ); ?></a>
-		</div><?php
+		</div>
+		<?php
 	}
 
 	/**
@@ -94,6 +96,11 @@ final class SaltusSingleExport {
 
 		// if no export_single var, it's a normal export - don't interfere
 		if ( ! isset( $_GET['export_single'] ) ) {
+			return $args;
+		}
+
+		// verify nonce
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'single_export' ) ) {
 			return $args;
 		}
 
@@ -118,7 +125,7 @@ final class SaltusSingleExport {
 		}
 
 		// verify nonce
-		if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'single_export' ) ) {
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'single_export' ) ) {
 			return $query;
 		}
 
@@ -129,7 +136,9 @@ final class SaltusSingleExport {
 		// to see if it matches, then if it is we replace it
 		$test = $wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.post_type = 'post' AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= %s AND {$wpdb->posts}.post_date < %s",
+			// phpcs:ignore: WordPress.DateTime.RestrictedFunctions.date_date
 			date( 'Y-m-d', strtotime( self::FAKE_DATE ) ),
+			// phpcs:ignore: WordPress.DateTime.RestrictedFunctions.date_date
 			date( 'Y-m-d', strtotime( '+1 month', strtotime( self::FAKE_DATE ) ) )
 		);
 
@@ -138,11 +147,11 @@ final class SaltusSingleExport {
 		}
 
 		// divide query
-		$split    = explode( 'WHERE', $query );
+		$split = explode( 'WHERE', $query );
 		// replace WHERE clause
 		$split[1] = $wpdb->prepare( " {$wpdb->posts}.ID = %d", intval( $_GET['export_single'] ) );
 		// put query back together
-		$query    = implode( 'WHERE', $split );
+		$query = implode( 'WHERE', $split );
 
 		return $query;
 	}

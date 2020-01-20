@@ -47,9 +47,6 @@
 	"scripts": {
 		"test": [
 			"vendor/bin/phpcs"
-		],
-		"files": [
-			"lib/codestar-framework/codestar-framework.php"
 		]
 	},
 	"minimum-stability": "dev",
