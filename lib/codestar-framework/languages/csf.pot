@@ -1,105 +1,121 @@
-# Copyright (C) 2019 Codestar
+# Copyright (C) 2020 Codestar
 # This file is distributed under the same license as the Codestar Framework package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Codestar Framework 2.1.0\n"
+"Project-Id-Version: Codestar Framework 2.1.3\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/codestar-framework\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: classes/metabox.class.php:252 classes/options.class.php:654
+#: classes/comment-metabox.class.php:190 classes/metabox.class.php:255
+#: classes/options.class.php:650
 msgid "No option provided by developer."
 msgstr ""
 
-#: classes/metabox.class.php:270
+#: classes/comment-metabox.class.php:208 classes/metabox.class.php:273
 msgid "Restore"
 msgstr ""
 
-#: classes/metabox.class.php:271
+#: classes/comment-metabox.class.php:209 classes/metabox.class.php:274
 msgid "update post for restore "
 msgstr ""
 
-#: classes/metabox.class.php:271
+#: classes/comment-metabox.class.php:209 classes/metabox.class.php:274
 msgid "Cancel"
 msgstr ""
 
-#: classes/options.class.php:237 functions/actions.php:43
-#: functions/actions.php:104 functions/actions.php:126
+#: classes/options.class.php:238
 msgid "Error while saving."
 msgstr ""
 
-#: classes/options.class.php:284
+#: classes/options.class.php:285
 msgid "Success. Imported backup options."
 msgstr ""
 
-#: classes/options.class.php:294
+#: classes/options.class.php:295
 msgid "Default options restored."
 msgstr ""
 
-#: classes/options.class.php:308
+#: classes/options.class.php:309
 msgid "Default options restored for only this section."
 msgstr ""
 
-#: classes/options.class.php:366
+#: classes/options.class.php:367
 msgid "Settings saved."
 msgstr ""
 
-#: classes/options.class.php:554
+#: classes/options.class.php:548
+msgid "Settings have changed, you should save them!"
+msgstr ""
+
+#: classes/options.class.php:550
 msgid "show all options"
 msgstr ""
 
-#: classes/options.class.php:556
+#: classes/options.class.php:552
 msgid "Search option(s)"
 msgstr ""
 
-#: classes/options.class.php:559 classes/options.class.php:678
+#: classes/options.class.php:555 classes/options.class.php:674
 msgid "Save"
 msgstr ""
 
-#: classes/options.class.php:559 classes/options.class.php:678
+#: classes/options.class.php:555 classes/options.class.php:674
 msgid "Saving..."
 msgstr ""
 
-#: classes/options.class.php:560 classes/options.class.php:679
+#: classes/options.class.php:556 classes/options.class.php:675
 msgid "Reset Section"
 msgstr ""
 
-#: classes/options.class.php:560 classes/options.class.php:679
+#: classes/options.class.php:556 classes/options.class.php:675
 msgid "Are you sure to reset this section options?"
 msgstr ""
 
-#: classes/options.class.php:561 classes/options.class.php:680
+#: classes/options.class.php:557 classes/options.class.php:676
 #: fields/backup/backup.php:34
 msgid "Reset All"
 msgstr ""
 
-#: classes/options.class.php:561 classes/options.class.php:680
+#: classes/options.class.php:557 classes/options.class.php:676
 msgid "Are you sure to reset all options?"
 msgstr ""
 
-#: classes/setup.class.php:401
+#: classes/setup.class.php:429
 msgid "Are you sure?"
 msgstr ""
 
-#: classes/setup.class.php:402
+#: classes/setup.class.php:430
 msgid "Restoring options."
 msgstr ""
 
-#: classes/setup.class.php:403
+#: classes/setup.class.php:431
 msgid "Importing options."
 msgstr ""
 
-#: classes/setup.class.php:440
-msgid "Ooops! This field type (%s) can not be used here, yet."
+#: classes/setup.class.php:434
+msgid "Please enter %s or more characters"
 msgstr ""
 
-#: classes/setup.class.php:503
-msgid "This field class is not available!"
+#: classes/setup.class.php:435
+msgid "Searching..."
+msgstr ""
+
+#: classes/setup.class.php:436
+msgid "No results match"
 msgstr ""
 
 #: classes/setup.class.php:507
+msgid "Ooops! This field type (%s) can not be used here, yet."
+msgstr ""
+
+#: classes/setup.class.php:570
+msgid "This field class is not available!"
+msgstr ""
+
+#: classes/setup.class.php:574
 msgid "This type is not found!"
 msgstr ""
 
@@ -107,192 +123,194 @@ msgstr ""
 msgid "Add one more"
 msgstr ""
 
-#: classes/shortcoder.class.php:279
-msgid "Security check"
+#: classes/shortcoder.class.php:279 functions/actions.php:43
+#: functions/actions.php:103 functions/actions.php:125
+#: functions/actions.php:160
+msgid "Error: Nonce verification has failed. Please try again."
 msgstr ""
 
-#: fields/background/background.php:34
+#: fields/background/background.php:35
 msgid "No background selected"
 msgstr ""
 
-#: fields/background/background.php:62 fields/date/date.php:31
+#: fields/background/background.php:66 fields/date/date.php:31
 msgid "From"
 msgstr ""
 
-#: fields/background/background.php:79 fields/date/date.php:32
+#: fields/background/background.php:84 fields/date/date.php:32
 msgid "To"
 msgstr ""
 
-#: fields/background/background.php:96
+#: fields/background/background.php:102
 msgid "Direction"
 msgstr ""
 
-#: fields/background/background.php:102
+#: fields/background/background.php:108
 msgid "Gradient Direction"
 msgstr ""
 
-#: fields/background/background.php:103
+#: fields/background/background.php:109
 msgid "&#8659; top to bottom"
 msgstr ""
 
-#: fields/background/background.php:104
+#: fields/background/background.php:110
 msgid "&#8658; left to right"
 msgstr ""
 
-#: fields/background/background.php:105
+#: fields/background/background.php:111
 msgid "&#8664; corner top to right"
 msgstr ""
 
-#: fields/background/background.php:106
+#: fields/background/background.php:112
 msgid "&#8665; corner top to left"
 msgstr ""
 
-#: fields/background/background.php:145
+#: fields/background/background.php:155
 msgid "Background Position"
 msgstr ""
 
-#: fields/background/background.php:146
+#: fields/background/background.php:156
 msgid "Left Top"
 msgstr ""
 
-#: fields/background/background.php:147
+#: fields/background/background.php:157
 msgid "Left Center"
 msgstr ""
 
-#: fields/background/background.php:148
+#: fields/background/background.php:158
 msgid "Left Bottom"
 msgstr ""
 
-#: fields/background/background.php:149
+#: fields/background/background.php:159
 msgid "Center Top"
 msgstr ""
 
-#: fields/background/background.php:150
+#: fields/background/background.php:160
 msgid "Center Center"
 msgstr ""
 
-#: fields/background/background.php:151
+#: fields/background/background.php:161
 msgid "Center Bottom"
 msgstr ""
 
-#: fields/background/background.php:152
+#: fields/background/background.php:162
 msgid "Right Top"
 msgstr ""
 
-#: fields/background/background.php:153
+#: fields/background/background.php:163
 msgid "Right Center"
 msgstr ""
 
-#: fields/background/background.php:154
+#: fields/background/background.php:164
 msgid "Right Bottom"
 msgstr ""
 
-#: fields/background/background.php:171
+#: fields/background/background.php:178
 msgid "Background Repeat"
 msgstr ""
 
-#: fields/background/background.php:172
+#: fields/background/background.php:179
 msgid "Repeat"
 msgstr ""
 
-#: fields/background/background.php:173
+#: fields/background/background.php:180
 msgid "No Repeat"
 msgstr ""
 
-#: fields/background/background.php:174
+#: fields/background/background.php:181
 msgid "Repeat Horizontally"
 msgstr ""
 
-#: fields/background/background.php:175
+#: fields/background/background.php:182
 msgid "Repeat Vertically"
 msgstr ""
 
-#: fields/background/background.php:192
+#: fields/background/background.php:196
 msgid "Background Attachment"
 msgstr ""
 
-#: fields/background/background.php:193
+#: fields/background/background.php:197
 msgid "Scroll"
 msgstr ""
 
-#: fields/background/background.php:194
+#: fields/background/background.php:198
 msgid "Fixed"
 msgstr ""
 
-#: fields/background/background.php:211
+#: fields/background/background.php:212
 msgid "Background Size"
 msgstr ""
 
-#: fields/background/background.php:212
+#: fields/background/background.php:213
 msgid "Cover"
 msgstr ""
 
-#: fields/background/background.php:213
+#: fields/background/background.php:214
 msgid "Contain"
 msgstr ""
 
-#: fields/background/background.php:230
+#: fields/background/background.php:228
 msgid "Background Origin"
 msgstr ""
 
-#: fields/background/background.php:231 fields/background/background.php:252
+#: fields/background/background.php:229 fields/background/background.php:247
 msgid "Padding Box"
 msgstr ""
 
-#: fields/background/background.php:232 fields/background/background.php:251
+#: fields/background/background.php:230 fields/background/background.php:246
 msgid "Border Box"
 msgstr ""
 
-#: fields/background/background.php:233 fields/background/background.php:253
+#: fields/background/background.php:231 fields/background/background.php:248
 msgid "Content Box"
 msgstr ""
 
-#: fields/background/background.php:250
+#: fields/background/background.php:245
 msgid "Background Clip"
 msgstr ""
 
-#: fields/background/background.php:270
+#: fields/background/background.php:262
 msgid "Background Blend Mode"
 msgstr ""
 
-#: fields/background/background.php:271 fields/link_color/link_color.php:36
+#: fields/background/background.php:263 fields/link_color/link_color.php:36
 #: fields/typography/typography.php:173
 msgid "Normal"
 msgstr ""
 
-#: fields/background/background.php:272
+#: fields/background/background.php:264
 msgid "Multiply"
 msgstr ""
 
-#: fields/background/background.php:273
+#: fields/background/background.php:265
 msgid "Screen"
 msgstr ""
 
-#: fields/background/background.php:274
+#: fields/background/background.php:266
 msgid "Overlay"
 msgstr ""
 
-#: fields/background/background.php:275
+#: fields/background/background.php:267
 msgid "Darken"
 msgstr ""
 
-#: fields/background/background.php:276
+#: fields/background/background.php:268
 msgid "Lighten"
 msgstr ""
 
-#: fields/background/background.php:277
+#: fields/background/background.php:269
 msgid "Color Dodge"
 msgstr ""
 
-#: fields/background/background.php:278
+#: fields/background/background.php:270
 msgid "Saturation"
 msgstr ""
 
-#: fields/background/background.php:279
+#: fields/background/background.php:271
 msgid "Color"
 msgstr ""
 
-#: fields/background/background.php:280
+#: fields/background/background.php:272
 msgid "Luminosity"
 msgstr ""
 
@@ -369,8 +387,8 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: fields/checkbox/checkbox.php:62 fields/radio/radio.php:61
-#: fields/select/select.php:74
+#: fields/checkbox/checkbox.php:63 fields/radio/radio.php:62
+#: fields/select/select.php:112
 msgid "No data provided for this option type."
 msgstr ""
 
@@ -415,7 +433,7 @@ msgstr ""
 msgid "You can not remove less than"
 msgstr ""
 
-#: fields/icon/icon.php:20 functions/actions.php:148
+#: fields/icon/icon.php:20 functions/actions.php:184
 msgid "Add Icon"
 msgstr ""
 
@@ -437,6 +455,18 @@ msgstr ""
 
 #: fields/link_color/link_color.php:40
 msgid "Focus"
+msgstr ""
+
+#: fields/map/map.php:23
+msgid "Search your address..."
+msgstr ""
+
+#: fields/map/map.php:24
+msgid "Latitude"
+msgstr ""
+
+#: fields/map/map.php:25
+msgid "Longitude"
 msgstr ""
 
 #: fields/media/media.php:23 fields/upload/upload.php:21
@@ -614,7 +644,11 @@ msgstr ""
 msgid "No data provided by developer"
 msgstr ""
 
-#: functions/actions.php:152
+#: functions/actions.php:156
+msgid "You do not have required permissions to access."
+msgstr ""
+
+#: functions/actions.php:188
 msgid "Search a Icon..."
 msgstr ""
 

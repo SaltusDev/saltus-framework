@@ -29,11 +29,9 @@ if( ! class_exists( 'CSF_Field_upload' ) ) {
       $hidden  = ( empty( $this->value ) ) ? ' hidden' : '';
 
       echo '<div class="csf--wrap">';
-        echo '<input type="text" name="'. $this->field_name() .'" value="'. $this->value .'"'. $this->field_attributes() .'/>';
-        echo '<div class="csf--buttons">';
-        echo '<a href="#" class="button button-primary csf--button" data-library="'. esc_attr( $library ) .'">'. $args['button_title'] .'</a>';
-        echo '<a href="#" class="button button-secondary csf-warning-primary csf--remove'. $hidden .'">'. $args['remove_title'] .'</a>';
-        echo '</div>';
+      echo '<input type="text" name="'. $this->field_name() .'" value="'. $this->value .'"'. $this->field_attributes() .'/>';
+      echo '<a href="#" class="button button-primary csf--button" data-library="'. esc_attr( $library ) .'">'. $args['button_title'] .'</a>';
+      echo '<a href="#" class="button button-secondary csf-warning-primary csf--remove'. $hidden .'">'. $args['remove_title'] .'</a>';
       echo '</div>';
 
       echo $this->field_after();

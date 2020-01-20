@@ -276,10 +276,10 @@ if( ! class_exists( 'CSF_Shortcoder' ) ) {
         }
 
       } else {
-        echo '<div class="csf-field csf-text-error">'. esc_html__( 'Security check', 'csf' ) .'</div>';
+        echo '<div class="csf-field csf-text-error">'. esc_html__( 'Error: Nonce verification has failed. Please try again.', 'csf' ) .'</div>';
       }
 
-      wp_send_json_success( array( 'success' => true, 'content' => ob_get_clean() ) );
+      wp_send_json_success( array( 'content' => ob_get_clean() ) );
 
     }
 

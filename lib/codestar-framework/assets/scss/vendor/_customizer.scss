@@ -9,10 +9,12 @@
     .csf-title{
       float: none;
       width: 100%;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
 
       h4{
-        font-size: 14px;
+        display: block;
+        font-size: 13px;
+        line-height: 1;
         font-weight: 600;
         color: inherit;
       }
@@ -21,6 +23,11 @@
     .csf-fieldset{
       margin-left: 0;
     }
+  }
+
+  .csf-help{
+    top: -5px;
+    right: -5px;
   }
 
   .csf-field-select select{
@@ -49,7 +56,6 @@
     font-size: 12px;
   }
 
-  .csf-field-content,
   .csf-field-submessage .csf-submessage{
     margin-right: -15px;
     margin-left: -15px;
@@ -92,24 +98,39 @@
 
   .csf-field-background{
 
-    .csf--select{
+    .csf--background-attributes{
+      flex-direction: column;
+    }
+  }
+
+  .csf-field-spacing{
+    input{
+      width: 90px;
+    }
+  }
+
+  .csf-field-border{
+
+    .csf--input{
+      flex: 1 50%;
+    }
+
+    input,
+    select{
       width: 100%;
     }
   }
 
-  .csf-field-border,
-  .csf-field-spacing,
-  .csf-field-dimensions{
-
-    select{
-      width: auto;
+  .csf-field-spinner{
+    input{
+      width: 50px;
     }
   }
 
-  .csf-field-spinner{
+  .csf-field-number{
 
-    input{
-      width: 50px;
+    .csf--wrap{
+      width: 100%;
     }
   }
 

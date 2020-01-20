@@ -17,7 +17,8 @@ if( ! class_exists( 'CSF_Field_radio' ) ) {
     public function render() {
 
       $args = wp_parse_args( $this->field, array(
-        'inline' => false,
+        'inline'     => false,
+        'query_args' => array(),
       ) );
 
       $inline_class = ( $args['inline'] ) ? ' class="csf--inline-list"' : '';
@@ -27,7 +28,7 @@ if( ! class_exists( 'CSF_Field_radio' ) ) {
       if( isset( $this->field['options'] ) ) {
 
         $options = $this->field['options'];
-        $options = ( is_array( $options ) ) ? $options : array_filter( $this->field_data( $options ) );
+        $options = ( is_array( $options ) ) ? $options : array_filter( $this->field_data( $options, false, $args['query_args'] ) );
 
         if( is_array( $options ) && ! empty( $options ) ) {
 

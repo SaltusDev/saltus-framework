@@ -11,7 +11,7 @@ if( ! class_exists( 'CSF' ) ) {
   class CSF {
 
     // constants
-    public static $version = '2.1.0';
+    public static $version = '2.1.3';
     public static $premium = true;
     public static $dir     = null;
     public static $url     = null;
@@ -25,6 +25,7 @@ if( ! class_exists( 'CSF' ) ) {
       'shortcoders'        => array(),
       'taxonomy_options'   => array(),
       'widgets'            => array(),
+      'comment_metaboxes'  => array(),
     );
 
     // shortcode instances
@@ -49,6 +50,8 @@ if( ! class_exists( 'CSF' ) ) {
       add_action( 'init', array( 'CSF', 'setup' ) );
       add_action( 'switch_theme', array( 'CSF', 'setup' ) );
       add_action( 'admin_enqueue_scripts', array( 'CSF', 'add_admin_enqueue_scripts' ), 20 );
+      add_action( 'admin_head', array( 'CSF', 'add_admin_head_css' ), 99 );
+      add_action( 'customize_controls_print_styles', array( 'CSF', 'add_admin_head_css' ), 99 );
 
     }
 
@@ -71,6 +74,8 @@ if( ! class_exists( 'CSF' ) ) {
             CSF_Options::instance( $key, $params );
 
             if( ! empty( $value['show_in_customizer'] ) ) {
+              $value['output_css'] = false;
+              $value['enqueue_webfont'] = false;
               self::$args['customize_options'][$key] = $value;
               self::$inited[$key] = null;
             }
@@ -181,6 +186,22 @@ if( ! class_exists( 'CSF' ) ) {
 
       }
 
+      // setup comment metabox
+      $params = array();
+      if ( ! empty( self::$args['comment_metaboxes'] ) ) {
+        foreach( self::$args['comment_metaboxes'] as $key => $value ) {
+          if( ! empty( self::$args['sections'][$key] ) && ! isset( self::$inited[$key] ) ) {
+
+            $params['args']     = $value;
+            $params['sections'] = self::$args['sections'][$key];
+            self::$inited[$key] = true;
+
+            CSF_Comment_Metabox::instance( $key, $params );
+
+          }
+        }
+      }
+
       do_action( 'csf_loaded' );
 
     }
@@ -219,6 +240,11 @@ if( ! class_exists( 'CSF' ) ) {
     public static function createWidget( $id, $args = array() ) {
       self::$args['widgets'][$id] = $args;
       self::set_used_fields( $args );
+    }
+
+    // create comment metabox
+    public static function createCommentMetabox( $id, $args = array() ) {
+      self::$args['comment_metaboxes'][$id] = $args;
     }
 
     // create section
@@ -321,6 +347,7 @@ if( ! class_exists( 'CSF' ) ) {
         self::include_plugin_file( 'classes/shortcoder.class.php'        );
         self::include_plugin_file( 'classes/taxonomy-options.class.php'  );
         self::include_plugin_file( 'classes/widgets.class.php'           );
+        self::include_plugin_file( 'classes/comment-metabox.class.php'   );
       }
 
     }
@@ -381,13 +408,13 @@ if( ! class_exists( 'CSF' ) ) {
       wp_enqueue_script( 'wp-color-picker' );
 
       // cdn styles
-      wp_enqueue_style( 'csf-fa', 'https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css', array(), '4.7.0', 'all' );
+      wp_enqueue_style( 'csf-fa', 'https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css', array(), '4.7.1', 'all' );
 
       // framework core styles
       wp_enqueue_style( 'csf', CSF::include_plugin_url( 'assets/css/csf'. $min .'.css' ), array(), '1.0.0', 'all' );
 
       // rtl styles
-      if ( is_rtl() ) {
+      if( is_rtl() ) {
         wp_enqueue_style( 'csf-rtl', CSF::include_plugin_url( 'assets/css/csf-rtl'. $min .'.css' ), array(), '1.0.0', 'all' );
       }
 
@@ -398,9 +425,15 @@ if( ! class_exists( 'CSF' ) ) {
       wp_localize_script( 'csf', 'csf_vars', array(
         'color_palette'  => apply_filters( 'csf_color_palette', array() ),
         'i18n'           => array(
+          // global localize
           'confirm'             => esc_html__( 'Are you sure?', 'csf' ),
           'reset_notification'  => esc_html__( 'Restoring options.', 'csf' ),
           'import_notification' => esc_html__( 'Importing options.', 'csf' ),
+
+          // chosen localize
+          'typing_text'     => esc_html__( 'Please enter %s or more characters', 'csf' ),
+          'searching_text'  => esc_html__( 'Searching...', 'csf' ),
+          'no_results_text' => esc_html__( 'No results match', 'csf' ),
         ),
       ) );
 
@@ -424,6 +457,40 @@ if( ! class_exists( 'CSF' ) ) {
       }
 
       do_action( 'csf_enqueue' );
+
+    }
+
+    //
+    // WP 5.2 fallback
+    //
+    // This function has been created as temporary.
+    // It will be remove after stable version of wp 5.3.
+    //
+    public static function add_admin_head_css() {
+
+      global $wp_version;
+
+      $current_branch = implode( '.', array_slice( preg_split( '/[.-]/', $wp_version ), 0, 2 ) );
+
+      if( version_compare( $current_branch, '5.3', '<' ) ) {
+
+        echo '<style type="text/css">
+          .csf-field-slider .csf--unit,
+          .csf-field-border .csf--label,
+          .csf-field-spacing .csf--label,
+          .csf-field-dimensions .csf--label,
+          .csf-field-spinner .ui-button-text-only{
+            border-color: #ddd;
+          }
+          .csf-warning-primary{
+            box-shadow: 0 1px 0 #bd2130 !important;
+          }
+          .csf-warning-primary:focus{
+            box-shadow: none !important;
+          }
+        </style>';
+
+      }
 
     }
 

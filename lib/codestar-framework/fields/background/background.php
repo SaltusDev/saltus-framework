@@ -25,11 +25,12 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
         'background_size'               => true,
         'background_origin'             => false,
         'background_clip'               => false,
-        'background_blend-mode'         => false,
+        'background_blend_mode'         => false,
         'background_gradient'           => false,
         'background_gradient_color'     => true,
         'background_gradient_direction' => true,
         'background_image_preview'      => true,
+        'background_auto_attributes'    => false,
         'background_image_library'      => 'image',
         'background_image_placeholder'  => esc_html__( 'No background selected', 'csf' ),
       ) );
@@ -54,11 +55,14 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
 
       echo $this->field_before();
 
+      echo '<div class="csf--background-colors">';
+
       //
       // Background Color
       if( ! empty( $args['background_color'] ) ) {
 
-        echo '<div class="csf--block csf--color">';
+        echo '<div class="csf--color">';
+
         echo ( ! empty( $args['background_gradient'] ) ) ? '<div class="csf--title">'. esc_html__( 'From', 'csf' ) .'</div>' : '';
 
         CSF::field( array(
@@ -75,7 +79,8 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
       // Background Gradient Color
       if( ! empty( $args['background_gradient_color'] ) && ! empty( $args['background_gradient'] ) ) {
 
-        echo '<div class="csf--block csf--color">';
+        echo '<div class="csf--color">';
+
         echo ( ! empty( $args['background_gradient'] ) ) ? '<div class="csf--title">'. esc_html__( 'To', 'csf' ) .'</div>' : '';
 
         CSF::field( array(
@@ -92,8 +97,9 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
       // Background Gradient Direction
       if( ! empty( $args['background_gradient_direction'] ) && ! empty( $args['background_gradient'] ) ) {
 
-        echo '<div class="csf--block csf--gradient">';
-        echo ( ! empty( $args['background_gradient'] ) ) ? '<div class="csf--title">'. esc_html__( 'Direction', 'csf' ) .'</div>' : '';
+        echo '<div class="csf--color">';
+
+        echo ( ! empty( $args['background_gradient'] ) ) ? '<div class="csf---title">'. esc_html__( 'Direction', 'csf' ) .'</div>' : '';
 
         CSF::field( array(
           'id'          => 'background-gradient-direction',
@@ -111,32 +117,36 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
 
       }
 
-      echo '<div class="clear"></div>';
+      echo '</div>';
 
       //
       // Background Image
       if( ! empty( $args['background_image'] ) ) {
 
-        echo '<div class="csf--block csf--media">';
+        echo '<div class="csf--background-image">';
 
         CSF::field( array(
           'id'          => 'background-image',
           'type'        => 'media',
+          'class'       => 'csf-assign-field-background',
           'library'     => $args['background_image_library'],
           'preview'     => $args['background_image_preview'],
-          'placeholder' => $args['background_image_placeholder']
+          'placeholder' => $args['background_image_placeholder'],
+          'attributes'  => array( 'data-depend-id' => $this->field['id'] ),
         ), $this->value['background-image'], $this->field_name(), 'field/background' );
 
         echo '</div>';
 
-        echo '<div class="clear"></div>';
-
       }
+
+      $auto_class   = ( ! empty( $args['background_auto_attributes'] ) ) ? ' csf--auto-attributes' : '';
+      $hidden_class = ( ! empty( $args['background_auto_attributes'] ) && empty( $this->value['background-image']['url'] ) ) ? ' csf--attributes-hidden' : '';
+
+      echo '<div class="csf--background-attributes'. $auto_class . $hidden_class .'">';
 
       //
       // Background Position
       if( ! empty( $args['background_position'] ) ) {
-        echo '<div class="csf--block csf--select">';
 
         CSF::field( array(
           'id'              => 'background-position',
@@ -155,14 +165,11 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
           ),
         ), $this->value['background-position'], $this->field_name(), 'field/background' );
 
-        echo '</div>';
-
       }
 
       //
       // Background Repeat
       if( ! empty( $args['background_repeat'] ) ) {
-        echo '<div class="csf--block csf--select">';
 
         CSF::field( array(
           'id'          => 'background-repeat',
@@ -176,14 +183,11 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
           ),
         ), $this->value['background-repeat'], $this->field_name(), 'field/background' );
 
-        echo '</div>';
-
       }
 
       //
       // Background Attachment
       if( ! empty( $args['background_attachment'] ) ) {
-        echo '<div class="csf--block csf--select">';
 
         CSF::field( array(
           'id'       => 'background-attachment',
@@ -195,14 +199,11 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
           ),
         ), $this->value['background-attachment'], $this->field_name(), 'field/background' );
 
-        echo '</div>';
-
       }
 
       //
       // Background Size
       if( ! empty( $args['background_size'] ) ) {
-        echo '<div class="csf--block csf--select">';
 
         CSF::field( array(
           'id'        => 'background-size',
@@ -214,14 +215,11 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
           ),
         ), $this->value['background-size'], $this->field_name(), 'field/background' );
 
-        echo '</div>';
-
       }
 
       //
       // Background Origin
       if( ! empty( $args['background_origin'] ) ) {
-        echo '<div class="csf--block csf--select">';
 
         CSF::field( array(
           'id'            => 'background-origin',
@@ -234,14 +232,11 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
           ),
         ), $this->value['background-origin'], $this->field_name(), 'field/background' );
 
-        echo '</div>';
-
       }
 
       //
       // Background Clip
       if( ! empty( $args['background_clip'] ) ) {
-        echo '<div class="csf--block csf--select">';
 
         CSF::field( array(
           'id'            => 'background-clip',
@@ -254,14 +249,11 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
           ),
         ), $this->value['background-clip'], $this->field_name(), 'field/background' );
 
-        echo '</div>';
-
       }
 
       //
       // Background Blend Mode
       if( ! empty( $args['background_blend_mode'] ) ) {
-        echo '<div class="csf--block csf--select">';
 
         CSF::field( array(
           'id'            => 'background-blend-mode',
@@ -281,11 +273,9 @@ if( ! class_exists( 'CSF_Field_background' ) ) {
           ),
         ), $this->value['background-blend-mode'], $this->field_name(), 'field/background' );
 
-        echo '</div>';
-
       }
 
-      echo '<div class="clear"></div>';
+      echo '</div>';
 
       echo $this->field_after();
 

@@ -11,23 +11,23 @@
   <tbody>
     <tr>
       <td>Admin Option Framework</td>
-      <td><i class="fa fa-check"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Customize Option Framework</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Metabox Option Framework</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Taxonomy Option Framework</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <th>Profile Option Framework</th>
@@ -36,48 +36,53 @@
     </tr>
     <tr>
       <td>Widget Option Framework</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
+    </tr>
+    <tr>
+      <td>Comment Metabox Framework</td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Shortcode Generate Framework</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>All Option Fields</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Developer Packages</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Unminfy Library</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>New Requests</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Autoremove Advertisements</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Life-time access/updates</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
     <tr>
       <td>Support Forum</td>
-      <td><i class="fa fa-times"></i></td>
-      <td><i class="fa fa-check"></i></td>
+      <td><i class="fa fa-times-circle"></i></td>
+      <td><i class="fa fa-check-circle"></i></td>
     </tr>
   </tbody>
   <tfoot>

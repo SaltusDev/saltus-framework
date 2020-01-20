@@ -2,6 +2,7 @@
  * 11. Responsive
  */
 @media only screen and (max-width:1200px){
+
   .csf-metabox{
 
     .csf-field{
@@ -28,6 +29,12 @@
       width: 100%;
       margin-bottom: 10px;
     }
+  }
+
+  .csf-form-result{
+    float: none;
+    margin-right: 0;
+    margin-bottom: 10px;
   }
 
   .csf-search,
@@ -85,11 +92,11 @@
 
   .csf-modal-inner{
     width: 350px;
-    height: 380px;
+    height: 400px;
   }
 
   .csf-modal-content{
-    height: 282px;
+    height: 237px;
   }
 
   .csf-icon-dialog{

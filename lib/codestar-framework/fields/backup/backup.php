@@ -31,7 +31,7 @@ if( ! class_exists( 'CSF_Field_backup' ) ) {
       echo '<a href="'. esc_url( $export ) .'" class="button button-primary csf-export" target="_blank">'. esc_html__( 'Export and Download Backup', 'csf' ) .'</a>';
 
       echo '<hr />';
-      echo '<button type="submit" name="csf_transient[csf_reset_all]" value="csf_reset_all" class="button button-primary csf-warning-primary csf-confirm csf-reset" data-unique="'. $unique .'" data-nonce="'. $nonce .'">'. esc_html__( 'Reset All', 'csf' ) .'</button>';
+      echo '<button type="submit" name="csf_transient[csf_reset_all]" value="csf_reset_all" class="button csf-warning-primary csf-confirm csf-reset" data-unique="'. $unique .'" data-nonce="'. $nonce .'">'. esc_html__( 'Reset All', 'csf' ) .'</button>';
       echo '<small class="csf-text-error">'. esc_html__( 'Please be sure for reset all of options.', 'csf' ) .'</small>';
 
       echo $this->field_after();

@@ -1,5 +1,42 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly. ?>
 
+<h3>v2.1.3</h3>
+<ul>
+  <li>Added: New field "map".</li>
+  <li>Added: Quick save (ctrl+s,command+s) for Option Framework.</li>
+  <li>Added: Form warning when changed any option for Option Framework.</li>
+  <li>Fixed: Output CSS twice times issue.</li>
+  <li>Updated: Google Web Fonts array.</li>
+  <li>Updated: Customizer Framework samples.</li>
+  <li>Improved: Background field for auto hide/show background attributes.</li>
+</ul>
+
+<h3>v2.1.2</h3>
+<ul>
+  <li>Added: WP 5.3 "Kirk" UI compatibility.</li>
+  <li>Added: Comment Metabox Framework (bonus).</li>
+  <li>Added: New field "number".</li>
+  <li>Fixed: Media field dependency issue.</li>
+  <li>Fixed: Button set field default selected issue.</li>
+  <li>Fixed: Select field empty message issue.</li>
+  <li>Fixed: Multiple chosen select issue in Shortcode Framework.</li>
+  <li>Fixed: Checkbox field confict with Repeater and Group field issue.</li>
+  <li>Fixed: Image Select and Multiple Checkbox fields refresh issue in Customize Framework.</li>
+</ul>
+
+<h3>v2.1.1</h3>
+<ul>
+  <li>Added: Chosen select AJAX search option.</li>
+  <li>Added: Chosen select sortable option.</li>
+  <li>Added: Chosen select keep options order.</li>
+  <li>Added: Users select field options.</li>
+  <li>Fixed: Single shortcode insert issue.</li>
+  <li>Fixed: Taxonomy Framework multiple save issue.</li>
+  <li>Fixed: Widgets Framework chosen select save issue.</li>
+  <li>Fixed: Chosen multiple select refresh issue in Customizer.</li>
+  <li>Fixed: Minor bug fixes and improvements.</li>
+</ul>
+
 <h3>v2.1.0</h3>
 <ul>
   <li>Added: SSL protocol control for library files.</li>
@@ -106,7 +143,7 @@
 <ul>
   <li>Added: Page Templates "default" option for spesific metabox hide/show.</li>
   <li>Added: Post Formats "default" option for spesific metabox hide/show.</li>
-  <li>Added: Only allow number inputs for Spacing, Dimensions, Border, Slider, Spinner, Typography etc.</li>
+  <li>Added: Only allow numeric inputs for Spacing, Dimensions, Border, Slider, Spinner, Typography etc.</li>
   <li>Added: ChosenJS custom options support and improved width and css style.</li>
   <li>Fixed: Taxonomy framework jquery triggers. It was not working again after saving. It fixed now.</li>
   <li>Fixed: Code Editor style issue for used inside Group/Repeater.</li>

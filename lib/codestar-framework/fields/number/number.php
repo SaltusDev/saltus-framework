@@ -1,14 +1,14 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly.
 /**
  *
- * Field: slider
+ * Field: number
  *
  * @since 1.0.0
  * @version 1.0.0
  *
  */
-if( ! class_exists( 'CSF_Field_slider' ) ) {
-  class CSF_Field_slider extends CSF_Fields {
+if( ! class_exists( 'CSF_Field_number' ) ) {
+  class CSF_Field_number extends CSF_Fields {
 
     public function __construct( $field, $value = '', $unique = '', $where = '', $parent = '' ) {
       parent::__construct( $field, $value, $unique, $where, $parent );
@@ -17,33 +17,16 @@ if( ! class_exists( 'CSF_Field_slider' ) ) {
     public function render() {
 
       $args = wp_parse_args( $this->field, array(
-        'max'  => 100,
-        'min'  => 0,
-        'step' => 1,
         'unit' => '',
       ) );
 
-      $is_unit = ( ! empty( $args['unit'] ) ) ? ' csf--is-unit' : '';
-
       echo $this->field_before();
-
       echo '<div class="csf--wrap">';
-      echo '<div class="csf-slider-ui"></div>';
-      echo '<div class="csf--input">';
-      echo '<input type="number" name="'. $this->field_name() .'" value="'. $this->value .'"'. $this->field_attributes( array( 'class' => 'csf-input-number'. $is_unit ) ) .' data-max="'. $args['max'] .'" data-min="'. $args['min'] .'" data-step="'. $args['step'] .'" />';
+      echo '<input type="number" name="'. $this->field_name() .'" value="'. $this->value .'"'. $this->field_attributes( array( 'class' => 'csf-input-number' ) ) .'/>';
       echo ( ! empty( $args['unit'] ) ) ? '<span class="csf--unit">'. $args['unit'] .'</span>' : '';
       echo '</div>';
-      echo '</div>';
-
+      echo '<div class="clear"></div>';
       echo $this->field_after();
-
-    }
-
-    public function enqueue() {
-
-      if( ! wp_script_is( 'jquery-ui-slider' ) ) {
-        wp_enqueue_script( 'jquery-ui-slider' );
-      }
 
     }
 

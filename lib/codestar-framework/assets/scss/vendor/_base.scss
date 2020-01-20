@@ -55,7 +55,7 @@
 
   .csf-header-inner{
     position: fixed;
-    z-index: 20;
+    z-index: 99999;
     top: 32px;
     @include box-shadow(0 5px 25px rgba(black, 0.125));
   }
@@ -71,6 +71,15 @@
   .button{
     margin: 0 2px;
     line-height: 26px;
+
+    &:focus{
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+  .csf-save{
+    min-width: 72px;
   }
 }
 
@@ -292,9 +301,8 @@
   margin-right: 4px;
   z-index: 1;
   font-size: 14px;
-  line-height: 29px;
+  line-height: 28px;
   cursor: pointer;
-  -webkit-user-select: none;
   user-select: none;
   @include border-radius(2px);
   @include transition(all 0.2s);
@@ -315,7 +323,8 @@
     margin: 0 2px 0 0;
     border: none;
     font-size: 12px;
-    line-height: 29px;
+    line-height: 28px;
+    min-height: 28px;
     text-align: inherit;
     padding: 0 10px;
     @include border-radius(2px);
@@ -333,7 +342,7 @@
   .csf-content{
     cursor: default;
     pointer-events: none;
-    @include opacity(0.75);
+    @include opacity(0.5);
   }
 }
 
@@ -355,7 +364,7 @@
   }
 }
 
-.csf-metabox-restore{
+.csf-restore-wrapper{
   text-align: right;
   padding: 10px;
   border-top: 1px solid #eee;
@@ -407,7 +416,19 @@
 }
 
 /**
- * 01. 13. Help Tooltip
+ * 01. 13. Comment Metabox
+ */
+.csf-comment-metabox{
+  margin: -6px -12px -12px -12px;
+
+  .csf-section-title{
+    padding: 20px;
+  }
+}
+
+
+/**
+ * 01. 14. Help Tooltip
  */
 .csf-tooltip{
   position: absolute;

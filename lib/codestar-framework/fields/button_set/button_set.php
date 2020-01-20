@@ -33,8 +33,8 @@ if( ! class_exists( 'CSF_Field_button_set' ) ) {
 
           $type    = ( $args['multiple'] ) ? 'checkbox' : 'radio';
           $extra   = ( $args['multiple'] ) ? '[]' : '';
-          $active  = ( in_array( $key, $value ) ) ? ' csf--active' : '';
-          $checked = ( in_array( $key, $value ) ) ? ' checked' : '';
+          $active  = ( in_array( $key, $value ) || ( empty( $value ) && empty( $key ) )  ) ? ' csf--active' : '';
+          $checked = ( in_array( $key, $value ) || ( empty( $value ) && empty( $key ) ) ) ? ' checked' : '';
 
           echo '<div class="csf--sibling csf--button'. $active .'">';
           echo '<input type="'. $type .'" name="'. $this->field_name( $extra ) .'" value="'. $key .'"'. $this->field_attributes() . $checked .'/>';

@@ -83,13 +83,12 @@ if( ! class_exists( 'CSF_Abstract' ) ) {
 
       if( ! empty( $this->typographies ) && empty( $this->args['async_webfont'] ) ) {
 
-        $query  = array( 'family' => implode( '|', $this->typographies ) );
+        $query  = array( 'family' => implode( '%7C', $this->typographies ) );
         $api    = '//fonts.googleapis.com/css';
         $handle = 'csf-google-web-fonts-'. $this->unique;
         $src    = esc_url( add_query_arg( $query, $api ) );
 
         wp_enqueue_style( $handle, $src, array(), null );
-        wp_enqueue_style( $handle );
 
       }
 

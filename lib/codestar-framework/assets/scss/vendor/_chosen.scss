@@ -228,7 +228,6 @@
 .chosen-container-multi .chosen-choices li.search-field input[type="text"] {
   margin: 1px 0;
   padding: 0;
-  height: 25px;
   outline: 0;
   border: 0 !important;
   background: transparent !important;
@@ -239,12 +238,14 @@
   line-height: normal;
   border-radius: 0;
   width: 25px;
+  height: 25px;
+  min-height: 25px;
 }
 
 .chosen-container-multi .chosen-choices li.search-choice {
   position: relative;
   margin: 3px 5px 3px 0;
-  padding: 3px 20px 3px 5px;
+  padding: 3px 20px 3px 6px;
   border: 1px solid #aaa;
   max-width: 100%;
   border-radius: 3px;
@@ -261,12 +262,13 @@
 
 .chosen-container-multi .chosen-choices li.search-choice span {
   word-wrap: break-word;
+  white-space: nowrap;
 }
 
 .chosen-container-multi .chosen-choices li.search-choice .search-choice-close {
   position: absolute;
-  top: 4px;
-  right: 3px;
+  top: 0;
+  right: 0;
   display: block;
   width: 12px;
   height: 12px;
