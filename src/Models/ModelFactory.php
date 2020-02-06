@@ -50,8 +50,9 @@ class ModelFactory {
 			if ( $config->has( $service_name ) ) {
 				$features = $config->get( $service_name );
 
-				foreach ( $features as $feature_name => $status ) {
-					if ( ! $status ) {
+				foreach ( $features as $feature_name => $args ) {
+
+					if ( ! $args ) {
 						continue;
 					}
 					$normalized_feature_name = strtolower( $feature_name );
@@ -61,8 +62,13 @@ class ModelFactory {
 						continue;
 					}
 
+					// make sure $args is an array
+					if( ! is_array( $args ) ){
+						$args = [];
+					}
+
 					$service = $this->app->get( $normalized_feature_name );
-					$service->make( $cpt->name, $this->project, [] );
+					$service->make( $cpt->name, $this->project, $args );
 				}
 			}
 

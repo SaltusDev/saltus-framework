@@ -10,15 +10,18 @@ final class SaltusDuplicate {
 
 	private $name;
 	private $project;
+	private $label;
+	private $attr_title;
 
 	/**
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct( string $name, array $project, ...$args ) {
-		$this->project = $project;
-		$this->name    = $name;
-
+	public function __construct( string $name, array $project, array $args ) {
+		$this->project    = $project;
+		$this->name       = $name;
+		$this->label      = $args['label'] ?? 'Duplicate';
+		$this->attr_title = $args['attr_title'] ?? 'Duplicate this entry';
 		$this->register();
 	}
 
@@ -52,8 +55,8 @@ final class SaltusDuplicate {
 				basename( __FILE__ ),
 				'saltus_duplicate_nonce'
 			),
-			esc_html__( 'Duplicate this item', 'saltus' ),
-			esc_html__( 'Duplicate', 'saltus' )
+			esc_attr( $this->attr_title ),
+			esc_html( $this->label )
 		);
 		return $actions;
 	}

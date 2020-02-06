@@ -10,6 +10,7 @@ final class SaltusSingleExport {
 
 	private $name;
 	private $project;
+	private $label;
 
 	// unlikely date match for filters
 	const FAKE_DATE = '1970-01-05'; // Y-m-d
@@ -18,9 +19,10 @@ final class SaltusSingleExport {
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct( string $name, array $project, ...$args ) {
+	public function __construct( string $name, array $project, array $args ) {
 		$this->project = $project;
 		$this->name    = $name;
+		$this->label   = $args['label'] ?? 'Export This';
 
 		$this->register();
 	}
@@ -80,7 +82,7 @@ final class SaltusSingleExport {
 				admin_url( 'export.php' )
 			);
 			?>
-			<a href="<?php echo esc_url( $export_url ); ?>"><?php esc_html_e( 'Export This', 'saltus' ); ?></a>
+			<a href="<?php echo esc_url( $export_url ); ?>"><?php echo esc_html( $this->label ); ?></a>
 		</div>
 		<?php
 	}
