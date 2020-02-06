@@ -22,7 +22,7 @@ final class SaltusSingleExport {
 	public function __construct( string $name, array $project, array $args ) {
 		$this->project = $project;
 		$this->name    = $name;
-		$this->label   = $args['label'] ?? 'Export This';
+		$this->label   = ! empty( $args['label'] ) ? $args['label'] : 'Export This';
 
 		$this->register();
 	}

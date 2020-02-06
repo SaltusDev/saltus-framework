@@ -20,8 +20,8 @@ final class SaltusDuplicate {
 	public function __construct( string $name, array $project, array $args ) {
 		$this->project    = $project;
 		$this->name       = $name;
-		$this->label      = $args['label'] ?? 'Duplicate';
-		$this->attr_title = $args['attr_title'] ?? 'Duplicate this entry';
+		$this->label      = ! empty( $args['label'] ) ? $args['label'] : 'Duplicate';
+		$this->attr_title = ! empty( $args['attr_title'] ) ? $args['attr_title'] : 'Duplicate this entry';
 		$this->register();
 	}
 
