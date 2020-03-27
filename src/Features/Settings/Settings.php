@@ -21,7 +21,7 @@ final class Settings implements Service, Conditional {
 		 * If this conditional returns false, the service is never even
 		 * instantiated.
 		 */
-		return \is_admin() && ! \wp_doing_ajax();
+		return \is_admin();
 	}
 
 	/**
