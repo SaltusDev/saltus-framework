@@ -15,6 +15,8 @@ class PostType extends BaseModel implements Model {
 
 		$this->set_labels( $this->get_default_labels() );
 
+		$this->set_ui_labels( $this->ui_labels );
+
 		$this->set_meta();
 
 		$this->register();
@@ -31,6 +33,7 @@ class PostType extends BaseModel implements Model {
 		$options = [
 			'public'        => true,
 			'menu_position' => 5,
+			'show_in_rest'  => true,
 		];
 
 		if ( $this->config->has( 'supports' ) ) {
@@ -98,32 +101,24 @@ class PostType extends BaseModel implements Model {
 			'items_list'            => $this->many . ' list',
 		];
 
+		if ( ! empty( $this->featured_image ) ) {
+			$featured_image_low              = strtolower( $this->featured_image );
+			$labels['featured_image']        = $this->featured_image;
+			$labels['set_featured_image']    = sprintf( 'Set %s', $featured_image_low );
+			$labels['remove_featured_image'] = sprintf( 'Remove %s', $featured_image_low );
+			$labels['use_featured_image']    = sprintf( 'Use as %s', $featured_image_low );
+		}
+
 		return $labels;
 	}
 
 	/**
 	 * Register Post Type
 	 *
-	 * Uses extended-cpts if available.
-	 *
-	 * @see https://github.com/johnbillion/extended-cpts
-	 *
 	 * @return void
 	 */
 	protected function register() {
 		$args = array_merge( $this->args, $this->options );
-
-		if ( function_exists( 'register_extended_post_type' ) ) {
-
-			// include the third parameter with the names, which will influence the messages
-			$names = [
-				'singular' => $this->one,
-				'plural'   => $this->many,
-			];
-
-			register_extended_post_type( $this->name, $args, $names );
-			return;
-		}
 		register_post_type( $this->name, $args );
 	}
 
@@ -134,6 +129,26 @@ class PostType extends BaseModel implements Model {
 	 */
 	public function get_type() {
 		return 'post_type';
+	}
+
+
+	/**
+	 * Adds filters to change the ui labels
+	 *
+	 * @param array $ui_labels
+	 * @return void
+	 */
+	protected function set_ui_labels( array $ui_labels ) {
+
+		if ( empty( $ui_labels ) ) {
+			return;
+		}
+
+		// change 'enter title here' placeholder
+		if ( isset( $ui_labels['enter_title_here'] ) ) {
+			add_filter( 'enter_title_here', [ $this, 'enter_title_here' ], 10, 2 );
+		}
+
 	}
 
 	/**
@@ -147,4 +162,20 @@ class PostType extends BaseModel implements Model {
 		}
 		return $current_status;
 	}
+
+	/**
+	 * Sets the placeholder text for the title field for this post type.
+	 *
+	 * @param string  $title The placeholder text.
+	 * @param WP_Post $post  The current post.
+	 * @return string The updated placeholder text.
+	 */
+	public function enter_title_here( string $title, \WP_Post $post ) : string {
+		if ( $this->name !== $post->post_type ) {
+			return $title;
+		}
+
+		return $this->ui_labels['enter_title_here'];
+	}
+
 }

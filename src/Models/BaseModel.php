@@ -32,6 +32,7 @@ abstract class BaseModel {
 	protected $one;
 	protected $many;
 	protected $i18n;
+	protected $ui_labels;
 
 	public function __construct( AbstractConfig $config_data ) {
 		$this->data   = $config_data->all();
@@ -43,8 +44,12 @@ abstract class BaseModel {
 
 		$this->set_name( $config_data->get( 'name' ) );
 
-		// pass only labels
+		// setup default global labels
 		$this->set_name_labels( $config_data );
+
+		// set ui labels to override
+		$this->set_ui_label_overrides( $config_data );
+
 	}
 
 	/**
@@ -68,6 +73,14 @@ abstract class BaseModel {
 		$this->name = $name;
 	}
 
+	/**
+	 * Set labels to override in ui
+	 *
+	 * Based on labels.ui_overrides values
+	 */
+	protected function set_ui_label_overrides( AbstractConfig $config ) {
+		$this->ui_labels = ( $config['labels.ui_overrides'] ? $config['labels.ui_overrides'] : [] );
+	}
 
 	/**
 	 * Set required labels
@@ -75,9 +88,10 @@ abstract class BaseModel {
 	 * Based on name, or keys labels.has-one and labels.has-many
 	 */
 	protected function set_name_labels( AbstractConfig $config ) {
-		$this->one  = ( $config['labels.has_one'] ? $config['labels.has_one'] : ucfirst( $this->name ) );
-		$this->many = ( $config['labels.has_many'] ? $config['labels.has_many'] : ucfirst( $this->name . 's' ) );
-		$this->i18n = ( $config['labels.text_domain'] ? $config['labels.text_domain'] : 'saltus' );
+		$this->one            = ( $config['labels.has_one'] ? $config['labels.has_one'] : ucfirst( $this->name ) );
+		$this->many           = ( $config['labels.has_many'] ? $config['labels.has_many'] : ucfirst( $this->name . 's' ) );
+		$this->i18n           = ( $config['labels.text_domain'] ? $config['labels.text_domain'] : 'saltus' );
+		$this->featured_image = ( $config['labels.featured_image'] ? $config['labels.featured_image'] : '' );
 	}
 
 	/**
@@ -104,13 +118,11 @@ abstract class BaseModel {
 	protected function set_labels( array $labels ) {
 		if ( empty( $this->config['labels.overrides'] ) ) {
 			$labels = $labels;
-			return;
 		}
 		if ( $this->config['labels.overrides'] ) {
 			$labels = array_replace( $labels, $this->config['labels.overrides'] );
 		}
 		$this->args['labels'] = $labels;
 	}
-
 
 }
