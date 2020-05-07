@@ -35,6 +35,8 @@ abstract class BaseModel {
 	protected $ui_labels;
 	protected $one_low;
 	protected $many_low;
+	protected $messages;
+	protected $bulk_messages;
 
 	public function __construct( AbstractConfig $config_data ) {
 		$this->data   = $config_data->all();
@@ -51,6 +53,9 @@ abstract class BaseModel {
 
 		// set ui labels to override
 		$this->set_ui_label_overrides( $config_data );
+
+		// set messages to override
+		$this->set_messages( $config_data );
 
 	}
 
@@ -78,10 +83,20 @@ abstract class BaseModel {
 	/**
 	 * Set labels to override in ui
 	 *
-	 * Based on labels.ui_overrides values
+	 * Based on labels.overrides.ui values
 	 */
 	protected function set_ui_label_overrides( AbstractConfig $config ) {
-		$this->ui_labels = ( $config['labels.ui_overrides'] ? $config['labels.ui_overrides'] : [] );
+		$this->ui_labels = ( $config['labels.overrides.ui'] ? $config['labels.overrides.ui'] : [] );
+	}
+
+	/**
+	 * Set messages overrides
+	 *
+	 * Based on labels.overrides.messages and label.overrides.bulk_messages values
+	 */
+	protected function set_messages( AbstractConfig $config ) {
+		$this->messages      = ( $config['labels.overrides.messages'] ? $config['labels.overrides.messages'] : [] );
+		$this->bulk_messages = ( $config['labels.overrides.bulk_messages'] ? $config['labels.overrides.bulk_messages'] : [] );
 	}
 
 	/**
@@ -131,11 +146,11 @@ abstract class BaseModel {
 	 * If key labels.overrides exists, add to or replace label defaults
 	 */
 	protected function set_labels( array $labels ) {
-		if ( empty( $this->config['labels.overrides'] ) ) {
+		if ( empty( $this->config['labels.overrides.labels'] ) ) {
 			$labels = $labels;
 		}
-		if ( $this->config['labels.overrides'] ) {
-			$labels = array_replace( $labels, $this->config['labels.overrides'] );
+		if ( $this->config['labels.overrides.labels'] ) {
+			$labels = array_replace( $labels, $this->config['labels.overrides.labels'] );
 		}
 		$this->args['labels'] = $labels;
 	}
@@ -162,55 +177,85 @@ abstract class BaseModel {
 	public function post_updated_messages( array $messages ) : array {
 		global $post;
 
-		$pto = get_post_type_object( $this->name );
+		$pto       = get_post_type_object( $this->name );
+		$date      = esc_html( date_i18n( 'M j, Y @ G:i', strtotime( $post->post_date ) ) );
+		$permalink = esc_url( get_permalink( $post ) );
+		$preview   = esc_url( get_preview_post_link( $post ) );
 
+		// placeholders
+		$search  = [ '{permalink}', '{date}', '{preview_url}' ];
+		$replace = [ $permalink, $date, $preview ];
+
+		// check if there are overrides, otherwise use defaults
 		$messages[ $this->name ] = [
-			1  => sprintf(
-				( $pto->publicly_queryable ? '%1$s updated. <a href="%2$s">View %3$s</a>' : '%1$s updated.' ),
-				esc_html( $this->one ),
-				esc_url( get_permalink( $post ) ),
-				esc_html( $this->one_low )
-			),
-			2  => 'Custom field updated.',
-			3  => 'Custom field deleted.',
-			4  => sprintf(
-				'%s updated.',
-				esc_html( $this->one )
-			),
-			5  => isset( $_GET['revision'] ) ? sprintf(
-				'%1$s restored to revision from %2$s',
-				esc_html( $this->one ),
-				wp_post_revision_title( intval( $_GET['revision'] ), false )
-			) : false,
-			6  => sprintf(
-				( $pto->publicly_queryable ? '%1$s published. <a href="%2$s">View %3$s</a>' : '%1$s published.' ),
-				esc_html( $this->one ),
-				esc_url( get_permalink( $post ) ),
-				esc_html( $this->one_low )
-			),
-			7  => sprintf(
-				'%s saved.',
-				esc_html( $this->one )
-			),
-			8  => sprintf(
-				( $pto->publicly_queryable ? '%1$s submitted. <a target="_blank" href="%2$s">Preview %3$s</a>' : '%1$s submitted.' ),
-				esc_html( $this->one ),
-				esc_url( get_preview_post_link( $post ) ),
-				esc_html( $this->one_low )
-			),
-			9  => sprintf(
-				( $pto->publicly_queryable ? '%1$s scheduled for: <strong>%2$s</strong>. <a target="_blank" href="%3$s">Preview %4$s</a>' : '%1$s scheduled for: <strong>%2$s</strong>.' ),
-				esc_html( $this->one ),
-				esc_html( date_i18n( 'M j, Y @ G:i', strtotime( $post->post_date ) ) ),
-				esc_url( get_permalink( $post ) ),
-				esc_html( $this->one_low )
-			),
-			10 => sprintf(
-				( $pto->publicly_queryable ? '%1$s draft updated. <a target="_blank" href="%2$s">Preview %3$s</a>' : '%1$s draft updated.' ),
-				esc_html( $this->one ),
-				esc_url( get_preview_post_link( $post ) ),
-				esc_html( $this->one_low )
-			),
+			1  => isset( $this->messages['post_updated'] ) ?
+				str_replace( $search, $replace, $this->messages['post_updated'] ) :
+				sprintf(
+					( $pto->publicly_queryable ? '%1$s updated. <a href="%2$s">View %3$s</a>' : '%1$s updated.' ),
+					esc_html( $this->one ),
+					esc_url( get_permalink( $post ) ),
+					esc_html( $this->one_low )
+				),
+			2  => isset( $this->messages['custom_field_updated'] ) ?
+				str_replace( $search, $replace, $this->messages['custom_field_updated'] ) :
+				'Custom field updated.',
+			3  => isset( $this->messages['custom_field_deleted'] ) ?
+				str_replace( $search, $replace, $this->messages['custom_field_deleted'] ) :
+				'Custom field deleted.',
+			4  => isset( $this->messages['post_updated_short'] ) ?
+				str_replace( $search, $replace, $this->messages['post_updated_short'] ) :
+				sprintf(
+					'%s updated.',
+					esc_html( $this->one )
+				),
+			5  => isset( $_GET['revision'] ) ?
+				( isset( $this->messages['post_updated_short'] ) ? str_replace( $search, $replace, $this->messages['post_updated_short'] ) :
+					sprintf(
+					'%1$s restored to revision from %2$s',
+					esc_html( $this->one ),
+					wp_post_revision_title( intval( $_GET['revision'] ), false )
+					)
+				) :
+				false,
+			6  => isset( $this->messages['post_published'] ) ?
+				str_replace( $search, $replace, $this->messages['post_published'] ) :
+				sprintf(
+					( $pto->publicly_queryable ? '%1$s published. <a href="%2$s">View %3$s</a>' : '%1$s published.' ),
+					esc_html( $this->one ),
+					esc_url( get_permalink( $post ) ),
+					esc_html( $this->one_low )
+				),
+			7  => isset( $this->messages['post_saved'] ) ?
+				str_replace( $search, $replace, $this->messages['post_saved'] ) :
+				sprintf(
+					'%s saved.',
+					esc_html( $this->one )
+				),
+			8  => isset( $this->messages['post_submitted'] ) ?
+				str_replace( $search, $replace, $this->messages['post_submitted'] ) :
+				sprintf(
+					( $pto->publicly_queryable ? '%1$s submitted. <a target="_blank" href="%2$s">Preview %3$s</a>' : '%1$s submitted.' ),
+					esc_html( $this->one ),
+					esc_url( get_preview_post_link( $post ) ),
+					esc_html( $this->one_low )
+				),
+			9  => isset( $this->messages['post_schedulled'] ) ?
+				str_replace( $search, $replace, $this->messages['post_schedulled'] ) :
+				sprintf(
+					( $pto->publicly_queryable ? '%1$s scheduled for: <strong>%2$s</strong>. <a target="_blank" href="%3$s">Preview %4$s</a>' : '%1$s scheduled for: <strong>%2$s</strong>.' ),
+					esc_html( $this->one ),
+					esc_html( date_i18n( 'M j, Y @ G:i', strtotime( $post->post_date ) ) ),
+					esc_url( get_permalink( $post ) ),
+					esc_html( $this->one_low )
+				),
+			10 => isset( $this->messages['post_draft_updated'] ) ?
+				str_replace( $search, $replace, $this->messages['post_draft_updated'] ) :
+				sprintf(
+					( $pto->publicly_queryable ? '%1$s draft updated. <a target="_blank" href="%2$s">Preview %3$s</a>' : '%1$s draft updated.' ),
+					esc_html( $this->one ),
+					esc_url( get_preview_post_link( $post ) ),
+					esc_html( $this->one_low )
+				),
 		];
 
 		return $messages;
@@ -233,36 +278,46 @@ abstract class BaseModel {
 	 */
 	public function bulk_post_updated_messages( array $messages, array $counts ) : array {
 		$messages[ $this->name ] = [
-			'updated'   => sprintf(
-				$this->n( '%2$s updated.', '%1$s %3$s updated.', $counts['updated'] ),
-				esc_html( number_format_i18n( $counts['updated'] ) ),
-				esc_html( $this->one ),
-				esc_html( $this->many_low )
-			),
-			'locked'    => sprintf(
-				$this->n( '%2$s not updated, somebody is editing it.', '%1$s %3$s not updated, somebody is editing them.', $counts['locked'] ),
-				esc_html( number_format_i18n( $counts['locked'] ) ),
-				esc_html( $this->one ),
-				esc_html( $this->many_low )
-			),
-			'deleted'   => sprintf(
-				$this->n( '%2$s permanently deleted.', '%1$s %3$s permanently deleted.', $counts['deleted'] ),
-				esc_html( number_format_i18n( $counts['deleted'] ) ),
-				esc_html( $this->one ),
-				esc_html( $this->many_low )
-			),
-			'trashed'   => sprintf(
-				$this->n( '%2$s moved to the trash.', '%1$s %3$s moved to the trash.', $counts['trashed'] ),
-				esc_html( number_format_i18n( $counts['trashed'] ) ),
-				esc_html( $this->one ),
-				esc_html( $this->many_low )
-			),
-			'untrashed' => sprintf(
-				$this->n( '%2$s restored from the trash.', '%1$s %3$s restored from the trash.', $counts['untrashed'] ),
-				esc_html( number_format_i18n( $counts['untrashed'] ) ),
-				esc_html( $this->one ),
-				esc_html( $this->many_low )
-			),
+			'updated'   => isset( $this->bulk_messages['updated_singular'] ) && isset( $this->bulk_messages['updated_plural'] ) ?
+				$this->n( $this->bulk_messages['updated_singular'], $this->bulk_messages['updated_plural'], $counts['updated'] ) :
+				sprintf(
+					$this->n( '%2$s updated.', '%1$s %3$s updated.', $counts['updated'] ),
+					esc_html( number_format_i18n( $counts['updated'] ) ),
+					esc_html( $this->one ),
+					esc_html( $this->many_low )
+				),
+			'locked'    => isset( $this->bulk_messages['locked_singular'] ) && isset( $this->bulk_messages['locked_plural'] ) ?
+				$this->n( $this->bulk_messages['locked_singular'], $this->bulk_messages['locked_plural'], $counts['locked'] ) :
+				sprintf(
+					$this->n( '%2$s not updated, somebody is editing it.', '%1$s %3$s not updated, somebody is editing them.', $counts['locked'] ),
+					esc_html( number_format_i18n( $counts['locked'] ) ),
+					esc_html( $this->one ),
+					esc_html( $this->many_low )
+				),
+			'deleted'   => isset( $this->bulk_messages['deleted_singular'] ) && isset( $this->bulk_messages['deleted_plural'] ) ?
+				$this->n( $this->bulk_messages['deleted_singular'], $this->bulk_messages['deleted_plural'], $counts['deleted'] ) :
+				sprintf(
+					$this->n( '%2$s permanently deleted.', '%1$s %3$s permanently deleted.', $counts['deleted'] ),
+					esc_html( number_format_i18n( $counts['deleted'] ) ),
+					esc_html( $this->one ),
+					esc_html( $this->many_low )
+				),
+			'trashed'   => isset( $this->bulk_messages['trashed_singular'] ) && isset( $this->bulk_messages['trashed_plural'] ) ?
+				$this->n( $this->bulk_messages['trashed_singular'], $this->bulk_messages['trashed_plural'], $counts['trashed'] ) :
+				sprintf(
+					$this->n( '%2$s moved to the trash.', '%1$s %3$s moved to the trash.', $counts['trashed'] ),
+					esc_html( number_format_i18n( $counts['trashed'] ) ),
+					esc_html( $this->one ),
+					esc_html( $this->many_low )
+				),
+			'untrashed' => isset( $this->bulk_messages['untrashed_singular'] ) && isset( $this->bulk_messages['untrashed_plural'] ) ?
+				$this->n( $this->bulk_messages['untrashed_singular'], $this->bulk_messages['untrashed_plural'], $counts['untrashed'] ) :
+				sprintf(
+					$this->n( '%2$s restored from the trash.', '%1$s %3$s restored from the trash.', $counts['untrashed'] ),
+					esc_html( number_format_i18n( $counts['untrashed'] ) ),
+					esc_html( $this->one ),
+					esc_html( $this->many_low )
+				),
 		];
 
 		return $messages;

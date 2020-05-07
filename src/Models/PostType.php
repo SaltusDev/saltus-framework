@@ -17,7 +17,7 @@ class PostType extends BaseModel implements Model {
 
 		$this->set_ui_labels( $this->ui_labels );
 
-		$this->set_messages();
+		$this->set_updated_messages();
 
 		$this->set_meta();
 
@@ -139,7 +139,7 @@ class PostType extends BaseModel implements Model {
 	 *
 	 * @return void
 	 */
-	protected function set_messages() {
+	protected function set_updated_messages() {
 
 		add_filter( 'post_updated_messages',      [ $this, 'post_updated_messages' ], 1 );
 		add_filter( 'bulk_post_updated_messages', [ $this, 'bulk_post_updated_messages' ], 1, 2 );
