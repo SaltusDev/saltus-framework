@@ -9,7 +9,6 @@ class Taxonomy extends BaseModel implements Model {
 
 	/**
 	 * Setup the data needed to register
-	 *
 	 */
 	public function setup() {
 		if ( $this->is_disabled() ) {
@@ -90,7 +89,6 @@ class Taxonomy extends BaseModel implements Model {
 
 	/**
 	 * Set Object types association to this taxonomy
-	 *
 	 */
 	private function set_associations( array $associations ) {
 		if ( ! $this->config->has( 'associations' ) ) {
@@ -123,19 +121,14 @@ class Taxonomy extends BaseModel implements Model {
 	 * Register Taxonomy
 	 *
 	 * Uses extended-cpts if available.
+	 *
 	 * @see https://github.com/johnbillion/extended-cpts
 	 *
 	 * @return void
 	 */
 	private function register() {
 		$args = array_merge( $this->args, $this->options );
-
-		if ( function_exists( 'register_extended_taxonomy' ) ) {
-			register_extended_taxonomy( $this->name, $this->associations, $args );
-		} else {
-			register_taxonomy( $this->name, $this->associations, $args );
-		}
-
+		register_taxonomy( $this->name, $this->associations, $args );
 		add_action( 'init', array( $this, 'register_associations' ) );
 	}
 
