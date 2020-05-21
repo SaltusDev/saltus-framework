@@ -35,7 +35,6 @@
 	},
 	"require": {
 		"php": ">=7.2",
-		"johnbillion/extended-cpts": "^4.2",
 		"hassankhan/config": "^1.0"
 	},
 	"require-dev": {

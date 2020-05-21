@@ -37,6 +37,9 @@ use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
 use Saltus\WP\Framework\Features\Duplicate\Duplicate;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
+use Saltus\WP\Framework\Features\AdminCols\AdminCols;
+use Saltus\WP\Framework\Features\AdminFilters\AdminFilters;
+
 
 class Core implements Plugin {
 
@@ -209,6 +212,8 @@ class Core implements Plugin {
 			'draganddrop'   => DragAndDrop::class,
 			'duplicate'     => Duplicate::class,
 			'single_export' => SingleExport::class,
+			'admin_cols'    => AdminCols::class,
+			'admin_filters' => AdminFilters::class,
 		];
 	}
 
