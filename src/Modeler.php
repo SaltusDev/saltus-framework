@@ -65,6 +65,15 @@ class Modeler {
 				);
 			}
 		}
+
+		// check for models added with filters
+		if ( has_filter( 'saltus_models' ) ) {
+			$model  = apply_filters( 'saltus_models', [] );
+			( ! empty( $model ) && count( $model ) > 0 ?
+					$this->iterate_multiple($model ) :
+					$this->create( $model )
+				);
+		}
 	}
 
 	/**
