@@ -141,7 +141,7 @@ class PostType extends BaseModel implements Model {
 	 */
 	protected function set_updated_messages() {
 
-		add_filter( 'post_updated_messages',      [ $this, 'post_updated_messages' ], 1 );
+		add_filter( 'post_updated_messages', [ $this, 'post_updated_messages' ], 1 );
 		add_filter( 'bulk_post_updated_messages', [ $this, 'bulk_post_updated_messages' ], 1, 2 );
 
 	}
@@ -160,9 +160,8 @@ class PostType extends BaseModel implements Model {
 
 		// change 'enter title here' placeholder
 		if ( isset( $ui_labels['enter_title_here'] ) ) {
-			add_filter( 'enter_title_here', [ $this, 'enter_title_here' ], 10, 2 );
+			add_filter( 'enter_title_here', [ $this, 'enter_title_here' ], 5, 2 );
 		}
-
 	}
 
 	/**
@@ -184,7 +183,7 @@ class PostType extends BaseModel implements Model {
 	 * @param WP_Post $post  The current post.
 	 * @return string The updated placeholder text.
 	 */
-	public function enter_title_here( $title, $post ) {
+	public function enter_title_here( string $title, \WP_Post $post ) : string {
 		if ( $this->name !== $post->post_type ) {
 			return $title;
 		}
