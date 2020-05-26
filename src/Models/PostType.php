@@ -184,7 +184,7 @@ class PostType extends BaseModel implements Model {
 	 * @param WP_Post $post  The current post.
 	 * @return string The updated placeholder text.
 	 */
-	public function enter_title_here( string $title, \WP_Post $post ) : string {
+	public function enter_title_here( $title, $post ) {
 		if ( $this->name !== $post->post_type ) {
 			return $title;
 		}
