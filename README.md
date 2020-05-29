@@ -14,16 +14,8 @@ How to initialize the framework once it’s included in your plugin:
       $framework->register();
 
       /**
-       * Initialize plugin
-       *
+       * Initialize plugin after this
        */
-      add_action(
-          'plugins_loaded',
-          function () use ( $framework ) {
-              $plugin = new Core( 'saltus-framework', '0.0.2', __FILE__, $framework );
-              $plugin->init();
-          }
-      );
 
 	}
 
