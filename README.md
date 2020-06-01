@@ -115,6 +115,8 @@ Example File for a Taxonomy Model (Soon)
 
 Includes a simplified version of SoberWP/Models. Their license is in lib/sobwewp/models/LICENSE.md. Is used to load php/json/yaml models of CPT.
 
+Includes the [Codestart Framework](https://codestarframework.com/) which is [licensed under GPL](https://codestarframework.com/license/).
+
 Includes support for [github-updater](https://github.com/afragen/github-updater) to keep track on updates through the WordPress backend.
 * Download [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
