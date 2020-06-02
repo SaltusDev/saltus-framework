@@ -17,13 +17,15 @@ Built to make things easier and faster for developers with different skills. Add
 	* Control labels
 	* Associate with any existing post type
 
+### Requirements
 
+Saltus Framework requires PHP 7.0+
 
 ## Getting Started
 
 ### Demo
 
-Refer to the [Framework Demo](https://github.com/SaltusDev/framework-demo) for a complete plugin example.
+Refer to the [Framework Demo](https://github.com/SaltusDev/framework-demo) for a complete plugin example and to the [Wiki](https://github.com/SaltusDev/saltus-framework/wiki) for complete documentation.
 
 
 Once the framework is included in your plugin, you can initialize it the following way:
