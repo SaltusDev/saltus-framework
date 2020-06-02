@@ -48,7 +48,7 @@ CSF::createWidget( 'csf_widget_example_1', array(
 // Front-end display of widget example 1
 // Attention: This function named considering above widget base id.
 //
-if( ! function_exists( 'csf_widget_example_1' ) ) {
+if ( ! function_exists( 'csf_widget_example_1' ) ) {
   function csf_widget_example_1( $args, $instance ) {
 
     echo $args['before_widget'];
@@ -154,7 +154,7 @@ CSF::createWidget( 'csf_widget_example_2', array(
 // Front-end display of widget example 2
 // Attention: This function named considering above widget base id.
 //
-if( ! function_exists( 'csf_widget_example_2' ) ) {
+if ( ! function_exists( 'csf_widget_example_2' ) ) {
   function csf_widget_example_2( $args, $instance ) {
 
     echo $args['before_widget'];

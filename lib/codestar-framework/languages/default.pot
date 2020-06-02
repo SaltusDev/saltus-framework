@@ -2,130 +2,130 @@
 # This file is distributed under the same license as the Codestar Framework package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Codestar Framework 2.1.3\n"
+"Project-Id-Version: Codestar Framework 2.1.6\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/codestar-framework\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: classes/comment-metabox.class.php:190 classes/metabox.class.php:255
-#: classes/options.class.php:650
-msgid "No option provided by developer."
-msgstr ""
-
-#: classes/comment-metabox.class.php:208 classes/metabox.class.php:273
-msgid "Restore"
-msgstr ""
-
-#: classes/comment-metabox.class.php:209 classes/metabox.class.php:274
-msgid "update post for restore "
-msgstr ""
-
-#: classes/comment-metabox.class.php:209 classes/metabox.class.php:274
-msgid "Cancel"
-msgstr ""
-
-#: classes/options.class.php:238
+#: classes/admin-options.class.php:223
 msgid "Error while saving."
 msgstr ""
 
-#: classes/options.class.php:285
+#: classes/admin-options.class.php:283
 msgid "Success. Imported backup options."
 msgstr ""
 
-#: classes/options.class.php:295
+#: classes/admin-options.class.php:295
 msgid "Default options restored."
 msgstr ""
 
-#: classes/options.class.php:309
+#: classes/admin-options.class.php:311
 msgid "Default options restored for only this section."
 msgstr ""
 
-#: classes/options.class.php:367
+#: classes/admin-options.class.php:382
 msgid "Settings saved."
 msgstr ""
 
-#: classes/options.class.php:548
+#: classes/admin-options.class.php:560
 msgid "Settings have changed, you should save them!"
 msgstr ""
 
-#: classes/options.class.php:550
+#: classes/admin-options.class.php:562
 msgid "show all options"
 msgstr ""
 
-#: classes/options.class.php:552
+#: classes/admin-options.class.php:564
 msgid "Search option(s)"
 msgstr ""
 
-#: classes/options.class.php:555 classes/options.class.php:674
+#: classes/admin-options.class.php:567 classes/admin-options.class.php:688
 msgid "Save"
 msgstr ""
 
-#: classes/options.class.php:555 classes/options.class.php:674
+#: classes/admin-options.class.php:567 classes/admin-options.class.php:688
 msgid "Saving..."
 msgstr ""
 
-#: classes/options.class.php:556 classes/options.class.php:675
+#: classes/admin-options.class.php:568 classes/admin-options.class.php:689
 msgid "Reset Section"
 msgstr ""
 
-#: classes/options.class.php:556 classes/options.class.php:675
+#: classes/admin-options.class.php:568 classes/admin-options.class.php:689
 msgid "Are you sure to reset this section options?"
 msgstr ""
 
-#: classes/options.class.php:557 classes/options.class.php:676
+#: classes/admin-options.class.php:569 classes/admin-options.class.php:690
 #: fields/backup/backup.php:34
 msgid "Reset All"
 msgstr ""
 
-#: classes/options.class.php:557 classes/options.class.php:676
+#: classes/admin-options.class.php:569 classes/admin-options.class.php:690
 msgid "Are you sure to reset all options?"
 msgstr ""
 
-#: classes/setup.class.php:429
+#: classes/admin-options.class.php:665 classes/comment-options.class.php:195
+#: classes/metabox-options.class.php:264
+msgid "No option provided by developer."
+msgstr ""
+
+#: classes/comment-options.class.php:212 classes/metabox-options.class.php:281
+msgid "Restore"
+msgstr ""
+
+#: classes/comment-options.class.php:213 classes/metabox-options.class.php:282
+msgid "update post for restore "
+msgstr ""
+
+#: classes/comment-options.class.php:213 classes/metabox-options.class.php:282
+msgid "Cancel"
+msgstr ""
+
+#: classes/setup.class.php:524
 msgid "Are you sure?"
 msgstr ""
 
-#: classes/setup.class.php:430
+#: classes/setup.class.php:525
 msgid "Restoring options."
 msgstr ""
 
-#: classes/setup.class.php:431
+#: classes/setup.class.php:526
 msgid "Importing options."
 msgstr ""
 
-#: classes/setup.class.php:434
+#: classes/setup.class.php:529
 msgid "Please enter %s or more characters"
 msgstr ""
 
-#: classes/setup.class.php:435
+#: classes/setup.class.php:530
 msgid "Searching..."
 msgstr ""
 
-#: classes/setup.class.php:436
+#: classes/setup.class.php:531
 msgid "No results match"
 msgstr ""
 
-#: classes/setup.class.php:507
+#: classes/setup.class.php:603
 msgid "Ooops! This field type (%s) can not be used here, yet."
 msgstr ""
 
-#: classes/setup.class.php:570
+#: classes/setup.class.php:677
 msgid "This field class is not available!"
 msgstr ""
 
-#: classes/setup.class.php:574
+#: classes/setup.class.php:681
 msgid "This type is not found!"
 msgstr ""
 
-#: classes/shortcoder.class.php:242
+#: classes/shortcode-options.class.php:250
 msgid "Add one more"
 msgstr ""
 
-#: classes/shortcoder.class.php:279 functions/actions.php:43
-#: functions/actions.php:103 functions/actions.php:125
-#: functions/actions.php:160
+#: classes/shortcode-options.class.php:287 functions/actions.php:16
+#: functions/actions.php:68 functions/actions.php:106 functions/actions.php:141
+#: functions/actions.php:170
 msgid "Error: Nonce verification has failed. Please try again."
 msgstr ""
 
@@ -249,68 +249,72 @@ msgstr ""
 msgid "Contain"
 msgstr ""
 
-#: fields/background/background.php:228
+#: fields/background/background.php:215
+msgid "Auto"
+msgstr ""
+
+#: fields/background/background.php:229
 msgid "Background Origin"
 msgstr ""
 
-#: fields/background/background.php:229 fields/background/background.php:247
+#: fields/background/background.php:230 fields/background/background.php:248
 msgid "Padding Box"
 msgstr ""
 
-#: fields/background/background.php:230 fields/background/background.php:246
+#: fields/background/background.php:231 fields/background/background.php:247
 msgid "Border Box"
 msgstr ""
 
-#: fields/background/background.php:231 fields/background/background.php:248
+#: fields/background/background.php:232 fields/background/background.php:249
 msgid "Content Box"
 msgstr ""
 
-#: fields/background/background.php:245
+#: fields/background/background.php:246
 msgid "Background Clip"
 msgstr ""
 
-#: fields/background/background.php:262
+#: fields/background/background.php:263
 msgid "Background Blend Mode"
 msgstr ""
 
-#: fields/background/background.php:263 fields/link_color/link_color.php:36
-#: fields/typography/typography.php:173
+#: fields/background/background.php:264 fields/link_color/link_color.php:36
+#: fields/typography/typography.php:175
 msgid "Normal"
 msgstr ""
 
-#: fields/background/background.php:264
+#: fields/background/background.php:265
 msgid "Multiply"
 msgstr ""
 
-#: fields/background/background.php:265
+#: fields/background/background.php:266
 msgid "Screen"
 msgstr ""
 
-#: fields/background/background.php:266
+#: fields/background/background.php:267
 msgid "Overlay"
 msgstr ""
 
-#: fields/background/background.php:267
+#: fields/background/background.php:268
 msgid "Darken"
 msgstr ""
 
-#: fields/background/background.php:268
+#: fields/background/background.php:269
 msgid "Lighten"
 msgstr ""
 
-#: fields/background/background.php:269
+#: fields/background/background.php:270
 msgid "Color Dodge"
 msgstr ""
 
-#: fields/background/background.php:270
+#: fields/background/background.php:271
 msgid "Saturation"
 msgstr ""
 
-#: fields/background/background.php:271
+#: fields/background/background.php:272
 msgid "Color"
 msgstr ""
 
-#: fields/background/background.php:272
+#: fields/background/background.php:273
 msgid "Luminosity"
 msgstr ""
 
@@ -350,19 +354,19 @@ msgstr ""
 msgid "all"
 msgstr ""
 
-#: fields/border/border.php:51 fields/typography/typography.php:201
+#: fields/border/border.php:51 fields/typography/typography.php:203
 msgid "Solid"
 msgstr ""
 
-#: fields/border/border.php:52 fields/typography/typography.php:204
+#: fields/border/border.php:52 fields/typography/typography.php:206
 msgid "Dashed"
 msgstr ""
 
-#: fields/border/border.php:53 fields/typography/typography.php:203
+#: fields/border/border.php:53 fields/typography/typography.php:205
 msgid "Dotted"
 msgstr ""
 
-#: fields/border/border.php:54 fields/typography/typography.php:202
+#: fields/border/border.php:54 fields/typography/typography.php:204
 msgid "Double"
 msgstr ""
 
@@ -382,13 +386,13 @@ msgstr ""
 msgid "ridge"
 msgstr ""
 
-#: fields/border/border.php:59 fields/typography/typography.php:186
-#: fields/typography/typography.php:200
+#: fields/border/border.php:59 fields/typography/typography.php:188
+#: fields/typography/typography.php:202
 msgid "None"
 msgstr ""
 
-#: fields/checkbox/checkbox.php:63 fields/radio/radio.php:62
-#: fields/select/select.php:112
+#: fields/button_set/button_set.php:56 fields/checkbox/checkbox.php:76
+#: fields/radio/radio.php:75 fields/select/select.php:113
 msgid "No data provided for this option type."
 msgstr ""
 
@@ -420,25 +424,29 @@ msgstr ""
 msgid "Error: Nested field id can not be same with another nested field id."
 msgstr ""
 
-#: fields/group/group.php:46 fields/group/group.php:86
+#: fields/group/group.php:46 fields/group/group.php:87
 #: fields/repeater/repeater.php:51 fields/repeater/repeater.php:82
 msgid "Are you sure to delete this item?"
 msgstr ""
 
-#: fields/group/group.php:121 fields/repeater/repeater.php:96
+#: fields/group/group.php:122 fields/repeater/repeater.php:96
 msgid "You can not add more than"
 msgstr ""
 
-#: fields/group/group.php:122 fields/repeater/repeater.php:97
+#: fields/group/group.php:123 fields/repeater/repeater.php:97
 msgid "You can not remove less than"
 msgstr ""
 
-#: fields/icon/icon.php:20 functions/actions.php:184
+#: fields/icon/icon.php:20 fields/icon/icon.php:53
 msgid "Add Icon"
 msgstr ""
 
 #: fields/icon/icon.php:21
 msgid "Remove Icon"
+msgstr ""
+
+#: fields/icon/icon.php:57
+msgid "Search a Icon..."
 msgstr ""
 
 #: fields/link_color/link_color.php:37
@@ -501,155 +509,163 @@ msgstr ""
 msgid "Add Shortcode"
 msgstr ""
 
-#: fields/typography/typography.php:83
+#: fields/typography/typography.php:85
 msgid "Font Family"
 msgstr ""
 
-#: fields/typography/typography.php:84
+#: fields/typography/typography.php:86
 msgid "Select a font"
 msgstr ""
 
-#: fields/typography/typography.php:92
+#: fields/typography/typography.php:94
 msgid "Backup Font Family"
 msgstr ""
 
-#: fields/typography/typography.php:106 fields/typography/typography.php:119
-#: fields/typography/typography.php:132 fields/typography/typography.php:147
-#: fields/typography/typography.php:163 fields/typography/typography.php:176
-#: fields/typography/typography.php:190 fields/typography/typography.php:208
+#: fields/typography/typography.php:108 fields/typography/typography.php:121
+#: fields/typography/typography.php:134 fields/typography/typography.php:149
+#: fields/typography/typography.php:165 fields/typography/typography.php:178
+#: fields/typography/typography.php:192 fields/typography/typography.php:210
 msgid "Default"
 msgstr ""
 
-#: fields/typography/typography.php:117
+#: fields/typography/typography.php:119
 msgid "Font Style"
 msgstr ""
 
-#: fields/typography/typography.php:131 fields/typography/typography.php:132
+#: fields/typography/typography.php:133 fields/typography/typography.php:134
 msgid "Load Extra Styles"
 msgstr ""
 
-#: fields/typography/typography.php:145
+#: fields/typography/typography.php:147
 msgid "Subset"
 msgstr ""
 
-#: fields/typography/typography.php:155
+#: fields/typography/typography.php:157
 msgid "Text Align"
 msgstr ""
 
-#: fields/typography/typography.php:157
+#: fields/typography/typography.php:159
 msgid "Inherit"
 msgstr ""
 
-#: fields/typography/typography.php:158
+#: fields/typography/typography.php:160
 msgid "Left"
 msgstr ""
 
-#: fields/typography/typography.php:159
+#: fields/typography/typography.php:161
 msgid "Center"
 msgstr ""
 
-#: fields/typography/typography.php:160
+#: fields/typography/typography.php:162
 msgid "Right"
 msgstr ""
 
-#: fields/typography/typography.php:161
+#: fields/typography/typography.php:163
 msgid "Justify"
 msgstr ""
 
-#: fields/typography/typography.php:162
+#: fields/typography/typography.php:164
 msgid "Initial"
 msgstr ""
 
-#: fields/typography/typography.php:171
+#: fields/typography/typography.php:173
 msgid "Font Variant"
 msgstr ""
 
-#: fields/typography/typography.php:174
+#: fields/typography/typography.php:176
 msgid "Small Caps"
 msgstr ""
 
-#: fields/typography/typography.php:175
+#: fields/typography/typography.php:177
 msgid "All Small Caps"
 msgstr ""
 
-#: fields/typography/typography.php:184
+#: fields/typography/typography.php:186
 msgid "Text Transform"
 msgstr ""
 
-#: fields/typography/typography.php:187
+#: fields/typography/typography.php:189
 msgid "Capitalize"
 msgstr ""
 
-#: fields/typography/typography.php:188
+#: fields/typography/typography.php:190
 msgid "Uppercase"
 msgstr ""
 
-#: fields/typography/typography.php:189
+#: fields/typography/typography.php:191
 msgid "Lowercase"
 msgstr ""
 
-#: fields/typography/typography.php:198
+#: fields/typography/typography.php:200
 msgid "Text Decoration"
 msgstr ""
 
-#: fields/typography/typography.php:205
+#: fields/typography/typography.php:207
 msgid "Wavy"
 msgstr ""
 
-#: fields/typography/typography.php:206
+#: fields/typography/typography.php:208
 msgid "Overline"
 msgstr ""
 
-#: fields/typography/typography.php:207
+#: fields/typography/typography.php:209
 msgid "Line-through"
 msgstr ""
 
-#: fields/typography/typography.php:220
+#: fields/typography/typography.php:222
 msgid "Font Size"
 msgstr ""
 
-#: fields/typography/typography.php:232
+#: fields/typography/typography.php:234
 msgid "Line Height"
 msgstr ""
 
-#: fields/typography/typography.php:244
+#: fields/typography/typography.php:246
 msgid "Letter Spacing"
 msgstr ""
 
-#: fields/typography/typography.php:256
+#: fields/typography/typography.php:258
 msgid "Word Spacing"
 msgstr ""
 
-#: fields/typography/typography.php:271
+#: fields/typography/typography.php:273
 msgid "Font Color"
 msgstr ""
 
-#: fields/typography/typography.php:282
+#: fields/typography/typography.php:284
 msgid "Custom Style"
 msgstr ""
 
-#: fields/typography/typography.php:349
+#: fields/typography/typography.php:351
 msgid "Custom Web Fonts"
 msgstr ""
 
-#: fields/typography/typography.php:355
+#: fields/typography/typography.php:357
 msgid "Safe Web Fonts"
 msgstr ""
 
-#: fields/typography/typography.php:375
+#: fields/typography/typography.php:377
 msgid "Google Web Fonts"
 msgstr ""
 
-#: functions/actions.php:35
+#: functions/actions.php:41
 msgid "No data provided by developer"
 msgstr ""
 
-#: functions/actions.php:156
-msgid "You do not have required permissions to access."
+#: functions/actions.php:72 functions/actions.php:110
+msgid "Error: Options unique id could not valid."
 msgstr ""
 
-#: functions/actions.php:188
-msgid "Search a Icon..."
+#: functions/actions.php:114
+msgid "Error: Import data could not valid."
+msgstr ""
+
+#: functions/actions.php:174
+msgid "Error: Missing request arguments."
+msgstr ""
+
+#: functions/actions.php:180
+msgid "You do not have required permissions to access."
 msgstr ""
 
 #: functions/validate.php:14 functions/validate.php:86

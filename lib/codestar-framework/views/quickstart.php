@@ -6,7 +6,7 @@
 <div class="csf-code-block">
 <pre>
 <span>// Control core classes for avoid errors</span>
-if( class_exists( 'CSF' ) ) {
+if ( class_exists( 'CSF' ) ) {
 
   <span>//</span>
   <span>// Set a unique slug-like ID</span>
@@ -64,4 +64,4 @@ echo $options['opt-textarea']; <span>// id of field</span>
 </pre>
 </div>
 
-<p><a href="http://codestarframework.com/documentation/" class="button" target="_blank" rel="nofollow"><i class="fa fa-book"></i> Online Documentation</a></p>
+<p><a href="http://codestarframework.com/documentation/" class="button" target="_blank" rel="nofollow"><i class="fas fa-book"></i> Online Documentation</a></p>

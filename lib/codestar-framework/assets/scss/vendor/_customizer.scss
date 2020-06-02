@@ -21,7 +21,8 @@
     }
 
     .csf-fieldset{
-      margin-left: 0;
+      float: none;
+      width: 100%;
     }
   }
 
@@ -51,7 +52,7 @@
     padding: 10px 15px;
   }
 
-  .csf-text-subtitle{
+  .csf-subtitle-text{
     margin-top: 4px;
     font-size: 12px;
   }

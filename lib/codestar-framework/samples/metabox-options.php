@@ -20,7 +20,7 @@ CSF::createMetabox( $prefix_page_opts, array(
 //
 CSF::createSection( $prefix_page_opts, array(
   'title'  => 'Overview',
-  'icon'   => 'fa fa-rocket',
+  'icon'   => 'fas fa-rocket',
   'fields' => array(
 
     //
@@ -53,9 +53,10 @@ CSF::createSection( $prefix_page_opts, array(
     ),
 
     array(
-      'id'    => 'opt-color',
-      'type'  => 'color',
-      'title' => 'Color',
+      'id'      => 'opt-color',
+      'type'    => 'color',
+      'title'   => 'Color',
+      'default' => '#3498db',
     ),
 
     array(
@@ -96,7 +97,7 @@ CSF::createSection( $prefix_page_opts, array(
 //
 CSF::createSection( $prefix_page_opts, array(
   'title'  => 'More Fields',
-  'icon'   => 'fa fa-tint',
+  'icon'   => 'fas fa-tint',
   'fields' => array(
 
     array(
@@ -271,7 +272,7 @@ CSF::createSection( $prefix_meta_opts, array(
       'id'    => 'opt-switcher',
       'type'  => 'switcher',
       'title' => 'Switcher',
-      'label' => 'The label text of the switcher.',
+      'label' => 'The label of the switcher.',
     ),
 
     array(
