@@ -1,10 +1,10 @@
 # Saltus Framework
-Framework to help you develop WordPress plugins that are based on Custom Post Types.
+Saltus Framework helps you develop WordPress plugins that are based on Custom Post Types.
 
-Built to make things easier and faster for developers with different skills. Add metaboxes, settings pages and other enhancements with just a few lines of code.
+We built it to make things easier and faster for developers with different skills. Add metaboxes, settings pages and other enhancements with just a few lines of code.
 
 ### Features
-* Create Custom Post Types easily
+	* Create Custom Post Types easily
 	* Control all labels and messages
 	* Add administration columns
 	* Add administration lists
@@ -13,7 +13,7 @@ Built to make things easier and faster for developers with different skills. Add
 	* Enable cloning
 	* Enable single entry export
 	* Enable drag&drop reordering
-* Create Taxonomies easily
+	* Create Taxonomies easily
 	* Control labels
 	* Associate with any existing post type
 
@@ -30,6 +30,7 @@ Refer to the [Framework Demo](https://github.com/SaltusDev/framework-demo) for a
 
 Once the framework is included in your plugin, you can initialize it the following way:
 
+```php
     if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 
       /*
@@ -43,21 +44,25 @@ Once the framework is included in your plugin, you can initialize it the followi
        * Initialize plugin after this
        */
 
-	}
+    }
+```
 
 The framework will search for a model file, by default in the folder `src/models`. This can be changed using a filter.
 
 A model file should return one array or a multidimensional array of models to build the Custom Post Types or Taxonomies. Simple example:
 
+```php
     return [
         'type'     => 'cpt',
         'name'     => 'movie',
-        ];
+    ];
+```
 
 The above example will create a Custom Post Type 'movie'.
 
 Several models in same file:
 
+```php
     return [
     [
         'type'     => 'cpt',
@@ -71,6 +76,7 @@ Several models in same file:
             ],
         ],
     ];
+```
 
 The above example will create a Custom Post Type 'movie' and a hierarchical Taxonomy 'genre' associated with the Custom Post Type 'movie'.
 
