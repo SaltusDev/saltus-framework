@@ -5,7 +5,7 @@
   position: relative;
   padding: 30px;
 
-  + .csf-field:not(.hidden){
+  + .csf-field{
     border-top: 1px solid #eee;
   }
 
@@ -43,7 +43,8 @@
   }
 
   .csf-fieldset{
-    margin-left: 25%;
+    float: right;
+    width: calc(80% - 20px);
   }
 }
 
@@ -68,6 +69,10 @@
   .csf-accordion-item{
     position: relative;
     margin-bottom: 5px;
+
+    &:last-child{
+      margin-bottom: 0;
+    }
 
     h4{
       font-size: 1em;
@@ -94,15 +99,16 @@
       outline: none;
       border-color: #999;
     }
+
+    .csf--icon{
+      width: 20px;
+      text-align: center;
+      margin-right: 2px;
+    }
   }
 
   .csf-accordion-icon{
-    width: 14px;
-    text-align: center;
-  }
-
-  .csf--icon{
-    width: 20px;
+    width: 16px;
     text-align: center;
   }
 
@@ -143,6 +149,7 @@
 
   .csf--background-colors{
     display: flex;
+    flex-wrap: wrap;
   }
 
   .csf--background-attributes{
@@ -161,10 +168,6 @@
 
   .csf--attributes-hidden{
     display: none;
-  }
-
-  .wp-color-result.button{
-    margin-bottom: 0;
   }
 }
 
@@ -326,14 +329,30 @@
 
   ul{
     margin: 0;
-    padding: 0 1px;
+    padding: 0;
     list-style-type: none;
     overflow-y: auto;
     max-height: 305px;
 
+    li{
+      margin-bottom: 6px;
+    }
+
     ul{
       max-height: none;
+
+      li{
+        margin-left: 8px;
+
+        &:first-child{
+          margin-left: 0;
+        }
+      }
     }
+  }
+
+  input{
+    margin: 0 1px;
   }
 
   .csf--inline-list li{
@@ -341,8 +360,9 @@
     margin-right: 15px;
   }
 
-  input[type="radio"]:checked:before{
-    line-height: 10px;
+  .csf--text{
+    margin-left: 5px;
+    vertical-align: middle;
   }
 
   .csf-checker{
@@ -382,8 +402,10 @@
   }
 
   .button.wp-picker-clear{
+    padding: 0 8px;
     margin-left: 6px;
-    padding: 2px 8px;
+    line-height: 2.54545455;
+    min-height: 30px;
   }
 }
 
@@ -480,7 +502,8 @@
     top: auto;
     left: auto;
     right: auto;
-    font-family: "FontAwesome";
+    font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+    font-weight: 900;
     font-size: 12px;
     text-align: center;
     width: 41px;
@@ -766,21 +789,24 @@
     margin-right: 5px;
   }
 
-  .csf-icon-preview i{
-    display: inline-block;
-    font-size: 14px;
-    width: 30px;
-    height: 26px;
-    line-height: 26px;
-    margin-right: 5px;
-    text-align: center;
-    vertical-align: top;
-    color: #555;
-    border: 1px solid #ccc;
-    background-color: #f7f7f7;
-    @include border-radius(3px);
-    @include box-shadow(0 1px 0 rgba(black, 0.08));
-    @include box-sizing(content-box);
+  .csf-icon-preview{
+
+    i{
+      display: inline-block;
+      font-size: 16px;
+      width: 30px;
+      height: 28px;
+      line-height: 28px;
+      margin-right: 5px;
+      text-align: center;
+      vertical-align: top;
+      color: #555;
+      border: 1px solid #ccc;
+      background-color: #f7f7f7;
+      @include border-radius(3px);
+      @include box-shadow(0 1px 0 rgba(black, 0.08));
+      @include box-sizing(content-box);
+    }
   }
 }
 
@@ -807,12 +833,13 @@
       top: 0;
       left: 0;
       text-align: center;
-      font-size: 11px;
-      font-family: FontAwesome;
+      font-size: 10px;
+      font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+      font-weight: 900;
       content: "\f00c";
-      width: 15px;
-      height: 15px;
-      line-height: 15px;
+      width: 16px;
+      height: 16px;
+      line-height: 14px;
       opacity: 0;
       color: #fff;
       background-color: #222;
@@ -922,6 +949,7 @@
 
   .csf--placeholder{
     display: flex;
+    align-items: flex-start;
 
     input{
       width: 100%;
@@ -998,12 +1026,13 @@
       top: 0;
       left: 0;
       text-align: center;
-      font-size: 11px;
-      font-family: FontAwesome;
+      font-size: 10px;
+      font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+      font-weight: 900;
       content: "\f00c";
-      width: 15px;
-      height: 15px;
-      line-height: 15px;
+      width: 16px;
+      height: 16px;
+      line-height: 14px;
       opacity: 0;
       color: #fff;
       background-color: #222;
@@ -1167,11 +1196,15 @@
     background-color: #f5f5f5;
   }
 
+  .csf-slider-ui{
+    margin-right: 15px;
+  }
+
   input[type=number]{
     position: relative;
     z-index: 1;
+    margin: 0;
     width: 50px;
-    margin: 0 0 0 15px;
     text-align: center;
   }
 
@@ -1262,7 +1295,7 @@
     border-left: 1px solid #eee;
     background-color: #f7f7f7;
 
-    .fa{
+    i{
       display: inline-block;
       cursor: pointer;
       width: 50px;
@@ -1409,8 +1442,10 @@
     }
 
     &:before{
-      font-family: FontAwesome;
+      font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+      font-weight: 900;
       font-size: 14px;
+      line-height: 14px;
     }
   }
 
@@ -1735,6 +1770,7 @@
 
   .csf--wrap{
     display: flex;
+    align-items: flex-start;
   }
 
   .button{
@@ -1949,7 +1985,7 @@
   top: 0;
   right: 0;
   padding: 5px;
-  font-size: 14px;
+  font-size: 13px;
   color: #aaa;
 
   .csf-help-text{
@@ -1992,7 +2028,8 @@
   .chosen-container-single .chosen-single abbr{
     top: 0;
     right: 20px;
-    font-family: FontAwesome;
+    font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+    font-weight: 900;
     font-size: 12px;
     height: 100%;
     width: 18px;
@@ -2010,7 +2047,8 @@
   }
 
   .chosen-container-multi .chosen-choices li.search-choice .search-choice-close{
-    font-family: FontAwesome;
+    font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+    font-weight: 900;
     font-size: 12px;
     height: 100%;
     width: 18px;
@@ -2030,7 +2068,8 @@
   }
 
   .chosen-container-single .chosen-single div b{
-    font-family: FontAwesome;
+    font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+    font-weight: 900;
     font-size: 14px;
     color: #aaa;
     background: none;
@@ -2071,18 +2110,23 @@
   .chosen-container-single .chosen-search{
 
     &:before{
-      font-family: FontAwesome;
-      position: absolute;
-      content: "\f002";
+      font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+      font-weight: 900;
       font-size: 11px;
-      right: 10px;
-      top: 7px;
+      content: "\f002";
+      position: absolute;
+      right: 12px;
+      top: 10px;
       color: #aaa;
     }
   }
 
   .wp-picker-container{
     display: inline-block;
+
+    .wp-color-result.button{
+      margin-bottom: 0;
+    }
   }
 
   .csf--transparent-wrap{

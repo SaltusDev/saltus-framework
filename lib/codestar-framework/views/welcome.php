@@ -7,14 +7,14 @@
  * @version 1.0.0
  *
  */
-if( ! class_exists( 'CSF_Welcome' ) ) {
+if ( ! class_exists( 'CSF_Welcome' ) ) {
   class CSF_Welcome{
 
     private static $instance = null;
 
     public function __construct() {
 
-      if( CSF::$premium && ( ! CSF::is_active_plugin( 'codestar-framework/codestar-framework.php' ) || apply_filters( 'csf_welcome_page', true ) === false ) ) { return; }
+      if ( CSF::$premium && ( ! CSF::is_active_plugin( 'codestar-framework/codestar-framework.php' ) || apply_filters( 'csf_welcome_page', true ) === false ) ) { return; }
 
       add_action( 'admin_menu', array( &$this, 'add_about_menu' ), 0 );
       add_filter( 'plugin_action_links', array( &$this, 'add_plugin_action_links' ), 10, 5 );
@@ -38,7 +38,7 @@ if( ! class_exists( 'CSF_Welcome' ) ) {
 
     public function add_page_welcome() {
 
-      $section = ( ! empty( $_GET['section'] ) ) ? $_GET['section'] : '';
+      $section = ( ! empty( $_GET['section'] ) ) ? sanitize_text_field( wp_unslash( $_GET['section'] ) ) : '';
 
       CSF::include_plugin_file( 'views/header.php' );
 
@@ -77,9 +77,9 @@ if( ! class_exists( 'CSF_Welcome' ) ) {
 
     public static function add_plugin_action_links( $links, $plugin_file ) {
 
-      if( $plugin_file === 'codestar-framework/codestar-framework.php' && ! empty( $links ) ) {
-        $links['csf--welcome'] = '<a href="'. admin_url( 'tools.php?page=csf-welcome' ) .'">Settings</a>';
-        if( ! CSF::$premium ) {
+      if ( $plugin_file === 'codestar-framework/codestar-framework.php' && ! empty( $links ) ) {
+        $links['csf--welcome'] = '<a href="'. esc_url( admin_url( 'tools.php?page=csf-welcome' ) ) .'">Settings</a>';
+        if ( ! CSF::$premium ) {
           $links['csf--upgrade'] = '<a href="http://codestarframework.com/">Upgrade</a>';
         }
       }
@@ -90,7 +90,7 @@ if( ! class_exists( 'CSF_Welcome' ) ) {
 
     public static function add_plugin_row_meta( $links, $plugin_file ) {
 
-      if( $plugin_file === 'codestar-framework/codestar-framework.php' && ! empty( $links ) ) {
+      if ( $plugin_file === 'codestar-framework/codestar-framework.php' && ! empty( $links ) ) {
         $links['csf--docs'] = '<a href="http://codestarframework.com/documentation/" target="_blank">Documentation</a>';
       }
 
@@ -102,24 +102,30 @@ if( ! class_exists( 'CSF_Welcome' ) ) {
 
       $demo_mode = get_option( 'csf_demo_mode', false );
 
-      if( ! empty( $_GET['csf-demo'] ) ) {
-        $demo_mode = ( $_GET['csf-demo'] === 'activate' ) ? true : false;
+      $demo_activate = ( ! empty( $_GET[ 'csf-demo' ] ) ) ? sanitize_text_field( wp_unslash( $_GET[ 'csf-demo' ] ) ) : '';
+
+      if ( ! empty( $demo_activate ) ) {
+
+        $demo_mode = ( $demo_activate === 'activate' ) ? true : false;
+
         update_option( 'csf_demo_mode', $demo_mode );
+
       }
 
-      if( ! empty( $demo_mode ) ) {
+      if ( ! empty( $demo_mode ) ) {
 
-        CSF::include_plugin_file( 'samples/options.samples.php' );
+        CSF::include_plugin_file( 'samples/admin-options.php' );
 
-        if( CSF::$premium ) {
+        if ( CSF::$premium ) {
 
-          CSF::include_plugin_file( 'samples/customize-options.samples.php' );
-          CSF::include_plugin_file( 'samples/metabox.samples.php'           );
-          CSF::include_plugin_file( 'samples/profile-options.samples.php'   );
-          CSF::include_plugin_file( 'samples/shortcoder.samples.php'        );
-          CSF::include_plugin_file( 'samples/taxonomy-options.samples.php'  );
-          CSF::include_plugin_file( 'samples/widgets.samples.php'           );
-          CSF::include_plugin_file( 'samples/comment-metabox.samples.php'   );
+          CSF::include_plugin_file( 'samples/customize-options.php' );
+          CSF::include_plugin_file( 'samples/metabox-options.php'   );
+          CSF::include_plugin_file( 'samples/nav-menu-options.php'  );
+          CSF::include_plugin_file( 'samples/profile-options.php'   );
+          CSF::include_plugin_file( 'samples/shortcode-options.php' );
+          CSF::include_plugin_file( 'samples/taxonomy-options.php'  );
+          CSF::include_plugin_file( 'samples/widget-options.php'    );
+          CSF::include_plugin_file( 'samples/comment-options.php'   );
 
         }
 

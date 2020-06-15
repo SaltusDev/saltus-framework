@@ -33,6 +33,7 @@
 
 .csf-header-inner{
   padding: 25px;
+  transition: box-shadow .3s ease;
 
   h1{
     float: left;
@@ -55,9 +56,9 @@
 
   .csf-header-inner{
     position: fixed;
-    z-index: 99999;
+    z-index: 99;
     top: 32px;
-    @include box-shadow(0 5px 25px rgba(black, 0.125));
+    @include box-shadow(0 5px 10px rgba(black, 0.1));
   }
 }
 
@@ -115,7 +116,9 @@
         display: block;
         padding: 14px 12px;
         text-decoration: none;
-        @include transition(all 0.3s ease);
+        transition-property: color;
+        transition-duration: 0.2s;
+        transition-timing-function: ease;
 
         &:focus{
           outline: none;
@@ -123,27 +126,11 @@
         }
       }
 
-      .csf-section-active{
-
-        &:after{
-          content: " ";
-          position: absolute;
-          right: 0;
-          top: 50%;
-          height: 0;
-          width: 0;
-          pointer-events: none;
-          border: solid transparent;
-          border-right-color: #fff;
-          border-width: 4px;
-          margin-top: -4px;
-        }
-      }
-
       .csf-arrow:after{
         content: "\f054";
         display: inline-block;
-        font-family: "FontAwesome";
+        font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+        font-weight: 900;
         font-size: 9px;
         line-height: 1;
         position: absolute;
@@ -153,7 +140,7 @@
         @include transform(rotate(0));
       }
 
-      &.csf-tab-active{
+      &.csf-tab-expanded{
 
         .csf-arrow:after{
           @include transform( rotate(90deg) );
@@ -179,10 +166,10 @@
     }
   }
 
-  .fa{
+  .csf-tab-icon{
     width: 20px;
     margin-right: 5px;
-    font-size: 14px;
+    font-size: 13px;
     text-align: center;
   }
 
@@ -245,7 +232,7 @@
     text-transform: uppercase;
   }
 
-  .fa{
+  .csf-section-icon{
     margin-right: 5px;
   }
 }
@@ -300,8 +287,8 @@
   padding: 0 8px;
   margin-right: 4px;
   z-index: 1;
-  font-size: 14px;
-  line-height: 28px;
+  font-size: 13px;
+  line-height: 30px;
   cursor: pointer;
   user-select: none;
   @include border-radius(2px);
@@ -323,8 +310,8 @@
     margin: 0 2px 0 0;
     border: none;
     font-size: 12px;
-    line-height: 28px;
-    min-height: 28px;
+    line-height: 30px;
+    min-height: 30px;
     text-align: inherit;
     padding: 0 10px;
     @include border-radius(2px);
@@ -352,6 +339,10 @@
 .csf-metabox{
   margin: -6px -12px -12px -12px;
 
+  .csf-field{
+    padding: 20px;
+  }
+
   .csf-section-title{
     padding: 20px;
   }
@@ -360,18 +351,33 @@
 .block-editor-page{
 
   .csf-metabox{
-    margin: -6px -14px -12px -14px;
+    margin: -6px -14px -14px -14px;
   }
 }
 
-.csf-restore-wrapper{
+.block-editor-editor-skeleton__content{
+
+  .csf-metabox{
+    border-left: 1px solid #e2e4e7;
+    border-right: 1px solid #e2e4e7;
+  }
+}
+
+.csf-sections-restore{
+  float: left;
+  width: 100%;
+  position: relative;
+  z-index: 1000000;
   text-align: right;
-  padding: 10px;
   border-top: 1px solid #eee;
 
   .csf-button-cancel,
   input{
     display: none;
+  }
+
+  label{
+    padding: 10px;
   }
 
   span{
@@ -397,21 +403,26 @@
   }
 
   .csf-field{
-    padding: 12px;
+    padding: 10px 15px;
 
     .csf-title{
       float: none;
       width: 100%;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
 
     .csf-fieldset{
-      margin-left: 0;
+      float: none;
+      width: 100%;
     }
   }
 
+  .csf-field-text input{
+    width: 100%;
+  }
+
   .csf-notice{
-    padding: 12px;
+    padding: 10px 15px;
   }
 }
 
@@ -420,6 +431,10 @@
  */
 .csf-comment-metabox{
   margin: -6px -12px -12px -12px;
+
+  .csf-field{
+    padding: 20px;
+  }
 
   .csf-section-title{
     padding: 20px;

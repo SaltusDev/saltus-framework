@@ -1,23 +1,21 @@
 <?php if ( ! defined( 'ABSPATH' )  ) { die; } // Cannot access directly.
 
 //
-// Comment Metabox
 // Set a unique slug-like ID
 //
-$prefix_comment = '_prefix_comment';
+$prefix = '_prefix_menu_options';
 
 //
-// Create a comment metabox
+// Create menu options
 //
-CSF::createCommentMetabox( $prefix_comment, array(
-  'title' => 'Custom Comment Options',
+CSF::createNavMenuOptions( $prefix, array(
+  'data_type' => 'serialize'
 ) );
 
 //
 // Create a section
 //
-CSF::createSection( $prefix_comment, array(
-  
+CSF::createSection( $prefix, array(
   'fields' => array(
 
     //
@@ -43,6 +41,12 @@ CSF::createSection( $prefix_comment, array(
     ),
 
     array(
+      'id'    => 'opt-icon',
+      'type'  => 'icon',
+      'title' => 'Icon',
+    ),
+
+    array(
       'id'    => 'opt-switcher',
       'type'  => 'switcher',
       'title' => 'Switcher',
@@ -50,9 +54,10 @@ CSF::createSection( $prefix_comment, array(
     ),
 
     array(
-      'id'    => 'opt-color',
-      'type'  => 'color',
-      'title' => 'Color',
+      'id'      => 'opt-color',
+      'type'    => 'color',
+      'title'   => 'Color',
+      'default' => '#3498db',
     ),
 
     array(
