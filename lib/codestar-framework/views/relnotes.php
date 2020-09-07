@@ -1,5 +1,26 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly. ?>
 
+<h3>v2.1.8</h3>
+<ul>
+  <li>Added: Localized 20+ languages support.</li>
+  <li>Improved: Group/Repeater nested usage feature.</li>
+  <li>Improved: Font Awesome 4 package usage.</li>
+  <li>Updated: "Font Awesome 5 Free" package and added new icons.</li>
+  <li>Updated: Google Web Fonts array.</li>
+  <li>Fixed: Shortcode Framework usage inside plugin issue.</li>
+  <li>Fixed: Spinner and Slider field fractional numbers step validation issue.</li>
+</ul>
+
+<h3>v2.1.7</h3>
+<ul>
+  <li>Fixed: Sortable field append new fields after saved issue.</li>
+  <li>Fixed: Customizer dependency issue after v2.1.6 update.</li>
+  <li>Fixed: Typography field "Normal 400" style embed issue.</li>
+  <li>Updated: Assets library (csf.css to style.css, csf.js to main.js).</li>
+  <li>Improved: Sanitize/Validate callback method.</li>
+  <li>Improved: Global dependency feature.</li>
+</ul>
+
 <h3>v2.1.6</h3>
 <ul>
   <li>Added: Nav Menu Option Framework (bonus).</li>
@@ -7,7 +28,7 @@
   <li>Added: Fields with output css feature can be used in Accordion, Tabbed and Fieldset fields.</li>
   <li>Added: Visible dependency instead of hiding.</li>
   <li>Fixed: Background field gradient transparent issue.</li>
-  <li>Improved: Admin Option Framework tab anchors (#tab-1, #tab-2 etc.) with the actual tab names.</li>
+  <li>Improved: Admin Option Framework tab anchors (#tab-1,2 etc.) with the actual tab names.</li>
   <li>Improved: Data sanitization and escaping.</li>
   <li>Improved: All of framework scripts and styles loads only when needed.</li>
   <li>Improved: Output css feature and documentation.</li>

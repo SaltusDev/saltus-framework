@@ -14,7 +14,17 @@ CSF::createWidget( 'csf_widget_example_1', array(
       'type'    => 'text',
       'title'   => 'Title',
     ),
-
+    array(
+      'id'       => 'opt-spinner-3',
+      'type'     => 'spinner',
+      'title'    => 'Spinner',
+      'subtitle' => 'max:1 | min:0 | step:0.1 | unit:px',
+      'max'      => 1,
+      'min'      => 0,
+      'step'     => 0.1,
+      'unit'     => 'px',
+      'default'  => 0.5,
+    ),
     array(
       'id'      => 'opt-text',
       'type'    => 'text',

@@ -25,6 +25,7 @@ if ( ! class_exists( 'CSF_Metabox' ) ) {
       'exclude_post_types' => array(),
       'page_templates'     => '',
       'post_formats'       => '',
+      'show_reset'         => false,
       'show_restore'       => false,
       'enqueue_webfont'    => true,
       'async_webfont'      => false,
@@ -261,7 +262,7 @@ if ( ! class_exists( 'CSF_Metabox' ) ) {
 
               } else {
 
-                echo '<div class="csf-no-option">'. esc_html__( 'No option provided by developer.', 'csf' ) .'</div>';
+                echo '<div class="csf-no-option">'. esc_html__( 'No data available.', 'csf' ) .'</div>';
 
               }
 
@@ -273,13 +274,13 @@ if ( ! class_exists( 'CSF_Metabox' ) ) {
 
             echo '</div>';
 
-            if ( ! empty( $this->args['show_restore'] ) ) {
+            if ( ! empty( $this->args['show_restore'] ) || ! empty( $this->args['show_reset'] ) ) {
 
-              echo '<div class="csf-sections-restore">';
+              echo '<div class="csf-sections-reset">';
               echo '<label>';
-              echo '<input type="checkbox" name="'. esc_attr( $this->unique ) .'[_restore]" />';
-              echo '<span class="button csf-button-restore">'. esc_html__( 'Restore', 'csf' ) .'</span>';
-              echo '<span class="button csf-button-cancel">'. sprintf( '<small>( %s )</small> %s', esc_html__( 'update post for restore ', 'csf' ), esc_html__( 'Cancel', 'csf' ) ) .'</span>';
+              echo '<input type="checkbox" name="'. esc_attr( $this->unique ) .'[_reset]" />';
+              echo '<span class="button csf-button-reset">'. esc_html__( 'Reset', 'csf' ) .'</span>';
+              echo '<span class="button csf-button-cancel">'. sprintf( '<small>( %s )</small> %s', esc_html__( 'update post', 'csf' ), esc_html__( 'Cancel', 'csf' ) ) .'</span>';
               echo '</label>';
               echo '</div>';
 
@@ -336,7 +337,7 @@ if ( ! class_exists( 'CSF_Metabox' ) ) {
                     $data[$field_id] = wp_kses_post( $field_value );
                   }
 
-                } else if( isset( $field['sanitize'] ) && function_exists( $field['sanitize'] ) ) {
+                } else if( isset( $field['sanitize'] ) && is_callable( $field['sanitize'] ) ) {
 
                   $data[$field_id] = call_user_func( $field['sanitize'], $field_value );
 
@@ -347,7 +348,7 @@ if ( ! class_exists( 'CSF_Metabox' ) ) {
                 }
 
                 // Validate "post" request of field.
-                if ( isset( $field['validate'] ) && function_exists( $field['validate'] ) ) {
+                if ( isset( $field['validate'] ) && is_callable( $field['validate'] ) ) {
 
                   $has_validated = call_user_func( $field['validate'], $field_value );
 
@@ -377,7 +378,7 @@ if ( ! class_exists( 'CSF_Metabox' ) ) {
 
       do_action( "csf_{$this->unique}_save_before", $data, $post_id, $this );
 
-      if ( empty( $data ) || ! empty( $request['_restore'] ) ) {
+      if ( empty( $data ) || ! empty( $request['_reset'] ) ) {
 
         if ( $this->args['data_type'] !== 'serialize' ) {
           foreach ( $data as $key => $value ) {

@@ -91,72 +91,9 @@ CSF::createSection( $prefix, array(
 // Create a section
 //
 CSF::createSection( $prefix, array(
-  'id'       => 'nested_panel',
-  'title'    => 'CSF - Nested Panels',
-  'priority' => 2,
-) );
-
-//
-// Create a section
-//
-CSF::createSection( $prefix, array(
-  'parent'   => 'nested_panel',
-  'title'    => 'Nested Panel 1',
-  'priority' => 3,
-  'fields'   => array(
-
-    array(
-      'id'    => 'opt-nested-text',
-      'type'  => 'text',
-      'title' => 'Text',
-    ),
-
-    array(
-      'id'    => 'opt-nested-textarea',
-      'type'  => 'textarea',
-      'title' => 'Textarea',
-    ),
-
-  ),
-) );
-
-//
-// Create a section
-//
-CSF::createSection( $prefix, array(
-  'parent'   => 'nested_panel',
-  'title'    => 'Nested Panel 2',
-  'priority' => 4,
-  'fields'   => array(
-
-    array(
-      'id'    => 'opt-nested-color-1',
-      'type'  => 'color',
-      'title' => 'Color 1',
-    ),
-
-    array(
-      'id'    => 'opt-nested-color-2',
-      'type'  => 'color',
-      'title' => 'Color 2',
-    ),
-
-    array(
-      'id'    => 'opt-nested-color-3',
-      'type'  => 'color',
-      'title' => 'Color 3',
-    ),
-
-  ),
-) );
-
-//
-// Create a section
-//
-CSF::createSection( $prefix, array(
   'id'       => 'fields',
   'title'    => 'CSF - Fields',
-  'priority' => 5,
+  'priority' => 2,
 ) );
 
 //
@@ -3109,8 +3046,42 @@ CSF::createSection( $prefix, array(
       'dependency' => array( 'opt-depend-image-select-any', 'any', 'red,blue' ),
     ),
 
+    array(
+      'type'    => 'subheading',
+      'content' => 'Visible Dependencies',
+    ),
+
     //
     // Dependency example 7
+    array(
+      'id'          => 'opt-depend-visible-switcher',
+      'type'        => 'switcher',
+      'title'       => 'Switched to (ON)',
+      'label'       => 'Below fields are visibling instead of hiding. Switched to (ON) for use them.',
+    ),
+
+    array(
+      'id'          => 'opt-depend-visible-text',
+      'type'        => 'text',
+      'title'       => 'Visible Text',
+      'dependency'  => array( 'opt-depend-visible-switcher', '==', 'true', '', 'visible' ),
+    ),
+
+    array(
+      'id'          => 'opt-depend-visible-select',
+      'type'        => 'select',
+      'title'       => 'Visible Select',
+      'placeholder' => 'Select an option',
+      'options'     => array(
+        'opt-1'     => 'Option 1',
+        'opt-2'     => 'Option 2',
+        'opt-3'     => 'Option 3',
+      ),
+      'dependency'  => array( 'opt-depend-visible-switcher', '==', 'true', '', 'visible' ),
+    ),
+
+    //
+    // Dependency example 8
     array(
       'type'    => 'subheading',
       'content' => 'Nested Dependencies',
@@ -3144,7 +3115,7 @@ CSF::createSection( $prefix, array(
     ),
 
     //
-    // Dependency example 8
+    // Dependency example 9
     array(
       'type'    => 'subheading',
       'content' => 'Another Nested Dependencies',
@@ -3366,7 +3337,7 @@ CSF::createSection( $prefix, array(
 //
 CSF::createSection( $prefix, array(
   'title'    => 'CSF - Reset & Backup',
-  'priority' => 6,
+  'priority' => 3,
   'fields'   => array(
 
     array(

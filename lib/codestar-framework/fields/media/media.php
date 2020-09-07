@@ -54,7 +54,7 @@ if ( ! class_exists( 'CSF_Field_media' ) ) {
       $preview_src = ( $args['preview_size'] !== 'thumbnail' ) ? $this->value['url'] : $this->value['thumbnail'];
       $hidden_url  = ( empty( $args['url'] ) ) ? ' hidden' : '';
       $hidden_auto = ( empty( $this->value['url'] ) ) ? ' hidden' : '';
-      $placeholder = ( empty( $this->field['placeholder'] ) ) ? ' placeholder="'.  esc_html__( 'No media selected', 'csf' ) .'"' : '';
+      $placeholder = ( empty( $this->field['placeholder'] ) ) ? ' placeholder="'.  esc_html__( 'Not selected', 'csf' ) .'"' : '';
 
       echo $this->field_before();
 

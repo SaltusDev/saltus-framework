@@ -90,7 +90,7 @@
     user-select: none;
     border: 1px solid #ccd0d4;
     background-color: #fafafa;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
     transition: border-color .15s;
 
     &:active,
@@ -118,7 +118,7 @@
     border: 1px solid #ccd0d4;
     border-top: none;
     background-color: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 
     > .csf-field{
       padding: 15px;
@@ -288,7 +288,6 @@
     border: 1px solid #cccccc;
     background-color: #f7f7f7;
     user-select: none;
-    -webkit-user-select: none;
     box-shadow: 0 1px 0 rgba(0,0,0,0.1);
 
     &:first-child{
@@ -434,7 +433,7 @@
   .csf-fieldset-content{
     border: 1px solid #ccd0d4;
     background-color: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 
     > .csf-field{
       padding: 15px;
@@ -465,7 +464,7 @@
   width: auto;
   background-color: #fff;
   z-index: 9999999 !important;
-  @include box-shadow(0 0 30px rgba(black, 0.15));
+  box-shadow: 0 0 30px rgba(0,0,0,0.15);
 
   *{
     float: none;
@@ -633,8 +632,8 @@
       margin: 0 5px 10px 0;
       border: 1px solid #ccc;
       background-color: #f9f9f9;
-      @include border-radius(2px);
-      @include box-shadow(0 1px 0 rgba(black, 0.08));
+      border-radius: 2px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.08);
 
       img{
         max-height: 60px;
@@ -680,7 +679,7 @@
   .csf-cloneable-content{
     border: 1px solid #ccd0d4;
     background-color: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 
     > .csf-field{
       padding: 15px;
@@ -803,9 +802,8 @@
       color: #555;
       border: 1px solid #ccc;
       background-color: #f7f7f7;
-      @include border-radius(3px);
-      @include box-shadow(0 1px 0 rgba(black, 0.08));
-      @include box-sizing(content-box);
+      border-radius: 3px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.08);
     }
   }
 }
@@ -825,8 +823,7 @@
     border: 2px solid transparent;
     background-color: #fff;
     user-select: none;
-    -webkit-user-select: none;
-    @include transition(all 0.2s);
+    transition: all .2s;
 
     &:before{
       position: absolute;
@@ -1139,7 +1136,7 @@
     overflow: hidden !important;
     border-color: #ccc !important;
     background-color: #eee !important;
-    @include opacity(0.5);
+    opacity: 0.5;
 
     .csf-repeater-helper,
     .csf-repeater-content{
@@ -1260,9 +1257,9 @@
     }
   }
 
-  .csf--sortable{
+  .csf-sortable{
 
-    .csf--sortable-item{
+    .csf-sortable-item{
       display: table;
       width: 100%;
       margin-bottom: 5px;
@@ -1274,7 +1271,7 @@
     }
   }
 
-  .csf--sortable-content{
+  .csf-sortable-content{
     width: 100%;
     display: table-cell;
     vertical-align: middle;
@@ -1285,7 +1282,7 @@
     }
   }
 
-  .csf--sortable-helper{
+  .csf-sortable-helper{
     width: 100%;
     display: table-cell;
     vertical-align: middle;
@@ -1302,7 +1299,7 @@
       color: #555;
 
       &:hover{
-        @include opacity(0.5);
+        opacity: 0.5;
       }
     }
   }
@@ -1319,10 +1316,10 @@
     overflow: hidden !important;
     border-color: #ccc !important;
     background-color: #eee !important;
-    @include opacity(0.5);
+    opacity: 0.5;
 
-    .csf--sortable-helper,
-    .csf--sortable-content{
+    .csf-sortable-helper,
+    .csf-sortable-content{
       display: none;
     }
   }
@@ -1362,12 +1359,12 @@
 
   .csf-disabled{
     li{
-      @include transition(opacity 0.15s);
-      @include opacity(0.5);
+      opacity: 0.5;
+      transition: opacity .15s;
     }
 
     .ui-sortable-helper{
-      @include opacity(1);
+      opacity: 1;
     }
   }
 
@@ -1396,7 +1393,7 @@
       text-align: center;
       border: 1px solid #e5e5e5;
       background-color: #fafafa;
-      @include transition(border-color 0.15s);
+      transition: border-color .15s;
 
       &:hover{
         border-color: #bbb;
@@ -1585,7 +1582,7 @@
  */
 .csf-field-tabbed{
 
-  .csf-tabbed-section{
+  .csf-tabbed-content{
     border: 1px solid #ccd0d4;
     background-color: #fff;
     box-shadow: 0 1px 1px rgba(0,0,0,.04);
@@ -1626,7 +1623,7 @@
 
       &:focus{
         outline: none;
-        @include box-shadow(none);
+        box-shadow: none;
       }
     }
   }
@@ -2002,7 +1999,7 @@
   margin-bottom: 10px;
   border: 1px solid #ccc;
   background-color: #f9f9f9;
-  @include box-shadow(0 1px 0 rgba(black, 0.08));
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08);
 
   img{
     max-height: 90px;
@@ -2163,9 +2160,9 @@
       margin: 0 -5px;
       background: none;
       cursor: ew-resize;
-      @include opacity(0.9);
-      @include border-radius(4px);
-      @include box-shadow(0 1px 2px rgba(black, 0.2));
+      opacity: 0.9;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 
       &:before{
         content: " ";
@@ -2175,7 +2172,7 @@
         top: -3px;
         bottom: -3px;
         border: 2px solid #fff;
-        @include border-radius(3px);
+        border-radius: 3px;
       }
     }
   }
@@ -2184,8 +2181,8 @@
     height: 18px;
     width: 200px;
     background: url(../images/checkerboard.png) repeat-y center left scroll #fff;
-    @include box-shadow(0 0 5px rgba(black, 0.4) inset);
-    @include border-radius(2px);
+    border-radius: 2px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.4);
   }
 
   .csf--transparent-text{

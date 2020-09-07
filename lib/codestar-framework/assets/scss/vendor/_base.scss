@@ -58,7 +58,7 @@
     position: fixed;
     z-index: 99;
     top: 32px;
-    @include box-shadow(0 5px 10px rgba(black, 0.1));
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
   }
 }
 
@@ -67,7 +67,6 @@
  */
 .csf-buttons{
   float: right;
-  @include transition(opacity 0.2s);
 
   .button{
     margin: 0 2px;
@@ -122,7 +121,7 @@
 
         &:focus{
           outline: none;
-          @include box-shadow(none);
+          box-shadow: none;
         }
       }
 
@@ -137,13 +136,12 @@
         right: 10px;
         top: 50%;
         margin-top: -4px;
-        @include transform(rotate(0));
       }
 
       &.csf-tab-expanded{
 
         .csf-arrow:after{
-          @include transform( rotate(90deg) );
+          transform: rotate(90deg);
         }
 
         ul{
@@ -202,7 +200,6 @@
   position: relative;
   margin-left: 225px;
   background-color: #fff;
-  @include transition(opacity 0.2s);
 }
 
 /**
@@ -254,7 +251,7 @@
 }
 
 /**
- * 01. 10. Show All Options
+ * 01. 10. Show All Settings
  */
 .csf-search-all,
 .csf-show-all{
@@ -291,8 +288,8 @@
   line-height: 30px;
   cursor: pointer;
   user-select: none;
-  @include border-radius(2px);
-  @include transition(all 0.2s);
+  border-radius: 2px;
+  transition: all .2s;
 
   span{
     font-size: 11px;
@@ -314,11 +311,11 @@
     min-height: 30px;
     text-align: inherit;
     padding: 0 10px;
-    @include border-radius(2px);
-    @include box-shadow(none);
+    border-radius: 2px;
+    box-shadow: none;
 
     &:focus{
-      @include box-shadow(none);
+      box-shadow: none;
     }
   }
 }
@@ -329,7 +326,7 @@
   .csf-content{
     cursor: default;
     pointer-events: none;
-    @include opacity(0.5);
+    opacity: 0.5;
   }
 }
 
@@ -363,7 +360,7 @@
   }
 }
 
-.csf-sections-restore{
+.csf-sections-reset{
   float: left;
   width: 100%;
   position: relative;
@@ -386,7 +383,7 @@
   }
 
 
-  input:checked ~ .csf-button-restore{
+  input:checked ~ .csf-button-reset{
     display: none;
   }
 
@@ -457,5 +454,5 @@
   color: #fff;
   background-color: #000;
   background-color: rgba(black, 0.85);
-  @include border-radius(4px);
+  border-radius: 4px;
 }

@@ -22,6 +22,7 @@ if ( ! class_exists( 'CSF_Shortcoder' ) ) {
       'select_title'     => 'Select a shortcode',
       'insert_title'     => 'Insert Shortcode',
       'show_in_editor'   => true,
+      'show_in_custom'   => false,
       'defaults'         => array(),
       'class'            => '',
       'gutenberg'        => array(
@@ -49,7 +50,7 @@ if ( ! class_exists( 'CSF_Shortcoder' ) ) {
 
       if ( ! empty( $this->args['show_in_editor'] ) ) {
 
-        CSF::$shortcode_instances[] = wp_parse_args( array( 'hash' => md5( $key ), 'modal_id' => $this->unique ), $this->args );
+        CSF::$shortcode_instances[$this->unique] = wp_parse_args( array( 'hash' => md5( $key ), 'modal_id' => $this->unique ), $this->args );
 
         // elementor editor support
         if ( CSF::is_active_plugin( 'elementor/elementor.php' ) ) {
@@ -295,7 +296,7 @@ if ( ! class_exists( 'CSF_Shortcoder' ) ) {
     public static function once_editor_setup() {
 
       if ( function_exists( 'register_block_type' ) ) {
-        add_action( 'init', array( 'CSF_Shortcoder', 'add_guteberg_block' ) );
+        add_action( 'enqueue_block_editor_assets', array( 'CSF_Shortcoder', 'add_guteberg_blocks' ) );
       }
 
       if ( csf_wp_editor_api() ) {
@@ -305,15 +306,15 @@ if ( ! class_exists( 'CSF_Shortcoder' ) ) {
     }
 
     // Add gutenberg blocks.
-    public static function add_guteberg_block() {
+    public static function add_guteberg_blocks() {
 
-      wp_register_script( 'csf-gutenberg-block', CSF::include_plugin_url( 'assets/js/csf-gutenberg-block.js' ), array( 'wp-blocks', 'wp-editor', 'wp-element', 'wp-components' ) );
+      wp_enqueue_script( 'csf-gutenberg-block', CSF::include_plugin_url( 'assets/js/gutenberg.js' ), array( 'wp-blocks', 'wp-editor', 'wp-element', 'wp-components' ) );
 
       wp_localize_script( 'csf-gutenberg-block', 'csf_gutenberg_blocks', CSF::$shortcode_instances );
 
-      foreach ( CSF::$shortcode_instances as $hash => $value ) {
+      foreach ( CSF::$shortcode_instances as $value ) {
 
-        register_block_type( 'csf-gutenberg-block/block-'. $hash, array(
+        register_block_type( 'csf-gutenberg-block/block-'. $value['hash'], array(
           'editor_script' => 'csf-gutenberg-block',
         ) );
 
@@ -324,7 +325,7 @@ if ( ! class_exists( 'CSF_Shortcoder' ) ) {
     // Add media buttons
     public static function add_media_buttons( $editor_id ) {
 
-      foreach ( CSF::$shortcode_instances as $hash => $value ) {
+      foreach ( CSF::$shortcode_instances as $value ) {
         echo '<a href="#" class="button button-primary csf-shortcode-button" data-editor-id="'. esc_attr( $editor_id ) .'" data-modal-id="'. esc_attr( $value['modal_id'] ) .'">'. wp_kses_post( $value['button_title'] ) .'</a>';
       }
 

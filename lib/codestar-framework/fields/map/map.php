@@ -20,7 +20,7 @@ if ( ! class_exists( 'CSF_Field_map' ) ) {
     public function render() {
 
       $args              = wp_parse_args( $this->field, array(
-        'placeholder'    => esc_html__( 'Search your address...', 'csf' ),
+        'placeholder'    => esc_html__( 'Search...', 'csf' ),
         'latitude_text'  => esc_html__( 'Latitude', 'csf' ),
         'longitude_text' => esc_html__( 'Longitude', 'csf' ),
         'address_field'  => '',
