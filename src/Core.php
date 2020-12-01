@@ -111,12 +111,13 @@ class Core implements Plugin {
 		// 3- Create a "store" with a factory
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
+		$priority = apply_filters( 'saltus_modeler_priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
 				$this->modeler->init( $project_path );
 			},
-			1
+			$priority
 		);
 
 		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
