@@ -9,18 +9,18 @@ $prefix = 'csf_demo_shortcodes';
 // Create a shortcoder
 //
 CSF::createShortcoder( $prefix, array(
-  'button_title'   => 'Add Shortcode',
-  'select_title'   => 'Select a shortcode',
-  'insert_title'   => 'Insert Shortcode',
-  'show_in_editor' => true,
-  'gutenberg'      => array(
-    'title'        => 'CSF Shortcodes',
-    'description'  => 'CSF Shortcode Block',
-    'icon'         => 'screenoptions',
-    'category'     => 'widgets',
-    'keywords'     => array( 'shortcode', 'csf', 'insert' ),
-    'placeholder'  => 'Write shortcode here...',
-  )
+  // 'button_title'   => 'Add Shortcode',
+  // 'select_title'   => 'Select a shortcode',
+  // 'insert_title'   => 'Insert Shortcode',
+  // 'show_in_editor' => true,
+  // 'gutenberg'      => array(
+  //   'title'        => 'CSF Shortcodes',
+  //   'description'  => 'CSF Shortcode Block',
+  //   'icon'         => 'screenoptions',
+  //   'category'     => 'widgets',
+  //   'keywords'     => array( 'shortcode', 'csf', 'insert' ),
+  //   'placeholder'  => 'Write shortcode here...',
+  // )
 ) );
 
 //

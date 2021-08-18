@@ -40,12 +40,12 @@ if ( ! class_exists( 'CSF_Customize_Options' ) ) {
       $this->get_options();
       $this->save_defaults();
 
-      add_action( 'customize_register', array( &$this, 'add_customize_options' ) );
-      add_action( 'customize_save_after', array( &$this, 'add_customize_save_after' ) );
+      add_action( 'customize_register', array( $this, 'add_customize_options' ) );
+      add_action( 'customize_save_after', array( $this, 'add_customize_save_after' ) );
 
       // Get options for enqueue actions
       if ( is_customize_preview() ) {
-        add_action( 'wp_enqueue_scripts', array( &$this, 'get_options' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'get_options' ) );
       }
 
       // wp enqeueu for typography and output css
@@ -240,16 +240,18 @@ if ( ! class_exists( 'CSF_Customize_Options' ) ) {
           $field_sanitize  = ( isset( $field['sanitize'] ) ) ? $field['sanitize'] : '';
           $field_validate  = ( isset( $field['validate'] ) ) ? $field['validate'] : '';
           $field_default   = ( isset( $field['default'] ) ) ? $field['default'] : '';
+          $field_customize = ( isset( $field['customize'] ) && ! isset( $field['transport'] ) ) ? true : false;
           $has_selective   = ( isset( $field['selective_refresh'] ) && isset( $wp_customize->selective_refresh ) ) ? true : false;
 
           $setting_id = $this->unique .'['. $field_id .']';
+          $transport  = ( $has_selective || $field_customize ) ? 'postMessage' : $field_transport;
 
           $wp_customize->add_setting( $setting_id,
             wp_parse_args( $setting_args, array(
               'default'           => $field_default,
               'type'              => $this->args['database'],
-              'transport'         => ( $has_selective ) ? 'postMessage' : $field_transport,
               'capability'        => $this->args['capability'],
+              'transport'         => $transport,
               'sanitize_callback' => $field_sanitize,
               'validate_callback' => $field_validate
             ) )

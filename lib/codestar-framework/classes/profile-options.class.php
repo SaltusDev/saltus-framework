@@ -27,7 +27,7 @@ if ( ! class_exists( 'CSF_Profile_Options' ) ) {
       $this->args     = apply_filters( "csf_{$this->unique}_args", wp_parse_args( $params['args'], $this->args ), $this );
       $this->sections = apply_filters( "csf_{$this->unique}_sections", $params['sections'], $this );
 
-      add_action( 'admin_init', array( &$this, 'add_profile_options' ) );
+      add_action( 'admin_init', array( $this, 'add_profile_options' ) );
 
     }
 
@@ -39,11 +39,11 @@ if ( ! class_exists( 'CSF_Profile_Options' ) ) {
     // add profile add/edit fields
     public function add_profile_options() {
 
-      add_action( 'show_user_profile', array( &$this, 'render_profile_form_fields' ) );
-      add_action( 'edit_user_profile', array( &$this, 'render_profile_form_fields' ) );
+      add_action( 'show_user_profile', array( $this, 'render_profile_form_fields' ) );
+      add_action( 'edit_user_profile', array( $this, 'render_profile_form_fields' ) );
 
-      add_action( 'personal_options_update', array( &$this, 'save_profile' ) );
-      add_action( 'edit_user_profile_update', array( &$this, 'save_profile' ) );
+      add_action( 'personal_options_update', array( $this, 'save_profile' ) );
+      add_action( 'edit_user_profile_update', array( $this, 'save_profile' ) );
 
     }
 
@@ -103,7 +103,8 @@ if ( ! class_exists( 'CSF_Profile_Options' ) ) {
         $section_icon  = ( ! empty( $section['icon'] ) ) ? '<i class="csf-section-icon '. esc_attr( $section['icon'] ) .'"></i>' : '';
         $section_title = ( ! empty( $section['title'] ) ) ? $section['title'] : '';
 
-        echo ( $section_title || $section_icon ) ? '<h2>'. wp_kses_post( $section_icon . $section_title ) .'</h2>' : '';
+        echo ( $section_title || $section_icon ) ? '<h2>'. $section_icon . $section_title .'</h2>' : '';
+        echo ( ! empty( $section['description'] ) ) ? '<div class="csf-field csf-section-description">'. $section['description'] .'</div>' : '';
 
         if ( ! empty( $section['fields'] ) ) {
 
@@ -168,7 +169,7 @@ if ( ! class_exists( 'CSF_Profile_Options' ) ) {
                     $data[$field_id] = wp_kses_post( $field_value );
                   }
 
-                } else if( isset( $field['sanitize'] ) && function_exists( $field['sanitize'] ) ) {
+                } else if( isset( $field['sanitize'] ) && is_callable( $field['sanitize'] ) ) {
 
                   $data[$field_id] = call_user_func( $field['sanitize'], $field_value );
 
@@ -179,7 +180,7 @@ if ( ! class_exists( 'CSF_Profile_Options' ) ) {
                 }
 
                 // Validate "post" request of field.
-                if ( isset( $field['validate'] ) && function_exists( $field['validate'] ) ) {
+                if ( isset( $field['validate'] ) && is_callable( $field['validate'] ) ) {
 
                   $has_validated = call_user_func( $field['validate'], $field_value );
 
