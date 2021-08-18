@@ -90,7 +90,7 @@
     user-select: none;
     border: 1px solid #ccd0d4;
     background-color: #fafafa;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
     transition: border-color .15s;
 
     &:active,
@@ -118,7 +118,7 @@
     border: 1px solid #ccd0d4;
     border-top: none;
     background-color: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 
     > .csf-field{
       padding: 15px;
@@ -252,8 +252,8 @@
   }
 
   .csf--icon + input{
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
   }
 
   .csf--unit{
@@ -262,8 +262,8 @@
   }
 
   .csf--is-unit{
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
   }
 }
 
@@ -282,13 +282,12 @@
     float: left;
     cursor: pointer;
     padding: 7px 14px;
-    min-width: 40px;
+    min-width: 16px;
     text-align: center;
     color: #555;
     border: 1px solid #cccccc;
     background-color: #f7f7f7;
     user-select: none;
-    -webkit-user-select: none;
     box-shadow: 0 1px 0 rgba(0,0,0,0.1);
 
     &:first-child{
@@ -434,7 +433,7 @@
   .csf-fieldset-content{
     border: 1px solid #ccd0d4;
     background-color: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 
     > .csf-field{
       padding: 15px;
@@ -465,7 +464,7 @@
   width: auto;
   background-color: #fff;
   z-index: 9999999 !important;
-  @include box-shadow(0 0 30px rgba(black, 0.15));
+  box-shadow: 0 0 30px rgba(0,0,0,0.15);
 
   *{
     float: none;
@@ -617,10 +616,6 @@
  */
 .csf-field-gallery{
 
-  input{
-    display: none;
-  }
-
   ul{
     margin: 0;
     padding: 0;
@@ -633,8 +628,8 @@
       margin: 0 5px 10px 0;
       border: 1px solid #ccc;
       background-color: #f9f9f9;
-      @include border-radius(2px);
-      @include box-shadow(0 1px 0 rgba(black, 0.08));
+      border-radius: 2px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.08);
 
       img{
         max-height: 60px;
@@ -680,7 +675,7 @@
   .csf-cloneable-content{
     border: 1px solid #ccd0d4;
     background-color: #fff;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 
     > .csf-field{
       padding: 15px;
@@ -781,31 +776,34 @@
  */
 .csf-field-icon{
 
-  input{
-    display: none;
-  }
-
   .button{
     margin-right: 5px;
+  }
+
+  .csf-icon-select{
+    display: flex;
+  }
+
+  .csf-icon-preview:not(.hidden){
+    display: flex;
   }
 
   .csf-icon-preview{
 
     i{
-      display: inline-block;
-      font-size: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       width: 30px;
-      height: 28px;
-      line-height: 28px;
+      font-size: 14px;
       margin-right: 5px;
       text-align: center;
       vertical-align: top;
       color: #555;
       border: 1px solid #ccc;
       background-color: #f7f7f7;
-      @include border-radius(3px);
-      @include box-shadow(0 1px 0 rgba(black, 0.08));
-      @include box-sizing(content-box);
+      border-radius: 3px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.08);
     }
   }
 }
@@ -816,17 +814,25 @@
 .csf-field-image_select{
 
   .csf--image{
+    display: inline-block;
+    margin: 0 5px 5px 0;
+  }
+
+  .csf--inline-list .csf--image{
+    display: block;
+  }
+
+  figure{
     cursor: pointer;
     position: relative;
     display: inline-block;
     max-width: 100%;
-    margin: 0 5px 5px 0;
+    margin: 0;
     vertical-align: bottom;
     border: 2px solid transparent;
     background-color: #fff;
     user-select: none;
-    -webkit-user-select: none;
-    @include transition(all 0.2s);
+    transition: all .2s;
 
     &:before{
       position: absolute;
@@ -847,7 +853,7 @@
     }
   }
 
-  .csf--active{
+  .csf--active figure{
     border-color: #222;
     box-shadow: 0 0 20px rgba(0,0,0,0.2);
 
@@ -857,6 +863,8 @@
   }
 
   img{
+    max-width: 100%;
+    height: auto;
     vertical-align: top;
   }
 
@@ -967,31 +975,6 @@
 
   .csf--preview{
     position: relative;
-
-    .fa-times{
-      position: absolute;
-      z-index: 1;
-      right: 4px;
-      top: 4px;
-      font-size: 14px;
-      width: 22px;
-      height: 22px;
-      line-height: 22px;
-      text-align: center;
-      text-decoration: none;
-      color: #fff;
-      background-color: #dd3333;
-      opacity: 0.8;
-      transition: all .2s;
-
-      &:hover{
-        opacity: 1;
-      }
-
-      &:focus{
-        box-shadow: none;
-      }
-    }
   }
 }
 
@@ -1139,7 +1122,7 @@
     overflow: hidden !important;
     border-color: #ccc !important;
     background-color: #eee !important;
-    @include opacity(0.5);
+    opacity: 0.5;
 
     .csf-repeater-helper,
     .csf-repeater-content{
@@ -1164,6 +1147,10 @@
   select{
     max-width: 100%;
     margin: 0;
+  }
+
+  .csf-hide-select{
+    display: none !important;
   }
 }
 
@@ -1209,8 +1196,8 @@
   }
 
   .csf--is-unit{
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
   }
 
   .ui-slider{
@@ -1260,9 +1247,9 @@
     }
   }
 
-  .csf--sortable{
+  .csf-sortable{
 
-    .csf--sortable-item{
+    .csf-sortable-item{
       display: table;
       width: 100%;
       margin-bottom: 5px;
@@ -1274,7 +1261,7 @@
     }
   }
 
-  .csf--sortable-content{
+  .csf-sortable-content{
     width: 100%;
     display: table-cell;
     vertical-align: middle;
@@ -1285,7 +1272,7 @@
     }
   }
 
-  .csf--sortable-helper{
+  .csf-sortable-helper{
     width: 100%;
     display: table-cell;
     vertical-align: middle;
@@ -1302,7 +1289,7 @@
       color: #555;
 
       &:hover{
-        @include opacity(0.5);
+        opacity: 0.5;
       }
     }
   }
@@ -1319,10 +1306,10 @@
     overflow: hidden !important;
     border-color: #ccc !important;
     background-color: #eee !important;
-    @include opacity(0.5);
+    opacity: 0.5;
 
-    .csf--sortable-helper,
-    .csf--sortable-content{
+    .csf-sortable-helper,
+    .csf-sortable-content{
       display: none;
     }
   }
@@ -1362,12 +1349,12 @@
 
   .csf-disabled{
     li{
-      @include transition(opacity 0.15s);
-      @include opacity(0.5);
+      opacity: 0.5;
+      transition: opacity .15s;
     }
 
     .ui-sortable-helper{
-      @include opacity(1);
+      opacity: 1;
     }
   }
 
@@ -1396,7 +1383,7 @@
       text-align: center;
       border: 1px solid #e5e5e5;
       background-color: #fafafa;
-      @include transition(border-color 0.15s);
+      transition: border-color .15s;
 
       &:hover{
         border-color: #bbb;
@@ -1418,7 +1405,7 @@
     display: flex;
   }
 
-  .ui-button-text-only{
+  .ui-button{
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1430,7 +1417,7 @@
     background-color: #f5f5f5;
   }
 
-  .ui-button{
+  .ui-spinner-button{
     cursor: pointer;
 
     &:hover{
@@ -1489,7 +1476,9 @@
     border-radius: 0;
   }
 
-  .ui-button-text{
+  .ui-button-text,
+  .ui-button-icon,
+  .ui-button-icon-space{
     display: none;
   }
 }
@@ -1574,10 +1563,6 @@
     font-weight: 400;
     color: #999;
   }
-
-  input{
-    display: none;
-  }
 }
 
 /**
@@ -1585,7 +1570,7 @@
  */
 .csf-field-tabbed{
 
-  .csf-tabbed-section{
+  .csf-tabbed-content{
     border: 1px solid #ccd0d4;
     background-color: #fff;
     box-shadow: 0 1px 1px rgba(0,0,0,.04);
@@ -1626,7 +1611,7 @@
 
       &:focus{
         outline: none;
-        @include box-shadow(none);
+        box-shadow: none;
       }
     }
   }
@@ -1668,8 +1653,9 @@
 
   textarea,
   select{
-    min-width: 100%;
     margin: 0;
+    min-width: 100%;
+    max-width: 100%;
   }
 
   .csf--title{
@@ -1689,6 +1675,7 @@
 
   .csf--block{
     flex: 1;
+    max-width: 100%;
     padding-right: 6px;
     padding-bottom: 6px;
   }
@@ -1775,6 +1762,10 @@
 
   .button{
     margin-left: 5px;
+  }
+
+  .csf--preview{
+    position: relative;
   }
 }
 
@@ -1977,7 +1968,50 @@
 }
 
 /**
- * 03. 39. others
+ * 03. 39. Field: link
+ */
+.csf-field-link{
+
+  .csf--result{
+    display: inline-block;
+    font-size: 12px;
+    line-height: 16px;
+    padding: 7px 10px;
+    margin-bottom: 7px;
+    color: #777;
+    border: 1px solid #e5e5e5;
+    background-color: #f5f5f5;
+    border-radius: 2px;
+    world-break: break-word;
+  }
+
+  .csf--wrap{
+    position: relative;
+    float: left;
+    width: 100px;
+  }
+
+  .csf--unit{
+    position: absolute;
+    z-index: 1;
+    right: 4px;
+    top: 4px;
+    bottom: 4px;
+    padding: 2px 6px;
+    color: #666;
+    font-size: 11px;
+    line-height: 1;
+    border-radius: 2px;
+    background: #eee;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+  }
+}
+
+/**
+ * 03. 40. others
  */
 .csf-help{
   cursor: help;
@@ -1993,21 +2027,67 @@
   }
 }
 
+.csf--preview{
+  max-width: 100%;
+}
+
 .csf-image-preview{
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
   position: relative;
-  padding: 4px;
-  min-width: 44px;
-  min-height: 22px;
+  padding: 6px;
+  max-width: 120px;
+  max-height: 120px;
+  min-width: 40px;
+  min-height: 40px;
   margin-bottom: 10px;
+  text-align: center;
+  border-radius: 2px;
   border: 1px solid #ccc;
   background-color: #f9f9f9;
-  @include box-shadow(0 1px 0 rgba(black, 0.08));
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+
+  i{
+    cursor: pointer;
+    position: absolute;
+    z-index: 1;
+    right: 4px;
+    top: 4px;
+    font-size: 14px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    text-decoration: none;
+    color: #fff;
+    background-color: #dd3333;
+    opacity: 0.75;
+    border-radius: 2px;
+    transition: all .2s;
+
+    &:hover{
+      opacity: 1;
+    }
+
+    &:focus{
+      box-shadow: none;
+    }
+  }
+
+  span{
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    height: 100%;
+    width: 100%;
+  }
 
   img{
-    max-height: 90px;
-    display: inline-block;
-    vertical-align: middle;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
   }
 }
 
@@ -2163,9 +2243,9 @@
       margin: 0 -5px;
       background: none;
       cursor: ew-resize;
-      @include opacity(0.9);
-      @include border-radius(4px);
-      @include box-shadow(0 1px 2px rgba(black, 0.2));
+      opacity: 0.9;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 
       &:before{
         content: " ";
@@ -2175,7 +2255,7 @@
         top: -3px;
         bottom: -3px;
         border: 2px solid #fff;
-        @include border-radius(3px);
+        border-radius: 3px;
       }
     }
   }
@@ -2184,8 +2264,8 @@
     height: 18px;
     width: 200px;
     background: url(../images/checkerboard.png) repeat-y center left scroll #fff;
-    @include box-shadow(0 0 5px rgba(black, 0.4) inset);
-    @include border-radius(2px);
+    border-radius: 2px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.4);
   }
 
   .csf--transparent-text{

@@ -20,6 +20,7 @@ if ( ! class_exists( 'CSF_Field_wp_editor' ) ) {
         'tinymce'       => true,
         'quicktags'     => true,
         'media_buttons' => true,
+        'wpautop'       => false,
         'height'        => '',
       ) );
 
@@ -35,6 +36,7 @@ if ( ! class_exists( 'CSF_Field_wp_editor' ) ) {
         'tinymce'       => $args['tinymce'],
         'quicktags'     => $args['quicktags'],
         'media_buttons' => $args['media_buttons'],
+        'wpautop'       => $args['wpautop'],
       );
 
       echo $this->field_before();
@@ -57,7 +59,7 @@ if ( ! class_exists( 'CSF_Field_wp_editor' ) ) {
 
         $this->setup_wp_editor_settings();
 
-        add_action( 'print_default_editor_scripts', array( &$this, 'setup_wp_editor_media_buttons' ) );
+        add_action( 'print_default_editor_scripts', array( $this, 'setup_wp_editor_media_buttons' ) );
 
       }
 

@@ -10,7 +10,7 @@
 if ( ! class_exists( 'CSF_Field_map' ) ) {
   class CSF_Field_map extends CSF_Fields {
 
-    public $version = '1.5.1';
+    public $version = '1.7.1';
     public $cdn_url = 'https://cdn.jsdelivr.net/npm/leaflet@';
 
     public function __construct( $field, $value = '', $unique = '', $where = '', $parent = '' ) {
@@ -20,7 +20,7 @@ if ( ! class_exists( 'CSF_Field_map' ) ) {
     public function render() {
 
       $args              = wp_parse_args( $this->field, array(
-        'placeholder'    => esc_html__( 'Search your address...', 'csf' ),
+        'placeholder'    => esc_html__( 'Search...', 'csf' ),
         'latitude_text'  => esc_html__( 'Latitude', 'csf' ),
         'longitude_text' => esc_html__( 'Longitude', 'csf' ),
         'address_field'  => '',

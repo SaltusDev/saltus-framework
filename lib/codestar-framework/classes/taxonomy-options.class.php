@@ -11,16 +11,20 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
   class CSF_Taxonomy_Options extends CSF_Abstract{
 
     // constans
-    public $unique     = '';
-    public $taxonomy   = '';
-    public $abstract   = 'taxonomy';
-    public $sections   = array();
-    public $taxonomies = array();
-    public $args       = array(
-      'taxonomy'       => 'category',
-      'data_type'      => 'serialize',
-      'class'          => '',
-      'defaults'       => array(),
+    public $unique      = '';
+    public $taxonomy    = '';
+    public $abstract    = 'taxonomy';
+    public $pre_fields  = array();
+    public $sections    = array();
+    public $taxonomies  = array();
+    public $args        = array(
+      'taxonomy'        => 'category',
+      'data_type'       => 'serialize',
+      'class'           => '',
+      'enqueue_webfont' => true,
+      'async_webfont'   => false,
+      'output_css'      => true,
+      'defaults'        => array(),
     );
 
     // run taxonomy construct
@@ -31,10 +35,14 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
       $this->sections   = apply_filters( "csf_{$this->unique}_sections", $params['sections'], $this );
       $this->taxonomies = ( is_array( $this->args['taxonomy'] ) ) ? $this->args['taxonomy'] : array_filter( (array) $this->args['taxonomy'] );
       $this->taxonomy   = ( ! empty( $_REQUEST[ 'taxonomy' ] ) ) ? sanitize_text_field( wp_unslash( $_REQUEST[ 'taxonomy' ] ) ) : '';
+      $this->pre_fields = $this->pre_fields( $this->sections );
 
       if ( ! empty( $this->taxonomies ) && in_array( $this->taxonomy, $this->taxonomies ) ) {
-        add_action( 'admin_init', array( &$this, 'add_taxonomy_options' ) );
+        add_action( 'admin_init', array( $this, 'add_taxonomy_options' ) );
       }
+
+      // wp enqeueu for typography and output css
+      parent::__construct();
 
     }
 
@@ -43,14 +51,30 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
       return new self( $key, $params );
     }
 
+    public function pre_fields( $sections ) {
+
+      $result  = array();
+
+      foreach ( $sections as $key => $section ) {
+        if ( ! empty( $section['fields'] ) ) {
+          foreach ( $section['fields'] as $field ) {
+            $result[] = $field;
+          }
+        }
+      }
+
+      return $result;
+
+    }
+
     // add taxonomy add/edit fields
     public function add_taxonomy_options() {
 
-      add_action( $this->taxonomy .'_add_form_fields', array( &$this, 'render_taxonomy_form_fields' ) );
-      add_action( $this->taxonomy .'_edit_form', array( &$this, 'render_taxonomy_form_fields' ) );
+      add_action( $this->taxonomy .'_add_form_fields', array( $this, 'render_taxonomy_form_fields' ) );
+      add_action( $this->taxonomy .'_edit_form', array( $this, 'render_taxonomy_form_fields' ) );
 
-      add_action( 'created_'. $this->taxonomy, array( &$this, 'save_taxonomy' ) );
-      add_action( 'edited_'. $this->taxonomy, array( &$this, 'save_taxonomy' ) );
+      add_action( 'created_'. $this->taxonomy, array( $this, 'save_taxonomy' ) );
+      add_action( 'edited_'. $this->taxonomy, array( $this, 'save_taxonomy' ) );
 
     }
 
@@ -65,9 +89,11 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
     }
 
     // get meta value
-    public function get_meta_value( $term_id, $field ) {
+    public function get_meta_value( $field, $term_id = null ) {
 
       $value = null;
+
+      $term_id = ( ! isset( $term_id ) ) ? get_queried_object_id() : $term_id;
 
       if ( ! empty( $term_id ) && ! empty( $field['id'] ) ) {
 
@@ -114,7 +140,8 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
           $section_icon  = ( ! empty( $section['icon'] ) ) ? '<i class="csf-section-icon '. esc_attr( $section['icon'] ) .'"></i>' : '';
           $section_title = ( ! empty( $section['title'] ) ) ? $section['title'] : '';
 
-          echo ( $section_title || $section_icon ) ? '<div class="csf-section-title"><h3>'. wp_kses_post( $section_icon . $section_title ) .'</h3></div>' : '';
+          echo ( $section_title || $section_icon ) ? '<div class="csf-section-title"><h3>'. $section_icon . $section_title .'</h3></div>' : '';
+          echo ( ! empty( $section['description'] ) ) ? '<div class="csf-field csf-section-description">'. $section['description'] .'</div>' : '';
 
           if ( ! empty( $section['fields'] ) ) {
             foreach ( $section['fields'] as $field ) {
@@ -127,7 +154,7 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
                 $field['default'] = $this->get_default( $field );
               }
 
-              CSF::field( $field, $this->get_meta_value( $term_id, $field ), $this->unique, 'taxonomy' );
+              CSF::field( $field, $this->get_meta_value( $field, $term_id ), $this->unique, 'taxonomy' );
 
             }
           }
@@ -179,7 +206,7 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
                     $data[$field_id] = wp_kses_post( $field_value );
                   }
 
-                } else if( isset( $field['sanitize'] ) && function_exists( $field['sanitize'] ) ) {
+                } else if( isset( $field['sanitize'] ) && is_callable( $field['sanitize'] ) ) {
 
                   $data[$field_id] = call_user_func( $field['sanitize'], $field_value );
 
@@ -190,7 +217,7 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
                 }
 
                 // Validate "post" request of field.
-                if ( isset( $field['validate'] ) && function_exists( $field['validate'] ) ) {
+                if ( isset( $field['validate'] ) && is_callable( $field['validate'] ) ) {
 
                   $has_validated = call_user_func( $field['validate'], $field_value );
 
@@ -198,7 +225,7 @@ if ( ! class_exists( 'CSF_Taxonomy_Options' ) ) {
 
                     $errors['sections'][$count] = true;
                     $errors['fields'][$field_id] = $has_validated;
-                    $data[$field_id] = $this->get_meta_value( $term_id, $field );
+                    $data[$field_id] = $this->get_meta_value( $field, $term_id );
 
                   }
 
