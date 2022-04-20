@@ -118,9 +118,8 @@ final class SaltusDuplicate {
 		}
 
 		// use SQL queries to duplicate postmeta
-		$query = "SELECT meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id=%s";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query_prepared = $wpdb->prepare( $query, $post_id );
+		$query_prepared = $wpdb->prepare( "SELECT meta_key, meta_value FROM $wpdb->postmeta WHERE post_id=%s", $post_id );
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query_result = $wpdb->get_results( $query_prepared );
 
@@ -131,14 +130,14 @@ final class SaltusDuplicate {
 		$insert_query = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
 		foreach ( $query_result as $post_meta ) {
 
+			error_log( $post_meta->meta_key );
+
 			$meta_key = $post_meta->meta_key;
 
 			if ( $meta_key === '_wp_old_slug' ) {
 				continue;
 			}
-
-			$meta_value      = addslashes( $post_meta->meta_value );
-			$sql_query_sel[] = "SELECT $new_post_id, '$meta_key', '$meta_value'";
+			$sql_query_sel[] = $wpdb->prepare( "SELECT %s, %s, %s", $new_post_id, $meta_key, $post_meta->meta_value);
 		}
 
 		$insert_query .= implode( ' UNION ALL ', $sql_query_sel );
@@ -147,6 +146,7 @@ final class SaltusDuplicate {
 
 		// redirect to admin screen depending on post type
 		$post_type = get_post_type( $post_id );
+
 		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
 
 	}
