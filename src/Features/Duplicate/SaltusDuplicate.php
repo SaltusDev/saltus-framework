@@ -130,8 +130,6 @@ final class SaltusDuplicate {
 		$insert_query = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
 		foreach ( $query_result as $post_meta ) {
 
-			error_log( $post_meta->meta_key );
-
 			$meta_key = $post_meta->meta_key;
 
 			if ( $meta_key === '_wp_old_slug' ) {
@@ -151,4 +149,3 @@ final class SaltusDuplicate {
 
 	}
 }
-

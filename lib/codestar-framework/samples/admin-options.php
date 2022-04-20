@@ -1271,6 +1271,74 @@ CSF::createSection( $prefix, array(
       )
     ),
 
+    array(
+      'id'       => 'opt-group-9',
+      'type'     => 'group',
+      'title'    => 'Group with custom titles',
+      'subtitle' => 'accordion_title_by => array( \'opt-name\', \'opt-surname\' )',
+      'accordion_title_by' => array( 'opt-name', 'opt-surname' ),
+      'fields' => array(
+        array(
+          'id'    => 'opt-name',
+          'type'  => 'text',
+          'title' => 'Name',
+        ),
+        array(
+          'id'    => 'opt-surname',
+          'type'  => 'text',
+          'title' => 'Surname',
+        ),
+        array(
+          'id'    => 'opt-textarea',
+          'type'  => 'textarea',
+          'title' => 'Textarea',
+        ),
+      ),
+      'default' => array(
+        array(
+          'opt-name'     => 'John',
+          'opt-surname'  => 'Doe',
+          'opt-textarea' => 'Textarea 1',
+        ),
+        array(
+          'opt-name'     => 'Jane',
+          'opt-surname'  => 'Doe',
+          'opt-textarea' => 'Textarea 1',
+        ),
+      )
+    ),
+
+    array(
+      'id'       => 'opt-group-10',
+      'type'     => 'group',
+      'title'    => 'Group with custom titles and prefix',
+      'subtitle' => 'accordion_title_by => array( \'opt-text\', \'opt-textarea\' )<br />accordion_title_by_prefix => \' | \'',
+      'accordion_title_by'        => array( 'opt-text', 'opt-textarea' ),
+      'accordion_title_by_prefix' => ' | ',
+      'fields' => array(
+        array(
+          'id'    => 'opt-text',
+          'type'  => 'text',
+          'title' => 'Title',
+        ),
+        array(
+          'id'    => 'opt-textarea',
+          'type'  => 'textarea',
+          'title' => 'Textarea',
+        ),
+      ),
+      'default' => array(
+        array(
+          'opt-text'     => 'Text 1',
+          'opt-textarea' => 'Textarea 1',
+        ),
+        array(
+          'opt-text'     => 'Text 2',
+          'opt-textarea' => 'Textarea 1',
+        ),
+      )
+    ),
+
   )
 ) );
 
@@ -2902,6 +2970,163 @@ CSF::createSection( $prefix, array(
 ) );
 
 //
+// Field: datetime
+//
+CSF::createSection( $prefix, array(
+  'parent'      => 'additional_fields',
+  'title'       => 'Date and Time',
+  'icon'        => 'fas fa-calendar',
+  'description' => 'Visit documentation for more details on this field: <a href="http://codestarframework.com/documentation/#/fields?id=date-time" target="_blank">Field: datetime</a>',
+  'fields'      => array(
+
+    array(
+      'id'    => 'opt-datetime-1',
+      'type'  => 'datetime',
+      'title' => 'Date',
+    ),
+
+    array(
+      'id'       => 'opt-datetime-2',
+      'type'     => 'datetime',
+      'title'    => 'Date',
+      'subtitle' => 'Human-friendly Dates',
+      'settings' => array(
+        'altFormat'  => 'F j, Y',
+        'dateFormat' => 'Y-m-d',
+      ),
+    ),
+
+    array(
+      'id'       => 'opt-datetime-3',
+      'type'     => 'datetime',
+      'title'    => 'Date',
+      'subtitle' => 'Start week on Monday',
+      'settings' => array(
+        'locale' => array(
+          'firstDayOfWeek' => 1,
+        ),
+      ),
+    ),
+
+    array(
+      'id'       => 'opt-datetime-4',
+      'type'     => 'datetime',
+      'title'    => 'Date and Time',
+      'subtitle' => 'Date and Time Both',
+      'settings' => array(
+        'enableTime' => true,
+        'dateFormat' => 'Y-m-d H:i',
+      ),
+    ),
+
+    array(
+      'id'       => 'opt-datetime-5',
+      'type'     => 'datetime',
+      'title'    => 'Time',
+      'subtitle' => 'Only Time',
+      'settings' => array(
+        'noCalendar' => true,
+        'enableTime' => true,
+      ),
+    ),
+
+    array(
+      'id'       => 'opt-datetime-6',
+      'type'     => 'datetime',
+      'title'    => 'Time',
+      'subtitle' => '24-hour Time without PM:AM',
+      'settings' => array(
+        'noCalendar' => true,
+        'enableTime' => true,
+        'dateFormat' => 'H:i',
+        'time_24hr'  => true,
+      ),
+    ),
+
+    array(
+      'id'       => 'opt-datetime-7',
+      'type'     => 'datetime',
+      'title'    => 'Date Range',
+      'subtitle' => 'Range Mode',
+      'settings' => array(
+        'mode' => 'range',
+      ),
+    ),
+
+    array(
+      'id'       => 'opt-datetime-8',
+      'type'     => 'datetime',
+      'title'    => 'Date From - To',
+      'subtitle' => 'Date with "From" and "To"',
+      'from_to'  => true,
+    ),
+
+    array(
+      'id'        => 'opt-datetime-9',
+      'type'      => 'datetime',
+      'title'     => 'Date Begin - End',
+      'subtitle'  => 'Date with "Begin" and "End" Custom Text',
+      'from_to'   => true,
+      'text_from' => 'Begin',
+      'text_to'   => 'End',
+    ),
+
+    array(
+      'id'       => 'opt-datetime-10',
+      'type'     => 'datetime',
+      'title'    => 'Date',
+      'subtitle' => 'Localize Example (Spanish)',
+      'settings' => array(
+        'locale' => array(
+          'time_24hr' => true,
+          'firstDayOfWeek' => 1,
+          'weekdays' => array(
+            'shorthand' => array( 'Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb' ),
+            'longhand'  => array(
+              'Domingo',
+              'Lunes',
+              'Martes',
+              'Miércoles',
+              'Jueves',
+              'Viernes',
+              'Sábado',
+            ),
+          ),
+          'months' => array(
+            'shortland' => array( 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic' ),
+            'longhand' => array(
+              'Enero',
+              'Febrero',
+              'Marzo',
+              'Abril',
+              'Mayo',
+              'Junio',
+              'Julio',
+              'Agosto',
+              'Septiembre',
+              'Octubre',
+              'Noviembre',
+              'Diciembre',
+            ),
+          ),
+        ),
+      ),
+    ),
+
+    array(
+      'id'       => 'opt-datetime-11',
+      'type'     => 'datetime',
+      'title'    => 'Date',
+      'subtitle' => 'Ready-Only Input',
+      'settings' => array(
+        'allowInput'  => false,
+      ),
+    ),
+
+  )
+) );
+
+//
 // Field: image_select
 //
 CSF::createSection( $prefix, array(
@@ -3365,6 +3590,46 @@ CSF::createSection( $prefix, array(
       'style'      => 'success',
       'content'    => 'Congratulations, You are here now!',
       'dependency' => array( 'opt-nested-select-1|opt-nested-select-2|opt-nested-select-3', 'any|==|==', 'black,white|large|hello' ),
+    ),
+
+    //
+    // Dependency example 10
+    array(
+      'type'    => 'subheading',
+      'content' => 'Contains Dependencies',
+    ),
+
+    array(
+      'id'       => 'opt-depend-checkbox-1',
+      'type'     => 'checkbox',
+      'title'    => 'Select a color or more.',
+      'inline'   => true,
+      'options'  => array(
+        'blue'   => 'Blue',
+        'yellow' => 'Yellow',
+        'green'  => 'Green',
+      ),
+    ),
+
+    array(
+      'type'       => 'notice',
+      'style'      => 'info',
+      'content'    => 'Selected (blue) color.',
+      'dependency' => array( 'opt-depend-checkbox-1', 'contains', 'blue' ),
+    ),
+
+    array(
+      'type'       => 'notice',
+      'style'      => 'warning',
+      'content'    => 'Selected (yellow) color.',
+      'dependency' => array( 'opt-depend-checkbox-1', 'contains', 'yellow' ),
+    ),
+
+    array(
+      'type'       => 'notice',
+      'style'      => 'success',
+      'content'    => 'Selected (green) color.',
+      'dependency' => array( 'opt-depend-checkbox-1', 'contains', 'green' ),
     ),
 
   )
