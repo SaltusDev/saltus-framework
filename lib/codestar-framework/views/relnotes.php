@@ -1,10 +1,42 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly. ?>
 
+<h3>v2.2.8</h3>
+<ul>
+  <li>Fixed: Free vs Pro version load priority conflict.</li>
+</ul>
+
+<h3>v2.2.7</h3>
+<ul>
+  <li>Added: Number field "min", "max", "step" options.</li>
+  <li>Updated: Google Web Fonts array added new fonts.</li>
+  <li>Updated: JS libraries (codemirror, leaflet, etc).</li>
+  <li>Improved: Group field "custom title and prefix" option (samples added).</li>
+  <li>Improved: Some JS and CSS coding.</li>
+</ul>
+
+<h3>v2.2.6</h3>
+<ul>
+  <li>Added: WordPress 5.9 compatible.</li>
+  <li>Added: New field "DateTime" both date and time option.</li>
+  <li>Improved: Some JS and CSS coding.</li>
+</ul>
+
+<h3>v2.2.5</h3>
+<ul>
+  <li>Added: Dependency new "contains" condition feature.</li>
+  <li>Fixed: Admin bar menu show in for non-admin capabilities.</li>
+  <li>Updated: Google Web Fonts array added 300+ new fonts.</li>
+  <li>Updated: "Font Awesome 5 Free" package and added new icons.</li>
+  <li>Updated: JS libraries (codemirror, leaflet, etc).</li>
+  <li>Improved: "Shortcode" and "Icon" modal popups responsive css.</li>
+  <li>Improved: Usage anywhere framework fields.</li>
+</ul>
+
 <h3>v2.2.4</h3>
 <ul>
   <li>Added: WordPress 5.8 compatible.</li>
   <li>Fixed: Widget Framework after WP 5.8 block-based widgets issue.</li>
-  <li>Fixed: Shortcode Framework "E"lementor" php8 error throw issue.</li>
+  <li>Fixed: Shortcode Framework "Elementor" php8 error throw issue.</li>
   <li>Updated: Google Web Fonts array.</li>
   <li>Updated: "Font Awesome 5 Free" package and added new icons.</li>
   <li>Updated: JS libraries (codemirror, leaflet, etc).</li>
@@ -78,6 +110,7 @@
   <li>Updated: Assets library (csf.css to style.css, csf.js to main.js).</li>
   <li>Improved: Sanitize/Validate callback method.</li>
   <li>Improved: Global dependency feature.</li>
+  <li>Improved: Usage anywhere framework fields.</li>
 </ul>
 
 <h3>v2.1.6</h3>

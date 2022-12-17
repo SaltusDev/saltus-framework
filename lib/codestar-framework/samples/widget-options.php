@@ -53,17 +53,18 @@ if ( ! function_exists( 'csf_widget_example_1' ) ) {
 
     echo $args['before_widget'];
 
-    if ( ! empty( $instance['title'] ) ) {
-      echo $args['before_title'] . apply_filters( 'widget_title', $instance['title'] ) . $args['after_title'];
-    }
+    // if ( ! empty( $instance['title'] ) ) {
+    //   echo $args['before_title'] . apply_filters( 'widget_title', $instance['title'] ) . $args['after_title'];
+    // }
 
-    // var_dump( $args ); // Widget arguments
-    // var_dump( $instance ); // Saved values from database
-    echo $instance['title'];
-    echo $instance['opt-text'];
-    echo $instance['opt-color'];
-    echo $instance['opt-upload'];
-    echo $instance['opt-textarea'];
+    echo '<div style="padding: 20px; background-color: #f7f7f7;">';
+    echo '<h3>Codestar Widget Example 1</h3>';
+    echo '<p><strong>Title:</strong> '. $instance['title'] .'</p>';
+    echo '<p><strong>Text:</strong> '. $instance['opt-text'] .'</p>';
+    echo '<p><strong>Color:</strong> '. $instance['opt-color'] .'</p>';
+    echo '<p><strong>Upload:</strong> '. $instance['opt-upload'] .'</p>';
+    echo '<p><strong>Textarea:</strong> '. $instance['opt-textarea'] .'</p>';
+    echo '</div>';
 
     echo $args['after_widget'];
 
@@ -159,14 +160,21 @@ if ( ! function_exists( 'csf_widget_example_2' ) ) {
 
     echo $args['before_widget'];
 
-    if ( ! empty( $instance['title'] ) ) {
-      echo $args['before_title'] . apply_filters( 'widget_title', $instance['title'] ) . $args['after_title'];
-    }
+    // if ( ! empty( $instance['title'] ) ) {
+    //   echo $args['before_title'] . apply_filters( 'widget_title', $instance['title'] ) . $args['after_title'];
+    // }
 
-    // var_dump( $args ); // Widget arguments
-    // var_dump( $instance ); // Saved values from database
-    echo $instance['title'];
-    echo $instance['opt-text'];
+    echo '<div style="padding: 20px; background-color: #f7f7f7;">';
+    echo '<h3>Codestar Widget Example 2</h3>';
+    echo '<p><strong>Title:</strong> '. $instance['title'] .'</p>';
+    echo '<p><strong>Text:</strong> '. $instance['opt-text'] .'</p>';
+    echo '<p><strong>Color:</strong> '. $instance['opt-color'] .'</p>';
+    echo '<p><strong>Switcher:</strong> '. $instance['opt-switcher'] .'</p>';
+    echo '<p><strong>Checkbox:</strong> '. $instance['opt-checkbox'] .'</p>';
+    echo '<p><strong>Select:</strong> '. $instance['opt-select'] .'</p>';
+    echo '<p><strong>Radio:</strong> '. $instance['opt-radio'] .'</p>';
+    echo '<p><strong>Textarea:</strong> '. $instance['opt-textarea'] .'</p>';
+    echo '</div>';
 
     echo $args['after_widget'];
 
