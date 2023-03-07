@@ -51,17 +51,26 @@ class Core implements Plugin {
 	const SERVICE_PREFIX = '';
 
 
-	/** @var bool */
+	/**
+	 * If services can be filtered out
+	 * @var bool */
 	protected $enable_filters;
 
-	/** @var ServiceContainer */
+	/**
+	 * Service list
+	 * @var ServiceContainer */
 	protected $service_container;
 
+	/** A list of paths and urls */
 	protected $project = [];
 
+	/** Loads paths and models */
 	protected $modeler;
 
-	protected $model_list;
+	/**
+	 * Instanciates Services
+	 */
+	protected $instantiator;
 
 	public function __construct( string $project_path ) {
 
