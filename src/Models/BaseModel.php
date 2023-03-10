@@ -10,7 +10,7 @@ abstract class BaseModel {
 	 *
 	 * Includes cache.
 	 *
-	 * @var [type]
+	 * @var AbstractConfig
 	 */
 	protected $config;
 
@@ -19,24 +19,41 @@ abstract class BaseModel {
 	 *
 	 * Includes Name, Type, etc
 	 *
-	 * @var [type]
+	 * @var array
 	 */
 	protected $data;
 
-	// name is required by register_post_type() and register_taxonomy()
+	/**
+	 * Set of options for registering Post Types
+	 *
+	 * @var array
+	 */
+	protected $options;
+
+	/**
+	 * name is required by register_post_type() and register_taxonomy()
+	 */
 	public $name;
 
+	/**
+	 * Optional paramenters to register the cpt
+	 *
+	 * @see https://developer.wordpress.org/reference/functions/register_post_type/#parameters
+	 */
 	protected $args;
 
-	// data req for computations
-	protected $one;
-	protected $many;
+	/**
+	 * data req for computations
+	 */
+	protected $bulk_messages;
 	protected $i18n;
-	protected $ui_labels;
-	protected $one_low;
+	protected $featured_image;
+	protected $many;
 	protected $many_low;
 	protected $messages;
-	protected $bulk_messages;
+	protected $one;
+	protected $one_low;
+	protected $ui_labels;
 
 	public function __construct( AbstractConfig $config_data ) {
 		$this->data   = $config_data->all();
