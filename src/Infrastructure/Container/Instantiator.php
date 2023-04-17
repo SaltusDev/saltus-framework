@@ -1,5 +1,5 @@
 <?php
-namespace Saltus\WP\Framework\Infrastructure\Service;
+namespace Saltus\WP\Framework\Infrastructure\Container;
 
 /**
  * Interface to make the act of instantiation extensible/replaceable.

@@ -6,20 +6,12 @@
 namespace Saltus\WP\Framework;
 
 use Saltus\WP\Framework\Models\ModelFactory;
-use Saltus\WP\Framework\Infrastructure\Service\{
-	App,
-	Service,
+
+use Saltus\WP\Framework\Infrastructure\Container\{
 	ServiceContainer,
-	Conditional,
-	Instantiator,
-	// Exceptions:
-	FailedToMakeInstance,
-	Invalid
+	Container,
+	Invalid,
 };
-
-use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
-
-use ReflectionClass;
 
 use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Plugin,
@@ -28,9 +20,6 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Deactivateable
 };
 
-use Saltus\WP\Framework\Infrastructure\Service\{
-	Actionable
-};
 
 use Saltus\WP\Framework\Features\Meta\Meta;
 use Saltus\WP\Framework\Features\Settings\Settings;
@@ -58,7 +47,7 @@ class Core implements Plugin {
 
 	/**
 	 * Service list
-	 * @var ServiceContainer */
+	 **/
 	protected $service_container;
 
 	/** A list of paths and urls */
@@ -83,9 +72,7 @@ class Core implements Plugin {
 		// the 'plugin-dir' part is just to fool plugins_url to consider the full path
 		$this->project['root_url'] = plugins_url( 'vendor/saltus/framework/assets/', $project_path . '/plugin-dir' );
 
-		$this->instantiator = $this->get_fallback_instantiator();
-
-		$this->service_container = new App();
+		$this->service_container = new ServiceContainer();
 	}
 
 	/**
@@ -205,7 +192,7 @@ class Core implements Plugin {
 		}
 
 		foreach ( $services as $id => $class ) {
-			$this->register_service( $id, $class );
+			$this->service_container->register( $id, $class );
 		}
 	}
 
@@ -227,144 +214,17 @@ class Core implements Plugin {
 		];
 	}
 
-	/**
-	 * Register a single service.
-	 *
-	 * @param string $id
-	 * @param string $class
-	 */
-	protected function register_service( string $id, string $class ) {
-
-		// Only instantiate services that are actually needed.
-		if ( is_a( $class, Conditional::class, true ) &&
-			! $class::is_needed() ) {
-			return;
-		}
-
-		$service = $this->instantiate_service( $class );
-
-		$this->service_container->put( $id, $service );
-
-		if ( $service instanceof Registerable ) {
-			$service->register();
-		}
-
-		if ( $service instanceof Actionable ) {
-			add_action(
-				'init',
-				function () use ( $service ) {
-					$service->add_action();
-				},
-				1
-			);
-		}
-
-	}
-
 
 	/**
-	 * Get the service container that contains the services that make up the
+	 * Get the Container that contains the services that make up the
 	 * plugin.
 	 *
-	 * @return ServiceContainer Service container of the plugin.
+	 * @return Container Container of the plugin.
 	 */
-	public function get_container(): ServiceContainer {
+	public function get_container(): Container {
 		return $this->service_container;
 	}
 
-	/**
-	 * Instantiate a single service.
-	 *
-	 * @param string $class Service class to instantiate.
-	 *
-	 * @throws Invalid If the service could not be properly instantiated.
-	 *
-	 * @return Service Instantiated service.
-	 */
-	protected function instantiate_service( $class ): Service {
 
-		// The service needs to be registered, so instantiate right away.
-		$service = $this->make( $class );
-
-		if ( ! $service instanceof Service ) {
-			throw Invalid::from_service( $service );
-		}
-
-		return $service;
-	}
-
-	/**
-	 * Make an object instance out of an interface or class.
-	 *
-	 * @param string $interface_or_class Interface or class to make an object
-	 *                                   instance out of.
-	 * @param array  $arguments          Optional. Additional arguments to pass
-	 *                                   to the constructor. Defaults to an
-	 *                                   empty array.
-	 * @return object Instantiated object.
-	 */
-	public function make( string $interface_or_class, array $arguments = [] ) {
-
-		$reflection = $this->get_class_reflection( $interface_or_class );
-		$this->ensure_is_instantiable( $reflection );
-
-		$dependencies = [];
-
-		$object = $this->instantiator->instantiate( $interface_or_class, $dependencies );
-
-		return $object;
-	}
-
-	/**
-	 * Get the reflection for a class or throw an exception.
-	 *
-	 * @param string $class Class to get the reflection for.
-	 * @return ReflectionClass Class reflection.
-	 * @throws FailedToMakeInstance If the class could not be reflected.
-	 */
-	private function get_class_reflection( string $class ): ReflectionClass {
-		try {
-			return new ReflectionClass( $class );
-		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( $class );
-		}
-	}
-
-
-	/**
-	 * Ensure that a given reflected class is instantiable.
-	 *
-	 * @param ReflectionClass $reflection Reflected class to check.
-	 * @return void
-	 * @throws FailedToMakeInstance If the interface could not be resolved.
-	 */
-	private function ensure_is_instantiable( ReflectionClass $reflection ) {
-		if ( ! $reflection->isInstantiable() ) {
-			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() );
-		}
-	}
-
-
-	/**
-	 * Get a fallback instantiator in case none was provided.
-	 *
-	 * @return Instantiator Simplistic fallback instantiator.
-	 */
-	private function get_fallback_instantiator(): Instantiator {
-		return new class() implements Instantiator {
-
-			/**
-			 * Make an object instance out of an interface or class.
-			 *
-			 * @param string $class        Class to make an object instance out of.
-			 * @param array  $dependencies Optional. Dependencies of the class.
-			 * @return object Instantiated object.
-			 */
-			public function instantiate( string $class, array $dependencies = [] ) {
-				return new $class( ...$dependencies );
-			}
-		};
-
-	}
 
 }
