@@ -18,7 +18,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
  * Extend ArrayObject to have default implementations for iterators and
  * array access.
  */
-final class GenericContainer
+class GenericContainer
 	extends ArrayObject
 	implements Container, CanRegister {
 

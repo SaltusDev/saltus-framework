@@ -26,7 +26,7 @@ use Saltus\WP\Framework\Infrastructure\Container\Instantiator;
  *
  * Can trigger service registration proccess with CanRegister
  */
-final class ServiceContainer
+class ServiceContainer
 	extends ArrayObject
 	implements Container, CanRegister {
 
