@@ -12,5 +12,5 @@ interface CanRegister {
 	 *
 	 * @return void
 	 */
-	public function register( string $id, string $class );
+	public function register( string $id, string $class, array $dependencies );
 }

@@ -191,8 +191,9 @@ class Core implements Plugin {
 			);
 		}
 
+		$dependencies = [ $this->project ];
 		foreach ( $services as $id => $class ) {
-			$this->service_container->register( $id, $class );
+			$this->service_container->register( $id, $class, $dependencies );
 		}
 	}
 
@@ -224,7 +225,4 @@ class Core implements Plugin {
 	public function get_container(): Container {
 		return $this->service_container;
 	}
-
-
-
 }

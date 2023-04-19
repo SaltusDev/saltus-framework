@@ -92,7 +92,7 @@ class ServiceContainer
 	 * @param string $id
 	 * @param string $class
 	 */
-	public function register( string $id, string $class ) {
+	public function register( string $id, string $class, array $dependencies ) {
 
 		// Only instantiate services that are actually needed.
 		if ( is_a( $class, Conditional::class, true ) &&
@@ -100,7 +100,7 @@ class ServiceContainer
 			return;
 		}
 
-		$service = $this->instantiate( $class );
+		$service = $this->instantiate( $class, $dependencies );
 
 		$this->put( $id, $service );
 
@@ -129,10 +129,10 @@ class ServiceContainer
 	 *
 	 * @return Service Instantiated service.
 	 */
-	private function instantiate( $class ): Service {
+	private function instantiate( $class, array $dependencies ): Service {
 
 		// The service needs to be registered, so instantiate right away.
-		$service = $this->make( $class );
+		$service = $this->make( $class, $dependencies );
 
 		if ( ! $service instanceof Service ) {
 			throw Invalid::from( $service );
@@ -151,12 +151,10 @@ class ServiceContainer
 	 *                                   empty array.
 	 * @return object Instantiated object.
 	 */
-	private function make( string $interface_or_class, array $arguments = [] ) {
+	private function make( string $interface_or_class, array $dependencies = [] ) {
 
 		$reflection = $this->get_class_reflection( $interface_or_class );
 		$this->ensure_is_instantiable( $reflection );
-
-		$dependencies = [];
 
 		$object = $this->instantiator->instantiate( $interface_or_class, $dependencies );
 
