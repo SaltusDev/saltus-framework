@@ -10,7 +10,7 @@ use Saltus\WP\Framework\Models\ModelFactory;
 use Saltus\WP\Framework\Infrastructure\Container\{
 	ServiceContainer,
 	Container,
-	Invalid,
+	Invalid
 };
 
 use Saltus\WP\Framework\Infrastructure\Plugin\{

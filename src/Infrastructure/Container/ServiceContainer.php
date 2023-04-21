@@ -9,11 +9,11 @@ use ArrayObject;
 use Saltus\WP\Framework\Infrastructure\Service\{
 	Service,
 	Conditional,
-	Actionable,
+	Actionable
 };
 
 use Saltus\WP\Framework\Infrastructure\Plugin\{
-	Registerable,
+	Registerable
 };
 
 use Saltus\WP\Framework\Infrastructure\Container\Instantiator;
