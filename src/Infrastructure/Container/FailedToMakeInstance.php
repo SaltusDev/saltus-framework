@@ -1,5 +1,5 @@
 <?php
-namespace Saltus\WP\Framework\Infrastructure\Service;
+namespace Saltus\WP\Framework\Infrastructure\Container;
 
 use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 

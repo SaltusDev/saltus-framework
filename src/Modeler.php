@@ -43,7 +43,6 @@ class Modeler {
 			return $path;
 		}
 		return false;
-
 	}
 
 	/**
