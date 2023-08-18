@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\AdminFilters;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Service,
 	Conditional
 };
@@ -10,7 +11,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 /**
  * Adds admin filters in the post type admin archive
  */
-class AdminFilters implements Service, Conditional {
+class AdminFilters implements Service, Conditional, Assembly {
 
 	/**
 	 * Instantiate this Service object.

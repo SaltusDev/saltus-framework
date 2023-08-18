@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\Duplicate;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Service,
 	Conditional
 };
@@ -9,7 +10,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 /**
  */
-class Duplicate implements Service, Conditional {
+class Duplicate implements Service, Conditional, Assembly {
 
 	/**
 	 * Instantiate this Service object.

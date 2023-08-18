@@ -2,13 +2,14 @@
 namespace Saltus\WP\Framework\Features\Meta;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Service,
 	Conditional
 };
 
 /**
  */
-final class Meta implements Service, Conditional {
+final class Meta implements Service, Conditional, Assembly {
 
 	/**
 	 * Check whether the conditional service is currently needed.
