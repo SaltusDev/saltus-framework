@@ -9,11 +9,4 @@ namespace Saltus\WP\Framework\Infrastructure\Service;
  * load when the code base increases in size.
  */
 interface Service {
-
-	/**
-	 * Create a new instance of the service provider
-	 *
-	 * @return object The new instance
-	 */
-	public static function make( $name, $project, $args );
 }
