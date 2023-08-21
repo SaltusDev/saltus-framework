@@ -28,22 +28,14 @@ class ModelFactory {
 			$cpt = new PostType( $config );
 			$cpt->setup();
 
-			$service_name = 'meta';
-			if ( $config->has( $service_name ) &&
-				$this->app->has( $service_name ) ) {
+			$services = [ 'meta', 'settings' ];
+			foreach ( $services as $service_name ) {
+				if ( $config->has( $service_name ) && $this->app->has( $service_name ) ) {
 
-				$meta         = $config->get( 'meta' );
-				$meta_service = $this->app->get( $service_name );
-				$meta_service->make( $cpt->name, $this->project, $meta );
+				$config_value = $config->get( $service_name );
+				$service_app = $this->app->get( $service_name );
+				$service_app->make( $cpt->name, $this->project, $config_value );
 			}
-
-			$service_name = 'settings';
-			if ( $config->has( $service_name ) &&
-				$this->app->has( $service_name ) ) {
-
-				$settings         = $config->get( $service_name );
-				$settings_service = $this->app->get( $service_name );
-				$settings_service->make( $cpt->name, $this->project, $settings );
 			}
 
 			$service_name = 'features';

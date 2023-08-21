@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\DragAndDrop;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Actionable,
 	Service,
 	Conditional
@@ -14,7 +15,7 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 
 /**
  */
-class DragAndDrop implements Service, Conditional, Activateable, Deactivateable, Actionable {
+class DragAndDrop implements Service, Conditional, Activateable, Deactivateable, Actionable, Assembly {
 
 	/**
 	 * Instantiate this Service object.

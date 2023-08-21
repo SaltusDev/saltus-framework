@@ -205,13 +205,13 @@ class Core implements Plugin {
 	 */
 	protected function get_service_classes(): array {
 		return [
-			'meta'          => Meta::class,
-			'settings'      => Settings::class,
-			'draganddrop'   => DragAndDrop::class,
-			'duplicate'     => Duplicate::class,
-			'single_export' => SingleExport::class,
 			'admin_cols'    => AdminCols::class,
 			'admin_filters' => AdminFilters::class,
+			'draganddrop'   => DragAndDrop::class,
+			'duplicate'     => Duplicate::class,
+			'meta'          => Meta::class,
+			'settings'      => Settings::class,
+			'single_export' => SingleExport::class,
 		];
 	}
 
