@@ -32,7 +32,7 @@ final class SaltusDuplicate {
 		// if cpt is hierarchical
 		add_filter( 'page_row_actions', array( $this, 'row_link' ), 10, 2 );
 
-		add_action( 'admin_action_saltus_duplicate_post', array( $this, 'duplicate' ) );
+		add_action( 'admin_action_' . $this->name . '_duplicate_post', array( $this, 'duplicate' ) );
 	}
 
 	/*
@@ -51,7 +51,7 @@ final class SaltusDuplicate {
 		$actions['duplicate'] = sprintf(
 			'<a href="%1$s" title="%2$s" rel="permalink">%3$s</a>',
 			wp_nonce_url(
-				'admin.php?action=saltus_duplicate_post&post=' . $post->ID,
+				'admin.php?action=' . $this->name . '_duplicate_post&post=' . $post->ID,
 				basename( __FILE__ ),
 				'saltus_duplicate_nonce'
 			),
