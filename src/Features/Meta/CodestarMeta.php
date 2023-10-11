@@ -77,6 +77,9 @@ final class CodestarMeta {
 			}
 		}
 
+		// add filter to properly save line breaks in this meta box
+		add_filter( sprintf( 'csf_%s_save', $box_id ), array( $this, 'sanitize_meta_save' ), 1, 3 );
+
 	}
 
 	/**
@@ -120,6 +123,32 @@ final class CodestarMeta {
 
 		// codestar framework 'prefers' keys to be a numeric index, so we return the array_values
 		return array_values( $fields );
+	}
+
+	/**
+	 * Function to sanitize meta on save
+	 *
+	 * @param array $request with meta info
+	 * @param int $post_id
+	 * @param obj $csf class
+	 * @return array
+	 */
+	public function sanitize_meta_save( $request, $post_id, $csf ) {
+
+		if ( empty( $request ) || ! is_array( $request ) ) {
+			return $request;
+		}
+
+		//replace line breaks on meta info to make it compatible with export
+		array_walk_recursive(
+			$request,
+			function ( &$value ) {
+				$value = str_replace( "\r\n", "\n", $value );
+			}
+		);
+
+		return $request;
+
 	}
 
 
