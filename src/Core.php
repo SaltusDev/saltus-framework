@@ -32,6 +32,9 @@ use Saltus\WP\Framework\Features\AdminFilters\AdminFilters;
 
 class Core implements Plugin {
 
+	// internal version
+	const SALTUS_VERSION = '1.0.2';
+
 	// Main filters to control the flow of the plugin from outside code.
 	const SERVICES_FILTER = 'services';
 
