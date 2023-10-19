@@ -10,6 +10,7 @@
 if ( ! class_exists( 'CSF_Field_wp_editor' ) ) {
   class CSF_Field_wp_editor extends CSF_Fields {
 
+
     public function __construct( $field, $value = '', $unique = '', $where = '', $parent = '' ) {
       parent::__construct( $field, $value, $unique, $where, $parent );
     }
