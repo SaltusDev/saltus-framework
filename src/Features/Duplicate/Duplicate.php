@@ -40,7 +40,7 @@ class Duplicate implements Service, Conditional, Assembly {
 		 * - ajax:  while updating menu order
 		 * - front: during pre_get_posts, etc
 		 */
-		return true;
+		return is_admin();
 	}
 
 }

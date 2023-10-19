@@ -1,38 +1,26 @@
 <?php
 namespace Saltus\WP\Framework\Features\RememberTabs;
 
-use Saltus\WP\Framework\Infrastructure\Feature\{
-	EnqueueAssets
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
 };
 
-final class SaltusRememberTabs implements EnqueueAssets {
+final class SaltusRememberTabs implements Processable {
 
 	private $name;
 	private $project;
-	private $args;
 
 		/**
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct( string $name, array $project,  array $args ) {
+	public function __construct( string $name, array $project, array $args = null ) {
 		$this->project = $project;
 		$this->name    = $name;
-		$this->args    = $args; // not being used in current version
-
-		$this->register();
-
-		$this->enqueue_assets();
 	}
 
-	public function enqueue_assets() {
-
-		add_action( 'admin_init', array( $this, 'load_script_css' ) );
-
-	}
-
-	public function register() {
-
+	public function process() {
+		add_action( 'admin_enqueue_scripts', array( $this, 'load_script_css' ) );
 		add_filter( 'admin_url', array( $this, 'check_remember_tab_url' ), 1, 10 );
 	}
 
@@ -75,12 +63,12 @@ final class SaltusRememberTabs implements EnqueueAssets {
 		}
 
 		if( isset( $_REQUEST['tab'] ) ) {
-			$params['tab'] = $_REQUEST['tab'];
+			$params['tab'] = absint( $_REQUEST['tab'] );
 			$link = add_query_arg( $params, $link );
 		}
 
 
 		return $link;
 	}
-	
+
 }

@@ -7,14 +7,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 
-use Saltus\WP\Framework\Infrastructure\Plugin\{
-	Activateable,
-	Deactivateable
-};
-
 /**
  */
-class RememberTabs implements Service, Conditional, Activateable, Deactivateable, Assembly {
+class RememberTabs implements Service, Conditional, Assembly {
 
 	/**
 	 * Instantiate this Service object.
@@ -40,18 +35,8 @@ class RememberTabs implements Service, Conditional, Activateable, Deactivateable
 
 		/*
 		 * This service loads in most screens:
-		 * - admin: in the edit screen
-		 * - ajax:  while updating menu order
-		 * - front: during pre_get_posts, etc
 		 */
-		return true;
-	}
-
-	public function activate() {
-
-	}
-	public function deactivate() {
-
+		return is_admin();
 	}
 
 }
