@@ -15,7 +15,6 @@ use Saltus\WP\Framework\Infrastructure\Container\{
 
 use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Plugin,
-	Registerable,
 	Activateable,
 	Deactivateable
 };
