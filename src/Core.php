@@ -15,7 +15,6 @@ use Saltus\WP\Framework\Infrastructure\Container\{
 
 use Saltus\WP\Framework\Infrastructure\Plugin\{
 	Plugin,
-	Registerable,
 	Activateable,
 	Deactivateable
 };
@@ -24,6 +23,7 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 use Saltus\WP\Framework\Features\Meta\Meta;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
+use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
 use Saltus\WP\Framework\Features\Duplicate\Duplicate;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\Features\AdminCols\AdminCols;
@@ -205,13 +205,14 @@ class Core implements Plugin {
 	 */
 	protected function get_service_classes(): array {
 		return [
-			'meta'          => Meta::class,
-			'settings'      => Settings::class,
-			'draganddrop'   => DragAndDrop::class,
-			'duplicate'     => Duplicate::class,
-			'single_export' => SingleExport::class,
 			'admin_cols'    => AdminCols::class,
 			'admin_filters' => AdminFilters::class,
+			'draganddrop'   => DragAndDrop::class,
+			'remember_tabs' => RememberTabs::class,
+			'duplicate'     => Duplicate::class,
+			'meta'          => Meta::class,
+			'settings'      => Settings::class,
+			'single_export' => SingleExport::class,
 		];
 	}
 

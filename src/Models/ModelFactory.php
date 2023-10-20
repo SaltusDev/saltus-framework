@@ -1,8 +1,12 @@
 <?php
 
 namespace Saltus\WP\Framework\Models;
+use Saltus\WP\Framework\Infrastructure\Plugin\{
+	Registerable
+};
 
 use Noodlehaus\AbstractConfig;
+use Saltus\WP\Framework\Infrastructure\Service\Processable;
 
 class ModelFactory {
 
@@ -28,22 +32,18 @@ class ModelFactory {
 			$cpt = new PostType( $config );
 			$cpt->setup();
 
-			$service_name = 'meta';
-			if ( $config->has( $service_name ) &&
-				$this->app->has( $service_name ) ) {
+			$services = [ 'meta', 'settings' ];
+			foreach ( $services as $service_name ) {
+				if ( $config->has( $service_name ) && $this->app->has( $service_name ) ) {
 
-				$meta         = $config->get( 'meta' );
-				$meta_service = $this->app->get( $service_name );
-				$meta_service->make( $cpt->name, $this->project, $meta );
+				$config_value = $config->get( $service_name );
+				$service = $this->app->get( $service_name );
+				$service_imp = $service->make( $cpt->name, $this->project, $config_value );
+
+				if ( $service_imp instanceof Processable ) {
+					$service_imp->process();
+				}
 			}
-
-			$service_name = 'settings';
-			if ( $config->has( $service_name ) &&
-				$this->app->has( $service_name ) ) {
-
-				$settings         = $config->get( $service_name );
-				$settings_service = $this->app->get( $service_name );
-				$settings_service->make( $cpt->name, $this->project, $settings );
 			}
 
 			$service_name = 'features';
@@ -68,7 +68,11 @@ class ModelFactory {
 					}
 
 					$service = $this->app->get( $normalized_feature_name );
-					$service->make( $cpt->name, $this->project, $args );
+					$service_imp = $service->make( $cpt->name, $this->project, $args );
+
+					if ( $service_imp instanceof Processable ) {
+						$service_imp->process();
+					}
 				}
 			}
 

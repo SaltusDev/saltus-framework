@@ -1,15 +1,18 @@
 <?php
 namespace Saltus\WP\Framework\Features\Duplicate;
 
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
+};
+
 /**
  * Enable cloning of a cpt entry.
  *
  * Adapted from Kinsta Duplicate posts and pages
  */
-final class SaltusDuplicate {
+final class SaltusDuplicate implements Processable {
 
 	private $name;
-	private $project;
 	private $label;
 	private $attr_title;
 
@@ -17,15 +20,13 @@ final class SaltusDuplicate {
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct( string $name, array $project, array $args ) {
-		$this->project    = $project;
+	public function __construct( string $name, array $project = null, array $args ) {
 		$this->name       = $name;
 		$this->label      = ! empty( $args['label'] ) ? $args['label'] : 'Duplicate';
 		$this->attr_title = ! empty( $args['attr_title'] ) ? $args['attr_title'] : 'Duplicate this entry';
-		$this->register();
 	}
 
-	public function register() {
+	public function process() {
 
 		// non hierarchical
 		add_filter( 'post_row_actions', array( $this, 'row_link' ), 10, 2 );

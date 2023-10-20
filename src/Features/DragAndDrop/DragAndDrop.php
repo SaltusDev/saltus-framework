@@ -2,19 +2,16 @@
 namespace Saltus\WP\Framework\Features\DragAndDrop;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Actionable,
 	Service,
 	Conditional
 };
 
-use Saltus\WP\Framework\Infrastructure\Plugin\{
-	Activateable,
-	Deactivateable
-};
 
 /**
  */
-class DragAndDrop implements Service, Conditional, Activateable, Deactivateable, Actionable {
+class DragAndDrop implements Service, Conditional, Actionable, Assembly {
 
 	/**
 	 * Instantiate this Service object.
@@ -44,14 +41,7 @@ class DragAndDrop implements Service, Conditional, Activateable, Deactivateable,
 		 * - ajax:  while updating menu order
 		 * - front: during pre_get_posts, etc
 		 */
-		return true;
-	}
-
-	public function activate() {
-
-	}
-	public function deactivate() {
-
+		return is_admin();
 	}
 
 	public function add_action() {

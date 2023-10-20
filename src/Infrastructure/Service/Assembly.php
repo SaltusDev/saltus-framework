@@ -8,5 +8,12 @@ namespace Saltus\WP\Framework\Infrastructure\Service;
  * assembling a plugin more systematic and scalable and lowers the cognitive
  * load when the code base increases in size.
  */
-interface Service {
+interface Assembly {
+
+	/**
+	 * Create a new instance of the service provider
+	 *
+	 * @return object The new instance
+	 */
+	public static function make( $name, $project, $args );
 }

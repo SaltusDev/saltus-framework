@@ -1,15 +1,18 @@
 <?php
 namespace Saltus\WP\Framework\Features\SingleExport;
 
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
+};
+
 /**
  * Enable an option to export single entry
  *
  * Adapted from trepmal's "Export One Post" at https://github.com/trepmal/export-one-post
  */
-final class SaltusSingleExport {
+final class SaltusSingleExport implements Processable {
 
 	private $name;
-	private $project;
 	private $label;
 
 	// unlikely date match for filters
@@ -19,15 +22,12 @@ final class SaltusSingleExport {
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct( string $name, array $project, array $args ) {
-		$this->project = $project;
+	public function __construct( string $name, array $project = null, array $args ) {
 		$this->name    = $name;
 		$this->label   = ! empty( $args['label'] ) ? $args['label'] : 'Export This';
-
-		$this->register();
 	}
 
-	public function register() {
+	public function process() {
 		add_action( 'init', array( $this, 'init' ) );
 	}
 

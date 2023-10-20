@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\SingleExport;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Service,
 	Conditional
 };
@@ -9,7 +10,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 /**
  */
-class SingleExport implements Service, Conditional {
+class SingleExport implements Service, Conditional, Assembly {
 
 	/**
 	 * Instantiate this Service object.

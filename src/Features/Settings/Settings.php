@@ -2,13 +2,14 @@
 namespace Saltus\WP\Framework\Features\Settings;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Service,
 	Conditional
 };
 
 /**
  */
-final class Settings implements Service, Conditional {
+final class Settings implements Service, Conditional, Assembly {
 
 	/**
 	 * Check whether the conditional service is currently needed.

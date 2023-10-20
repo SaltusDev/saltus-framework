@@ -1,5 +1,5 @@
 <?php
-namespace Saltus\WP\Framework\Features\AdminFilters;
+namespace Saltus\WP\Framework\Features\RememberTabs;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
 	Assembly,
@@ -7,11 +7,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 
-
 /**
- * Adds admin filters in the post type admin archive
  */
-class AdminFilters implements Service, Conditional, Assembly {
+class RememberTabs implements Service, Conditional, Assembly {
 
 	/**
 	 * Instantiate this Service object.
@@ -25,7 +23,7 @@ class AdminFilters implements Service, Conditional, Assembly {
 	 * @return object The new instance
 	 */
 	public static function make( $name, $project, $args ) {
-		return new SaltusAdminFilters( $name, $project, $args );
+		return new SaltusRememberTabs( $name, $project, $args );
 	}
 
 	/**
@@ -36,7 +34,7 @@ class AdminFilters implements Service, Conditional, Assembly {
 	public static function is_needed(): bool {
 
 		/*
-		 * This service loads only in the admin edit screen
+		 * This service loads in most screens:
 		 */
 		return is_admin();
 	}

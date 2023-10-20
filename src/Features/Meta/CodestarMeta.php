@@ -1,25 +1,25 @@
 <?php
 namespace Saltus\WP\Framework\Features\Meta;
 
-final class CodestarMeta {
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
+};
+
+
+final class CodestarMeta implements Processable {
 
 	private $name;
 	private $meta;
-	private $project;
 
 	/**
 	 * Instantiate the Codestar Framework Fields object.
 	 */
-	public function __construct( string $name, array $project, array $meta = array() ) {
+	public function __construct( string $name, array $project = null, array $meta = array() ) {
 		$this->name    = $name;
-		$this->project = $project;
 		$this->meta    = $meta;
-
-		$this->init();
-
 	}
 
-	private function init() {
+	public function process() {
 
 		/**
 		 * Create Metaboxes
@@ -121,6 +121,4 @@ final class CodestarMeta {
 		// codestar framework 'prefers' keys to be a numeric index, so we return the array_values
 		return array_values( $fields );
 	}
-
-
 }

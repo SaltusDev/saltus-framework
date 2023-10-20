@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\AdminCols;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
+	Assembly,
 	Service,
 	Conditional
 };
@@ -10,7 +11,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 /**
  * Adds custom admin columns in the post type archive
  */
-class AdminCols implements Service, Conditional {
+class AdminCols implements Service, Conditional, Assembly {
 
 	/**
 	 * Instantiate this Service object.
