@@ -1,24 +1,21 @@
 <?php
 namespace Saltus\WP\Framework\Features\Settings;
 
-final class CodestarSettings {
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
+};
+
+final class CodestarSettings implements Processable{
 
 	private $name;
-	private $project;
 	private $settings;
 
-
-	public function __construct( string $name, array $project, array $settings = array() ) {
-
+	public function __construct( string $name, array $project = null, array $settings = array() ) {
 		$this->name     = $name;
-		$this->project  = $project;
 		$this->settings = $settings;
-
-		$this->init();
 	}
 
-	private function init() {
-
+	public function process() {
 		/**
 		 * Create Settings pages
 		*/

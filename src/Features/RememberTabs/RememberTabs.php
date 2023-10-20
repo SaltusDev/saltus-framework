@@ -1,5 +1,5 @@
 <?php
-namespace Saltus\WP\Framework\Features\Duplicate;
+namespace Saltus\WP\Framework\Features\RememberTabs;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
 	Assembly,
@@ -7,10 +7,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 
-
 /**
  */
-class Duplicate implements Service, Conditional, Assembly {
+class RememberTabs implements Service, Conditional, Assembly {
 
 	/**
 	 * Instantiate this Service object.
@@ -24,7 +23,7 @@ class Duplicate implements Service, Conditional, Assembly {
 	 * @return object The new instance
 	 */
 	public static function make( $name, $project, $args ) {
-		return new SaltusDuplicate( $name, $project, $args );
+		return new SaltusRememberTabs( $name, $project, $args );
 	}
 
 	/**
@@ -36,9 +35,6 @@ class Duplicate implements Service, Conditional, Assembly {
 
 		/*
 		 * This service loads in most screens:
-		 * - admin: in the edit screen
-		 * - ajax:  while updating menu order
-		 * - front: during pre_get_posts, etc
 		 */
 		return is_admin();
 	}

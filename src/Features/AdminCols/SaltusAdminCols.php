@@ -35,8 +35,6 @@ final class SaltusAdminCols {
 		$this->project = $project;
 		$this->name    = $name;
 		$this->args    = $args;
-
-		$this->register();
 	}
 
 	/**
@@ -46,8 +44,8 @@ final class SaltusAdminCols {
 	 */
 	public function register() {
 
-		add_filter( 'manage_posts_columns',                       [ $this, '_log_default_cols' ], 0 );
-		add_filter( 'manage_pages_columns',                       [ $this, '_log_default_cols' ], 0 );
+		add_filter( 'manage_posts_columns',                       [ $this, 'log_default_cols' ], 0 );
+		add_filter( 'manage_pages_columns',                       [ $this, 'log_default_cols' ], 0 );
 		add_filter( "manage_edit-{$this->name}_sortable_columns", [ $this, 'sortables' ] );
 		add_filter( "manage_{$this->name}_posts_columns",         [ $this, 'cols' ] );
 		add_action( "manage_{$this->name}_posts_custom_column",   [ $this, 'col' ] );
@@ -62,7 +60,7 @@ final class SaltusAdminCols {
 	 * @param array $cols The default columns for this post type screen
 	 * @return array The default columns for this post type screen
 	 */
-	public function _log_default_cols( array $cols ) : array {
+	public function log_default_cols( array $cols ) : array {
 		$this->_cols = $cols;
 
 		return $this->_cols;
@@ -179,7 +177,7 @@ final class SaltusAdminCols {
 	 */
 	protected function p2p_connection_exists( string $connection ) : bool {
 		if ( ! isset( $this->connection_exists[ $connection ] ) ) {
-			$this->connection_exists[ $connection ] = p2p_connection_exists( $connection );
+			$this->connection_exists[ $connection ] = $this->p2p_connection_exists( $connection );
 		}
 
 		return $this->connection_exists[ $connection ];
@@ -223,7 +221,7 @@ final class SaltusAdminCols {
 				return $fallback;
 			}
 
-			$ctype = p2p_type( $item['connection'] );
+			$ctype = \p2p_type( $item['connection'] );
 			if ( ! $ctype ) {
 				return $fallback;
 			}
@@ -239,7 +237,7 @@ final class SaltusAdminCols {
 			return $fallback;
 		} elseif ( isset( $item['connection'] ) ) {
 			if ( function_exists( 'p2p_type' ) && $this->p2p_connection_exists( $item['connection'] ) ) {
-				$ctype = p2p_type( $item['connection'] );
+				$ctype = \p2p_type( $item['connection'] );
 				if ( $ctype ) {
 					$other = ( 'from' === $ctype->direction_from_types( 'post', $this->name ) ) ? 'to' : 'from';
 					return $ctype->side[ $other ]->get_title();
@@ -537,7 +535,7 @@ final class SaltusAdminCols {
 		}
 
 		if ( ! isset( $_post->$field ) ) {
-			$type = p2p_type( $connection );
+			$type = \p2p_type( $connection );
 			if ( $type ) {
 				$type->each_connected( [ $_post ], $meta, $field );
 			} else {

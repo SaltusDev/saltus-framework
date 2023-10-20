@@ -23,8 +23,6 @@ final class SaltusAdminFilters {
 		$this->name         = $name;
 		$this->args         = $args;
 		$this->site_filters = [];
-
-		$this->register();
 	}
 
 	public function register() {
