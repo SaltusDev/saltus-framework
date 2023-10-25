@@ -82,7 +82,7 @@ class GenericContainer
 	 * @param string $id
 	 * @param string $class
 	 */
-	public function register( string $id, string $class ) {
+	public function register( string $id, string $class, array $dependencies = null ) {
 
 		// Only instantiate services that are actually needed.
 		if ( is_a( $class, Conditional::class, true ) &&

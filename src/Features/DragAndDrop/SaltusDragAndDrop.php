@@ -1,11 +1,11 @@
 <?php
 namespace Saltus\WP\Framework\Features\DragAndDrop;
 
-use Saltus\WP\Framework\Infrastructure\Feature\{
-	EnqueueAssets
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
 };
 
-final class SaltusDragAndDrop implements EnqueueAssets {
+final class SaltusDragAndDrop implements Processable {
 
 	private $name;
 	private $project;
@@ -17,22 +17,12 @@ final class SaltusDragAndDrop implements EnqueueAssets {
 	public function __construct( string $name, array $project, ...$args ) {
 		$this->project = $project;
 		$this->name    = $name;
-
-		$this->register();
-
-		$this->enqueue_assets();
 	}
 
-	public function enqueue_assets() {
+	public function process() {
 
-		add_action( 'admin_init', array( $this, 'load_script_css' ) );
-
-	}
-
-	public function register() {
-
+		add_action( 'admin_enqueue_scripts', array( $this, 'load_script_css' ) );
 		add_action( 'admin_init', array( $this, 'refresh' ) );
-
 		add_action( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
 		add_filter( 'get_previous_post_where', array( $this, 'previous_post_where' ) );
 		add_filter( 'get_previous_post_sort', array( $this, 'previous_post_sort' ) );
