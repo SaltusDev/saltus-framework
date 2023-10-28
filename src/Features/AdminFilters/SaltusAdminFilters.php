@@ -1,12 +1,16 @@
 <?php
 namespace Saltus\WP\Framework\Features\AdminFilters;
 
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
+};
+
 /**
  * Enable custom administration filters
  *
  * Adapted from https://github.com/johnbillion/extended-cpts by johnbillion
  */
-final class SaltusAdminFilters {
+final class SaltusAdminFilters implements Processable {
 
 	private $name;
 	private $project;
@@ -25,7 +29,7 @@ final class SaltusAdminFilters {
 		$this->site_filters = [];
 	}
 
-	public function register() {
+	public function process() {
 
 		add_action( 'load-edit.php',         [ $this, 'default_filter' ] );
 		add_filter( 'pre_get_posts',         [ $this, 'maybe_filter' ] );
