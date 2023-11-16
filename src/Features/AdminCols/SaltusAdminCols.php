@@ -1,12 +1,16 @@
 <?php
 namespace Saltus\WP\Framework\Features\AdminCols;
 
+use Saltus\WP\Framework\Infrastructure\Service\{
+	Processable
+};
+
 /**
  * Enable custom administration columns
  *
  * Adapted from https://github.com/johnbillion/extended-cpts by johnbillion
  */
-final class SaltusAdminCols {
+final class SaltusAdminCols implements Processable {
 
 	private $name;
 	private $project;
@@ -42,7 +46,7 @@ final class SaltusAdminCols {
 	 *
 	 * @return void
 	 */
-	public function register() {
+	public function process() {
 
 		add_filter( 'manage_posts_columns',                       [ $this, 'log_default_cols' ], 0 );
 		add_filter( 'manage_pages_columns',                       [ $this, 'log_default_cols' ], 0 );
