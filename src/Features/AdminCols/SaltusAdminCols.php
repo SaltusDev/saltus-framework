@@ -1,4 +1,10 @@
 <?php
+/**
+ * Admin Columns
+ *
+ * @package Saltus/WP/Framework
+ */
+
 namespace Saltus\WP\Framework\Features\AdminCols;
 
 use Saltus\WP\Framework\Infrastructure\Service\{
@@ -17,19 +23,14 @@ final class SaltusAdminCols implements Processable {
 	private $args;
 
 	/**
-	 * @var array
+	 * @var array Default columns
 	 */
-	protected $_cols;
+	private $default_columns;
 
 	/**
-	 * @var array
+	 * @var array Managed columsn
 	 */
-	protected $the_cols = null;
-
-	/**
-	 * @var array
-	 */
-	protected $connection_exists = [];
+	private $managed_columns = null;
 
 	/**
 	 * Instantiate this Service object.
@@ -51,8 +52,8 @@ final class SaltusAdminCols implements Processable {
 		add_filter( 'manage_posts_columns',                       [ $this, 'log_default_cols' ], 0 );
 		add_filter( 'manage_pages_columns',                       [ $this, 'log_default_cols' ], 0 );
 		add_filter( "manage_edit-{$this->name}_sortable_columns", [ $this, 'sortables' ] );
-		add_filter( "manage_{$this->name}_posts_columns",         [ $this, 'cols' ] );
-		add_action( "manage_{$this->name}_posts_custom_column",   [ $this, 'col' ] );
+		add_filter( "manage_{$this->name}_posts_columns",         [ $this, 'manage_columns' ] );
+		add_action( "manage_{$this->name}_posts_custom_column",   [ $this, 'manage_custom_columns' ], 10, 2 );
 		add_action( 'load-edit.php',                              [ $this, 'default_sort' ] );
 		add_filter( 'pre_get_posts',                              [ $this, 'maybe_sort_by_fields' ] );
 		add_filter( 'posts_clauses',                              [ $this, 'maybe_sort_by_taxonomy' ], 10, 2 );
@@ -64,10 +65,10 @@ final class SaltusAdminCols implements Processable {
 	 * @param array $cols The default columns for this post type screen
 	 * @return array The default columns for this post type screen
 	 */
-	public function log_default_cols( array $cols ) : array {
-		$this->_cols = $cols;
+	public function log_default_cols( array $cols ): array {
+		$this->default_columns = $cols;
 
-		return $this->_cols;
+		return $this->default_columns;
 	}
 
 	/**
@@ -76,7 +77,7 @@ final class SaltusAdminCols implements Processable {
 	 * @param array $cols Array of sortable columns keyed by the column ID.
 	 * @return array Updated array of sortable columns.
 	 */
-	public function sortables( array $cols ) : array {
+	public function sortables( array $cols ): array {
 		foreach ( $this->args as $id => $col ) {
 			if ( ! is_array( $col ) ) {
 				continue;
@@ -100,14 +101,14 @@ final class SaltusAdminCols implements Processable {
 	 * @param array $cols Associative array of columns
 	 * @return array Updated array of columns
 	 */
-	public function cols( array $cols ) : array {
+	public function manage_columns( array $cols ): array {
 		// This function gets called multiple times, so let's cache it for efficiency:
-		if ( isset( $this->the_cols ) ) {
-			return $this->the_cols;
+		if ( isset( $this->managed_columns ) ) {
+			return $this->managed_columns;
 		}
 
 		$new_cols = [];
-		$keep = [
+		$keep     = [
 			'cb',
 			'title',
 		];
@@ -127,7 +128,7 @@ final class SaltusAdminCols implements Processable {
 			} elseif ( is_string( $col ) && isset( $cols[ $id ] ) ) {
 				# Existing (ie. built-in) column with id as the key and title as the value
 				$new_cols[ $id ] = esc_html( $col );
-			} elseif ( 'author' === $col ) {
+			} elseif ( $col === 'author' ) {
 				# Automatic support for Co-Authors Plus plugin and special case for
 				# displaying author column when the post type doesn't support 'author'
 				if ( class_exists( 'coauthors_plus' ) ) {
@@ -138,9 +139,6 @@ final class SaltusAdminCols implements Processable {
 				$new_cols[ $k ] = esc_html__( 'Author', 'extended-cpts' );
 			} elseif ( is_array( $col ) ) {
 				if ( isset( $col['cap'] ) && ! current_user_can( $col['cap'] ) ) {
-					continue;
-				}
-				if ( isset( $col['connection'] ) && ! function_exists( 'p2p_type' ) ) {
 					continue;
 				}
 
@@ -163,28 +161,11 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		# Re-add any custom columns:
-		$custom   = array_diff_key( $cols, $this->_cols );
+		$custom   = array_diff_key( $cols, $this->default_columns );
 		$new_cols = array_merge( $new_cols, $custom );
 
-		$this->the_cols = $new_cols;
-		return $this->the_cols;
-	}
-
-	/**
-	 * Checks if a certain Posts 2 Posts connection exists.
-	 *
-	 * This is just a caching wrapper for `p2p_connection_exists()`, which performs a
-	 * database query on every call.
-	 *
-	 * @param string $connection A connection type.
-	 * @return bool Whether the connection exists.
-	 */
-	protected function p2p_connection_exists( string $connection ) : bool {
-		if ( ! isset( $this->connection_exists[ $connection ] ) ) {
-			$this->connection_exists[ $connection ] = $this->p2p_connection_exists( $connection );
-		}
-
-		return $this->connection_exists[ $connection ];
+		$this->managed_columns = $new_cols;
+		return $this->managed_columns;
 	}
 
 	/**
@@ -197,57 +178,27 @@ final class SaltusAdminCols implements Processable {
 		if ( isset( $item['taxonomy'] ) ) {
 			$tax = get_taxonomy( $item['taxonomy'] );
 			if ( $tax ) {
-				if ( ! empty( $tax->exclusive ) ) {
-					return $tax->labels->singular_name;
-				} else {
-					return $tax->labels->name;
-				}
-			} else {
-				return $item['taxonomy'];
+				return $tax->labels->name;
 			}
+			return $item['taxonomy'];
 		} elseif ( isset( $item['post_field'] ) ) {
-			return ucwords( trim( str_replace( [
-				'post_',
-				'_',
-			], ' ', $item['post_field'] ) ) );
+			return ucwords( trim( str_replace(
+				[
+					'post_',
+					'_',
+				],
+				' ',
+				$item['post_field']
+			) ) );
 		} elseif ( isset( $item['meta_key'] ) ) {
-			return ucwords( trim( str_replace( [
-				'_',
-				'-',
-			], ' ', $item['meta_key'] ) ) );
-		} elseif ( isset( $item['connection'] ) && isset( $item['field'] ) && isset( $item['value'] ) ) {
-			$fallback = ucwords( trim( str_replace( [
-				'_',
-				'-',
-			], ' ', $item['value'] ) ) );
-
-			if ( ! function_exists( 'p2p_type' ) || ! $this->p2p_connection_exists( $item['connection'] ) ) {
-				return $fallback;
-			}
-
-			$ctype = \p2p_type( $item['connection'] );
-			if ( ! $ctype ) {
-				return $fallback;
-			}
-
-			if ( isset( $ctype->fields[ $item['field'] ]['values'][ $item['value'] ] ) ) {
-				if ( '' === trim( $ctype->fields[ $item['field'] ]['values'][ $item['value'] ] ) ) {
-					return $ctype->fields[ $item['field'] ]['title'];
-				} else {
-					return $ctype->fields[ $item['field'] ]['values'][ $item['value'] ];
-				}
-			}
-
-			return $fallback;
-		} elseif ( isset( $item['connection'] ) ) {
-			if ( function_exists( 'p2p_type' ) && $this->p2p_connection_exists( $item['connection'] ) ) {
-				$ctype = \p2p_type( $item['connection'] );
-				if ( $ctype ) {
-					$other = ( 'from' === $ctype->direction_from_types( 'post', $this->name ) ) ? 'to' : 'from';
-					return $ctype->side[ $other ]->get_title();
-				}
-			}
-			return $item['connection'];
+			return ucwords( trim( str_replace(
+				[
+					'_',
+					'-',
+				],
+				' ',
+				$item['meta_key']
+			) ) );
 		}
 		return null;
 	}
@@ -257,7 +208,7 @@ final class SaltusAdminCols implements Processable {
 	 *
 	 * @param string $col The column name
 	 */
-	public function col( string $col ) {
+	public function manage_custom_columns( string $col, $post_id ) {
 		# Shorthand:
 		$c = $this->args;
 
@@ -281,13 +232,11 @@ final class SaltusAdminCols implements Processable {
 		} elseif ( isset( $c[ $col ]['meta_key'] ) ) {
 			$this->col_post_meta( $c[ $col ]['meta_key'], $c[ $col ] );
 		} elseif ( isset( $c[ $col ]['taxonomy'] ) ) {
-			$this->col_taxonomy( $c[ $col ]['taxonomy'], $c[ $col ] );
+			$this->col_taxonomy( $post_id, $c[ $col ]['taxonomy'], $c[ $col ] );
 		} elseif ( isset( $c[ $col ]['post_field'] ) ) {
-			$this->col_post_field( $c[ $col ]['post_field'], $c[ $col ] );
+			$this->col_post_field( $post_id, $c[ $col ]['post_field'], $c[ $col ] );
 		} elseif ( isset( $c[ $col ]['featured_image'] ) ) {
 			$this->col_featured_image( $c[ $col ]['featured_image'], $c[ $col ] );
-		} elseif ( isset( $c[ $col ]['connection'] ) ) {
-			$this->col_connection( $c[ $col ]['connection'], $c[ $col ] );
 		}
 	}
 
@@ -304,7 +253,7 @@ final class SaltusAdminCols implements Processable {
 		sort( $vals );
 
 		if ( isset( $args['date_format'] ) ) {
-			if ( true === $args['date_format'] ) {
+			if ( $args['date_format'] === true ) {
 				$args['date_format'] = get_option( 'date_format' );
 			}
 
@@ -324,7 +273,7 @@ final class SaltusAdminCols implements Processable {
 		} else {
 			foreach ( $vals as $val ) {
 
-				if ( ! empty( $val ) || ( '0' === $val ) ) {
+				if ( ! empty( $val ) || ( $val === '0' ) ) {
 					$echo[] = $val;
 				}
 			}
@@ -343,10 +292,10 @@ final class SaltusAdminCols implements Processable {
 	 * @param string $taxonomy The taxonomy name
 	 * @param array  $args     Array of arguments for this field
 	 */
-	public function col_taxonomy( string $taxonomy, array $args ) {
-		global $post;
+	public function col_taxonomy( int $post_id, string $taxonomy, array $args ) {
 
-		$terms = get_the_terms( $post, $taxonomy );
+		$post  = get_post( $post_id );
+		$terms = get_the_terms( $post_id, $taxonomy );
 		$tax   = get_taxonomy( $taxonomy );
 
 		if ( is_wp_error( $terms ) ) {
@@ -396,10 +345,13 @@ final class SaltusAdminCols implements Processable {
 						break;
 
 					case 'list':
-						$link = add_query_arg( [
-							'post_type' => $post->post_type,
-							$taxonomy   => $term->slug,
-						], admin_url( 'edit.php' ) );
+						$link  = add_query_arg(
+							[
+								'post_type' => $post->post_type,
+								$taxonomy   => $term->slug,
+							],
+							admin_url( 'edit.php' )
+						);
 						$out[] = sprintf(
 							'<a href="%1$s">%2$s</a>',
 							esc_url( $link ),
@@ -412,8 +364,8 @@ final class SaltusAdminCols implements Processable {
 				$out[] = esc_html( $term->name );
 			}
 		}
-
-		echo implode( ', ', $out ); // WPCS: XSS ok.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo implode( ', ', $out );
 	}
 
 	/**
@@ -422,21 +374,21 @@ final class SaltusAdminCols implements Processable {
 	 * @param string $field The post field
 	 * @param array  $args  Array of arguments for this field
 	 */
-	public function col_post_field( string $field, array $args ) {
-		global $post;
-
+	public function col_post_field( int $post_id, string $field, array $args ) {
+		$post = get_post( $post_id );
 		switch ( $field ) {
 
 			case 'post_date':
 			case 'post_date_gmt':
 			case 'post_modified':
 			case 'post_modified_gmt':
-				if ( '0000-00-00 00:00:00' !== get_post_field( $field, $post ) ) {
-					if ( ! isset( $args['date_format'] ) ) {
-						$args['date_format'] = get_option( 'date_format' );
-					}
-					echo esc_html( mysql2date( $args['date_format'], get_post_field( $field, $post ) ) );
+				if ( get_post_field( $field, $post ) === '0000-00-00 00:00:00' ) {
+					break;
 				}
+				if ( ! isset( $args['date_format'] ) ) {
+					$args['date_format'] = get_option( 'date_format' );
+				}
+				echo esc_html( mysql2date( $args['date_format'], get_post_field( $field, $post ) ) );
 				break;
 
 			case 'post_status':
@@ -502,129 +454,6 @@ final class SaltusAdminCols implements Processable {
 		}
 	}
 
-	/**
-	 * Outputs column data for a Posts 2 Posts connection.
-	 *
-	 * @param string $connection The ID of the connection type
-	 * @param array  $args       Array of arguments for a given connection type
-	 */
-	public function col_connection( string $connection, array $args ) {
-		global $post, $wp_query;
-
-		if ( ! function_exists( 'p2p_type' ) ) {
-			return;
-		}
-
-		if ( ! $this->p2p_connection_exists( $connection ) ) {
-			echo esc_html( sprintf(
-				/* translators: %s: The ID of the Posts 2 Posts connection type */
-				__( 'Invalid connection type: %s', 'extended-cpts' ),
-				$connection
-			) );
-			return;
-		}
-
-		$_post = $post;
-		$meta  = [];
-		$out   = [];
-		$field = 'connected_' . $connection;
-
-		if ( isset( $args['field'] ) && isset( $args['value'] ) ) {
-			$meta = [
-				'connected_meta' => [
-					$args['field'] => $args['value'],
-				],
-			];
-			$field .= sanitize_title( '_' . $args['field'] . '_' . $args['value'] );
-		}
-
-		if ( ! isset( $_post->$field ) ) {
-			$type = \p2p_type( $connection );
-			if ( $type ) {
-				$type->each_connected( [ $_post ], $meta, $field );
-			} else {
-				echo esc_html( sprintf(
-					/* translators: %s: The ID of the Posts 2 Posts connection type */
-					__( 'Invalid connection type: %s', 'extended-cpts' ),
-					$connection
-				) );
-				return;
-			}
-		}
-
-		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-		foreach ( $_post->$field as $post ) {
-			setup_postdata( $post );
-
-			$pto = get_post_type_object( $post->post_type );
-			$pso = get_post_status_object( $post->post_status );
-
-			if ( $pso->protected && ! current_user_can( 'edit_post', $post->ID ) ) {
-				continue;
-			}
-			if ( 'trash' === $post->post_status ) {
-				continue;
-			}
-
-			if ( $args['link'] ) {
-				switch ( $args['link'] ) {
-
-					case 'view':
-						if ( $pto->public ) {
-							if ( $pso->protected ) {
-								$out[] = sprintf(
-									'<a href="%1$s">%2$s</a>',
-									esc_url( get_preview_post_link() ),
-									esc_html( get_the_title() )
-								);
-							} else {
-								$out[] = sprintf(
-									'<a href="%1$s">%2$s</a>',
-									esc_url( get_permalink() ),
-									esc_html( get_the_title() )
-								);
-							}
-						} else {
-							$out[] = esc_html( get_the_title() );
-						}
-						break;
-
-					case 'edit':
-						if ( current_user_can( 'edit_post', $post->ID ) ) {
-							$out[] = sprintf(
-								'<a href="%1$s">%2$s</a>',
-								esc_url( get_edit_post_link() ),
-								esc_html( get_the_title() )
-							);
-						} else {
-							$out[] = esc_html( get_the_title() );
-						}
-						break;
-
-					case 'list':
-						$link = add_query_arg( array_merge( [
-							'post_type'       => $_post->post_type,
-							'connected_type'  => $connection,
-							'connected_items' => $post->ID,
-						], $meta ), admin_url( 'edit.php' ) );
-						$out[] = sprintf(
-							'<a href="%1$s">%2$s</a>',
-							esc_url( $link ),
-							esc_html( get_the_title() )
-						);
-						break;
-
-				}
-			} else {
-				$out[] = esc_html( get_the_title() );
-			}
-		}
-
-		$post = $_post; // WPCS: override ok.
-
-		echo implode( ', ', $out ); // WPCS: XSS ok.
-	}
-
 
 	/**
 	 * Sets the default sort field and sort order on our post type admin screen.
@@ -635,6 +464,7 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		# If we've already ordered the screen, bail out:
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( isset( $_GET['orderby'] ) ) {
 			return;
 		}
@@ -643,7 +473,7 @@ final class SaltusAdminCols implements Processable {
 		foreach ( $this->args as $id => $col ) {
 			if ( is_array( $col ) && isset( $col['default'] ) ) {
 				$_GET['orderby'] = $id;
-				$_GET['order']   = ( 'desc' === strtolower( $col['default'] ) ? 'desc' : 'asc' );
+				$_GET['order']   = ( strtolower( $col['default'] ) === 'desc' ? 'desc' : 'asc' );
 				break;
 			}
 		}
@@ -654,12 +484,11 @@ final class SaltusAdminCols implements Processable {
 	 *
 	 * @return string The post type name.
 	 */
-	protected static function get_current_post_type() : string {
-		if ( function_exists( 'get_current_screen' ) && is_object( get_current_screen() ) && 'edit' === get_current_screen()->base ) {
+	protected static function get_current_post_type(): string {
+		if ( function_exists( 'get_current_screen' ) && is_object( get_current_screen() ) && get_current_screen()->base === 'edit' ) {
 			return get_current_screen()->post_type;
-		} else {
-			return '';
 		}
+		return '';
 	}
 
 	/**
@@ -690,7 +519,7 @@ final class SaltusAdminCols implements Processable {
 	 * @param WP_Query $wp_query The current `WP_Query` object.
 	 * @return array The updated SQL clauses.
 	 */
-	public function maybe_sort_by_taxonomy( array $clauses, \WP_Query $wp_query ) : array {
+	public function maybe_sort_by_taxonomy( array $clauses, \WP_Query $wp_query ): array {
 		if ( empty( $wp_query->query['post_type'] ) || ! in_array( $this->name, (array) $wp_query->query['post_type'], true ) ) {
 			return $clauses;
 		}
@@ -713,7 +542,7 @@ final class SaltusAdminCols implements Processable {
 	 *                         `site_sortables` argument when registering an extended post type.
 	 * @return array The list of private and public query vars to apply to the query.
 	 */
-	public static function get_sort_field_vars( array $vars, array $sortables ) : array {
+	public static function get_sort_field_vars( array $vars, array $sortables ): array {
 		if ( ! isset( $vars['orderby'] ) ) {
 			return [];
 		}
@@ -743,7 +572,7 @@ final class SaltusAdminCols implements Processable {
 			$return['orderby']  = 'meta_value';
 			// @TODO meta_value_num
 		} elseif ( isset( $orderby['post_field'] ) ) {
-			$field = str_replace( 'post_', '', $orderby['post_field'] );
+			$field             = str_replace( 'post_', '', $orderby['post_field'] );
 			$return['orderby'] = $field;
 		}
 
@@ -764,8 +593,8 @@ final class SaltusAdminCols implements Processable {
 	 *                         `site_sortables` argument when registering an extended post type).
 	 * @return array The list of SQL clauses to apply to the query.
 	 */
-	public static function get_sort_taxonomy_clauses( array $clauses, array $vars, array $sortables ) : array {
-		global $wpdb;
+	public static function get_sort_taxonomy_clauses( array $clauses, array $vars, array $sortables ): array {
+		global $wpdb; // Global WPDB class object
 
 		if ( ! isset( $vars['orderby'] ) ) {
 			return [];
@@ -794,7 +623,7 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		# Taxonomy term ordering courtesy of http://scribu.net/wordpress/sortable-taxonomy-columns.html
-		$clauses['join'] .= "
+		$clauses['join']    .= "
 			LEFT OUTER JOIN {$wpdb->term_relationships} as ext_cpts_tr
 			ON ( {$wpdb->posts}.ID = ext_cpts_tr.object_id )
 			LEFT OUTER JOIN {$wpdb->term_taxonomy} as ext_cpts_tt
@@ -802,12 +631,11 @@ final class SaltusAdminCols implements Processable {
 			LEFT OUTER JOIN {$wpdb->terms} as ext_cpts_t
 			ON ( ext_cpts_tt.term_id = ext_cpts_t.term_id )
 		";
-		$clauses['where'] .= $wpdb->prepare( ' AND ( taxonomy = %s OR taxonomy IS NULL )', $orderby['taxonomy'] );
-		$clauses['groupby'] = 'ext_cpts_tr.object_id';
-		$clauses['orderby'] = 'GROUP_CONCAT( ext_cpts_t.name ORDER BY name ASC ) ';
-		$clauses['orderby'] .= ( isset( $vars['order'] ) && ( 'ASC' === strtoupper( $vars['order'] ) ) ) ? 'ASC' : 'DESC';
+		$clauses['where']   .= $wpdb->prepare( ' AND ( taxonomy = %s OR taxonomy IS NULL )', $orderby['taxonomy'] );
+		$clauses['groupby']  = 'ext_cpts_tr.object_id';
+		$clauses['orderby']  = 'GROUP_CONCAT( ext_cpts_t.name ORDER BY name ASC ) ';
+		$clauses['orderby'] .= ( isset( $vars['order'] ) && ( strtoupper( $vars['order'] ) === 'ASC' ) ) ? 'ASC' : 'DESC';
 
 		return $clauses;
 	}
-
 }
