@@ -10,48 +10,74 @@
 	<exclude-pattern>lib/*</exclude-pattern>
 
 
-	<rule ref="WordPress-Extra" />
+	<rule ref="WordPress-Extra">
 
-	<!-- Yoda conditions, we must ignore -->
-	<rule ref="WordPress.PHP.YodaConditions.NotYoda">
-		<severity>0</severity>
-	</rule>
-	<!-- Ignore lowercase filenames -->
-	<rule ref="Generic.Files.LowercasedFilename.NotFound">
-		<severity>0</severity>
-	</rule>
-	<rule ref="WordPress.Files.FileName.NotHyphenatedLowercase">
-		<severity>0</severity>
+		<!-- # files -->
+		<!-- Ignore lowercase filenames -->
+		<exclude name="Generic.Files.LowercasedFilename.NotFound"/>
+		<!-- Do not enforce 'class-' prefix and hyffens -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+
+		<!-- # WP VIP: Generates too many false positives -->
+		<exclude name="WordPress.WP.CapitalPDangit.Misspelled"/>
+		<exclude name="WordPress.WP.CapitalPDangit.MisspelledInComment"/>
+
+		<!-- # wp nonsense -->
+		<!-- ignore yoda -->
+		<exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
+		<!-- too many rules -->
+		<exclude name="PEAR.Functions.FunctionCallSignature.requiredSpacesAfterOpen"/>
+		<exclude name="PEAR.Functions.FunctionCallSignature.requiredSpacesBeforeClose"/>
+		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket"/>
+		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine"/>
+		<exclude name="Generic.Functions.FunctionCallArgumentSpacing.TooMuchSpaceAfterComma"/>
+		<!-- Allow ternary forms -->
+		<exclude name="Universal.Operators.DisallowShortTernary.Found"/>
+		<!-- Prefer [] instead of array() -->
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax.Found"/>
+		<exclude name="Generic.Arrays.DisallowLongArraySyntax.Found"/>
+		<!-- common -->
+		<exclude name="PSR2.Classes.ClassDeclaration.ImplementsLine"/>
+		<exclude name="PSR2.Classes.ClassDeclaration.ExtendsLine"/>
 	</rule>
 
-	<!-- Allow class file names without the 'class-' prefix -->
-	<rule ref="WordPress.Files.FileName">
-		<properties>
-			<property name="strict_class_file_names" value="false"/>
-		</properties>
-	</rule>
+
 	<!-- Add extra word delimiter for hooks. -->
 	<rule ref="WordPress.NamingConventions.ValidHookName">
 		<properties>
 			<property name="additionalWordDelimiters" value="/"/>
 		</properties>
 	</rule>
-	<!-- Allow ternary forms -->
-	<rule ref="WordPress.PHP.DisallowShortTernary.Found">
-		<severity>0</severity>
-	</rule>
-	<!-- Warn against using array() instead of [] -->
-	<rule ref="Generic.Arrays.DisallowLongArraySyntax.Found">
-		<type>warning</type>
-	</rule>
-	<!-- Prefer [] instead of array() -->
-	<rule ref="Generic.Arrays.DisallowShortArraySyntax">
-		<severity>0</severity>
-	</rule>
 
-	<file>.</file>
+	<!-- # from yoast: https://github.com/Yoast/yoastcs/blob/develop/Yoast/ruleset.xml -->
+	<!-- If a conscious choice has been made for a non-strict comparison, that's ok.
+		I.e. when `strict` has been explicitely set to `false` in an array comparison,
+		it will be allowed. -->
+	<exclude name="WordPress.PHP.StrictInArray.FoundNonStrictFalse"/>
+	<!-- In contrast to WPCS: disallow Yoda conditions. (PHPCS 3.5.0) -->
+	<rule ref="Generic.ControlStructures.DisallowYodaConditions"/>
+
+	<!-- # code quality -->
+	<!-- cyclomatic -->
+	<rule ref="Generic.Metrics.CyclomaticComplexity">
+		<properties>
+			<property name="complexity" value="10"/>
+			<property name="absoluteComplexity" value="20"/>
+		</properties>
+	</rule>
+	<!-- php compat -->
+	<rule ref="PHPCompatibility"/>
+
+	<!-- phpcs parameters -->
+	<file>./src/</file>
 	<arg name="extensions" value="php" />
 	<arg name="encoding" value="UTF-8" />
-	<config name="testVersion" value="8.0-"/>
+	<arg value="ps"/>
+	<arg name="colors"/>
+	<arg name="parallel" value="12"/>
+	<config name="testVersion" value="7.0-"/>
+
+	<config name="installed_paths" value="/srv/dev/coding_standards/wpcs/,/srv/dev/coding_standards/PHPCSUtils/,/srv/dev/coding_standards/PHPCSExtra/,/srv/dev/coding_standards/PHPCompatibility" />
 
 </ruleset>
