@@ -109,15 +109,22 @@ class ServiceContainer
 		}
 
 		if ( $service instanceof Actionable ) {
+			$priority = 1;
+			$filter = 'init';
+			if ( method_exists( $service, 'priority' ) ) {
+				$priority = $service->priority();
+			}
+			if ( method_exists( $service, 'filter' ) ) {
+				$filter = $service->filter();
+			}
 			add_action(
-				'init',
+				$filter,
 				function () use ( $service ) {
 					$service->add_action();
 				},
-				1
+				$priority
 			);
 		}
-
 	}
 
 	/**
