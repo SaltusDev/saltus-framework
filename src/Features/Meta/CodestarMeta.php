@@ -69,6 +69,9 @@ final class CodestarMeta implements Processable {
 
 		if ( isset( $box_settings['sections'] ) ) {
 			foreach ( $box_settings['sections'] as $section ) {
+				if ( empty( $section['fields'] ) ) {
+					continue;
+				}
 				$section['fields'] = $this->prepare_fields( $section['fields'] );
 				$this->create_section( $box_id, $section );
 			}
@@ -142,7 +145,7 @@ final class CodestarMeta implements Processable {
 
 		$meta_rest_fields = $this->setup_restapi_fields( $meta_fields );
 
-		add_action( 'rest_api_init', function() use ($post_type, $meta_name, $meta_type, $meta_rest_fields ) {
+		add_action( 'rest_api_init', function() use ( $post_type, $meta_name, $meta_type, $meta_rest_fields ) {
 			register_meta( 'post', $meta_name, array(
 				'object_subtype' => $post_type,
 				'type'           => $meta_type,
@@ -231,12 +234,10 @@ final class CodestarMeta implements Processable {
 				case 'image_select':
 				case 'link':
 				case 'link_color':
-				case 'map':
 				case 'media':
 				case 'notice':
 				case 'palette':
 				case 'radio':
-				case 'select':
 				case 'slider':
 				case 'sortable':
 				case 'sorter':
@@ -260,8 +261,12 @@ final class CodestarMeta implements Processable {
 				case 'color_group':
 				case 'fieldset':
 				case 'group':
-				case 'repeater':
+				case 'map':
 					$assigned_field_type[ $field ] = 'object';
+					break;
+				case 'select':
+				case 'repeater':
+					$assigned_field_type[ $field ] = 'array';
 					break;
 				default:
 					$assigned_field_type[ $field ] = 'string';
