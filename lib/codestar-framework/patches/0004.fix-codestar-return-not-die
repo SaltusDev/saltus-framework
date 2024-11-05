@@ -1,0 +1,10 @@
+diff --git a/lib/codestar-framework/codestar-framework.php b/lib/codestar-framework/codestar-framework.php
+index 90e9b63..41f5182 100755
+--- a/lib/codestar-framework/codestar-framework.php
++++ b/lib/codestar-framework/codestar-framework.php
+@@ -1,4 +1,4 @@
+-<?php if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly.
++<?php if ( ! defined( 'ABSPATH' ) ) { return; } // Cannot access directly.
+ /**
+  *
+  * @package   Codestar Framework - WordPress Options Framework
