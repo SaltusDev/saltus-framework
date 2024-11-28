@@ -80,20 +80,25 @@ final class CodestarMeta implements Processable {
 		if ( ! empty( $box_settings['register_rest_api'] ) && $box_settings['register_rest_api'] === true ) {
 			if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
 				$post_type = $this->name;
-				if ( ! empty( $box_settings['sections']['details']['fields'] ) ) {
-					$this->create_meta_fields_serialized( $box_settings['sections']['details']['fields'], $box_id, $post_type );
+				foreach( $box_settings['sections'] as $section ) {
+					if ( ! empty( $section['fields'] ) ) {
+						$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
+					}
 				}
 			}
 			if ( empty( $box_settings['data_type'] ) ||
 				( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'unserialize' ) ) {
 				$post_type = $this->name;
-				if ( ! empty( $box_settings['sections']['details']['fields'] ) ) {
-					foreach ( $box_settings['sections']['details']['fields'] as $meta_name => $want_to_register_fields ) {
-						$meta_type = 'object';
-						if ( ! empty( $want_to_register_fields['type'] ) ) {
-							$meta_type = $want_to_register_fields['type'];
+
+				foreach( $box_settings['sections'] as $section ) {
+					if ( ! empty( $section['fields'] ) ) {
+						foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
+							$meta_type = 'object';
+							if ( ! empty( $want_to_register_fields['type'] ) ) {
+								$meta_type = $want_to_register_fields['type'];
+							}
+							$this->create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type );
 						}
-						$this->create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type );
 					}
 				}
 			}
