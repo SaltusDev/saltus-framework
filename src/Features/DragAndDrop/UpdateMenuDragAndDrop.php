@@ -16,7 +16,7 @@ class UpdateMenuDragAndDrop implements Actionable {
 	public function __construct() {}
 
 	public function add_action() {
-		add_action( 'wp_ajax_dda-update-menu-order', array( $this, 'update_menu_order' ) );
+		add_action( 'wp_ajax_saltus-dad-update-menu-order', array( $this, 'update_menu_order' ) );
 	}
 
 	public function update_menu_order() {
@@ -76,6 +76,6 @@ class UpdateMenuDragAndDrop implements Actionable {
 			);
 		}
 
-		do_action( 'dda_update_menu_order' );
+		do_action( 'saltus/dad/update_menu_order' );
 	}
 }
