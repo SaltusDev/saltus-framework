@@ -239,7 +239,6 @@ final class CodestarMeta implements Processable {
 				case 'image_select':
 				case 'link':
 				case 'link_color':
-				case 'media':
 				case 'notice':
 				case 'palette':
 				case 'radio':
@@ -269,6 +268,7 @@ final class CodestarMeta implements Processable {
 				case 'map':
 					$assigned_field_type[ $field ] = 'object';
 					break;
+				case 'media':
 				case 'select':
 				case 'repeater':
 					$assigned_field_type[ $field ] = 'array';
