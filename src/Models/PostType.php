@@ -41,6 +41,9 @@ class PostType extends BaseModel implements Model {
 		if ( $this->config->has( 'supports' ) ) {
 			$options['supports'] = $this->config->get( 'supports' );
 		}
+		if ( $this->config->has( 'meta' ) ) {
+			$options['supports'][] = 'custom-fields';
+		}
 		return $options;
 	}
 

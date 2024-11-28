@@ -2,6 +2,7 @@
 /**
  * Saltus Framework
  *
+ * Version 1.1.0
  */
 namespace Saltus\WP\Framework;
 

@@ -146,7 +146,8 @@ final class SaltusDuplicate implements Processable {
 		// redirect to admin screen depending on post type
 		$post_type = get_post_type( $post_id );
 
-		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
+		do_action( 'saltus/duplicate_post/after', $post_type, $post_id, $new_post_id );
 
+		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
 	}
 }

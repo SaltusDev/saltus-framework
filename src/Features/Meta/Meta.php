@@ -18,11 +18,9 @@ final class Meta implements Service, Conditional, Assembly {
 	 */
 	public static function is_needed(): bool {
 		/*
-		 * Only load this sample service on the admin backend.
-		 * If this conditional returns false, the service is never even
-		 * instantiated.
+		 * Load everywhere since its needed via REST API
 		 */
-		return \is_admin() && ! \wp_doing_ajax();
+		return true;
 	}
 
 	/**
