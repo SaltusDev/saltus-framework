@@ -33,7 +33,6 @@ final class CodestarMeta implements Processable {
 			// else add just the fields
 			$this->create_metabox( $box_id, $box );
 		}
-
 	}
 
 	/**
@@ -80,7 +79,7 @@ final class CodestarMeta implements Processable {
 		if ( ! empty( $box_settings['register_rest_api'] ) && $box_settings['register_rest_api'] === true ) {
 			if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
 				$post_type = $this->name;
-				foreach( $box_settings['sections'] as $section ) {
+				foreach ( $box_settings['sections'] as $section ) {
 					if ( ! empty( $section['fields'] ) ) {
 						$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
 					}
@@ -90,7 +89,7 @@ final class CodestarMeta implements Processable {
 				( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'unserialize' ) ) {
 				$post_type = $this->name;
 
-				foreach( $box_settings['sections'] as $section ) {
+				foreach ( $box_settings['sections'] as $section ) {
 					if ( ! empty( $section['fields'] ) ) {
 						foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
 							$meta_type = 'object';
@@ -109,17 +108,17 @@ final class CodestarMeta implements Processable {
 	}
 	private function setup_restapi_fields( $fields ) {
 		$rest_fields = [];
-		$rest_types = $this->match_fields( $this->list_fields() );
+		$rest_types  = $this->match_fields( $this->list_fields() );
 		foreach ( $fields as $name => $attributes ) {
 			if ( empty( $attributes['type'] ) ) {
 				continue;
 			}
-			$rest_type = $this->get_field_type( $attributes['type'], $rest_types );
+			$rest_type            = $this->get_field_type( $attributes['type'], $rest_types );
 			$rest_fields[ $name ] = [
-				'type' => $rest_type
+				'type' => $rest_type,
 			];
 			if ( $rest_type === 'object' && ! empty( $attributes['fields'] ) ) {
-				$rest_properties = $this->setup_restapi_fields( $attributes['fields'] );
+				$rest_properties                    = $this->setup_restapi_fields( $attributes['fields'] );
 				$rest_fields[ $name ]['properties'] = $rest_properties;
 			}
 		}
@@ -128,20 +127,27 @@ final class CodestarMeta implements Processable {
 	private function create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type ) {
 
 		$rest_types = $this->match_fields( $this->list_fields() );
-		$rest_type = $this->get_field_type( $meta_type, $rest_types );
+		$rest_type  = $this->get_field_type( $meta_type, $rest_types );
 
-		add_action( 'rest_api_init', function() use ($post_type, $meta_name, $rest_type ) {
-			register_meta( 'post', $meta_name, array(
-				'object_subtype' => $post_type,
-				'type'           => $rest_type,
-				'single'         => true,
-				'show_in_rest'  => [
-					'prepare_callback' => function( $value ) {
-						return wp_json_encode( $value );
-					}
-				],
-			));
-		});
+		add_action(
+			'rest_api_init',
+			function () use ( $post_type, $meta_name, $rest_type ) {
+				register_meta(
+					'post',
+					$meta_name,
+					array(
+						'object_subtype' => $post_type,
+						'type'           => $rest_type,
+						'single'         => true,
+						'show_in_rest'   => [
+							'prepare_callback' => function ( $value ) {
+								return wp_json_encode( $value );
+							},
+						],
+					)
+				);
+			}
+		);
 	}
 
 	private function create_meta_fields_serialized( $meta_fields, $meta_name, $post_type ) {
@@ -150,77 +156,87 @@ final class CodestarMeta implements Processable {
 
 		$meta_rest_fields = $this->setup_restapi_fields( $meta_fields );
 
-		add_action( 'rest_api_init', function() use ( $post_type, $meta_name, $meta_type, $meta_rest_fields ) {
-			register_meta( 'post', $meta_name, array(
-				'object_subtype' => $post_type,
-				'type'           => $meta_type,
-				'single'         => true,
-				'show_in_rest'   => [
-					'schema' => [
-						'type'       => 'object',
-						'additionalProperties' => true, // so it handles old meta
-						'properties' => $meta_rest_fields,
-					],
-				],
-			));
-		});
+		add_action(
+			'rest_api_init',
+			function () use ( $post_type, $meta_name, $meta_type, $meta_rest_fields ) {
+				register_meta(
+					'post',
+					$meta_name,
+					array(
+						'object_subtype' => $post_type,
+						'type'           => $meta_type,
+						'single'         => true,
+						'show_in_rest'   => [
+							'schema' => [
+								'type'                 => 'object',
+								'additionalProperties' => true, // so it handles old meta
+								'properties'           => $meta_rest_fields,
+							],
+						],
+					)
+				);
+			}
+		);
 	}
 
 	private function list_fields() {
 
 		// Include all framework fields
-		return apply_filters( 'saltus/cfs/fields', array(
-			'accordion',
-			'background',
-			'backup',
-			'border',
-			'button_set',
-			'callback',
-			'checkbox',
-			'code_editor',
-			'color',
-			'color_group',
-			'content',
-			'date',
-			'datetime',
-			'dimensions',
-			'fieldset',
-			'gallery',
-			'group',
-			'heading',
-			'icon',
-			'image_select',
-			'link',
-			'link_color',
-			'map',
-			'media',
-			'notice',
-			'number',
-			'palette',
-			'radio',
-			'repeater',
-			'select',
-			'slider',
-			'sortable',
-			'sorter',
-			'spacing',
-			'spinner',
-			'subheading',
-			'submessage',
-			'switcher',
-			'tabbed',
-			'text',
-			'textarea',
-			'typography',
-			'upload',
-			'wp_editor',
-		) );
+		return apply_filters(
+			'saltus/cfs/fields',
+			array(
+				'accordion',
+				'background',
+				'backup',
+				'border',
+				'button_set',
+				'callback',
+				'checkbox',
+				'code_editor',
+				'color',
+				'color_group',
+				'content',
+				'date',
+				'datetime',
+				'dimensions',
+				'fieldset',
+				'gallery',
+				'group',
+				'heading',
+				'icon',
+				'image_select',
+				'link',
+				'link_color',
+				'map',
+				'media',
+				'notice',
+				'number',
+				'palette',
+				'radio',
+				'repeater',
+				'select',
+				'slider',
+				'sortable',
+				'sorter',
+				'spacing',
+				'spinner',
+				'subheading',
+				'submessage',
+				'switcher',
+				'tabbed',
+				'text',
+				'textarea',
+				'typography',
+				'upload',
+				'wp_editor',
+			)
+		);
 	}
 	private function match_fields( $allowed_fields ) {
 
 		$assigned_field_type = [];
-		foreach( $allowed_fields as $field ) {
-			switch( $field) {
+		foreach ( $allowed_fields as $field ) {
+			switch ( $field ) {
 				case 'accordion':
 				case 'backup':
 				case 'border':
@@ -307,7 +323,6 @@ final class CodestarMeta implements Processable {
 			return;
 		}
 		\CSF::createSection( $id, $section );
-
 	}
 
 	/**
