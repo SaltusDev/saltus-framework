@@ -53,10 +53,23 @@ class Modeler {
 			$path_dir      = new \RecursiveDirectoryIterator( $path );
 			$path_dir_iter = new \RecursiveIteratorIterator( $path_dir );
 
+			$files = [];
 			foreach ( $path_dir_iter as $filename => $file ) {
 				if ( ! in_array( pathinfo( $file, PATHINFO_EXTENSION ), [ 'json', 'php', 'yml', 'yaml' ], true ) ) {
 					continue;
 				}
+				$files[] = $file; // Collect valid files
+			}
+
+			// sort by ascending names so it loads in the desired order
+			usort(
+				$files,
+				function ( $a, $b ) {
+					return strcmp( $a->getFilename(), $b->getFilename() );
+				}
+			); // Sort by filename
+
+			foreach ( $files as $file ) { // Iterate over sorted files
 				$config = new Config( $file );
 				( $this->is_multiple( $config ) ?
 					$this->iterate_multiple( $config ) :
