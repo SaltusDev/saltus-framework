@@ -68,7 +68,7 @@ final class SaltusDuplicate implements Processable {
 		$error_msg = esc_html__( 'Item cannot be found. Please select one to duplicate.', 'saltus' );
 
 		// Die if post not selected
-		if ( ! ( isset( $_GET['post'] ) || isset( $_POST['post'] ) || ( isset( $_REQUEST['action'] ) && 'saltus_duplicate_post' === $_REQUEST['action'] ) ) ) {
+		if ( ! ( isset( $_GET['post'] ) || isset( $_POST['post'] ) || ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'saltus_duplicate_post' ) ) ) {
 			wp_die( esc_html__( 'Please select an item to duplicate.', 'saltus' ) );
 		}
 
@@ -136,7 +136,7 @@ final class SaltusDuplicate implements Processable {
 			if ( $meta_key === '_wp_old_slug' ) {
 				continue;
 			}
-			$sql_query_sel[] = $wpdb->prepare( "SELECT %s, %s, %s", $new_post_id, $meta_key, $post_meta->meta_value);
+			$sql_query_sel[] = $wpdb->prepare( 'SELECT %s, %s, %s', $new_post_id, $meta_key, $post_meta->meta_value );
 		}
 
 		$insert_query .= implode( ' UNION ALL ', $sql_query_sel );
