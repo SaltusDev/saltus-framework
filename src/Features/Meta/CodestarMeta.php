@@ -265,7 +265,6 @@ final class CodestarMeta implements Processable {
 				case 'spinner':
 				case 'subheading':
 				case 'submessage':
-				case 'switcher':
 				case 'tabbed':
 				case 'text':
 				case 'textarea':
@@ -286,6 +285,7 @@ final class CodestarMeta implements Processable {
 					break;
 				case 'media':
 				case 'select':
+				case 'switcher':
 				case 'repeater':
 					$assigned_field_type[ $field ] = 'array';
 					break;
