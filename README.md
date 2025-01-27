@@ -3,7 +3,9 @@ Saltus Framework helps you develop WordPress plugins that are based on Custom Po
 
 We built it to make things easier and faster for developers with different skills. Add metaboxes, settings pages and other enhancements with just a few lines of code.
 
-**Version 1.1.2**
+## Version
+## [1.1.2] - 2025-03-05
+See [change log file](changelog.md) for full details.
 
 ### Features
 	* Create Custom Post Types easily
