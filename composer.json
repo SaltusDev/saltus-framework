@@ -24,8 +24,8 @@
 		"psr-4": {
 			"Saltus\\WP\\Framework\\": "src/"
 		},
-		"files": [
-			"lib/codestar-framework/codestar-framework.php"
+		"classmap": [
+			"lib/codestar-framework/"
 		]
 	},
 	"autoload-dev": {
