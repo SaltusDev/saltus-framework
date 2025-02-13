@@ -133,3 +133,9 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 * Download [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
 * Activate via WordPress
+
+## Building
+
+### Disadvantages of classmap
+As we move from 'files' to 'classmap', heed this:
+> Manual Updates: If you add new classes, you must regenerate the classmap by running composer dump-autoload.
