@@ -4,7 +4,17 @@
 ## [Unreleased]
 
 
-## [1.1.2] - 2025-03-05
+## [1.1.4] - 2025-02-18
+
+### Changed
+	Move loading codestar from files to classmap
+
+## [1.1.3] - 2025-01-28
+
+### Added
+	Add changelog
+
+## [1.1.2] - 2024-12-10
 
 ### Fixed
 	Load models by ascending filename order
