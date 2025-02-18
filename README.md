@@ -4,8 +4,8 @@ Saltus Framework helps you develop WordPress plugins that are based on Custom Po
 We built it to make things easier and faster for developers with different skills. Add metaboxes, settings pages and other enhancements with just a few lines of code.
 
 ## Version
-## [1.1.2] - 2025-03-05
-See [change log file](changelog.md) for full details.
+## [1.1.4] - 2025-02-18
+See [change log file](CHANGELOG.md) for full details.
 
 ### Features
 	* Create Custom Post Types easily
@@ -133,3 +133,9 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 * Download [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
 * Activate via WordPress
+
+## Building
+
+### Disadvantages of classmap
+As we move from 'files' to 'classmap', heed this:
+> Manual Updates: If you add new classes, you must regenerate the classmap by running composer dump-autoload.
