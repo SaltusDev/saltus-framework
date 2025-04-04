@@ -14,7 +14,7 @@ final class SaltusDragAndDrop implements Processable {
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct( string $name, array $project, ...$args ) {
+	public function __construct( string $name, array $project ) {
 		$this->project = $project;
 		$this->name    = $name;
 	}
@@ -70,7 +70,6 @@ final class SaltusDragAndDrop implements Processable {
 		);
 
 		wp_enqueue_style( 'drag_drop_order', $this->project['root_url'] . '/Feature/DragAndDrop/order.css', array(), '1' );
-
 	}
 
 	public function previous_post_where( $where ) {
@@ -140,7 +139,6 @@ final class SaltusDragAndDrop implements Processable {
 		$query_prepared = $wpdb->prepare( $query, $this->name );
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query_result = $wpdb->query( $query_prepared );
-
 	}
 
 	public function pre_get_posts( $wp_query ) {

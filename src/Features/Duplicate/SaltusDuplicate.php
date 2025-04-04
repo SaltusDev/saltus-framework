@@ -12,15 +12,30 @@ use Saltus\WP\Framework\Infrastructure\Service\{
  */
 final class SaltusDuplicate implements Processable {
 
+	/**
+	 * @var string $name The name of the custom post type (CPT)
+	 */
 	private $name;
+
+	/**
+	 * @var string $label The label for duplicate link.
+	 */
 	private $label;
+
+	/**
+	 * @var string $attr_title The title for the duplicate link.
+	 */
 	private $attr_title;
 
 	/**
-	 * Instantiate this Service object.
+	 * Constructor.
 	 *
+	 * @param string $name The name of the custom post type (CPT).
+	 * @param array  $args Additional arguments.
+	 *                     - 'label': The label for the duplicate link.
+	 *                     - 'attr_title': The title for the duplicate link.
 	 */
-	public function __construct( string $name, array $project = null, array $args ) {
+	public function __construct( string $name, array $args ) {
 		$this->name       = $name;
 		$this->label      = ! empty( $args['label'] ) ? $args['label'] : 'Duplicate';
 		$this->attr_title = ! empty( $args['attr_title'] ) ? $args['attr_title'] : 'Duplicate this entry';
@@ -38,6 +53,12 @@ final class SaltusDuplicate implements Processable {
 
 	/*
 	* Add a duplicate link to action list for this cpt row_actions
+	*
+	* @param array $actions The actions for the row.
+	* @param object $post The post object.
+	*
+	* @return array The modified actions.
+	*
 	*/
 	public function row_link( $actions, $post ) {
 
@@ -65,7 +86,7 @@ final class SaltusDuplicate implements Processable {
 	public function duplicate() {
 
 		global $wpdb;
-		$error_msg = esc_html__( 'Item cannot be found. Please select one to duplicate.', 'saltus' );
+		$error_msg = esc_html__( 'Item cannot be found. Please select one to duplicate.', 'saltus-framework' );
 
 		// Die if post not selected
 		if ( ! ( isset( $_GET['post'] ) || isset( $_POST['post'] ) || ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'saltus_duplicate_post' ) ) ) {
@@ -83,6 +104,7 @@ final class SaltusDuplicate implements Processable {
 		$post    = get_post( $post_id );
 
 		// duplicate the post
+		// @phpstan-ignore identical.alwaysFalse
 		if ( ! isset( $post ) || $post === null ) {
 			return;
 		}
@@ -105,6 +127,7 @@ final class SaltusDuplicate implements Processable {
 		);
 
 		// insert the new post
+		// @phpstan-ignore argument.type
 		$new_post_id = wp_insert_post( $args );
 
 		// add taxonomy terms to the new post
@@ -127,8 +150,8 @@ final class SaltusDuplicate implements Processable {
 		if ( count( $query_result ) === 0 ) {
 			return;
 		}
-
-		$insert_query = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
+		$sql_query_sel = [];
+		$insert_query  = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
 		foreach ( $query_result as $post_meta ) {
 
 			$meta_key = $post_meta->meta_key;

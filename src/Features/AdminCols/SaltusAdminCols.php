@@ -18,28 +18,35 @@ use Saltus\WP\Framework\Infrastructure\Service\{
  */
 final class SaltusAdminCols implements Processable {
 
+	/**
+	 * @var string $name The name of the custom post type (CPT)
+	 */
 	private $name;
-	private $project;
+
+	/**
+	 * @var array $args List of columns
+	 */
 	private $args;
 
 	/**
 	 * @var array Default columns
 	 */
-	private $default_columns;
+	private $default_columns = null;
 
 	/**
-	 * @var array Managed columsn
+	 * @var array Managed columns
 	 */
-	private $managed_columns = null;
+	private ?array $managed_columns = null;
 
 	/**
 	 * Instantiate this Service object.
 	 *
+	 * @param string $name The name of the custom post type (CPT)
+	 * @param array  $args List of columns
 	 */
-	public function __construct( string $name, array $project, array $args ) {
-		$this->project = $project;
-		$this->name    = $name;
-		$this->args    = $args;
+	public function __construct( string $name, array $args ) {
+		$this->name = $name;
+		$this->args = $args;
 	}
 
 	/**
@@ -72,10 +79,10 @@ final class SaltusAdminCols implements Processable {
 	}
 
 	/**
-	 * Adds our custom columns to the list of sortable columns.
+	 * Adds the custom columns to the list of sortable columns.
 	 *
-	 * @param array $cols Array of sortable columns keyed by the column ID.
-	 * @return array Updated array of sortable columns.
+	 * @param array<string,string> $cols Array of sortable columns keyed by the column ID.
+	 * @return array<string,string> Updated array of sortable columns.
 	 */
 	public function sortables( array $cols ): array {
 		foreach ( $this->args as $id => $col ) {
@@ -98,8 +105,8 @@ final class SaltusAdminCols implements Processable {
 	 *
 	 * @link https://github.com/johnbillion/extended-cpts/wiki/Admin-columns
 	 *
-	 * @param array $cols Associative array of columns
-	 * @return array Updated array of columns
+	 * @param array<string,string> $cols Associative array of columns
+	 * @return array<string,string> Updated array of columns
 	 */
 	public function manage_columns( array $cols ): array {
 		// This function gets called multiple times, so let's cache it for efficiency:
@@ -120,8 +127,11 @@ final class SaltusAdminCols implements Processable {
 			}
 		}
 
-		# Add our custom columns:
-		foreach ( array_filter( $this->args ) as $id => $col ) {
+		# Add the custom columns:
+		/** @var array<string,(string|mixed[])> */
+		$admin_cols = array_filter( $this->args );
+
+		foreach ( $admin_cols as $id => $col ) {
 			if ( is_string( $col ) && isset( $cols[ $col ] ) ) {
 				# Existing (ie. built-in) column with id as the value
 				$new_cols[ $col ] = $cols[ $col ];
@@ -136,7 +146,7 @@ final class SaltusAdminCols implements Processable {
 				} else {
 					$k = 'author';
 				}
-				$new_cols[ $k ] = esc_html__( 'Author', 'extended-cpts' );
+				$new_cols[ $k ] = esc_html__( 'Author', 'saltus-framework' );
 			} elseif ( is_array( $col ) ) {
 				if ( isset( $col['cap'] ) && ! current_user_can( $col['cap'] ) ) {
 					continue;
@@ -171,8 +181,9 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * Returns a sensible title for the current item (usually the arguments array for a column)
 	 *
-	 * @param array $item An array of arguments
-	 * @return string|null The item title
+	 * @param array<string,mixed> $item     An array of arguments.
+	 * @param string              $fallback Fallback item title.
+	 * @return string The item title.
 	 */
 	protected function get_item_title( array $item ) {
 		if ( isset( $item['taxonomy'] ) ) {
@@ -200,19 +211,20 @@ final class SaltusAdminCols implements Processable {
 				$item['meta_key']
 			) ) );
 		}
-		return null;
+		return $fallback;
 	}
 
 	/**
-	 * Output the column data for our custom columns.
+	 * Output the column data for the custom columns.
 	 *
-	 * @param string $col The column name
+	 * @param string $col     The column name.
+	 * @param int    $post_id The post ID.
 	 */
-	public function manage_custom_columns( string $col, $post_id ) {
+	public function manage_custom_columns( string $col, int $post_id ): void {
 		# Shorthand:
 		$c = $this->args;
 
-		# We're only interested in our custom columns:
+		# We're only interested in the custom columns:
 		$custom_cols = array_filter( array_keys( $c ) );
 
 		if ( ! in_array( $col, $custom_cols, true ) ) {
@@ -243,8 +255,9 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * Outputs column data for a post meta field.
 	 *
-	 * @param string $meta_key The post meta key
-	 * @param array  $args     Array of arguments for this field
+	 * @param \WP_Post             $post     The post object.
+	 * @param string              $meta_key The post meta key.
+	 * @param array<string,mixed> $args     Array of arguments for this field.
 	 */
 	public function col_post_meta( string $meta_key, array $args ) {
 		$vals = get_post_meta( get_the_ID(), $meta_key, false );
@@ -289,8 +302,9 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * Outputs column data for a taxonomy's term names.
 	 *
-	 * @param string $taxonomy The taxonomy name
-	 * @param array  $args     Array of arguments for this field
+	 * @param \WP_Post             $post     The post object.
+	 * @param string              $taxonomy The taxonomy name.
+	 * @param array<string,mixed> $args     Array of arguments for this field.
 	 */
 	public function col_taxonomy( int $post_id, string $taxonomy, array $args ) {
 
@@ -302,7 +316,6 @@ final class SaltusAdminCols implements Processable {
 			echo esc_html( $terms->get_error_message() );
 			return;
 		}
-
 		if ( empty( $terms ) ) {
 			printf(
 				'<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">%s</span>',
@@ -494,7 +507,7 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * Sets the relevant query vars for sorting posts by our admin sortables.
 	 *
-	 * @param WP_Query $wp_query The current `WP_Query` object.
+	 * @param \WP_Query $wp_query The current `WP_Query` object.
 	 */
 	public function maybe_sort_by_fields( \WP_Query $wp_query ) {
 		if ( empty( $wp_query->query['post_type'] ) || ! in_array( $this->name, (array) $wp_query->query['post_type'], true ) ) {
@@ -513,11 +526,11 @@ final class SaltusAdminCols implements Processable {
 	}
 
 	/**
-	 * Filters the query's SQL clauses so we can sort posts by taxonomy terms.
+	 * Filters the query's SQL clauses so the posts can be sorted by taxonomy terms.
 	 *
-	 * @param array    $clauses  The current query's SQL clauses.
-	 * @param WP_Query $wp_query The current `WP_Query` object.
-	 * @return array The updated SQL clauses.
+	 * @param array<string,string> $clauses  The current query's SQL clauses.
+	 * @param \WP_Query             $wp_query The current `WP_Query` object.
+	 * @return array<string,string> The updated SQL clauses
 	 */
 	public function maybe_sort_by_taxonomy( array $clauses, \WP_Query $wp_query ): array {
 		if ( empty( $wp_query->query['post_type'] ) || ! in_array( $this->name, (array) $wp_query->query['post_type'], true ) ) {
@@ -537,10 +550,10 @@ final class SaltusAdminCols implements Processable {
 	 * Get the array of private and public query vars for the given sortables, to apply to the current query in order to
 	 * sort it by the requested orderby field.
 	 *
-	 * @param array $vars      The public query vars, usually from `$wp_query->query`.
-	 * @param array $sortables The sortables valid for this query (usually the value of the `admin_cols` or
-	 *                         `site_sortables` argument when registering an extended post type.
-	 * @return array The list of private and public query vars to apply to the query.
+	 * @param array<string,mixed> $vars      The public query vars, usually from `$wp_query->query`.
+	 * @param array<string,mixed> $sortables The sortables valid for this query (usually the value of the `admin_cols` or
+	 *                                       `site_sortables` argument when registering an extended post type.
+	 * @return array<string,mixed> The list of private and public query vars to apply to the query.
 	 */
 	public static function get_sort_field_vars( array $vars, array $sortables ): array {
 		if ( ! isset( $vars['orderby'] ) ) {
@@ -587,11 +600,11 @@ final class SaltusAdminCols implements Processable {
 	 * Get the array of SQL clauses for the given sortables, to apply to the current query in order to
 	 * sort it by the requested orderby field.
 	 *
-	 * @param array $clauses   The query's SQL clauses.
-	 * @param array $vars      The public query vars, usually from `$wp_query->query`.
-	 * @param array $sortables The sortables valid for this query (usually the value of the `admin_cols` or
-	 *                         `site_sortables` argument when registering an extended post type).
-	 * @return array The list of SQL clauses to apply to the query.
+	 * @param array<string,string> $clauses   The query's SQL clauses.
+	 * @param array<string,mixed>  $vars      The public query vars, usually from `$wp_query->query`.
+	 * @param array<string,mixed>  $sortables The sortables valid for this query (usually the value of the `admin_cols` or
+	 *                                        `site_sortables` argument when registering an extended post type).
+	 * @return array<string,string> The list of SQL clauses to apply to the query.
 	 */
 	public static function get_sort_taxonomy_clauses( array $clauses, array $vars, array $sortables ): array {
 		global $wpdb; // Global WPDB class object

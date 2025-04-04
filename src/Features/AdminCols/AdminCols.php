@@ -25,7 +25,7 @@ class AdminCols implements Service, Conditional, Assembly {
 	 * @return object The new instance
 	 */
 	public static function make( $name, $project, $args ) {
-		return new SaltusAdminCols( $name, $project, $args );
+		return new SaltusAdminCols( $name, $args );
 	}
 
 	/**
@@ -40,5 +40,4 @@ class AdminCols implements Service, Conditional, Assembly {
 		 */
 		return is_admin();
 	}
-
 }
