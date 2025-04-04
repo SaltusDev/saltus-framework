@@ -23,7 +23,7 @@ class UpdateMenuDragAndDrop implements Actionable {
 	 * Register the WordPress action for handling the AJAX request.
 	 */
 	public function add_action() {
-		add_action( 'wp_ajax_saltus-dad-update-menu-order', array( $this, 'update_menu_order' ) );
+		add_action( 'wp_ajax_saltus-framwork-drop-and-drag-update-menu-order', array( $this, 'update_menu_order' ) );
 	}
 
 	/**
