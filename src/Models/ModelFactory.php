@@ -1,9 +1,6 @@
 <?php
 
 namespace Saltus\WP\Framework\Models;
-use Saltus\WP\Framework\Infrastructure\Plugin\{
-	Registerable
-};
 
 use Noodlehaus\AbstractConfig;
 use Saltus\WP\Framework\Infrastructure\Service\Processable;
@@ -13,13 +10,23 @@ class ModelFactory {
 	protected $app;
 	protected $project;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param object $app     The application instance.
+	 * @param string $project The project data.
+	 */
 	public function __construct( $app, $project ) {
 		$this->app     = $app;
 		$this->project = $project;
 	}
 
 	/**
-	 * Route to class
+	 * Create a new model instance based on the provided configuration.
+	 *
+	 * @param AbstractConfig $config The configuration for the model.
+	 *
+	 * @return Model|bool The created model instance or false if the type is not recognized.
 	 */
 	public function create( AbstractConfig $config ) {
 
@@ -36,14 +43,14 @@ class ModelFactory {
 			foreach ( $services as $service_name ) {
 				if ( $config->has( $service_name ) && $this->app->has( $service_name ) ) {
 
-				$config_value = $config->get( $service_name );
-				$service = $this->app->get( $service_name );
-				$service_imp = $service->make( $cpt->name, $this->project, $config_value );
+					$config_value = $config->get( $service_name );
+					$service      = $this->app->get( $service_name );
+					$service_imp  = $service->make( $cpt->name, $this->project, $config_value );
 
-				if ( $service_imp instanceof Processable ) {
-					$service_imp->process();
+					if ( $service_imp instanceof Processable ) {
+						$service_imp->process();
+					}
 				}
-			}
 			}
 
 			$service_name = 'features';
@@ -63,11 +70,11 @@ class ModelFactory {
 					}
 
 					// make sure $args is an array
-					if( ! is_array( $args ) ){
+					if ( ! is_array( $args ) ) {
 						$args = [];
 					}
 
-					$service = $this->app->get( $normalized_feature_name );
+					$service     = $this->app->get( $normalized_feature_name );
 					$service_imp = $service->make( $cpt->name, $this->project, $args );
 
 					if ( $service_imp instanceof Processable ) {
@@ -78,7 +85,7 @@ class ModelFactory {
 
 			// disable block editor only if 'block_editor' is false
 			if ( $config->has( 'block_editor' ) && ! $config->get( 'block_editor' ) ) {
-				add_filter( 'use_block_editor_for_post_type', array( $cpt, 'disable_block_editor'), 10, 2 );
+				add_filter( 'use_block_editor_for_post_type', array( $cpt, 'disable_block_editor' ), 10, 2 );
 			}
 			return $cpt;
 
@@ -90,6 +97,5 @@ class ModelFactory {
 		}
 
 		return false;
-
 	}
 }

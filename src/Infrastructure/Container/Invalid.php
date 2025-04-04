@@ -4,7 +4,7 @@ namespace Saltus\WP\Framework\Infrastructure\Container;
 use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 use InvalidArgumentException;
 
-class Invalid
+final class Invalid
 	extends InvalidArgumentException
 	implements SaltusFrameworkThrowable {
 
@@ -25,7 +25,7 @@ class Invalid
 				: (string) $item
 		);
 
-		return new static( $message );
+		return new self( $message );
 	}
 
 	/**
@@ -43,6 +43,6 @@ class Invalid
 			$item_id
 		);
 
-		return new static( $message );
+		return new self( $message );
 	}
 }

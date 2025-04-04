@@ -14,9 +14,7 @@ namespace Saltus\WP\Framework\Infrastructure\Service;
 interface Actionable {
 
 	/**
-	 * Check whether the conditional object is currently needed.
-	 *
-	 * @return bool Whether the conditional object is needed.
+	 * Add an action to the WordPress action hook.
 	 */
 	public function add_action();
 }
