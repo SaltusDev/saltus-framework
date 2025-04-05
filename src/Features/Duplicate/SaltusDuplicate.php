@@ -73,9 +73,9 @@ final class SaltusDuplicate implements Processable {
 		$actions['duplicate'] = sprintf(
 			'<a href="%1$s" title="%2$s" rel="permalink">%3$s</a>',
 			wp_nonce_url(
-				'admin.php?action=' . $this->name . '_duplicate_post&post=' . $post->ID,
+				'admin.php?action=saltus_framework_duplicate_post&post=' . $post->ID,
 				basename( __FILE__ ),
-				'saltus_duplicate_nonce'
+				'saltus_framework_duplicate_nonce'
 			),
 			esc_attr( $this->attr_title ),
 			esc_html( $this->label )
@@ -89,12 +89,16 @@ final class SaltusDuplicate implements Processable {
 		$error_msg = esc_html__( 'Item cannot be found. Please select one to duplicate.', 'saltus-framework' );
 
 		// Die if post not selected
-		if ( ! ( isset( $_GET['post'] ) || isset( $_POST['post'] ) || ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'saltus_duplicate_post' ) ) ) {
-			wp_die( esc_html__( 'Please select an item to duplicate.', 'saltus' ) );
+		if ( ! ( isset( $_GET['post'] ) ||
+				isset( $_POST['post'] ) ||
+				( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'saltus_framework_duplicate_post' )
+				) ) {
+			wp_die( esc_html__( 'Please select an item to duplicate.', 'saltus-framework' ) );
 		}
 
 		// Verify nonce
-		if ( ! isset( $_GET['saltus_duplicate_nonce'] ) || ! wp_verify_nonce( $_GET['saltus_duplicate_nonce'], basename( __FILE__ ) ) ) {
+		if ( ! isset( $_GET['saltus_framework_duplicate_nonce'] ) ||
+			! wp_verify_nonce( $_GET['saltus_framework_duplicate_nonce'], basename( __FILE__ ) ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			wp_die( $error_msg );
 		}
