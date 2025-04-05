@@ -58,9 +58,17 @@ final class SaltusAdminCols implements Processable {
 
 		add_filter( 'manage_posts_columns',                       [ $this, 'log_default_cols' ], 0 );
 		add_filter( 'manage_pages_columns',                       [ $this, 'log_default_cols' ], 0 );
-		add_filter( "manage_edit-{$this->name}_sortable_columns", [ $this, 'sortables' ] );
-		add_filter( "manage_{$this->name}_posts_columns",         [ $this, 'manage_columns' ] );
-		add_action( "manage_{$this->name}_posts_custom_column",   [ $this, 'manage_custom_columns' ], 10, 2 );
+		add_filter( 'manage_media_columns',                       [ $this, 'log_default_cols' ], 0 );
+		if ( $this->name === 'attachment' ) {
+			add_filter( 'manage_upload_sortable_columns', [ $this, 'sortables' ] );
+			add_filter( 'manage_media_columns',         [ $this, 'manage_columns' ] );
+			add_action( 'manage_media_custom_column',   [ $this, 'manage_custom_columns' ], 10, 2 );
+		} else {
+			add_filter( "manage_edit-{$this->name}_sortable_columns", [ $this, 'sortables' ] );
+			add_filter( "manage_{$this->name}_posts_columns",         [ $this, 'manage_columns' ] );
+			add_action( "manage_{$this->name}_posts_custom_column",   [ $this, 'manage_custom_columns' ], 10, 2 );
+		}
+
 		add_action( 'load-edit.php',                              [ $this, 'default_sort' ] );
 		add_filter( 'pre_get_posts',                              [ $this, 'maybe_sort_by_fields' ] );
 		add_filter( 'posts_clauses',                              [ $this, 'maybe_sort_by_taxonomy' ], 10, 2 );
@@ -155,7 +163,7 @@ final class SaltusAdminCols implements Processable {
 				if ( isset( $col['title_cb'] ) ) {
 					$new_cols[ $id ] = call_user_func( $col['title_cb'], $col );
 				} else {
-					$title = esc_html( $col['title'] ?? $this->get_item_title( $col ) ?? $id );
+					$title = esc_html( $this->get_item_title( $col, $id ) );
 
 					if ( isset( $col['title_icon'] ) ) {
 						$title = sprintf(
@@ -185,8 +193,11 @@ final class SaltusAdminCols implements Processable {
 	 * @param string              $fallback Fallback item title.
 	 * @return string The item title.
 	 */
-	protected function get_item_title( array $item ) {
-		if ( isset( $item['taxonomy'] ) ) {
+	protected function get_item_title( array $item, string $fallback = '' ): string {
+		if ( isset( $item['title'] ) ) {
+			return $item['title'];
+
+		} elseif ( isset( $item['taxonomy'] ) ) {
 			$tax = get_taxonomy( $item['taxonomy'] );
 			if ( $tax ) {
 				return $tax->labels->name;
@@ -234,21 +245,26 @@ final class SaltusAdminCols implements Processable {
 		if ( isset( $c[ $col ]['post_cap'] ) && ! current_user_can( $c[ $col ]['post_cap'], get_the_ID() ) ) {
 			return;
 		}
+		$post = get_post( $post_id );
+
+		if ( ! $post ) {
+			return;
+		}
 
 		if ( ! isset( $c[ $col ]['link'] ) ) {
 			$c[ $col ]['link'] = 'list';
 		}
 
 		if ( isset( $c[ $col ]['function'] ) ) {
-			call_user_func( $c[ $col ]['function'] );
+			call_user_func( $c[ $col ]['function'], $post );
 		} elseif ( isset( $c[ $col ]['meta_key'] ) ) {
-			$this->col_post_meta( $c[ $col ]['meta_key'], $c[ $col ] );
+			$this->col_post_meta( $post, $c[ $col ]['meta_key'], $c[ $col ] );
 		} elseif ( isset( $c[ $col ]['taxonomy'] ) ) {
-			$this->col_taxonomy( $post_id, $c[ $col ]['taxonomy'], $c[ $col ] );
+			$this->col_taxonomy( $post, $c[ $col ]['taxonomy'], $c[ $col ] );
 		} elseif ( isset( $c[ $col ]['post_field'] ) ) {
-			$this->col_post_field( $post_id, $c[ $col ]['post_field'], $c[ $col ] );
+			$this->col_post_field( $post, $c[ $col ]['post_field'], $c[ $col ] );
 		} elseif ( isset( $c[ $col ]['featured_image'] ) ) {
-			$this->col_featured_image( $c[ $col ]['featured_image'], $c[ $col ] );
+			$this->col_featured_image( $post, $c[ $col ]['featured_image'], $c[ $col ] );
 		}
 	}
 
@@ -259,8 +275,8 @@ final class SaltusAdminCols implements Processable {
 	 * @param string              $meta_key The post meta key.
 	 * @param array<string,mixed> $args     Array of arguments for this field.
 	 */
-	public function col_post_meta( string $meta_key, array $args ) {
-		$vals = get_post_meta( get_the_ID(), $meta_key, false );
+	public function col_post_meta( \WP_Post $post, string $meta_key, array $args ): void {
+		$vals = get_post_meta( $post->ID, $meta_key, false );
 		$echo = [];
 
 		sort( $vals );
@@ -269,23 +285,9 @@ final class SaltusAdminCols implements Processable {
 			if ( $args['date_format'] === true ) {
 				$args['date_format'] = get_option( 'date_format' );
 			}
-
-			foreach ( $vals as $val ) {
-				$val_time = strtotime( $val );
-
-				if ( $val_time ) {
-					$val = $val_time;
-				}
-
-				if ( is_numeric( $val ) ) {
-					$echo[] = date_i18n( $args['date_format'], $val );
-				} elseif ( ! empty( $val ) ) {
-					$echo[] = mysql2date( $args['date_format'], $val );
-				}
-			}
+			$echo = $this->col_date_format( $vals, $args['date_format'] );
 		} else {
 			foreach ( $vals as $val ) {
-
 				if ( ! empty( $val ) || ( $val === '0' ) ) {
 					$echo[] = $val;
 				}
@@ -298,6 +300,35 @@ final class SaltusAdminCols implements Processable {
 			echo esc_html( implode( ', ', $echo ) );
 		}
 	}
+	/**
+	 * Formats the date values for the column.
+	 *
+	 * @param array<string> $vals        The values to format.
+	 * @param string       $date_format The date format to use.
+	 * @return array<string> The formatted date values.
+	 */
+	private function col_date_format( $vals, $date_format ) {
+
+		$echo = [];
+		foreach ( $vals as $val ) {
+			try {
+				$val_time = ( new \DateTime( '@' . $val ) )->format( 'U' );
+			} catch ( \Exception $e ) {
+				$val_time = strtotime( $val );
+			}
+
+			if ( $val_time !== false ) {
+				$val = $val_time;
+			}
+
+			if ( is_numeric( $val ) ) {
+				$echo[] = date_i18n( $date_format, (int) $val );
+			} elseif ( ! empty( $val ) ) {
+				$echo[] = mysql2date( $date_format, $val );
+			}
+		}
+		return $echo;
+	}
 
 	/**
 	 * Outputs column data for a taxonomy's term names.
@@ -306,12 +337,13 @@ final class SaltusAdminCols implements Processable {
 	 * @param string              $taxonomy The taxonomy name.
 	 * @param array<string,mixed> $args     Array of arguments for this field.
 	 */
-	public function col_taxonomy( int $post_id, string $taxonomy, array $args ) {
+	public function col_taxonomy( \WP_Post $post, string $taxonomy, array $args ): void {
+		$tax = get_taxonomy( $taxonomy );
+		if ( ! $tax ) {
+			return;
+		}
 
-		$post  = get_post( $post_id );
-		$terms = get_the_terms( $post_id, $taxonomy );
-		$tax   = get_taxonomy( $taxonomy );
-
+		$terms = get_the_terms( $post, $taxonomy );
 		if ( is_wp_error( $terms ) ) {
 			echo esc_html( $terms->get_error_message() );
 			return;
@@ -328,51 +360,7 @@ final class SaltusAdminCols implements Processable {
 
 		foreach ( $terms as $term ) {
 			if ( $args['link'] ) {
-				switch ( $args['link'] ) {
-
-					case 'view':
-						if ( $tax->public ) {
-							// https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/issues/1096
-							// @codingStandardsIgnoreStart
-							$out[] = sprintf(
-								'<a href="%1$s">%2$s</a>',
-								esc_url( get_term_link( $term ) ),
-								esc_html( $term->name )
-							);
-							// @codingStandardsIgnoreEnd
-						} else {
-							$out[] = esc_html( $term->name );
-						}
-						break;
-
-					case 'edit':
-						if ( current_user_can( $tax->cap->edit_terms ) ) {
-							$out[] = sprintf(
-								'<a href="%1$s">%2$s</a>',
-								esc_url( get_edit_term_link( $term->term_id, $taxonomy, $post->post_type ) ),
-								esc_html( $term->name )
-							);
-						} else {
-							$out[] = esc_html( $term->name );
-						}
-						break;
-
-					case 'list':
-						$link  = add_query_arg(
-							[
-								'post_type' => $post->post_type,
-								$taxonomy   => $term->slug,
-							],
-							admin_url( 'edit.php' )
-						);
-						$out[] = sprintf(
-							'<a href="%1$s">%2$s</a>',
-							esc_url( $link ),
-							esc_html( $term->name )
-						);
-						break;
-
-				}
+				$out[] = $this->col_taxonomy_link( $args['link'], $tax, $taxonomy, $term, $post );
 			} else {
 				$out[] = esc_html( $term->name );
 			}
@@ -380,15 +368,71 @@ final class SaltusAdminCols implements Processable {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo implode( ', ', $out );
 	}
+	/**
+	 * Outputs column data for a taxonomy term link.
+	 *
+	 * @param string              $link     The link type.
+	 * @param \WP_Taxonomy        $tax      The taxonomy object.
+	 * @param string              $taxonomy The taxonomy name.
+	 * @param \WP_Term            $term     The term object.
+	 * @param \WP_Post             $post     The post object.
+	 */
+	private function col_taxonomy_link( $link, $tax, $taxonomy, $term, $post ) {
+		$out = '';
+		switch ( $link ) {
 
+			case 'view':
+				if ( $tax->public ) {
+					// https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/issues/1096
+					// @codingStandardsIgnoreStart
+					$out = sprintf(
+						'<a href="%1$s">%2$s</a>',
+						esc_url( get_term_link( $term ) ),
+						esc_html( $term->name )
+					);
+					// @codingStandardsIgnoreEnd
+				} else {
+					$out = esc_html( $term->name );
+				}
+				break;
+
+			case 'edit':
+				if ( current_user_can( $tax->cap->edit_terms ) ) {
+					$out = sprintf(
+						'<a href="%1$s">%2$s</a>',
+						esc_url( get_edit_term_link( $term->term_id, $taxonomy, $post->post_type ) ),
+						esc_html( $term->name )
+					);
+				} else {
+					$out = esc_html( $term->name );
+				}
+				break;
+
+			case 'list':
+				$link = add_query_arg(
+					[
+						'post_type' => $post->post_type,
+						$taxonomy   => $term->slug,
+					],
+					admin_url( 'edit.php' )
+				);
+				$out  = sprintf(
+					'<a href="%1$s">%2$s</a>',
+					esc_url( $link ),
+					esc_html( $term->name )
+				);
+				break;
+		}
+		return $out;
+	}
 	/**
 	 * Outputs column data for a post field.
 	 *
-	 * @param string $field The post field
-	 * @param array  $args  Array of arguments for this field
+	 * @param \WP_Post             $post  The post object.
+	 * @param string              $field The post field.
+	 * @param array<string,mixed> $args  Array of arguments for this field.
 	 */
-	public function col_post_field( int $post_id, string $field, array $args ) {
-		$post = get_post( $post_id );
+	public function col_post_field( \WP_Post $post, string $field, array $args ): void {
 		switch ( $field ) {
 
 			case 'post_date':
@@ -426,17 +470,17 @@ final class SaltusAdminCols implements Processable {
 			default:
 				echo esc_html( get_post_field( $field, $post ) );
 				break;
-
 		}
 	}
 
 	/**
 	 * Outputs column data for a post's featured image.
 	 *
-	 * @param string $image_size The image size
-	 * @param array  $args       Array of `width` and `height` attributes for the image
+	 * @param \WP_Post                  $post       The post object.
+	 * @param string                   $image_size The image size.
+	 * @param array<string,string|int> $args       Array of `width` and `height` attributes for the image.
 	 */
-	public function col_featured_image( string $image_size, array $args ) {
+	public function col_featured_image( \WP_Post $post, string $image_size, array $args ): void {
 		if ( ! function_exists( 'has_post_thumbnail' ) ) {
 			return;
 		}
