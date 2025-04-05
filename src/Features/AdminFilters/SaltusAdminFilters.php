@@ -60,6 +60,7 @@ final class SaltusAdminFilters implements Processable {
 
 		# Loop over our filters to find the default filter (if there is one):
 		foreach ( $this->args as $id => $filter ) {
+			// phpcs:ignore WordPress.Security.NonceVerification
 			if ( empty( $_GET[ $id ] ) ) {
 				continue;
 			}
@@ -121,6 +122,21 @@ final class SaltusAdminFilters implements Processable {
 			}
 
 			if ( isset( $filter['cap'] ) && ! current_user_can( $filter['cap'] ) ) {
+				continue;
+			}
+
+			$hook = "saltus/framework/admin_filter/{$post_type}/filter_query/{$filter_key}";
+
+			if ( has_filter( $hook ) ) {
+				/**
+				 * Allows a filter's private query vars to be overridden.
+				 *
+				 * @param array<string,mixed> $return The private query vars.
+				 * @param array<string,mixed> $query  The public query vars.
+				 * @param array<string,mixed> $filter The filter arguments.
+				 */
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+				$return = apply_filters( $hook, $return, $query, $filter );
 				continue;
 			}
 
@@ -222,18 +238,19 @@ final class SaltusAdminFilters implements Processable {
 
 			$id = 'filter_' . $filter_key;
 
+			/** @deprecated 1.2.0 */
 			$hook = "ext-cpts/{$this->name}/filter-output/{$filter_key}";
+			$hook = "saltus/framework/admin_filter/filter_output/{$filter_key}";
 
 			if ( has_action( $hook ) ) {
 				/**
 				 * Allows a filter's output to be overridden.
 				 *
-				 * @since 4.3.0
-				 *
-				 * @param Extended_CPT_Admin $this   The post type admin controller instance.
-				 * @param array              $filter The filter arguments.
-				 * @param string             $id     The filter's `id` attribute value.
+				 * @param SaltusAdminFilters $instance The post type admin controller instance.
+				 * @param array              $filter   The filter arguments.
+				 * @param string             $id       The filter's `id` attribute value.
 				 */
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 				do_action( $hook, $this, $filter, $id );
 				continue;
 			}

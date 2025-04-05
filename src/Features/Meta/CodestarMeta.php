@@ -272,55 +272,10 @@ final class CodestarMeta implements Processable {
 		];
 
 		// Include all framework fields
-		return apply_filters(
-			'saltus/cfs/fields',
-			array(
-				'accordion',
-				'background',
-				'backup',
-				'border',
-				'button_set',
-				'callback',
-				'checkbox',
-				'code_editor',
-				'color',
-				'color_group',
-				'content',
-				'date',
-				'datetime',
-				'dimensions',
-				'fieldset',
-				'gallery',
-				'group',
-				'heading',
-				'icon',
-				'image_select',
-				'link',
-				'link_color',
-				'map',
-				'media',
-				'notice',
-				'number',
-				'palette',
-				'radio',
-				'repeater',
-				'select',
-				'slider',
-				'sortable',
-				'sorter',
-				'spacing',
-				'spinner',
-				'subheading',
-				'submessage',
-				'switcher',
-				'tabbed',
-				'text',
-				'textarea',
-				'typography',
-				'upload',
-				'wp_editor',
-			)
-		);
+
+		/** @deprecated 1.2.0 */
+		$filtered = apply_filters( 'saltus/cfs/fields', $field_type_map );
+		$filtered = apply_filters( 'saltus/framework/meta/matched_fields', $field_type_map );
 		if ( ! is_array( $filtered ) ) {
 			return [];
 		}

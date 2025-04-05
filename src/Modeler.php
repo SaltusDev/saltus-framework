@@ -35,7 +35,11 @@ class Modeler {
 
 		$path = $project_path . '/src/models/';
 		if ( has_filter( 'saltus_models_path' ) ) {
+			/** @deprecated 1.2.0 */
 			$path = apply_filters( 'saltus_models_path', $path );
+		}
+		if ( has_filter( 'saltus/framework/models/path' ) ) {
+			$path = apply_filters( 'saltus/framework/models/path', $path );
 		}
 
 		if ( file_exists( $path ) ) {
@@ -79,7 +83,23 @@ class Modeler {
 
 		// check for models added with filters
 		if ( has_filter( 'saltus_models' ) ) {
-			$model  = apply_filters( 'saltus_models', [] );
+			/** @deprecated 1.2.0 */
+			$model = apply_filters( 'saltus_models', [] );
+			( ! empty( $model ) && count( $model ) > 0 ?
+					$this->iterate_multiple( $model ) :
+					$this->create( $model )
+				);
+		}
+		// check for models added with filters
+		if ( has_filter( 'saltus/framework/models/extra_models' ) ) {
+			/**
+			 * parse the models and create them.
+			 * Useful for models that are the parsed models
+			 *
+			 * @param array $empty_list Empty list for extra models
+			 */
+			$empty_list = [];
+			$model      = apply_filters( 'saltus/framework/models/extra_models', $empty_list );
 			( ! empty( $model ) && count( $model ) > 0 ?
 					$this->iterate_multiple( $model ) :
 					$this->create( $model )

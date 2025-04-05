@@ -37,7 +37,7 @@ class Core implements Plugin {
 	const SERVICES_FILTER = 'services';
 
 	// Prefixes to use.
-	const HOOK_PREFIX    = '';
+	const HOOK_PREFIX    = 'saltus/framework/';
 	const SERVICE_PREFIX = '';
 
 
@@ -108,7 +108,9 @@ class Core implements Plugin {
 		// 3- Create a "store" with a factory
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
+		/** @deprecated 1.2.0 */
 		$priority = apply_filters( 'saltus_modeler_priority', 1 );
+		$priority = apply_filters( 'saltus/framework/modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {

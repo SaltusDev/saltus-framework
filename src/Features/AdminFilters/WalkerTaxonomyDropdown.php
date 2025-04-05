@@ -67,8 +67,10 @@ class WalkerTaxonomyDropdown extends \Walker {
 			$value = '';
 		}
 
-		$cat_name = apply_filters( 'list_cats', $object->name, $object );
-		$output .= "\t<option class=\"level-{$depth}\" value=\"" . esc_attr( $value ) . '"';
+		/** @deprecated 1.2.0 */
+		$cat_name = apply_filters( 'list_cats', $term_object->name, $term_object );
+		$cat_name = apply_filters( 'saltus/framework/admin_filter/category_list', $term_object->name, $term_object );
+		$output  .= "\t<option class=\"level-{$depth}\" value=\"" . esc_attr( $value ) . '"';
 
 		if ( isset( $args['selected_cats'] ) && in_array( $value, (array) $args['selected_cats'], true ) ) {
 			$output .= ' selected="selected"';
