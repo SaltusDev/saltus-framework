@@ -45,6 +45,7 @@ final class CodestarMeta implements Processable {
 
 			// add just the fields and register rest api
 			$this->create_metabox( $box_id, $box );
+			$this->register_rest_api( $box_id, $box );
 		}
 	}
 
@@ -89,35 +90,48 @@ final class CodestarMeta implements Processable {
 			}
 		}
 
-		if ( ! empty( $box_settings['register_rest_api'] ) && $box_settings['register_rest_api'] === true ) {
-			if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
-				$post_type = $this->name;
-				foreach ( $box_settings['sections'] as $section ) {
-					if ( ! empty( $section['fields'] ) ) {
-						$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
-					}
+		// add filter to properly save line breaks in this meta box
+		add_filter( sprintf( 'csf_%s_save', $box_id ), array( $this, 'sanitize_meta_save' ), 1, 3 );
+	}
+
+
+	/**
+	 * Register REST API
+	 *
+	 * @param mixed $box_id       Identifier of the metabox
+	 * @param array $box_settings Paramaters for the box
+	 *
+	 */
+	private function register_rest_api( $box_id, $box_settings ) {
+
+		if ( empty( $box_settings['register_rest_api'] ) || $box_settings['register_rest_api'] !== true ) {
+			return;
+		}
+
+		if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
+			$post_type = $this->name;
+			foreach ( $box_settings['sections'] as $section ) {
+				if ( ! empty( $section['fields'] ) ) {
+					$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
 				}
 			}
-			if ( empty( $box_settings['data_type'] ) ||
-				( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'unserialize' ) ) {
-				$post_type = $this->name;
+		}
+		if ( empty( $box_settings['data_type'] ) ||
+			$box_settings['data_type'] === 'unserialize' ) {
+			$post_type = $this->name;
 
-				foreach ( $box_settings['sections'] as $section ) {
-					if ( ! empty( $section['fields'] ) ) {
-						foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
-							$meta_type = 'object';
-							if ( ! empty( $want_to_register_fields['type'] ) ) {
-								$meta_type = $want_to_register_fields['type'];
-							}
-							$this->create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type );
+			foreach ( $box_settings['sections'] as $section ) {
+				if ( ! empty( $section['fields'] ) ) {
+					foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
+						$meta_type = 'object';
+						if ( ! empty( $want_to_register_fields['type'] ) ) {
+							$meta_type = $want_to_register_fields['type'];
 						}
+						$this->create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type );
 					}
 				}
 			}
 		}
-
-		// add filter to properly save line breaks in this meta box
-		add_filter( sprintf( 'csf_%s_save', $box_id ), array( $this, 'sanitize_meta_save' ), 1, 3 );
 	}
 
 	/**
