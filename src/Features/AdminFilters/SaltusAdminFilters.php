@@ -130,7 +130,7 @@ final class SaltusAdminFilters implements Processable {
 				continue;
 			}
 
-			$hook = "saltus/framework/admin_filter/{$post_type}/filter_query/{$filter_key}";
+			$hook = "saltus/framework/admin_filters/{$post_type}/filter_query/{$filter_key}";
 
 			if ( has_filter( $hook ) ) {
 				/**
@@ -254,7 +254,7 @@ final class SaltusAdminFilters implements Processable {
 
 			/** @deprecated 1.2.0 */
 			$hook = "ext-cpts/{$this->name}/filter-output/{$filter_key}";
-			$hook = "saltus/framework/admin_filter/filter_output/{$filter_key}";
+			$hook = "saltus/framework/admin_filters/filter_output/{$filter_key}";
 
 			if ( has_action( $hook ) ) {
 				/**
