@@ -25,7 +25,7 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * @var array $site_filters List of filters
 	 */
-	public $site_filters;
+	public $site_filters = [];
 
 	/**
 	 * Instantiate this Service object.
@@ -37,7 +37,9 @@ final class SaltusAdminFilters implements Processable {
 	public function __construct( string $name, array $args ) {
 		$this->name         = $name;
 		$this->args         = $args;
-		$this->site_filters = [];
+		foreach ( $args as $id => $filter ) {
+			$this->site_filters[ $id ] = $filter;
+		}
 	}
 
 	/**
