@@ -8,7 +8,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 /**
  * Enable custom administration filters
  *
- * Adapted from https://github.com/johnbillion/extended-cpts by johnbillion
+ * Adapted from https://github.com/johnbillion/extended-cpts by johnbillion with notable changes:
+ *   - models can override the default sort order
+ *   - reduce cyclomatic complexity of some functions
  */
 final class SaltusAdminFilters implements Processable {
 
