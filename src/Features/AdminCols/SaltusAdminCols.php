@@ -14,7 +14,8 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 /**
  * Enable custom administration columns
  *
- * Adapted from https://github.com/johnbillion/extended-cpts by johnbillion
+ * Adapted from https://github.com/johnbillion/extended-cpts by johnbillion with notable changes:
+ *   - models can override the default sort order
  */
 final class SaltusAdminCols implements Processable {
 
@@ -612,24 +613,26 @@ final class SaltusAdminCols implements Processable {
 			return [];
 		}
 
-		$orderby = $sortables[ $vars['orderby'] ];
+		$admin_col = $sortables[ $vars['orderby'] ];
 
-		if ( ! is_array( $orderby ) ) {
+		if ( ! is_array( $admin_col ) ) {
 			return [];
 		}
 
-		if ( isset( $orderby['sortable'] ) && ! $orderby['sortable'] ) {
+		if ( isset( $admin_col['sortable'] ) && ! $admin_col['sortable'] ) {
 			return [];
 		}
 
 		$return = [];
 
-		if ( isset( $orderby['meta_key'] ) ) {
-			$return['meta_key'] = $orderby['meta_key'];
+		if ( isset( $admin_col['meta_key'] ) ) {
+			$return['meta_key'] = $admin_col['meta_key'];
 			$return['orderby']  = 'meta_value';
-			// @TODO meta_value_num
-		} elseif ( isset( $orderby['post_field'] ) ) {
-			$field             = str_replace( 'post_', '', $orderby['post_field'] );
+			if ( isset( $admin_col['orderby'] ) ) {
+				$return['orderby'] = $admin_col['orderby'];
+			}
+		} elseif ( isset( $admin_col['post_field'] ) ) {
+			$field             = str_replace( 'post_', '', $admin_col['post_field'] );
 			$return['orderby'] = $field;
 		}
 
@@ -665,17 +668,17 @@ final class SaltusAdminCols implements Processable {
 			return [];
 		}
 
-		$orderby = $sortables[ $vars['orderby'] ];
+		$admin_col = $sortables[ $vars['orderby'] ];
 
-		if ( ! is_array( $orderby ) ) {
+		if ( ! is_array( $admin_col ) ) {
 			return [];
 		}
 
-		if ( isset( $orderby['sortable'] ) && ! $orderby['sortable'] ) {
+		if ( isset( $admin_col['sortable'] ) && ! $admin_col['sortable'] ) {
 			return [];
 		}
 
-		if ( ! isset( $orderby['taxonomy'] ) ) {
+		if ( ! isset( $admin_col['taxonomy'] ) ) {
 			return [];
 		}
 
@@ -688,7 +691,7 @@ final class SaltusAdminCols implements Processable {
 			LEFT OUTER JOIN {$wpdb->terms} as ext_cpts_t
 			ON ( ext_cpts_tt.term_id = ext_cpts_t.term_id )
 		";
-		$clauses['where']   .= $wpdb->prepare( ' AND ( taxonomy = %s OR taxonomy IS NULL )', $orderby['taxonomy'] );
+		$clauses['where']   .= $wpdb->prepare( ' AND ( taxonomy = %s OR taxonomy IS NULL )', $admin_col['taxonomy'] );
 		$clauses['groupby']  = 'ext_cpts_tr.object_id';
 		$clauses['orderby']  = 'GROUP_CONCAT( ext_cpts_t.name ORDER BY name ASC ) ';
 		$clauses['orderby'] .= ( isset( $vars['order'] ) && ( strtoupper( $vars['order'] ) === 'ASC' ) ) ? 'ASC' : 'DESC';
