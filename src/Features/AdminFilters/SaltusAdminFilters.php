@@ -35,8 +35,8 @@ final class SaltusAdminFilters implements Processable {
 	 *
 	 */
 	public function __construct( string $name, array $args ) {
-		$this->name         = $name;
-		$this->args         = $args;
+		$this->name = $name;
+		$this->args = $args;
 		foreach ( $args as $id => $filter ) {
 			$this->site_filters[ $id ] = $filter;
 		}
@@ -110,6 +110,7 @@ final class SaltusAdminFilters implements Processable {
 	 * @param array  $filters   The filters valid for this query (usually the value of the `admin_filters` or
 	 *                          `site_filters` argument when registering an extended post type).
 	 * @param string $post_type The post type name.
+	 *
 	 * @return array The list of private query vars to apply to the query.
 	 */
 	public static function get_filter_vars( array $query, array $filters, string $post_type ): array {
@@ -275,7 +276,7 @@ final class SaltusAdminFilters implements Processable {
 
 				$walker = new WalkerTaxonomyDropdown(
 					[
-					'field' => 'slug',
+						'field' => 'slug',
 					]
 				);
 
