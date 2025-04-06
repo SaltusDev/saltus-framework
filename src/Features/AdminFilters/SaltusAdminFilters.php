@@ -143,27 +143,36 @@ final class SaltusAdminFilters implements Processable {
 			}
 
 			if ( isset( $filter['meta_key'] ) ) {
-				$meta_query = [
-					'key'   => $filter['meta_key'],
-					'value' => wp_unslash( $query[ $filter_key ] ),
-				];
+				$meta_query          = array_merge( $meta_query, $filter );
+				$meta_query['key']   = $filter['meta_key'];
+				$meta_query['value'] = wp_unslash( $query[ $filter_key ] );
+
 			} elseif ( isset( $filter['meta_search_key'] ) ) {
-				$meta_query = [
-					'key'     => $filter['meta_search_key'],
-					'value'   => wp_unslash( $query[ $filter_key ] ),
+				// default to LIKE
+				$meta_query          = [
 					'compare' => 'LIKE',
 				];
+				$meta_query          = array_merge( $meta_query, $filter );
+				$meta_query['key']   = $filter['meta_search_key'];
+				$meta_query['value'] = wp_unslash( $query[ $filter_key ] );
+
 			} elseif ( isset( $filter['meta_key_exists'] ) ) {
-				$meta_query = [
-					'key'     => wp_unslash( $query[ $filter_key ] ),
+				// default to EXISTS
+				$meta_query        = [
 					'compare' => 'EXISTS',
 				];
+				$meta_query        = array_merge( $meta_query, $filter );
+				$meta_query['key'] = wp_unslash( $query[ $filter_key ] );
+
 			} elseif ( isset( $filter['meta_exists'] ) ) {
-				$meta_query = [
-					'key'     => wp_unslash( $query[ $filter_key ] ),
+				// default to NOT IN
+				$meta_query          = [
 					'compare' => 'NOT IN',
-					'value'   => [ '', '0', 'false', 'null' ],
 				];
+				$meta_query          = array_merge( $meta_query, $filter );
+				$meta_query['key']   = wp_unslash( $query[ $filter_key ] );
+				$meta_query['value'] = [ '', '0', 'false', 'null' ];
+
 			} elseif ( isset( $filter['post_date'] ) ) {
 				$date_query = [
 					$filter['post_date'] => wp_unslash( $query[ $filter_key ] ),
