@@ -264,9 +264,11 @@ final class SaltusAdminFilters implements Processable {
 					continue;
 				}
 
-				$walker = new WalkerTaxonomyDropdown( [
+				$walker = new WalkerTaxonomyDropdown(
+					[
 					'field' => 'slug',
-				] );
+					]
+				);
 
 				# If we haven't specified a title, use the all_items label from the taxonomy:
 				if ( ! isset( $filter['title'] ) ) {
@@ -484,14 +486,16 @@ final class SaltusAdminFilters implements Processable {
 				}
 
 				# Output a dropdown:
-				wp_dropdown_users( [
-					'id'                => $id,
-					'include'           => $filter['options'],
-					'name'              => 'author',
-					'option_none_value' => '0',
-					'selected'          => $value,
-					'show_option_none'  => $filter['title'],
-				] );
+				wp_dropdown_users(
+					[
+						'id'                => $id,
+						'include'           => $filter['options'],
+						'name'              => 'author',
+						'option_none_value' => '0',
+						'selected'          => $value,
+						'show_option_none'  => $filter['title'],
+					]
+				);
 			}
 		}
 	}
