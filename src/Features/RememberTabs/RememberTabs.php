@@ -8,6 +8,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 };
 
 /**
+ * Class RememberTabs
+ *
+ * Enable an option to remember the last active tab in the admin area.
  */
 class RememberTabs implements Service, Conditional, Assembly {
 
@@ -16,15 +19,6 @@ class RememberTabs implements Service, Conditional, Assembly {
 	 *
 	 */
 	public function __construct() {}
-
-	/**
-	 * Create a new instance of the service provider
-	 *
-	 * @return object The new instance
-	 */
-	public static function make( $name, $project, $args ) {
-		return new SaltusRememberTabs( $name, $project, $args );
-	}
 
 	/**
 	 * Check whether the conditional service is currently needed.
@@ -39,4 +33,16 @@ class RememberTabs implements Service, Conditional, Assembly {
 		return is_admin();
 	}
 
+	/**
+	 * Create a new instance of the service provider
+	 *
+	 * @param string $name        The name of the custom post type (CPT)
+	 * @param array|null $project Project information.
+	 * @param array|null $args    Additional arguments.
+	 *
+	 * @return object The new instance
+	 */
+	public static function make( $name, $project, $args ) {
+		return new SaltusRememberTabs( $name, $project );
+	}
 }

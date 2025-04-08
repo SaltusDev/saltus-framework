@@ -90,17 +90,17 @@ class ServiceContainer
 	 * Runs Registerable, Actionable
 	 *
 	 * @param string $id
-	 * @param string $class
+	 * @param string $service_class
 	 */
-	public function register( string $id, string $class, array $dependencies ) {
+	public function register( string $id, string $service_class, array $dependencies ) {
 
 		// Only instantiate services that are actually needed.
-		if ( is_a( $class, Conditional::class, true ) &&
-			! $class::is_needed() ) {
+		if ( is_a( $service_class, Conditional::class, true ) &&
+			! $service_class::is_needed() ) {
 			return;
 		}
 
-		$service = $this->instantiate( $class, $dependencies );
+		$service = $this->instantiate( $service_class, $dependencies );
 
 		$this->put( $id, $service );
 
@@ -110,7 +110,7 @@ class ServiceContainer
 
 		if ( $service instanceof Actionable ) {
 			$priority = 1;
-			$filter = 'init';
+			$filter   = 'init';
 			if ( method_exists( $service, 'priority' ) ) {
 				$priority = $service->priority();
 			}
@@ -130,16 +130,16 @@ class ServiceContainer
 	/**
 	 * Instantiate a single service.
 	 *
-	 * @param string $class Service class to instantiate.
+	 * @param string $service_class Service class to instantiate.
 	 *
 	 * @throws Invalid If the service could not be properly instantiated.
 	 *
 	 * @return Service Instantiated service.
 	 */
-	private function instantiate( $class, array $dependencies ): Service {
+	private function instantiate( $service_class, array $dependencies ): Service {
 
 		// The service needs to be registered, so instantiate right away.
-		$service = $this->make( $class, $dependencies );
+		$service = $this->make( $service_class, $dependencies );
 
 		if ( ! $service instanceof Service ) {
 			throw Invalid::from( $service );
@@ -153,7 +153,7 @@ class ServiceContainer
 	 *
 	 * @param string $interface_or_class Interface or class to make an object
 	 *                                   instance out of.
-	 * @param array  $arguments          Optional. Additional arguments to pass
+	 * @param array  $dependencies       Optional. Additional arguments to pass
 	 *                                   to the constructor. Defaults to an
 	 *                                   empty array.
 	 * @return object Instantiated object.
@@ -171,15 +171,15 @@ class ServiceContainer
 	/**
 	 * Get the reflection for a class or throw an exception.
 	 *
-	 * @param string $class Class to get the reflection for.
+	 * @param string $service_class Class to get the reflection for.
 	 * @return ReflectionClass Class reflection.
 	 * @throws FailedToMakeInstance If the class could not be reflected.
 	 */
-	private function get_class_reflection( string $class ): ReflectionClass {
+	private function get_class_reflection( string $service_class ): ReflectionClass {
 		try {
-			return new ReflectionClass( $class );
+			return new ReflectionClass( $service_class );
 		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( $class );
+			throw FailedToMakeInstance::for_unreflectable_class( $service_class );
 		}
 	}
 
@@ -208,14 +208,13 @@ class ServiceContainer
 			/**
 			 * Make an object instance out of an interface or class.
 			 *
-			 * @param string $class        Class to make an object instance out of.
+			 * @param string $service_class        Class to make an object instance out of.
 			 * @param array  $dependencies Optional. Dependencies of the class.
 			 * @return object Instantiated object.
 			 */
-			public function instantiate( string $class, array $dependencies = [] ) {
-				return new $class( ...$dependencies );
+			public function instantiate( string $service_class, array $dependencies = [] ) {
+				return new $service_class( ...$dependencies );
 			}
 		};
-
 	}
 }

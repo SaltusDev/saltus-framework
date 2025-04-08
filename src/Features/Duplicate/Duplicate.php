@@ -24,7 +24,7 @@ class Duplicate implements Service, Conditional, Assembly {
 	 * @return object The new instance
 	 */
 	public static function make( $name, $project, $args ) {
-		return new SaltusDuplicate( $name, $project, $args );
+		return new SaltusDuplicate( $name, $args );
 	}
 
 	/**
@@ -42,5 +42,4 @@ class Duplicate implements Service, Conditional, Assembly {
 		 */
 		return is_admin();
 	}
-
 }

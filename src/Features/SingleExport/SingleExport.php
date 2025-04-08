@@ -7,8 +7,10 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 
-
 /**
+ * Class SingleExport
+ *
+ * Enable an option to export single entry
  */
 class SingleExport implements Service, Conditional, Assembly {
 
@@ -17,15 +19,6 @@ class SingleExport implements Service, Conditional, Assembly {
 	 *
 	 */
 	public function __construct() {}
-
-	/**
-	 * Create a new instance of the service provider
-	 *
-	 * @return object The new instance
-	 */
-	public static function make( $name, $project, $args ) {
-		return new SaltusSingleExport( $name, $project, $args );
-	}
 
 	/**
 	 * Check whether the conditional service is currently needed.
@@ -40,4 +33,16 @@ class SingleExport implements Service, Conditional, Assembly {
 		return is_admin();
 	}
 
+	/**
+	 * Create a new instance of the service provider
+	 *
+	 * @param string $name        The name of the custom post type (CPT) to export.
+	 * @param array|null $project Project information.
+	 * @param array|null $args    Additional arguments for the export.
+	 *
+	 * @return object The new instance
+	 */
+	public static function make( $name, $project, $args ) {
+		return new SaltusSingleExport( $name, $args );
+	}
 }
