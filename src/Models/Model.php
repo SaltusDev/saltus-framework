@@ -16,5 +16,4 @@ interface Model {
 	 * @return string The type of Model
 	 */
 	public function get_type();
-
 }

@@ -6,7 +6,7 @@
         'helper': fixHelper,
         'update': function (e, ui) {
             $.post( drag_drop_object.ajaxurl, {
-                action: 'saltus-dad-update-menu-order',
+                action: 'saltus-framework-drop-and-drag-update-menu-order',
                 order: $('#the-list').sortable('serialize'),
                 nonce: drag_drop_object.nonce,
             } );

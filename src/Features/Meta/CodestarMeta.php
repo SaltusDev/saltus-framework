@@ -9,17 +9,30 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 final class CodestarMeta implements Processable {
 
+	/**
+	 * @var string $name The name of the custom post type (CPT)
+	 */
 	private $name;
+
+	/**
+	 * @var array $meta The meta fields
+	 */
 	private $meta;
 
 	/**
 	 * Instantiate the Codestar Framework Fields object.
+	 *
+	 * @param string  $name The name of the custom post type (CPT)
+	 * @param array   $meta Meta fields.
 	 */
-	public function __construct( string $name, array $project = null, array $meta = array() ) {
+	public function __construct( string $name, array $meta ) {
 		$this->name = $name;
 		$this->meta = $meta;
 	}
 
+	/**
+	 * Process the functionality
+	 */
 	public function process() {
 
 		/**
@@ -30,17 +43,18 @@ final class CodestarMeta implements Processable {
 				continue;
 			}
 
-			// else add just the fields
+			// add just the fields and register rest api
 			$this->create_metabox( $box_id, $box );
+			$this->register_rest_api( $box_id, $box );
 		}
 	}
 
 	/**
 	 * Create metabox
 	 *
-	 * @param int   $box_id identifier of the metabox
-	 * @param array $box_settings paramaters for the page
-	 * @return void
+	 * @param mixed $box_id       Identifier of the metabox
+	 * @param array $box_settings Paramaters for the box
+	 *
 	 */
 	private function create_metabox( $box_id, $box_settings ) {
 
@@ -76,39 +90,60 @@ final class CodestarMeta implements Processable {
 			}
 		}
 
-		if ( ! empty( $box_settings['register_rest_api'] ) && $box_settings['register_rest_api'] === true ) {
-			if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
-				$post_type = $this->name;
-				foreach ( $box_settings['sections'] as $section ) {
-					if ( ! empty( $section['fields'] ) ) {
-						$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
-					}
+		// add filter to properly save line breaks in this meta box
+		add_filter( sprintf( 'csf_%s_save', $box_id ), array( $this, 'sanitize_meta_save' ), 1, 3 );
+	}
+
+
+	/**
+	 * Register REST API
+	 *
+	 * @param mixed $box_id       Identifier of the metabox
+	 * @param array $box_settings Paramaters for the box
+	 *
+	 */
+	private function register_rest_api( $box_id, $box_settings ) {
+
+		if ( empty( $box_settings['register_rest_api'] ) || $box_settings['register_rest_api'] !== true ) {
+			return;
+		}
+
+		if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
+			$post_type = $this->name;
+			foreach ( $box_settings['sections'] as $section ) {
+				if ( ! empty( $section['fields'] ) ) {
+					$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
 				}
 			}
-			if ( empty( $box_settings['data_type'] ) ||
-				( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'unserialize' ) ) {
-				$post_type = $this->name;
+		}
+		if ( empty( $box_settings['data_type'] ) ||
+			$box_settings['data_type'] === 'unserialize' ) {
+			$post_type = $this->name;
 
-				foreach ( $box_settings['sections'] as $section ) {
-					if ( ! empty( $section['fields'] ) ) {
-						foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
-							$meta_type = 'object';
-							if ( ! empty( $want_to_register_fields['type'] ) ) {
-								$meta_type = $want_to_register_fields['type'];
-							}
-							$this->create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type );
+			foreach ( $box_settings['sections'] as $section ) {
+				if ( ! empty( $section['fields'] ) ) {
+					foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
+						$meta_type = 'object';
+						if ( ! empty( $want_to_register_fields['type'] ) ) {
+							$meta_type = $want_to_register_fields['type'];
 						}
+						$this->create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type );
 					}
 				}
 			}
 		}
-
-		// add filter to properly save line breaks in this meta box
-		add_filter( sprintf( 'csf_%s_save', $box_id ), array( $this, 'sanitize_meta_save' ), 1, 3 );
 	}
+
+	/**
+	 * Setup REST API fields
+	 *
+	 * @param array $fields Fields to be registered
+	 *
+	 * @return array $rest_fields Fields to be registered in REST API
+	 */
 	private function setup_restapi_fields( $fields ) {
 		$rest_fields = [];
-		$rest_types  = $this->match_fields( $this->list_fields() );
+		$rest_types  = $this->match_fields();
 		foreach ( $fields as $name => $attributes ) {
 			if ( empty( $attributes['type'] ) ) {
 				continue;
@@ -124,9 +159,18 @@ final class CodestarMeta implements Processable {
 		}
 		return $rest_fields;
 	}
+
+	/**
+	 * Create meta fields that are not serialized
+	 * Hooks into REST API
+	 *
+	 * @param string $meta_name   Name of the meta field
+	 * @param string $meta_type   Type of the meta field
+	 * @param string $post_type   Post type to register the meta field for
+	 */
 	private function create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type ) {
 
-		$rest_types = $this->match_fields( $this->list_fields() );
+		$rest_types = $this->match_fields();
 		$rest_type  = $this->get_field_type( $meta_type, $rest_types );
 
 		add_action(
@@ -150,6 +194,14 @@ final class CodestarMeta implements Processable {
 		);
 	}
 
+	/**
+	 * Create meta fields that are serialized
+	 * Hooks into REST API
+	 *
+	 * @param array  $meta_fields Meta fields to be registered
+	 * @param string $meta_name   Name of the meta field
+	 * @param string $post_type   Post type to register the meta field for
+	 */
 	private function create_meta_fields_serialized( $meta_fields, $meta_name, $post_type ) {
 
 		$meta_type = 'object';
@@ -179,142 +231,95 @@ final class CodestarMeta implements Processable {
 		);
 	}
 
-	private function list_fields() {
+	/**
+	 * Match fields to their types
+	 *
+	 * @return array Array of field types
+	 */
+	private function match_fields() {
+
+		$field_type_map = [
+			'accordion'    => 'string',
+			'backup'       => 'string',
+			'border'       => 'string',
+			'button_set'   => 'string',
+			'callback'     => 'string',
+			'checkbox'     => 'string',
+			'code_editor'  => 'string',
+			'color'        => 'string',
+			'content'      => 'string',
+			'date'         => 'string',
+			'datetime'     => 'string',
+			'dimensions'   => 'string',
+			'gallery'      => 'string',
+			'heading'      => 'string',
+			'icon'         => 'string',
+			'image_select' => 'string',
+			'link'         => 'string',
+			'link_color'   => 'string',
+			'notice'       => 'string',
+			'palette'      => 'string',
+			'radio'        => 'string',
+			'slider'       => 'string',
+			'sortable'     => 'string',
+			'sorter'       => 'string',
+			'spacing'      => 'string',
+			'spinner'      => 'string',
+			'subheading'   => 'string',
+			'submessage'   => 'string',
+			'switcher'     => 'string',
+			'tabbed'       => 'string',
+			'text'         => 'string',
+			'textarea'     => 'string',
+			'typography'   => 'string',
+			'upload'       => 'string',
+			'wp_editor'    => 'string',
+			'number'       => 'number',
+			'background'   => 'object',
+			'color_group'  => 'object',
+			'fieldset'     => 'object',
+			'group'        => 'object',
+			'map'          => 'object',
+			'media'        => 'array',
+			'select'       => 'array',
+			'repeater'     => 'array',
+		];
 
 		// Include all framework fields
-		return apply_filters(
-			'saltus/cfs/fields',
-			array(
-				'accordion',
-				'background',
-				'backup',
-				'border',
-				'button_set',
-				'callback',
-				'checkbox',
-				'code_editor',
-				'color',
-				'color_group',
-				'content',
-				'date',
-				'datetime',
-				'dimensions',
-				'fieldset',
-				'gallery',
-				'group',
-				'heading',
-				'icon',
-				'image_select',
-				'link',
-				'link_color',
-				'map',
-				'media',
-				'notice',
-				'number',
-				'palette',
-				'radio',
-				'repeater',
-				'select',
-				'slider',
-				'sortable',
-				'sorter',
-				'spacing',
-				'spinner',
-				'subheading',
-				'submessage',
-				'switcher',
-				'tabbed',
-				'text',
-				'textarea',
-				'typography',
-				'upload',
-				'wp_editor',
-			)
-		);
-	}
-	private function match_fields( $allowed_fields ) {
 
-		$assigned_field_type = [];
-		foreach ( $allowed_fields as $field ) {
-			switch ( $field ) {
-				case 'accordion':
-				case 'backup':
-				case 'border':
-				case 'button_set':
-				case 'callback':
-				case 'checkbox':
-				case 'code_editor':
-				case 'color':
-				case 'content':
-				case 'date':
-				case 'datetime':
-				case 'dimensions':
-				case 'gallery':
-				case 'heading':
-				case 'icon':
-				case 'image_select':
-				case 'link':
-				case 'link_color':
-				case 'notice':
-				case 'palette':
-				case 'radio':
-				case 'slider':
-				case 'sortable':
-				case 'sorter':
-				case 'spacing':
-				case 'spinner':
-				case 'subheading':
-				case 'submessage':
-				case 'switcher':
-				case 'tabbed':
-				case 'text':
-				case 'textarea':
-				case 'typography':
-				case 'upload':
-				case 'wp_editor':
-					$assigned_field_type[ $field ] = 'string';
-					break;
-				case 'number':
-					$assigned_field_type[ $field ] = 'number';
-					break;
-				case 'background':
-				case 'color_group':
-				case 'fieldset':
-				case 'group':
-				case 'map':
-					$assigned_field_type[ $field ] = 'object';
-					break;
-				case 'media':
-				case 'select':
-				case 'repeater':
-					$assigned_field_type[ $field ] = 'array';
-					break;
-				default:
-					$assigned_field_type[ $field ] = 'string';
-					break;
-			}
+		/** @deprecated 1.2.0 */
+		$filtered = apply_filters( 'saltus/cfs/fields', $field_type_map );
+		$filtered = apply_filters( 'saltus/framework/meta/matched_fields', $field_type_map );
+		if ( ! is_array( $filtered ) ) {
+			return [];
 		}
-		return $assigned_field_type;
+		return $filtered;
 	}
 
-	private function get_field_type( $field, $fields = null ) {
+	/**
+	 * Get field type
+	 *
+	 * @param string     $field  Field name
+	 * @param array|null $fields Optional. Fields to match against
+	 *
+	 * @return string|null Field type or null if not found
+	 */
+	private function get_field_type( $field, ?array $fields = null ) {
 		if ( $fields === null ) {
-			$fields = $this->match_fields( $this->list_fields() );
+			$fields = $this->match_fields();
 		}
-		if ( ! is_array( $fields ) ) {
-			return '';
+
+		if ( empty( $fields[ $field ] ) ) {
+			return null;
 		}
-		if ( ! empty( $fields[ $field ] ) ) {
-			return $fields[ $field ];
-		}
-		return null;
+		return $fields[ $field ];
 	}
 
 	/**
 	 * Create section using builtin Codestart method
 	 *
-	 * @param string $id - identifier of the section
-	 * @param array  $section - parameters for the section
+	 * @param string $id      Identifier of the section
+	 * @param array  $section Parameters for the section
 	 * @return void
 	 */
 	private function create_section( $id, $section ) {
@@ -328,8 +333,9 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Prepare fields to make sure they have all necessary parameters
 	 *
-	 * @param array $fields
-	 * @return array $fields array of fields prepared to be rendered by CodestarFields
+	 * @param array  $fields  Fields to be prepared
+	 *
+	 * @return array Array of fields prepared to be rendered by CodestarFields
 	 */
 	private function prepare_fields( $fields ) {
 
@@ -353,9 +359,9 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Function to sanitize meta on save
 	 *
-	 * @param array $request with meta info
-	 * @param int $post_id
-	 * @param obj $csf class
+	 * @param $request with meta info
+	 * @param $post_id
+	 * @param $csf class
 	 * @return array
 	 */
 	public function sanitize_meta_save( $request, $post_id, $csf ) {

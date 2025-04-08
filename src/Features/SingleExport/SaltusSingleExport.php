@@ -6,33 +6,54 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 };
 
 /**
+ * Class SaltusSingleExport
+ *
  * Enable an option to export single entry
  *
  * Adapted from trepmal's "Export One Post" at https://github.com/trepmal/export-one-post
  */
 final class SaltusSingleExport implements Processable {
 
+	/**
+	 * @var string $name The name of the custom post type (CPT) to export.
+	 */
 	private $name;
+
+	/**
+	 * @var string $label The label for the export link.
+	 */
 	private $label;
 
-	// unlikely date match for filters
+	/**
+	 * A constant representing a fake date used for filtering queries.
+	 * Unlikely date match for filters
+	 */
 	const FAKE_DATE = '1970-01-05'; // Y-m-d
 
 	/**
-	 * Instantiate this Service object.
+	 * Constructor.
 	 *
+	 * @param string     $name The name of the custom post type (CPT) to export.
+	 * @param array|null $args Optional. Additional arguments for the export.
+	 *                         - 'label': The label for the export link.
 	 */
-	public function __construct( string $name, array $project = null, array $args ) {
-		$this->name    = $name;
-		$this->label   = ! empty( $args['label'] ) ? $args['label'] : 'Export This';
+	public function __construct( string $name, ?array $args = [] ) {
+		$this->name  = $name;
+		$this->label = ! empty( $args['label'] ) ? $args['label'] : 'Export This';
 	}
 
+	/**
+	 * Process the export functionality by hooking into WordPress actions.
+	 */
 	public function process() {
 		add_action( 'init', array( $this, 'init' ) );
 	}
 
 	/**
 	 * Get hooked in: Part II
+	 * Initialize the export functionality.
+	 *
+	 * Hooks into WordPress filters and actions to enable single entry export.
 	 *
 	 */
 	public function init() {
@@ -44,16 +65,18 @@ final class SaltusSingleExport implements Processable {
 		add_filter( 'export_args', array( $this, 'export_args' ) );
 		add_filter( 'query', array( $this, 'query' ) );
 		add_action( 'post_submitbox_misc_actions', array( $this, 'post_submitbox_misc_actions' ) );
-
 	}
+
 	/**
 	 * Insert our action link into the submit box
+	 *
+	 * @param \WP_Post $post The current post object.
 	 *
 	 */
 	public function post_submitbox_misc_actions( $post ) {
 
 		// if it's not out cpt, do nothing
-		if ( ! isset( $post->post_type ) || $post->post_type !== $this->name ) {
+		if ( $post->post_type !== $this->name ) {
 			return;
 		}
 
@@ -63,7 +86,6 @@ final class SaltusSingleExport implements Processable {
 			content: "\f316";
 			color: #82878c;
 			font: normal 20px/1 dashicons;
-			speak: none;
 			display: inline-block;
 			padding: 0 3px 0 0;
 			vertical-align: top;
@@ -88,11 +110,13 @@ final class SaltusSingleExport implements Processable {
 	}
 
 	/**
-	 * Modify export arguments
-	 * except if normal export
+	 * Modify export arguments.
 	 *
-	 * @param array $args Query args for determining what should be exported
-	 * @return $args Modified query
+	 * Adjusts the export query arguments to handle single entry export.
+	 *
+	 * @param array $args Query arguments for determining what should be exported.
+	 *
+	 * @return array Modified query arguments.
 	 */
 	public function export_args( $args ) {
 
@@ -115,11 +139,13 @@ final class SaltusSingleExport implements Processable {
 	}
 
 	/**
-	 * Filter query
-	 * Look for 'tagged' query, replace with one matching the needs
+	 * Filter the SQL query for single entry export.
 	 *
-	 * @param string $query SQL query
-	 * @return string Modified SQL query
+	 * Replaces the query to match the single post ID for export.
+	 *
+	 * @param string $query The original SQL query.
+	 *
+	 * @return string Modified SQL query.
 	 */
 	public function query( $query ) {
 		if ( ! isset( $_GET['export_single'] ) ) {
@@ -157,6 +183,5 @@ final class SaltusSingleExport implements Processable {
 
 		return $query;
 	}
-
 }
 

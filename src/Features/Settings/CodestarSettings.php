@@ -5,16 +5,32 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Processable
 };
 
-final class CodestarSettings implements Processable{
+final class CodestarSettings implements Processable {
 
+	/**
+	 * @var string $name The name of the custom post type (CPT)
+	 */
 	private $name;
+
+	/**
+	 * @var array $settings The settings to be used for the settings page.
+	 */
 	private $settings;
 
-	public function __construct( string $name, array $project = null, array $settings = array() ) {
+	/**
+	 * Constructor.
+	 *
+	 * @param string  $name The name of the custom post type (CPT)
+	 * @param array   $settings Optional. Settings options
+	 */
+	public function __construct( string $name, array $settings = [] ) {
 		$this->name     = $name;
 		$this->settings = $settings;
 	}
 
+	/**
+	 * Process the settings
+	 */
 	public function process() {
 		/**
 		 * Create Settings pages
@@ -64,20 +80,17 @@ final class CodestarSettings implements Processable{
 				$this->create_section( $settings_id, $section );
 			}
 		}
-
 	}
 
 	/**
 	 * Create section using builtin Codestart method
 	 *
-	 * @param string $id - identifier of the section
+	 * @param mixed $id - identifier of the section
 	 * @param array  $section - parameters for the section
 	 * @return void
 	 */
 	private function create_section( $id, $section ) {
-
 		\CSF::createSection( $id, $section );
-
 	}
 
 	/**
@@ -97,15 +110,11 @@ final class CodestarSettings implements Processable{
 			$fields[ $key ]['id'] = $field_id;
 
 			if ( isset( $field['fields'] ) ) {
-
 				$field['fields'] = $this->prepare_fields( $field['fields'] );
-
 			}
 		}
 
 		// codestar framework 'prefers' keys to be a numeric index, so we return the array_values
 		return array_values( $fields );
 	}
-
-
 }

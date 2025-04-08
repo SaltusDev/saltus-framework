@@ -49,7 +49,15 @@
 			<property name="additionalWordDelimiters" value="/"/>
 		</properties>
 	</rule>
-
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="Saltus"/>
+				<element value="Saltus_Framework"/>
+				<element value="sframework"/>
+			</property>
+		</properties>
+	</rule>
 	<!-- # from yoast: https://github.com/Yoast/yoastcs/blob/develop/Yoast/ruleset.xml -->
 	<!-- If a conscious choice has been made for a non-strict comparison, that's ok.
 		I.e. when `strict` has been explicitely set to `false` in an array comparison,
@@ -76,7 +84,9 @@
 	<arg value="ps"/>
 	<arg name="colors"/>
 	<arg name="parallel" value="12"/>
-	<config name="testVersion" value="7.0-"/>
+	<config name="minimum_wp_version" value="6.0"/>
+
+	<config name="testVersion" value="7.4-"/>
 
 	<config name="installed_paths" value="/srv/dev/coding_standards/wpcs/,/srv/dev/coding_standards/PHPCSUtils/,/srv/dev/coding_standards/PHPCSExtra/,/srv/dev/coding_standards/PHPCompatibility" />
 

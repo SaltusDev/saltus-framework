@@ -25,7 +25,7 @@ class AdminFilters implements Service, Conditional, Assembly {
 	 * @return object The new instance
 	 */
 	public static function make( $name, $project, $args ) {
-		return new SaltusAdminFilters( $name, $project, $args );
+		return new SaltusAdminFilters( $name, $args );
 	}
 
 	/**
@@ -40,5 +40,4 @@ class AdminFilters implements Service, Conditional, Assembly {
 		 */
 		return is_admin();
 	}
-
 }
