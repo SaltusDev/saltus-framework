@@ -4,6 +4,14 @@
 ## [Unreleased]
 
 
+## [1.2.1] - 2025-04-16
+
+### Added
+	- Allow filter to have a key property to be used when filtering
+	- Allow filter to force to use key as value in meta filter
+### Changed
+	- Update filters to reflect that
+
 ## [1.2.0] - 2025-04-08
 
 ### Added
