@@ -245,16 +245,17 @@ final class SaltusAdminFilters implements Processable {
 
 		$pto = get_post_type_object( $this->name );
 
-		foreach ( $this->args as $filter_key => $filter ) {
+		foreach ( $this->args as $filter_id => $filter ) {
 			if ( isset( $filter['cap'] ) && ! current_user_can( $filter['cap'] ) ) {
 				continue;
 			}
 
-			$id = 'filter_' . $filter_key;
+			$filter_key = $filter['key'] ?? $filter_id;
+			$id         = 'filter_' . $filter_id;
 
 			/** @deprecated 1.2.0 */
-			$hook = "ext-cpts/{$this->name}/filter-output/{$filter_key}";
-			$hook = "saltus/framework/admin_filters/filter_output/{$filter_key}";
+			$hook = "ext-cpts/{$this->name}/filter-output/{$filter_id}";
+			$hook = "saltus/framework/admin_filters/filter_output/{$filter_id}";
 
 			if ( has_action( $hook ) ) {
 				/**
@@ -360,13 +361,13 @@ final class SaltusAdminFilters implements Processable {
 				}
 
 				$selected = wp_unslash( get_query_var( $filter_key ) );
-
-				$use_key = false;
-
-				foreach ( $filter['options'] as $k => $v ) {
-					if ( ! is_numeric( $k ) ) {
-						$use_key = true;
-						break;
+				$use_key  = $filter['use_key'] ?? false;
+				if ( ! $use_key ) {
+					foreach ( $filter['options'] as $k => $v ) {
+						if ( ! is_numeric( $k ) ) {
+							$use_key = true;
+							break;
+						}
 					}
 				}
 
