@@ -360,13 +360,13 @@ final class SaltusAdminFilters implements Processable {
 				}
 
 				$selected = wp_unslash( get_query_var( $filter_key ) );
-
-				$use_key = false;
-
-				foreach ( $filter['options'] as $k => $v ) {
-					if ( ! is_numeric( $k ) ) {
-						$use_key = true;
-						break;
+				$use_key  = $filter['use_key'] ?? false;
+				if ( ! $use_key ) {
+					foreach ( $filter['options'] as $k => $v ) {
+						if ( ! is_numeric( $k ) ) {
+							$use_key = true;
+							break;
+						}
 					}
 				}
 
