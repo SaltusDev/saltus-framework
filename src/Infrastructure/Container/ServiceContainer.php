@@ -149,7 +149,7 @@ class ServiceContainer
 		$service = $this->make( $service_class, $dependencies );
 
 		if ( ! $service instanceof Service ) {
-			throw Invalid::from( $service );
+			throw Invalid::from( esc_html( $service ) );
 		}
 
 		return $service;
@@ -186,7 +186,7 @@ class ServiceContainer
 		try {
 			return new ReflectionClass( $service_class );
 		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( $service_class );
+			throw FailedToMakeInstance::for_unreflectable_class( esc_html( $service_class ) );
 		}
 	}
 
@@ -200,7 +200,7 @@ class ServiceContainer
 	 */
 	private function ensure_is_instantiable( ReflectionClass $reflection ) {
 		if ( ! $reflection->isInstantiable() ) {
-			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() );
+			throw FailedToMakeInstance::for_unresolved_interface( esc_html( $reflection->getName() ) );
 		}
 	}
 
