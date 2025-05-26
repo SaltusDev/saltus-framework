@@ -32,7 +32,7 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * @var array Default columns
 	 */
-	private $default_columns = null;
+	private ?array $default_columns = null;
 
 	/**
 	 * @var array Managed columns

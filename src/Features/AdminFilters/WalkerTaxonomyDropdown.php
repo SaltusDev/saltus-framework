@@ -23,9 +23,9 @@ class WalkerTaxonomyDropdown extends \Walker {
 	];
 
 	/**
-	 * @var string
+	 * @var string|null $field The field to use for the dropdown value.
 	 */
-	public $field = null;
+	public ?string $field = null;
 
 	/**
 	 * Class constructor.
@@ -33,7 +33,7 @@ class WalkerTaxonomyDropdown extends \Walker {
 	 * @param array|null $args Optional arguments.
 	 *                         - 'field': The field to use for the dropdown value.
 	 */
-	public function __construct( $args = null ) {
+	public function __construct( ?array $args = null ) {
 		if ( $args && isset( $args['field'] ) ) {
 			$this->field = $args['field'];
 		}
