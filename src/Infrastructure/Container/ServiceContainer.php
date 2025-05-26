@@ -17,6 +17,7 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 };
 
 use Saltus\WP\Framework\Infrastructure\Container\Instantiator;
+use Saltus\WP\Framework\Infrastructure\Services\Assets\HasAssets;
 
 /**
  * A simplified implementation of a service container.
@@ -103,6 +104,12 @@ class ServiceContainer
 		$service = $this->instantiate( $service_class, $dependencies );
 
 		$this->put( $id, $service );
+
+		if ( $service instanceof HasAssets ) {
+			$service->set_assets_list();
+			add_action( 'admin_enqueue_scripts', array( $service, 'register_assets' ) );
+			add_action( 'wp_enqueue_scripts', array( $service, 'register_assets' ) );
+		}
 
 		if ( $service instanceof Registerable ) {
 			$service->register();
@@ -213,7 +220,7 @@ class ServiceContainer
 			 * @return object Instantiated object.
 			 */
 			public function instantiate( string $service_class, array $dependencies = [] ) {
-				return new $service_class( ...$dependencies );
+				return new $service_class( $dependencies );
 			}
 		};
 	}
