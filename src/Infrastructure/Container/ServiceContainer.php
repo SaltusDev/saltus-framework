@@ -17,6 +17,7 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 };
 
 use Saltus\WP\Framework\Infrastructure\Container\Instantiator;
+use Saltus\WP\Framework\Infrastructure\Services\Assets\HasAssets;
 
 /**
  * A simplified implementation of a service container.
@@ -104,6 +105,12 @@ class ServiceContainer
 
 		$this->put( $id, $service );
 
+		if ( $service instanceof HasAssets ) {
+			$service->set_assets_list();
+			add_action( 'admin_enqueue_scripts', array( $service, 'register_assets' ) );
+			add_action( 'wp_enqueue_scripts', array( $service, 'register_assets' ) );
+		}
+
 		if ( $service instanceof Registerable ) {
 			$service->register();
 		}
@@ -142,7 +149,7 @@ class ServiceContainer
 		$service = $this->make( $service_class, $dependencies );
 
 		if ( ! $service instanceof Service ) {
-			throw Invalid::from( $service );
+			throw Invalid::from( esc_html( $service ) );
 		}
 
 		return $service;
@@ -179,7 +186,7 @@ class ServiceContainer
 		try {
 			return new ReflectionClass( $service_class );
 		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( $service_class );
+			throw FailedToMakeInstance::for_unreflectable_class( esc_html( $service_class ) );
 		}
 	}
 
@@ -193,7 +200,7 @@ class ServiceContainer
 	 */
 	private function ensure_is_instantiable( ReflectionClass $reflection ) {
 		if ( ! $reflection->isInstantiable() ) {
-			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() );
+			throw FailedToMakeInstance::for_unresolved_interface( esc_html( $reflection->getName() ) );
 		}
 	}
 
@@ -213,7 +220,7 @@ class ServiceContainer
 			 * @return object Instantiated object.
 			 */
 			public function instantiate( string $service_class, array $dependencies = [] ) {
-				return new $service_class( ...$dependencies );
+				return new $service_class( $dependencies );
 			}
 		};
 	}
