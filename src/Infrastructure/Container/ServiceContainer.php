@@ -53,7 +53,7 @@ class ServiceContainer
 	 */
 	public function get( string $id ) {
 		if ( ! $this->has( $id ) ) {
-			throw Invalid::from_id( $id );
+			throw Invalid::from_id( esc_html( $id ) );
 		}
 
 		$service = $this->offsetGet( $id );
