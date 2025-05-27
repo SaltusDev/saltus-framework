@@ -7,8 +7,10 @@
 ## [1.3.0] - 2025-05-26
 	- Breaking changes: Allow Injection of container type to Assembler
 	- Feature: Manage HasAssets to manage assets ( css, js )
+	- Feature: Provide Project class
+	- Feature: Provide Service Factory
 	- Fix: Correct types to be compatible with php84 without warnings
-	- Fix: Escape Exception messages
+	- Fix: Escape exception messages
 
 ## [1.2.1] - 2025-04-16
 
