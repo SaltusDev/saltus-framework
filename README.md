@@ -5,7 +5,7 @@ We built it to make things easier and faster for developers with different skill
 
 ## Version
 
-## [1.3.0] - 2025-05-26
+## [1.3.1] - 2025-07-06
 
 See [change log file](CHANGELOG.md) for full details.
 
@@ -22,6 +22,7 @@ See [change log file](CHANGELOG.md) for full details.
 	* Create Taxonomies easily
 	* Control labels
 	* Associate with any existing post type
+	* Add quick edit fields
 
 ### Requirements
 
