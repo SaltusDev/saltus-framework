@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Columns
+ * Quick Edit Fields
  *
  * @package Saltus/WP/Framework
  */
@@ -12,7 +12,7 @@ use Saltus\WP\Plugin\InteractiveGlobes\Saltus\WP\Framework\Infrastructure\Servic
 };
 
 /**
- * Enable custom administration columns
+ * Enable custom Quick Edit Fields
  *
  */
 final class SaltusQuickEdit implements Processable {
@@ -23,7 +23,7 @@ final class SaltusQuickEdit implements Processable {
 	private $name;
 
 	/**
-	 * @var array $fields List of fields for the custom columns
+	 * @var array $fields List of fields for the custom fields
 	 */
 	private $fields = [];
 
@@ -31,7 +31,7 @@ final class SaltusQuickEdit implements Processable {
 	 * Instantiate this Service object.
 	 *
 	 * @param string $name The name of the custom post type (CPT)
-	 * @param array  $args List of columns
+	 * @param array  $args List of Quick Edit Fields
 	 */
 	public function __construct( string $name, array $args ) {
 		$this->name = $name; // cpt name
@@ -142,8 +142,6 @@ final class SaltusQuickEdit implements Processable {
 	 * when the user clicks on the Quick Edit link.
 	 */
 	public function quick_edit_javascript() {
-		//$column_names = array_column( $this->fields, 'column_name' );
-		//$meta_keys    = array_keys( $this->fields );
 		?>
 		<script type="text/javascript">
 		jQuery(function($) {
