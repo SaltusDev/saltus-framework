@@ -22,14 +22,19 @@ final class SaltusQuickEdit implements Processable {
 	 */
 	private $name;
 	/**
-	 * @var string $field_name The name of the custom field to be added
+	 * @var string $meta_key The name of the custom field to be added
 	 */
-	private $field_name;
+	private $meta_key;
 
 	/**
 	 * @var string $column_name The name of the custom column to be edited
 	 */
 	private $column_name;
+
+	/**
+	 * @var string $title The title of the custom field
+	 */
+	private $title;
 
 	/**
 	 * Instantiate this Service object.
@@ -39,8 +44,9 @@ final class SaltusQuickEdit implements Processable {
 	 */
 	public function __construct( string $name, array $args ) {
 		$this->name        = $name; // cpt name
-		$this->field_name  = ! empty( $args['label'] ) ? $args['label'] : '';
+		$this->meta_key    = ! empty( $args['meta_key'] ) ? $args['meta_key'] : '';
 		$this->column_name = ! empty( $args['column_name'] ) ? $args['column_name'] : '';
+		$this->title       = ! empty( $args['title'] ) ? $args['title'] : '';
 	}
 
 	/**
@@ -63,8 +69,8 @@ final class SaltusQuickEdit implements Processable {
 			return;
 		}
 
-		if ( isset( $_POST[ $this->field_name ] ) ) {
-			update_post_meta( $post_id, $this->field_name, sanitize_text_field( $_POST[ $this->field_name ] ) );
+		if ( isset( $_POST[ $this->meta_key ] ) ) {
+			update_post_meta( $post_id, $this->meta_key, sanitize_text_field( $_POST[ $this->meta_key ] ) );
 		}
 	}
 
@@ -97,7 +103,7 @@ final class SaltusQuickEdit implements Processable {
 	 */
 	public function populate_custom_column( $column, $post_id ) {
 		if ( $column === $this->column_name ) {
-			$value = get_post_meta( $post_id, $this->field_name, true );
+			$value = get_post_meta( $post_id, $this->meta_key, true );
 			echo '<span class="hidden custom-field-value" data-custom-field="' . esc_attr( $value ) . '">' . esc_html( $value ) . '</span>';
 
 		}
@@ -119,8 +125,8 @@ final class SaltusQuickEdit implements Processable {
 		<fieldset class="inline-edit-col-right">
 			<div class="inline-edit-col">
 				<label>
-					<span class="title"><?php _e( 'Globe id', 'textdomain' ); ?></span>
-					<input type="text" name="<?php echo esc_attr( $this->field_name ); ?>" value="" />
+					<span class="title"><?= $this->title; ?></span>
+					<input type="text" name="<?php echo esc_attr( $this->meta_key ); ?>" value="" />
 				</label>
 			</div>
 		</fieldset>
@@ -150,7 +156,7 @@ final class SaltusQuickEdit implements Processable {
 				if (post_id > 0) {
 					var $row = $('#edit-' + post_id);
 					var custom_field = $('#post-' + post_id).find('.<?php echo esc_js( $this->column_name ); ?> .custom-field-value').data('custom-field');
-					$row.find('input[name="<?php echo esc_js( $this->field_name ); ?>"]').val(custom_field);
+					$row.find('input[name="<?php echo esc_js( $this->meta_key ); ?>"]').val(custom_field);
 				}
 			};
 		});
