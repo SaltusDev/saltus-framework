@@ -5,9 +5,9 @@
  * @package Saltus/WP/Framework
  */
 
-namespace Saltus\WP\Framework\Features\QuickEdit;
+namespace Saltus\WP\Plugin\InteractiveGlobes\Saltus\WP\Framework\Features\QuickEdit;
 
-use Saltus\WP\Framework\Infrastructure\Service\{
+use Saltus\WP\Plugin\InteractiveGlobes\Saltus\WP\Framework\Infrastructure\Service\{
 	Processable
 };
 
@@ -21,20 +21,11 @@ final class SaltusQuickEdit implements Processable {
 	 * @var string $name The name of the custom post type (CPT)
 	 */
 	private $name;
-	/**
-	 * @var string $meta_key The name of the custom field to be added
-	 */
-	private $meta_key;
 
 	/**
-	 * @var string $column_name The name of the custom column to be edited
+	 * @var array $fields List of fields for the custom columns
 	 */
-	private $column_name;
-
-	/**
-	 * @var string $title The title of the custom field
-	 */
-	private $title;
+	private $fields = [];
 
 	/**
 	 * Instantiate this Service object.
@@ -43,10 +34,14 @@ final class SaltusQuickEdit implements Processable {
 	 * @param array  $args List of columns
 	 */
 	public function __construct( string $name, array $args ) {
-		$this->name        = $name; // cpt name
-		$this->meta_key    = ! empty( $args['meta_key'] ) ? $args['meta_key'] : '';
-		$this->column_name = ! empty( $args['column_name'] ) ? $args['column_name'] : '';
-		$this->title       = ! empty( $args['title'] ) ? $args['title'] : '';
+		$this->name = $name; // cpt name
+		foreach ( $args as $meta_key => $values ) {
+			$this->fields[ $meta_key ] = [
+				'meta_key'    => $meta_key,
+				'column_name' => ! empty( $values['column_name'] ) ? $values['column_name'] : $meta_key,
+				'title'       => ! empty( $values['title'] ) ? $values['title'] : ucfirst( $meta_key ),
+			];
+		}
 	}
 
 	/**
@@ -63,14 +58,17 @@ final class SaltusQuickEdit implements Processable {
 	}
 
 	public function save_quick_edit_data( $post_id ) {
-		if ( ! isset( $_POST['quick_edit_nonce_field'] ) ||
+		if (
+			! isset( $_POST['quick_edit_nonce_field'] ) ||
 			! wp_verify_nonce( $_POST['quick_edit_nonce_field'], 'quick_edit_nonce' ) ||
-			! current_user_can( 'edit_post', $post_id ) ) {
+			! current_user_can( 'edit_post', $post_id )
+		) {
 			return;
 		}
-
-		if ( isset( $_POST[ $this->meta_key ] ) ) {
-			update_post_meta( $post_id, $this->meta_key, sanitize_text_field( $_POST[ $this->meta_key ] ) );
+		foreach ( $this->fields as $meta_key => $field ) {
+			if ( isset( $_POST[ $meta_key ] ) ) {
+				update_post_meta( $post_id, $meta_key, sanitize_text_field( $_POST[ $meta_key ] ) );
+			}
 		}
 	}
 
@@ -102,10 +100,11 @@ final class SaltusQuickEdit implements Processable {
 	 * @param int    $post_id The ID of the post.
 	 */
 	public function populate_custom_column( $column, $post_id ) {
-		if ( $column === $this->column_name ) {
-			$value = get_post_meta( $post_id, $this->meta_key, true );
-			echo '<span class="hidden custom-field-value" data-custom-field="' . esc_attr( $value ) . '">' . esc_html( $value ) . '</span>';
-
+		foreach ( $this->fields as $meta_key => $field ) {
+			if ( $column === $field['column_name'] ) {
+				$value = get_post_meta( $post_id, $meta_key, true );
+				echo '<span class="hidden quick-edit-field-value" data-quick-edit-field="' . esc_attr( $value ) . '">' . esc_html( $value ) . '</span>';
+			}
 		}
 	}
 
@@ -116,21 +115,24 @@ final class SaltusQuickEdit implements Processable {
 	 * @param string $post_type   The post type.
 	 */
 	public function add_quick_edit_field( $column_name, $post_type ) {
-		if ( $post_type !== $this->name || $column_name !== $this->column_name ) {
+		if ( $post_type !== $this->name ) {
 			return;
 		}
-
-		wp_nonce_field( 'quick_edit_nonce', 'quick_edit_nonce_field' );
-		?>
-		<fieldset class="inline-edit-col-right">
-			<div class="inline-edit-col">
-				<label>
-					<span class="title"><?= $this->title; ?></span>
-					<input type="text" name="<?php echo esc_attr( $this->meta_key ); ?>" value="" />
-				</label>
-			</div>
-		</fieldset>
-		<?php
+		foreach ( $this->fields as $meta_key => $field ) {
+			if ( $column_name === $field['column_name'] ) {
+				wp_nonce_field( 'quick_edit_nonce', 'quick_edit_nonce_field' );
+				?>
+				<fieldset class="inline-edit-col-right">
+					<div class="inline-edit-col">
+						<label>
+							<span class="title"><?= esc_html( $field['title'] ); ?></span>
+							<input type="text" name="<?php echo esc_attr( $meta_key ); ?>" value="" />
+						</label>
+					</div>
+				</fieldset>
+				<?php
+			}
+		}
 	}
 
 	/**
@@ -140,6 +142,8 @@ final class SaltusQuickEdit implements Processable {
 	 * when the user clicks on the Quick Edit link.
 	 */
 	public function quick_edit_javascript() {
+		//$column_names = array_column( $this->fields, 'column_name' );
+		//$meta_keys    = array_keys( $this->fields );
 		?>
 		<script type="text/javascript">
 		jQuery(function($) {
@@ -154,9 +158,10 @@ final class SaltusQuickEdit implements Processable {
 				}
 
 				if (post_id > 0) {
-					var $row = $('#edit-' + post_id);
-					var custom_field = $('#post-' + post_id).find('.<?php echo esc_js( $this->column_name ); ?> .custom-field-value').data('custom-field');
-					$row.find('input[name="<?php echo esc_js( $this->meta_key ); ?>"]').val(custom_field);
+					<?php foreach ( $this->fields as $meta_key => $field ) : ?>
+						var quick_edit_field = $('#post-' + post_id).find('.<?php echo esc_js( $field['column_name'] ); ?> .quick-edit-field-value').data('quick-edit-field');
+						$('#edit-' + post_id).find('input[name="<?php echo esc_js( $meta_key ); ?>"]').val(quick_edit_field);
+					<?php endforeach; ?>
 				}
 			};
 		});
