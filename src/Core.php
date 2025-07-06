@@ -21,14 +21,15 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 };
 
 
-use Saltus\WP\Framework\Features\Meta\Meta;
-use Saltus\WP\Framework\Features\Settings\Settings;
-use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
-use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
-use Saltus\WP\Framework\Features\Duplicate\Duplicate;
-use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\Features\AdminCols\AdminCols;
 use Saltus\WP\Framework\Features\AdminFilters\AdminFilters;
+use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
+use Saltus\WP\Framework\Features\Duplicate\Duplicate;
+use Saltus\WP\Framework\Features\Meta\Meta;
+use Saltus\WP\Framework\Features\QuickEdit\QuickEdit;
+use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
+use Saltus\WP\Framework\Features\Settings\Settings;
+use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 
 
 class Core implements Plugin {
@@ -211,9 +212,10 @@ class Core implements Plugin {
 			'admin_cols'    => AdminCols::class,
 			'admin_filters' => AdminFilters::class,
 			'draganddrop'   => DragAndDrop::class,
-			'remember_tabs' => RememberTabs::class,
 			'duplicate'     => Duplicate::class,
 			'meta'          => Meta::class,
+			'quick_edit'    => QuickEdit::class,
+			'remember_tabs' => RememberTabs::class,
 			'settings'      => Settings::class,
 			'single_export' => SingleExport::class,
 		];
