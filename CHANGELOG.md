@@ -4,6 +4,9 @@
 ## [Unreleased]
 
 
+## [1.3.1] - 2025-07-06
+	- Feature: Quick edit
+
 ## [1.3.0] - 2025-05-26
 	- Breaking changes: Allow Injection of container type to Assembler
 	- Feature: Manage HasAssets to manage assets ( css, js )
