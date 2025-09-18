@@ -11,6 +11,7 @@ trait AssetLoader {
 
 	private $assets_container = null;
 	private $assets_list      = null;
+	private $data             = null;
 
 	/**
 	 * register the assets list
@@ -46,6 +47,14 @@ trait AssetLoader {
 		try {
 			$assets = $this->services->get( AssetManager::class );
 			$assets->enqueue_assets( $this->assets_container );
+			foreach ( $this->data as $data ) {
+				$assets->add_data(
+					$this->assets_container,
+					$data->get_source(),
+					$data->get_identifier(),
+					$data->get_data(),
+				);
+			}
 		} catch ( \Throwable $exception ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG === true ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions
