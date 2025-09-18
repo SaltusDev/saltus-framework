@@ -47,6 +47,9 @@ trait AssetLoader {
 		try {
 			$assets = $this->services->get( AssetManager::class );
 			$assets->enqueue_assets( $this->assets_container );
+			if ( ! is_array( $this->data ) ) {
+				return;
+			}
 			foreach ( $this->data as $data ) {
 				$assets->add_data(
 					$this->assets_container,
