@@ -7,29 +7,29 @@ use Saltus\WP\Framework\Infrastructure\Service\Service;
 class AssetData implements Service {
 
 	/**
-	 * The asset name.
+	 * The asset source path, used as a handle.
 	 */
 	private string $source;
 
 	/**
-	 * The asset identifier.
+	 * Name for the JavaScript object that will contain the data.
 	 */
 	private string $identifier;
 
 	/**
-	 * The asset data.
+	 * The data to be made available to the script.
 	 */
 	private array $data;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param string $src          File path/URL (e.g., "assets/js/script.js").
+	 * @param string $source       File path/URL (e.g., "assets/js/script.js").
 	 * @param string $identifier   Name for the JavaScript object that will contain the data.
 	 * @param array  $data         The data to be made available to the script.
 	 */
-	public function __construct( string $src, string $identifier, array $data = [] ) {
-		$this->source     = $src;
+	public function __construct( string $source, string $identifier, array $data = [] ) {
+		$this->source     = $source;
 		$this->identifier = $identifier;
 		$this->data       = $data;
 	}
