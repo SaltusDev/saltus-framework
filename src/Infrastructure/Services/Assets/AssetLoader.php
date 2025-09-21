@@ -9,9 +9,26 @@ use Saltus\WP\Framework\Infrastructure\Service\ServiceFactory;
 
 trait AssetLoader {
 
+	/**
+	 * The assets container.
+	 *
+	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetsContainer|null
+	 */
 	private $assets_container = null;
-	private $assets_list      = null;
-	private $data             = null;
+
+	/**
+	 * List of assets to load.
+	 *
+	 * @var array|null
+	 */
+	private $assets_list = null;
+
+	/**
+	 * Data to be localized for assets.
+	 *
+	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData[]|null
+	 */
+	private $data = null;
 
 	/**
 	 * register the assets list

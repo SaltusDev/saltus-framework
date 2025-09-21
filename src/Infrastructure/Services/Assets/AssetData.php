@@ -24,7 +24,9 @@ class AssetData implements Service {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $src          File path/URL (e.g., "assets/js/script.js")
+	 * @param string $src          File path/URL (e.g., "assets/js/script.js").
+	 * @param string $identifier   Name for the JavaScript object that will contain the data.
+	 * @param array  $data         The data to be made available to the script.
 	 */
 	public function __construct( string $src, string $identifier, array $data = [] ) {
 		$this->source     = $src;
