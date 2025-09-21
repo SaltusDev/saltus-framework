@@ -68,8 +68,10 @@ trait AssetLoader {
 				return;
 			}
 			foreach ( $this->data as $data ) {
+				if ( ! $data instanceof AssetData ) {
+					continue;
+				}
 				$assets->add_data(
-					$this->assets_container,
 					$data->get_source(),
 					$data->get_identifier(),
 					$data->get_data(),
