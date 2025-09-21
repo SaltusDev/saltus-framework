@@ -274,26 +274,18 @@ class AssetManager implements Service {
 	/**
 	 * Enqueue all registered assets.
 	 *
-	 * @param AssetsContainer $assets_container The container holding the assets to enqueue.
 	 * @param string          $handle           The handle of the asset to enqueue.
 	 * @param string          $obj_js_name      The name of the JavaScript object to localize.
 	 * @param array           $data_list        The data to localize.
 	 *
 	 * @return void
 	 */
-	public function add_data( $assets_container, $handle, $obj_js_name, $data_list ) {
-
-		foreach ( $assets_container->getAll() as $asset ) {
-			if ( $asset->source !== $handle ) {
-				continue;
-			}
-			$name = $this->prepare_name( $handle );
-			wp_localize_script(
-				$name,
-				$obj_js_name,
-				$data_list,
-			);
-			return;
-		}
+	public function add_data( $handle, $obj_js_name, $data_list ) {
+		$name = $this->prepare_name( $handle );
+		wp_localize_script(
+			$name,
+			$obj_js_name,
+			$data_list,
+		);
 	}
 }
