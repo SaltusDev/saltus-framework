@@ -3,6 +3,8 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2025-09-21
+	- Fix: Assets data container to allow add_data
 
 ## [1.3.1] - 2025-07-06
 	- Feature: Quick edit
