@@ -9,17 +9,17 @@ class AssetData implements Service {
 	/**
 	 * The asset name.
 	 */
-	public string $source;
+	private string $source;
 
 	/**
 	 * The asset identifier.
 	 */
-	public string $identifier;
+	private string $identifier;
 
 	/**
 	 * The asset data.
 	 */
-	public array $data;
+	private array $data;
 
 	/**
 	 * Constructor.
