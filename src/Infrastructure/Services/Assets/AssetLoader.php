@@ -26,7 +26,7 @@ trait AssetLoader {
 	/**
 	 * Data to be localized for assets.
 	 *
-	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData[]|null
+	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData[]
 	 */
 	private $data = [];
 
