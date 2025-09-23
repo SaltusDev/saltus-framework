@@ -50,14 +50,19 @@ saltusRememberTabs.rememberTabInit = function () {
 	if ( tabIndex ) {
 		saltusRememberTabs.hitTab( parseInt(tabIndex, 10 ) );
 	}
+}
 
-	// currently considers all tabs on page
+
+saltusRememberTabs.attachTabListeners = function () {
 	let tabs = document.querySelectorAll('.csf-nav-metabox ul li');
-	let search_params = currentUrl.searchParams;
 
 	tabs.forEach(function (tab, index) {
 		tab.addEventListener('click', function () {
+
+			const currentUrl = new URL(window.location.href);
+			const search_params = currentUrl.searchParams;
 			search_params.set('tab', index);
+
 			const nextTitle = document.title;
 			const nextState = {
 				additionalInformation: 'Updated the URL with JS'
@@ -65,6 +70,12 @@ saltusRememberTabs.rememberTabInit = function () {
 			window.history.replaceState(nextState, nextTitle, currentUrl.toString());
 		});
 	});
-}
+};
 
+// Initialize the feature
 saltusRememberTabs.init();
+
+// Run on DOM ready
+document.addEventListener('DOMContentLoaded', function () {
+	saltusRememberTabs.attachTabListeners();
+})
