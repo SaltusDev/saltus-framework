@@ -1,9 +1,15 @@
 <?php
-// class to hold asset's data
+
 namespace Saltus\WP\Framework\Infrastructure\Services\Assets;
 
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 
+/**
+ * A data container for assets to be localized.
+ *
+ * This class holds the data that will be made available to a specific script
+ * using `wp_localize_script`.
+ */
 class AssetData implements Service {
 
 	/**
