@@ -9,8 +9,26 @@ use Saltus\WP\Framework\Infrastructure\Service\ServiceFactory;
 
 trait AssetLoader {
 
+	/**
+	 * The assets container.
+	 *
+	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetsContainer|null
+	 */
 	private $assets_container = null;
-	private $assets_list      = null;
+
+	/**
+	 * List of assets to load.
+	 *
+	 * @var array|null
+	 */
+	private $assets_list = null;
+
+	/**
+	 * Data to be localized for assets.
+	 *
+	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData[]
+	 */
+	private $data = [];
 
 	/**
 	 * register the assets list
@@ -46,6 +64,19 @@ trait AssetLoader {
 		try {
 			$assets = $this->services->get( AssetManager::class );
 			$assets->enqueue_assets( $this->assets_container );
+			if ( ! is_array( $this->data ) ) {
+				return;
+			}
+			foreach ( $this->data as $data ) {
+				if ( ! $data instanceof AssetData ) {
+					continue;
+				}
+				$assets->add_data(
+					$data->get_source(),
+					$data->get_identifier(),
+					$data->get_data(),
+				);
+			}
 		} catch ( \Throwable $exception ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG === true ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions

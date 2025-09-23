@@ -163,11 +163,9 @@ class AssetManager implements Service {
 	/**
 	 * Wrapper for any local script, skips name and version parameter
 	 *
-	 * @param string $src
-	 * Path of the script relative to the assets directory.
-	 *
+	 * @param string   $src          Path of the script relative to the assets directory.
 	 * @param string[] $dependencies Optional. An array of registered script handles. Default empty array.
-	 * @param bool $in_footer        Optional. Whether to enqueue the script before instead of in the . Default 'false'.
+	 * @param bool     $in_footer    Optional. Whether to enqueue the script before instead of in the . Default 'false'.
 	 *
 	 * @return string The name used to register the asset
 	 */
@@ -179,8 +177,7 @@ class AssetManager implements Service {
 	/**
 	 * Wrapper for any script, skips name and version parameter. Doesn't transform $src
 	 *
-	 * @param string $src Path or URL to the script.
-	 *
+	 * @param string   $src          Path or URL to the script.
 	 * @param string[] $dependencies Optional. An array of registered script handles. Default empty array.
 	 * @param bool     $in_footer    Optional. Where to enqueue. Default 'false'.
 	 *
@@ -274,26 +271,18 @@ class AssetManager implements Service {
 	/**
 	 * Enqueue all registered assets.
 	 *
-	 * @param AssetsContainer $assets_container The container holding the assets to enqueue.
-	 * @param string          $handle           The handle of the asset to enqueue.
-	 * @param string          $obj_js_name      The name of the JavaScript object to localize.
-	 * @param array           $data_list        The data to localize.
+	 * @param string $handle      The handle of the asset to enqueue.
+	 * @param string $obj_js_name The name of the JavaScript object to localize.
+	 * @param array  $data_list   The data to localize.
 	 *
 	 * @return void
 	 */
-	public function add_data( $assets_container, $handle, $obj_js_name, $data_list ) {
-
-		foreach ( $assets_container->getAll() as $asset ) {
-			if ( $asset->source !== $handle ) {
-				continue;
-			}
-			$name = $this->prepare_name( $handle );
-			wp_localize_script(
-				$name,
-				$obj_js_name,
-				$data_list,
-			);
-			return;
-		}
+	public function add_data( string $handle, string $obj_js_name, array $data_list ) {
+		$name = $this->prepare_name( $handle );
+		wp_localize_script(
+			$name,
+			$obj_js_name,
+			$data_list,
+		);
 	}
 }

@@ -5,7 +5,7 @@ We built it to make things easier and faster for developers with different skill
 
 ## Version
 
-## [1.3.1] - 2025-07-06
+## Current version [1.3.2] - 2025-09-21
 
 See [change log file](CHANGELOG.md) for full details.
 
