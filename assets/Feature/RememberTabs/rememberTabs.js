@@ -72,10 +72,13 @@ saltusRememberTabs.attachTabListeners = function () {
 	});
 };
 
-// Initialize the feature
-saltusRememberTabs.init();
 
 // Run on DOM ready
 document.addEventListener('DOMContentLoaded', function () {
+
+	// Initialize the feature
+	saltusRememberTabs.init();
+
+	// Attach listeners to tabs
 	saltusRememberTabs.attachTabListeners();
 })
