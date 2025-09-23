@@ -47,8 +47,12 @@ saltusRememberTabs.rememberTabInit = function () {
 	if ( tabIndex === null ) {
 		tabIndex = currentUrl.searchParams.get('tab');
 	}
+
 	if ( tabIndex ) {
-		saltusRememberTabs.hitTab( parseInt(tabIndex, 10 ) );
+		tabIndex = Number( tabIndex );
+		if ( ! isNaN( tabIndex ) ) {
+			saltusRememberTabs.hitTab( tabIndex );
+		}
 	}
 }
 
