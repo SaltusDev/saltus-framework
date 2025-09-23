@@ -18,7 +18,7 @@ saltusRememberTabs.init = function () {
 saltusRememberTabs.hitTab = function (index) {
 	setTimeout(function () {
 		let tab = document.querySelectorAll('.csf-nav-metabox ul li a');
-		if (tab) {
+		if (tab && tab[index]) {
 			tab[index].click();
 		}
 	}, 1000);
@@ -26,30 +26,34 @@ saltusRememberTabs.hitTab = function (index) {
 
 /**
  * Creates the logic to check if we need to open a tab
- * @returns 
+ * @returns
  */
 saltusRememberTabs.rememberTabInit = function () {
 
 	// check if URL contains tab parameter
-	let referer = document.querySelector('#referredby');
-	let refererUrl = new URL(window.location.origin + referer.value);
+	const referer = document.querySelector('#referredby');
 
-	if (typeof refererUrl.origin === 'undefined') {
-		return;
-	}
-	if (refererUrl.searchParams.get('tab')) {
-		saltusRememberTabs.hitTab(refererUrl.searchParams.get('tab'));
-	} else {
-		let currentUrl = new URL(window.location.href);
-		if (currentUrl.searchParams.get('tab')) {
-			saltusRememberTabs.hitTab(currentUrl.searchParams.get('tab'));
+	let tabIndex = null;
+	if ( referer && referer.value ) {
+		try {
+			let refererUrl = new URL(window.location.origin + referer.value);
+			tabIndex = refererUrl.searchParams.get('tab');
+		} catch (e) {
+			// Invalid referer, ignore
 		}
 	}
+
+	let currentUrl = new URL(window.location.href);
+	if ( ! tabIndex ) {
+		tabIndex = currentUrl.searchParams.get('tab');
+	}
+	if ( tabIndex ) {
+		saltusRememberTabs.hitTab( parseInt(tabIndex, 10 ) );
+	}
+
 	// currently considers all tabs on page
 	let tabs = document.querySelectorAll('.csf-nav-metabox ul li');
-	let currentURL = window.location.href;
-	let url = new URL(currentURL);
-	let search_params = url.searchParams;
+	let search_params = currentUrl.searchParams;
 
 	tabs.forEach(function (tab, index) {
 		tab.addEventListener('click', function () {
@@ -58,7 +62,7 @@ saltusRememberTabs.rememberTabInit = function () {
 			const nextState = {
 				additionalInformation: 'Updated the URL with JS'
 			};
-			window.history.replaceState(nextState, nextTitle, url.toString());
+			window.history.replaceState(nextState, nextTitle, currentUrl.toString());
 		});
 	});
 }
