@@ -28,7 +28,7 @@ trait AssetLoader {
 	 *
 	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData[]|null
 	 */
-	private $data = null;
+	private $data = [];
 
 	/**
 	 * register the assets list
