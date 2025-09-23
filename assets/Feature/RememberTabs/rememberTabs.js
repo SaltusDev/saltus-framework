@@ -36,7 +36,7 @@ saltusRememberTabs.rememberTabInit = function () {
 	let tabIndex = null;
 	if ( referer && referer.value ) {
 		try {
-			let refererUrl = new URL(window.location.origin + referer.value);
+			let refererUrl = new URL(referer.value, window.location.href);
 			tabIndex = refererUrl.searchParams.get('tab');
 		} catch (e) {
 			// Invalid referer, ignore
