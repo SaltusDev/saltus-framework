@@ -44,7 +44,7 @@ saltusRememberTabs.rememberTabInit = function () {
 	}
 
 	let currentUrl = new URL(window.location.href);
-	if ( ! tabIndex ) {
+	if ( tabIndex === null ) {
 		tabIndex = currentUrl.searchParams.get('tab');
 	}
 	if ( tabIndex ) {
