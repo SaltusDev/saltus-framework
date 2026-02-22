@@ -33,7 +33,6 @@ final class SaltusRememberTabs implements Processable {
 	 */
 	public function process() {
 		add_action( 'admin_enqueue_scripts', [ $this, 'load_script_css' ] );
-		add_filter( 'admin_url', [ $this, 'check_remember_tab_url' ], 10, 1 );
 	}
 	/**
 	 * Check if the script and CSS should be loaded
@@ -70,27 +69,5 @@ final class SaltusRememberTabs implements Processable {
 			'1',
 			true
 		);
-	}
-
-	/**
-	 * Adds check to see if extra parameter is set on admin url on save cpt
-	 * Used to remember tab
-	 *
-	 * @param string $link Admin url
-	 * @return string The url
-	 */
-	public function check_remember_tab_url( $link ) {
-
-		global $current_screen;
-		if ( ! is_admin() || ! isset( $current_screen ) || $this->name !== $current_screen->post_type || wp_doing_ajax() ) {
-			return $link;
-		}
-
-		if ( isset( $_REQUEST['tab'] ) ) {
-			$params['tab'] = absint( $_REQUEST['tab'] );
-			$link          = add_query_arg( $params, $link );
-		}
-
-		return $link;
 	}
 }

@@ -18,7 +18,7 @@ saltusRememberTabs.init = function () {
 saltusRememberTabs.hitTab = function (index) {
 	setTimeout(function () {
 		let tab = document.querySelectorAll('.csf-nav-metabox ul li a');
-		if (tab) {
+		if (tab && tab[index]) {
 			tab[index].click();
 		}
 	}, 1000);
@@ -26,41 +26,63 @@ saltusRememberTabs.hitTab = function (index) {
 
 /**
  * Creates the logic to check if we need to open a tab
- * @returns 
+ * @returns
  */
 saltusRememberTabs.rememberTabInit = function () {
 
 	// check if URL contains tab parameter
-	let referer = document.querySelector('#referredby');
-	let refererUrl = new URL(window.location.origin + referer.value);
+	const referer = document.querySelector('#referredby');
 
-	if (typeof refererUrl.origin === 'undefined') {
-		return;
-	}
-	if (refererUrl.searchParams.get('tab')) {
-		saltusRememberTabs.hitTab(refererUrl.searchParams.get('tab'));
-	} else {
-		let currentUrl = new URL(window.location.href);
-		if (currentUrl.searchParams.get('tab')) {
-			saltusRememberTabs.hitTab(currentUrl.searchParams.get('tab'));
+	let tabIndex = null;
+	if ( referer && referer.value ) {
+		try {
+			let refererUrl = new URL(referer.value, window.location.href);
+			tabIndex = refererUrl.searchParams.get('tab');
+		} catch (e) {
+			// Invalid referer, ignore
 		}
 	}
-	// currently considers all tabs on page
+
+	let currentUrl = new URL(window.location.href);
+	if ( tabIndex === null ) {
+		tabIndex = currentUrl.searchParams.get('tab');
+	}
+
+	if ( tabIndex ) {
+		tabIndex = Number( tabIndex );
+		if ( ! isNaN( tabIndex ) ) {
+			saltusRememberTabs.hitTab( tabIndex );
+		}
+	}
+}
+
+
+saltusRememberTabs.attachTabListeners = function () {
 	let tabs = document.querySelectorAll('.csf-nav-metabox ul li');
-	let currentURL = window.location.href;
-	let url = new URL(currentURL);
-	let search_params = url.searchParams;
 
 	tabs.forEach(function (tab, index) {
 		tab.addEventListener('click', function () {
+
+			const currentUrl = new URL(window.location.href);
+			const search_params = currentUrl.searchParams;
 			search_params.set('tab', index);
+
 			const nextTitle = document.title;
 			const nextState = {
 				additionalInformation: 'Updated the URL with JS'
 			};
-			window.history.replaceState(nextState, nextTitle, url.toString());
+			window.history.replaceState(nextState, nextTitle, currentUrl.toString());
 		});
 	});
-}
+};
 
-saltusRememberTabs.init();
+
+// Run on DOM ready
+document.addEventListener('DOMContentLoaded', function () {
+
+	// Initialize the feature
+	saltusRememberTabs.init();
+
+	// Attach listeners to tabs
+	saltusRememberTabs.attachTabListeners();
+})
