@@ -183,7 +183,7 @@ final class CodestarMeta implements Processable {
 
 		add_action(
 			'rest_api_init',
-			function () use ( $post_type, $meta_name, $rest_type, $field_args ) {
+			function () use ( $post_type, $meta_name, $meta_type, $rest_type, $field_args ) {
 
 				$show_in_rest = true;
 
@@ -195,7 +195,7 @@ final class CodestarMeta implements Processable {
 					$show_in_rest = [
 						'schema' => [
 							'items' => [
-								'type' => 'string',
+								'type' => ( $meta_type === 'repeater' ) ? 'object' : 'string',
 							],
 						],
 					];
