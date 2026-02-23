@@ -171,12 +171,12 @@ final class CodestarMeta implements Processable {
 	 * Hooks into REST API
 	 *
 	 * @param string $meta_name   Name of the meta field
-	 * @param string $meta_type   Type of the meta field
+	 * @param array  $field_args  All the field arguments
 	 * @param string $post_type   Post type to register the meta field for
 	 */
 	private function create_meta_fields_not_serialized( $meta_name, $field_args, $post_type ) {
 
-		$meta_type = $field_args['type'] ?? 'object';
+		$meta_type = is_array( $field_args ) ? ( $field_args['type'] ?? 'object' ) : $field_args;
 
 		$rest_types = $this->match_fields();
 		$rest_type  = $this->get_field_type( $meta_type, $rest_types );
