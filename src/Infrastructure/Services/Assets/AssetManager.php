@@ -119,9 +119,9 @@ class AssetManager implements Service {
 	 * @return string[]
 	 */
 	private function prepare_dependencies( $dependencies ) {
-		foreach ( $dependencies as $index => $dependency_name ) {
-			$dependency_src         = $this->prepare_src( $dependency_name );
-			$dependencies[ $index ] = $this->prepare_name( $dependency_src );
+		foreach ( $dependencies as $dependency_name ) {
+			$dependency_src = $this->prepare_src( $dependency_name );
+			$dependencies[] = $this->prepare_name( $dependency_src );
 		}
 		return $dependencies;
 	}
@@ -302,8 +302,13 @@ class AssetManager implements Service {
 		string $style_handle,
 		array $data
 	) {
-		$data['editor_script'] = $this->prepare_name( $script_handle );
-		$data['editor_style']  = $this->prepare_name( $style_handle );
+		if ( ! empty( $script_handle ) ) {
+			$data['editor_script'] = $this->prepare_name( $script_handle );
+		}
+
+		if ( ! empty( $style_handle ) ) {
+			$data['editor_style'] = $this->prepare_name( $style_handle );
+		}
 		register_block_type(
 			$block_name,
 			$data
