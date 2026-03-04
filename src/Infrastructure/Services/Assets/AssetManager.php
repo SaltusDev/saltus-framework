@@ -285,4 +285,28 @@ class AssetManager implements Service {
 			$data_list,
 		);
 	}
+
+	/**
+	 * Register a Gutenberg block.
+	 *
+	 * @param string $block_name    The handle.
+	 * @param string $script_handle The handle of the script to enqueue.
+	 * @param string $style_handle  The handle of the style to enqueue.
+	 * @param array  $data          The data for the block.
+	 *
+	 * @return void
+	 */
+	public function register_gutenberg_block(
+		string $block_name,
+		string $script_handle,
+		string $style_handle,
+		array $data
+	) {
+		$data['editor_script'] = $this->prepare_name( $script_handle );
+		$data['editor_style']  = $this->prepare_name( $style_handle );
+		register_block_type(
+			$this->prepare_name( $block_name ),
+			$data
+		);
+	}
 }
