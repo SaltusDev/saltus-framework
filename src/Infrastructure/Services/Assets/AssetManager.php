@@ -296,10 +296,10 @@ class AssetManager implements Service {
 	/**
 	 * Register a Gutenberg block.
 	 *
-	 * @param string $block_name    The handle.
-	 * @param string $script_handle The handle of the script to enqueue.
-	 * @param string $style_handle  The handle of the style to enqueue.
-	 * @param array  $data          The data for the block.
+	 * @param string $block_name    The name of the block, including namespace.
+	 * @param string $script_src    The path to the script to enqueue, relative to the assets directory.
+	 * @param string $style_src     The path to the style to enqueue, relative to the assets directory.
+	 * @param array  $data          Additional data for the block registration.
 	 *
 	 * @return void
 	 */
