@@ -119,11 +119,18 @@ class AssetManager implements Service {
 	 * @return string[]
 	 */
 	private function prepare_dependencies( $dependencies ) {
-		foreach ( $dependencies as $dependency_name ) {
-			$dependency_src = $this->prepare_src( $dependency_name );
-			$dependencies[] = $this->prepare_name( $dependency_src );
+		$prepared = [];
+		foreach ( $dependencies as $index => $dependency_name ) {
+			if ( \is_string( $index ) && ( $dependency_name === 'skip' || $dependency_name === 'external' ) ) {
+				$prepared[] = $index;
+				continue;
+			}
+			$dependency = \is_string( $index ) ? $index : $dependency_name;
+
+			$dependency_src = $this->prepare_src( $dependency );
+			$prepared[]     = $this->prepare_name( $dependency_src );
 		}
-		return $dependencies;
+		return $prepared;
 	}
 
 	/**
