@@ -80,7 +80,7 @@ final class CodestarMeta implements Processable {
 			$this->create_section( $box_id, $box_settings );
 		}
 
-		if ( isset( $box_settings['sections'] ) ) {
+		if ( isset( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
 			foreach ( $box_settings['sections'] as $section ) {
 				if ( empty( $section['fields'] ) ) {
 					continue;
@@ -110,25 +110,31 @@ final class CodestarMeta implements Processable {
 
 		if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
 			$post_type = $this->name;
-			foreach ( $box_settings['sections'] as $section ) {
-				if ( ! empty( $section['fields'] ) ) {
-					$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
+			if ( ! empty( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
+				foreach ( $box_settings['sections'] as $section ) {
+					if ( ! empty( $section['fields'] ) ) {
+						$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
+					}
 				}
+			} elseif ( ! empty( $box_settings['fields'] ) ) {
+				$this->create_meta_fields_serialized( $box_settings['fields'], $box_id, $post_type );
 			}
 		}
 		if ( empty( $box_settings['data_type'] ) ||
 			$box_settings['data_type'] === 'unserialize' ) {
 			$post_type = $this->name;
 
-			foreach ( $box_settings['sections'] as $section ) {
-				if ( ! empty( $section['fields'] ) ) {
-					foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
-						$meta_type = 'object';
-						if ( ! empty( $want_to_register_fields['type'] ) ) {
-							$meta_type = $want_to_register_fields['type'];
+			if ( ! empty( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
+				foreach ( $box_settings['sections'] as $section ) {
+					if ( ! empty( $section['fields'] ) ) {
+						foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
+							$this->create_meta_fields_not_serialized( $meta_name, $want_to_register_fields, $post_type );
 						}
-						$this->create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type );
 					}
+				}
+			} elseif ( ! empty( $box_settings['fields'] ) ) {
+				foreach ( $box_settings['fields'] as $meta_name => $want_to_register_fields ) {
+					$this->create_meta_fields_not_serialized( $meta_name, $want_to_register_fields, $post_type );
 				}
 			}
 		}
@@ -165,17 +171,36 @@ final class CodestarMeta implements Processable {
 	 * Hooks into REST API
 	 *
 	 * @param string $meta_name   Name of the meta field
-	 * @param string $meta_type   Type of the meta field
+	 * @param array  $field_args  All the field arguments
 	 * @param string $post_type   Post type to register the meta field for
 	 */
-	private function create_meta_fields_not_serialized( $meta_name, $meta_type, $post_type ) {
+	private function create_meta_fields_not_serialized( $meta_name, $field_args, $post_type ) {
+
+		$meta_type = is_array( $field_args ) ? ( $field_args['type'] ?? 'object' ) : $field_args;
 
 		$rest_types = $this->match_fields();
 		$rest_type  = $this->get_field_type( $meta_type, $rest_types );
 
 		add_action(
 			'rest_api_init',
-			function () use ( $post_type, $meta_name, $rest_type ) {
+			function () use ( $post_type, $meta_name, $meta_type, $rest_type, $field_args ) {
+
+				$show_in_rest = true;
+
+				if ( ! empty( $field_args['schema'] ) ) {
+					$show_in_rest = [
+						'schema' => $field_args['schema'],
+					];
+				} elseif ( $rest_type === 'array' ) {
+					$show_in_rest = [
+						'schema' => [
+							'items' => [
+								'type' => ( $meta_type === 'repeater' ) ? 'object' : 'string',
+							],
+						],
+					];
+				}
+
 				register_meta(
 					'post',
 					$meta_name,
@@ -183,11 +208,7 @@ final class CodestarMeta implements Processable {
 						'object_subtype' => $post_type,
 						'type'           => $rest_type,
 						'single'         => true,
-						'show_in_rest'   => [
-							'prepare_callback' => function ( $value ) {
-								return wp_json_encode( $value );
-							},
-						],
+						'show_in_rest'   => $show_in_rest,
 					)
 				);
 			}
