@@ -305,7 +305,7 @@ class AssetManager implements Service {
 		$data['editor_script'] = $this->prepare_name( $script_handle );
 		$data['editor_style']  = $this->prepare_name( $style_handle );
 		register_block_type(
-			$this->prepare_name( $block_name ),
+			$block_name,
 			$data
 		);
 	}
