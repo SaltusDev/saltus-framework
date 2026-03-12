@@ -85,7 +85,6 @@ final class SaltusDuplicate implements Processable {
 
 	public function duplicate() {
 
-		global $wpdb;
 		$error_msg = esc_html__( 'Item cannot be found. Please select one to duplicate.', 'saltus-framework' );
 
 		// Die if post not selected
@@ -145,21 +144,20 @@ final class SaltusDuplicate implements Processable {
 			wp_set_object_terms( $new_post_id, $post_terms, $taxonomy, false );
 		}
 
-		// use SQL queries to duplicate postmeta
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query_prepared = $wpdb->prepare( "SELECT meta_key, meta_value FROM $wpdb->postmeta WHERE post_id=%s", $post_id );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query_result = $wpdb->get_results( $query_prepared );
+		// Duplicate postmeta using update_post_meta() so that serialized values
+		// (e.g. globe_info) are stored correctly. The previous SQL UNION ALL SELECT
+		// approach via $wpdb->prepare( '%s', ... ) escaped inner double-quotes inside
+		// serialized strings, corrupting length declarations and silently breaking
+		// maybe_unserialize() on read-back.
+		$all_meta = get_post_meta( $post_id );
 
-		if ( count( $query_result ) > 0 ) {
-			$sql_query_sel = [];
-			$insert_query  = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
+		if ( ! empty( $all_meta ) ) {
 
 			/**
 			 * Filter the list of meta keys to exclude when duplicating a post.
 			 *
-			 * _edit_lock and _edit_last are set by wp_insert_post() itself, so inserting
-			 * them again via SQL would create duplicate rows and can return stale values.
+			 * _edit_lock and _edit_last are set by wp_insert_post() itself, so
+			 * copying them again would create duplicate rows with stale values.
 			 *
 			 * @param string[] $excluded_keys Meta keys that should not be copied.
 			 */
@@ -169,23 +167,20 @@ final class SaltusDuplicate implements Processable {
 					'_wp_old_slug',
 					'_edit_lock',
 					'_edit_last',
-					]
+				]
 			);
 
-			foreach ( $query_result as $post_meta ) {
-
-				$meta_key = $post_meta->meta_key;
+			foreach ( $all_meta as $meta_key => $meta_values ) {
 
 				if ( in_array( $meta_key, $excluded_keys, true ) ) {
 					continue;
 				}
-				$sql_query_sel[] = $wpdb->prepare( 'SELECT %s, %s, %s', $new_post_id, $meta_key, $post_meta->meta_value );
-			}
 
-			if ( ! empty( $sql_query_sel ) ) {
-				$insert_query .= implode( ' UNION ALL ', $sql_query_sel );
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$wpdb->query( $insert_query );
+				foreach ( $meta_values as $meta_value ) {
+					// get_post_meta() returns values already unserialized; update_post_meta()
+					// will re-serialize them correctly when writing back.
+					update_post_meta( $new_post_id, $meta_key, maybe_unserialize( $meta_value ) );
+				}
 			}
 		}
 
@@ -193,7 +188,6 @@ final class SaltusDuplicate implements Processable {
 		$post_type = get_post_type( $post_id );
 
 		/** @deprecated 1.2.0 */
-		do_action( 'saltus/duplicate_post/after', $post_type, $post_id, $new_post_id );
 		do_action( 'saltus/framework/duplicate_post/after', $post_type, $post_id, $new_post_id );
 
 		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
