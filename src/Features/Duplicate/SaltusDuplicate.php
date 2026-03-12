@@ -151,24 +151,43 @@ final class SaltusDuplicate implements Processable {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query_result = $wpdb->get_results( $query_prepared );
 
-		if ( count( $query_result ) === 0 ) {
-			return;
-		}
-		$sql_query_sel = [];
-		$insert_query  = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
-		foreach ( $query_result as $post_meta ) {
+		if ( count( $query_result ) > 0 ) {
+			$sql_query_sel = [];
+			$insert_query  = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
 
-			$meta_key = $post_meta->meta_key;
+			/**
+			 * Filter the list of meta keys to exclude when duplicating a post.
+			 *
+			 * _edit_lock and _edit_last are set by wp_insert_post() itself, so inserting
+			 * them again via SQL would create duplicate rows and can return stale values.
+			 *
+			 * @param string[] $excluded_keys Meta keys that should not be copied.
+			 */
+			$excluded_keys = apply_filters(
+				'saltus/framework/duplicate_post/excluded_meta_keys',
+				[
+					'_wp_old_slug',
+					'_edit_lock',
+					'_edit_last',
+					]
+			);
 
-			if ( $meta_key === '_wp_old_slug' ) {
-				continue;
+			foreach ( $query_result as $post_meta ) {
+
+				$meta_key = $post_meta->meta_key;
+
+				if ( in_array( $meta_key, $excluded_keys, true ) ) {
+					continue;
+				}
+				$sql_query_sel[] = $wpdb->prepare( 'SELECT %s, %s, %s', $new_post_id, $meta_key, $post_meta->meta_value );
 			}
-			$sql_query_sel[] = $wpdb->prepare( 'SELECT %s, %s, %s', $new_post_id, $meta_key, $post_meta->meta_value );
-		}
 
-		$insert_query .= implode( ' UNION ALL ', $sql_query_sel );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( $insert_query );
+			if ( ! empty( $sql_query_sel ) ) {
+				$insert_query .= implode( ' UNION ALL ', $sql_query_sel );
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->query( $insert_query );
+			}
+		}
 
 		// redirect to admin screen depending on post type
 		$post_type = get_post_type( $post_id );
