@@ -119,11 +119,18 @@ class AssetManager implements Service {
 	 * @return string[]
 	 */
 	private function prepare_dependencies( $dependencies ) {
+		$prepared = [];
 		foreach ( $dependencies as $index => $dependency_name ) {
-			$dependency_src         = $this->prepare_src( $dependency_name );
-			$dependencies[ $index ] = $this->prepare_name( $dependency_src );
+			if ( \is_string( $index ) && ( $dependency_name === 'skip' || $dependency_name === 'external' ) ) {
+				$prepared[] = $index;
+				continue;
+			}
+			$dependency = \is_string( $index ) ? $index : $dependency_name;
+
+			$dependency_src = $this->prepare_src( $dependency );
+			$prepared[]     = $this->prepare_name( $dependency_src );
 		}
-		return $dependencies;
+		return $prepared;
 	}
 
 	/**
@@ -283,6 +290,35 @@ class AssetManager implements Service {
 			$name,
 			$obj_js_name,
 			$data_list,
+		);
+	}
+
+	/**
+	 * Register a Gutenberg block.
+	 *
+	 * @param string $block_name    The name of the block, including namespace.
+	 * @param string $script_src    The path to the script to enqueue, relative to the assets directory.
+	 * @param string $style_src     The path to the style to enqueue, relative to the assets directory.
+	 * @param array  $data          Additional data for the block registration.
+	 *
+	 * @return void
+	 */
+	public function register_gutenberg_block(
+		string $block_name,
+		string $script_handle,
+		string $style_handle,
+		array $data
+	) {
+		if ( ! empty( $script_handle ) ) {
+			$data['editor_script'] = $this->prepare_name( $script_handle );
+		}
+
+		if ( ! empty( $style_handle ) ) {
+			$data['editor_style'] = $this->prepare_name( $style_handle );
+		}
+		register_block_type(
+			$block_name,
+			$data
 		);
 	}
 }
