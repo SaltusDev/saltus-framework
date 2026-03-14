@@ -104,10 +104,10 @@ final class SaltusDuplicate implements Processable {
 
 		// Get id of post to be duplicated and data from it
 		$post_id     = ( isset( $_GET['post'] ) ? absint( $_GET['post'] ) : absint( $_POST['post'] ) );
-		$new_post_id = $this->perform_duplication( $post_id );
+		$new_post_id_or_error = $this->perform_duplication( $post_id );
 
-		if ( is_wp_error( $new_post_id ) ) {
-			wp_die( $new_post_id->get_error_message() );
+		if ( is_wp_error( $new_post_id_or_error ) ) {
+			wp_die( $new_post_id_or_error );
 		}
 
 		// redirect to admin screen depending on post type
