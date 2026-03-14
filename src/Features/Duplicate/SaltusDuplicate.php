@@ -150,7 +150,7 @@ final class SaltusDuplicate implements Processable {
 
 		// insert the new post
 		// @phpstan-ignore argument.type
-		$new_post_id = wp_insert_post( $args );
+		$new_post_id = wp_insert_post( $args, true );
 
 		if ( is_wp_error( $new_post_id ) ) {
 			return $new_post_id;
