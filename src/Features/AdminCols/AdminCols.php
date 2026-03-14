@@ -37,7 +37,8 @@ class AdminCols implements Service, Conditional, Assembly {
 
 		/*
 		 * This service loads only in the admin edit screen
+		 * or in rest calls
 		 */
-		return is_admin();
+		return is_admin() || ( \defined( 'REST_REQUEST' ) && REST_REQUEST );
 	}
 }
