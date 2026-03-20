@@ -103,20 +103,37 @@ final class SaltusDuplicate implements Processable {
 		}
 
 		// Get id of post to be duplicated and data from it
-		$post_id = ( isset( $_GET['post'] ) ? absint( $_GET['post'] ) : absint( $_POST['post'] ) );
-		$post    = get_post( $post_id );
+		$post_id     = ( isset( $_GET['post'] ) ? absint( $_GET['post'] ) : absint( $_POST['post'] ) );
+		$new_post_id_or_error = $this->perform_duplication( $post_id );
 
-		// duplicate the post
-		// @phpstan-ignore identical.alwaysFalse
-		if ( ! isset( $post ) || $post === null ) {
-			return;
+		if ( is_wp_error( $new_post_id_or_error ) ) {
+			wp_die( $new_post_id_or_error );
 		}
 
-		// args for new post
+		// redirect to admin screen depending on post type
+		$post_type = get_post_type( $post_id );
+
+		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
+		exit;
+	}
+
+	/**
+	 * Perform the actual duplication logic.
+	 *
+	 * @param int $post_id The ID of the post to duplicate.
+	 * @return int|\WP_Error The new post ID on success, or WP_Error on failure.
+	 */
+	public function perform_duplication( int $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new \WP_Error( 'duplicate_failed', __( 'Post not found.', 'saltus-framework' ) );
+		}
+
+		// Prepare Args (Add filter for title/status/etc)
 		$args = array(
 			'comment_status' => $post->comment_status,
 			'ping_status'    => $post->ping_status,
-			'post_author'    => $post->post_author,
+			'post_author'    => get_current_user_id() ?: $post->post_author,
 			'post_content'   => $post->post_content,
 			'post_excerpt'   => $post->post_excerpt,
 			'post_name'      => $post->post_name,
@@ -129,26 +146,25 @@ final class SaltusDuplicate implements Processable {
 			'menu_order'     => $post->menu_order,
 		);
 
+		$args = apply_filters( 'saltus/framework/duplicate_post/args', $args, $post_id );
+
 		// insert the new post
 		// @phpstan-ignore argument.type
-		$new_post_id = wp_insert_post( $args );
+		$new_post_id = wp_insert_post( $args, true );
 
-		// add taxonomy terms to the new post
-		// identify taxonomies that apply to the post type
+		if ( is_wp_error( $new_post_id ) ) {
+			return $new_post_id;
+		}
+
+		// Clone Taxonomies
 		$taxonomies = get_object_taxonomies( $post->post_type );
 
-		// add the taxonomy terms to the new post
 		foreach ( $taxonomies as $taxonomy ) {
-
 			$post_terms = wp_get_object_terms( $post_id, $taxonomy, array( 'fields' => 'slugs' ) );
 			wp_set_object_terms( $new_post_id, $post_terms, $taxonomy, false );
 		}
 
-		// Duplicate postmeta using update_post_meta() so that serialized values
-		// (e.g. globe_info) are stored correctly. The previous SQL UNION ALL SELECT
-		// approach via $wpdb->prepare( '%s', ... ) escaped inner double-quotes inside
-		// serialized strings, corrupting length declarations and silently breaking
-		// maybe_unserialize() on read-back.
+		// Clone Meta
 		$all_meta = get_post_meta( $post_id );
 
 		if ( ! empty( $all_meta ) ) {
@@ -184,12 +200,9 @@ final class SaltusDuplicate implements Processable {
 			}
 		}
 
-		// redirect to admin screen depending on post type
-		$post_type = get_post_type( $post_id );
+		// Trigger Action
+		do_action( 'saltus/framework/duplicate_post/after', $post->post_type, $post_id, $new_post_id );
 
-		/** @deprecated 1.2.0 */
-		do_action( 'saltus/framework/duplicate_post/after', $post_type, $post_id, $new_post_id );
-
-		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
+		return $new_post_id;
 	}
 }
