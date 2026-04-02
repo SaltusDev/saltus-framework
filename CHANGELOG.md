@@ -3,6 +3,16 @@
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-04-02
+	- Rework remember tabs
+	- Allow models to pass schema for meta fields
+	- Fix schema for other types of meta
+	- Wrap registering gutenberger block
+	- Allow assets to skip prefixing
+	- Allow admin cols to get called on rest api endpoints
+	- Allow duplicate to run on rest api endpoints
+	- Fix: Patch codestar framework
+
 ## [1.3.2] - 2025-09-21
 	- Fix: Add Assets data container to allow add_data
 
