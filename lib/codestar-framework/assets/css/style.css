@@ -540,6 +540,9 @@
 .csf-theme-dark .csf-nav > ul > li:last-child > a {
   border: none;
 }
+.csf-theme-dark .csf-nav-normal ul li h3 {
+  margin:0;
+}
 .csf-theme-dark .csf-nav-normal ul li a {
   border-bottom-width: 1px;
   border-bottom-style: solid;
@@ -634,6 +637,9 @@
 .csf-theme-light .csf-nav-normal > ul {
   margin-right: -1px;
   margin-bottom: -1px;
+}
+.csf-theme-light .csf-nav-normal > ul li h3 {
+  margin:0;
 }
 .csf-theme-light .csf-nav-normal > ul li a {
   border-bottom: 1px solid #ccd0d4;

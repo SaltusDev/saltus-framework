@@ -208,7 +208,7 @@ if ( ! class_exists( 'CSF_Metabox' ) ) {
                 $tab_error = ( ! empty( $errors['sections'][$tab_key] ) ) ? '<i class="csf-label-error csf-error">!</i>' : '';
                 $tab_icon  = ( ! empty( $section['icon'] ) ) ? '<i class="csf-tab-icon '. esc_attr( $section['icon'] ) .'"></i>' : '';
 
-                echo '<li><a href="#">'. $tab_icon . $section['title'] . $tab_error .'</a></li>';
+                echo '<li><h3><a href="#">'. $tab_icon . $section['title'] . $tab_error .'</a></h3></li>';
 
                 $tab_key++;
 
