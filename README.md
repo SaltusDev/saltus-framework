@@ -132,6 +132,14 @@ Includes a simplified version of SoberWP/Models. Their license is in lib/sobwewp
 
 Includes the [Codestart Framework](https://codestarframework.com/) which is [licensed under GPL](https://codestarframework.com/license/).
 
+### Patching Codestar Framework
+
+Every time the Codestar Framework is updated, our custom fixes may be overwritten. To re-apply the patches located in `lib/codestar-framework/patches`, run the following command from the repository root:
+
+```bash
+for f in lib/codestar-framework/patches/*; do git apply "$f"; done
+```
+
 Includes support for [github-updater](https://github.com/afragen/github-updater) to keep track on updates through the WordPress backend.
 * Download [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
