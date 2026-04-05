@@ -49,8 +49,18 @@ final class SaltusDuplicate implements Processable {
 		add_filter( 'page_row_actions', array( $this, 'row_link' ), 10, 2 );
 
 		add_action( 'admin_action_saltus_framework_' . $this->name . '_duplicate_post', array( $this, 'duplicate' ) );
+
+		add_action( 'admin_notices', [ $this, 'duplication_error_notice' ] );
 	}
 
+	public function duplication_error_notice() {
+		if ( isset( $_GET['duplication_error'], $_GET['_error_nonce'] ) &&
+			wp_verify_nonce( sanitize_key( $_GET['_error_nonce'] ), 'duplication_error_notice' ) ) {
+			echo '<div class="notice notice-error"><p>'
+				. esc_html__( 'Item could not be duplicated.', 'saltus-framework' )
+				. '</p></div>';
+		}
+	}
 	/*
 	* Add a duplicate link to action list for this cpt row_actions
 	*
@@ -83,37 +93,71 @@ final class SaltusDuplicate implements Processable {
 		return $actions;
 	}
 
+	/**
+	 * Duplicate a CPT
+	 * @return never
+	 */
 	public function duplicate() {
+		$error_nonce   = wp_create_nonce( 'duplication_error_notice' );
+		$base_redirect = admin_url( 'edit.php' );
 
-		$error_msg = esc_html__( 'Item cannot be found. Please select one to duplicate.', 'saltus-framework' );
-
-		// Die if post not selected
-		if ( ! ( isset( $_GET['post'] ) ||
-				isset( $_POST['post'] ) ||
-				( isset( $_REQUEST['action'] ) && $_REQUEST['action'] === 'saltus_framework_duplicate_post' )
-				) ) {
-			wp_die( esc_html__( 'Please select an item to duplicate.', 'saltus-framework' ) );
-		}
+		// note: base_redirect is a reference.
+		$error_redirect = function ( string $message ) use ( &$base_redirect, $error_nonce ): string {
+			return add_query_arg(
+				[
+					'duplication_error' => rawurlencode( $message ),
+					'_error_nonce'      => $error_nonce,
+				],
+				$base_redirect
+			);
+		};
 
 		// Verify nonce
 		if ( ! isset( $_GET['saltus_framework_duplicate_nonce'] ) ||
-			! wp_verify_nonce( $_GET['saltus_framework_duplicate_nonce'], basename( __FILE__ ) ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			wp_die( $error_msg );
+			! wp_verify_nonce( sanitize_key( $_GET['saltus_framework_duplicate_nonce'] ), basename( __FILE__ ) ) ) {
+			wp_safe_redirect( $error_redirect( __( 'Security check failed.', 'saltus-framework' ) ) );
+			exit;
+		}
+
+		// exit if post not selected
+		if ( ! ( isset( $_GET['post'] ) || isset( $_POST['post'] ) ) ) {
+			wp_safe_redirect( $error_redirect( __( 'Please select an item to duplicate.', 'saltus-framework' ) ) );
+			exit;
 		}
 
 		// Get id of post to be duplicated and data from it
-		$post_id     = ( isset( $_GET['post'] ) ? absint( $_GET['post'] ) : absint( $_POST['post'] ) );
+		$post_id = absint( $_GET['post'] ?? $_POST['post'] ?? 0 );
+		if ( ! get_post( $post_id ) ) {
+			wp_safe_redirect( $error_redirect( __( 'Item could not be found.', 'saltus-framework' ) ) );
+			exit;
+		}
+
+		$post_type = get_post_type( $post_id );
+		if ( ! $post_type ) {
+			wp_safe_redirect( $error_redirect( __( 'Item type could not be determined.', 'saltus-framework' ) ) );
+			exit;
+		}
+
+		$post_type_object = get_post_type_object( $post_type );
+		if ( ! $post_type_object ) {
+			wp_safe_redirect( $error_redirect( __( 'Item type is not registered.', 'saltus-framework' ) ) );
+			exit;
+		}
+		$base_redirect = admin_url( add_query_arg( 'post_type', $post_type, 'edit.php' ) );
+
+		if ( ! current_user_can( $post_type_object->cap->edit_posts ) ) {
+			wp_safe_redirect( $error_redirect( __( 'You do not have permission to do this.', 'saltus-framework' ) ) );
+			exit;
+		}
+
 		$new_post_id_or_error = $this->perform_duplication( $post_id );
 
 		if ( is_wp_error( $new_post_id_or_error ) ) {
-			wp_die( $new_post_id_or_error );
+			wp_safe_redirect( $error_redirect( $new_post_id_or_error->get_error_message() ) );
+			exit;
 		}
 
-		// redirect to admin screen depending on post type
-		$post_type = get_post_type( $post_id );
-
-		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
+		wp_safe_redirect( $base_redirect );
 		exit;
 	}
 

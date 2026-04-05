@@ -29,7 +29,7 @@ class SimpleContainer extends ArrayObject implements Container {
 	 */
 	public function get( string $id ) {
 		if ( ! $this->has( $id ) ) {
-			throw Invalid::from_id( esc_html( $id ) );
+			throw Invalid::from_id( $id ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		$service = $this->offsetGet( $id );

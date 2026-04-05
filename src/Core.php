@@ -190,7 +190,7 @@ class Core implements Plugin {
 			 *                                Service interface.
 			 */
 			$services = \apply_filters(
-				static::HOOK_PREFIX . static::SERVICES_FILTER,
+				static::HOOK_PREFIX . static::SERVICES_FILTER, // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 				$services
 			);
 		}
