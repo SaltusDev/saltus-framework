@@ -610,10 +610,6 @@ final class SaltusAdminFilters implements Processable {
 			esc_attr( $filter['key'] ?? $id ),
 			esc_attr( $value )
 		);
-
-		?>
-		<input type="text" name="<?php echo esc_attr( $filter['key'] ?? $id ); ?>" id="<?php echo esc_attr( $id ); ?>" value="<?php echo esc_attr( $value ); ?>" />
-		<?php
 	}
 
 	private function render_meta_exists_filter(
