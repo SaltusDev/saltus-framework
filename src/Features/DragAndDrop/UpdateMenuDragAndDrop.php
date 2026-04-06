@@ -85,6 +85,6 @@ class UpdateMenuDragAndDrop implements Actionable {
 			);
 		}
 
-		do_action( 'saltus/framework/drop_and_drop/update_menu_order' );
+		do_action( 'saltus/framework/drag_and_drop/update_menu_order' );
 	}
 }
