@@ -129,9 +129,13 @@ final class SaltusAdminCols implements Processable {
 			}
 		}
 
-		# Add the custom columns:
-		/** @var array<string,(string|mixed[])> */
-		$admin_cols = $this->args;
+		/**
+		 * if a column is set to false in the configuration, array_filter()
+		 * will remove it, effectively disabling it
+		 *
+		 * @var array<string,(string|mixed[])>
+		 */
+		$admin_cols = array_filter( $this->args );
 
 		foreach ( $admin_cols as $id => $col ) {
 
