@@ -678,17 +678,18 @@ final class SaltusAdminFilters implements Processable {
 
 		foreach ( $fields as $value => $label ) {
 
-			$html .= sprintf(
+			$checkbox_id = esc_attr( $id . '-' . $value );
+			$html       .= sprintf(
 				'<input type="checkbox" name="%1$s" id="%2$s" value="%3$s" %4$s />',
 				esc_attr( $filter['key'] ),
-				esc_attr( $id ),
+				esc_attr( $checkbox_id ),
 				esc_attr( $value ),
 				checked( $selected, $value, false )
 			);
 
 			$html .= sprintf(
 				'<label for="%1$s">%2$s</label>',
-				esc_attr( $id ),
+				esc_attr( $checkbox_id ),
 				esc_html( $label )
 			);
 		}
