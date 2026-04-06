@@ -148,7 +148,7 @@ class GenericContainer
 		try {
 			return new ReflectionClass( $service_class );
 		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( esc_html( $service_class ) );
+			throw FailedToMakeInstance::for_unreflectable_class( $service_class ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 	}
 
