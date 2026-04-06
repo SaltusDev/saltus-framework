@@ -408,7 +408,10 @@ final class SaltusAdminCols implements Processable {
 
 		// Map other fields to handlers
 		$handlers = [
-			'post_status'  => fn() => esc_html( get_post_status_object( get_post_status( $post ) )->label ?? '' ),
+			'post_status'  => function () use ( $post ) {
+				$status = get_post_status_object( get_post_status( $post ) );
+				return esc_html( $status->label ?? '' );
+			},
 			'post_author'  => fn() => esc_html( get_the_author() ),
 			'post_title'   => fn() => esc_html( get_the_title() ),
 			'post_excerpt' => fn() => esc_html( get_the_excerpt() ),
