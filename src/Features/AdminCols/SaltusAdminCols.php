@@ -20,24 +20,20 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 final class SaltusAdminCols implements Processable {
 
 	/**
-	 * @var string $name The name of the custom post type (CPT)
+	 * The name of the custom post type (CPT)
 	 */
 	private $name;
 
 	/**
-	 * @var array $args List of columns
+	 * List of columns
 	 */
 	private $args;
 
-	/**
-	 * @var array Default columns
-	 */
 	private ?array $default_columns = null;
 
-	/**
-	 * @var array Managed columns
-	 */
 	private ?array $managed_columns = null;
+
+	private const DEFAULT_KEEP_COLUMNS = [ 'cb', 'title' ];
 
 	/**
 	 * Instantiate this Service object.
@@ -48,6 +44,8 @@ final class SaltusAdminCols implements Processable {
 	public function __construct( string $name, array $args ) {
 		$this->name = $name;
 		$this->args = $args;
+		// normalize the columns to unify all the different column types
+		$this->normalize_columns();
 	}
 
 	/**
@@ -124,64 +122,32 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		$new_cols = [];
-		$keep     = [
-			'cb',
-			'title',
-		];
-
 		# Add existing columns we want to keep:
 		foreach ( $cols as $id => $title ) {
-			if ( in_array( $id, $keep, true ) && ! isset( $this->args[ $id ] ) ) {
+			if ( \in_array( $id, self::DEFAULT_KEEP_COLUMNS, true ) && ! isset( $this->args[ $id ] ) ) {
 				$new_cols[ $id ] = $title;
 			}
 		}
 
-		# Add the custom columns:
-		/** @var array<string,(string|mixed[])> */
+		/**
+		 * if a column is set to false in the configuration, array_filter()
+		 * will remove it, effectively disabling it
+		 *
+		 * @var array<string,(string|mixed[])>
+		 */
 		$admin_cols = array_filter( $this->args );
 
 		foreach ( $admin_cols as $id => $col ) {
-			if ( is_string( $col ) && isset( $cols[ $col ] ) ) {
-				# Existing (ie. built-in) column with id as the value
-				$new_cols[ $col ] = $cols[ $col ];
-			} elseif ( is_string( $col ) && isset( $cols[ $id ] ) ) {
-				# Existing (ie. built-in) column with id as the key and title as the value
-				$new_cols[ $id ] = esc_html( $col );
-			} elseif ( $col === 'author' ) {
-				# Automatic support for Co-Authors Plus plugin and special case for
-				# displaying author column when the post type doesn't support 'author'
-				if ( class_exists( 'coauthors_plus' ) ) {
-					$k = 'coauthors';
-				} else {
-					$k = 'author';
-				}
-				$new_cols[ $k ] = esc_html__( 'Author', 'saltus-framework' );
-			} elseif ( is_array( $col ) ) {
-				if ( isset( $col['cap'] ) && ! current_user_can( $col['cap'] ) ) {
-					continue;
-				}
 
-				if ( isset( $col['title_cb'] ) ) {
-					$new_cols[ $id ] = call_user_func( $col['title_cb'], $col );
-				} else {
-					$title = esc_html( $this->get_item_title( $col, $id ) );
-
-					if ( isset( $col['title_icon'] ) ) {
-						$title = sprintf(
-							'<span class="dashicons %s" aria-hidden="true"></span><span class="screen-reader-text">%s</span>',
-							esc_attr( $col['title_icon'] ),
-							$title
-						);
-					}
-
-					$new_cols[ $id ] = $title;
-				}
+			if ( isset( $col['cap'] ) && ! \current_user_can( $col['cap'] ) ) {
+				continue;
 			}
+			$new_cols = $this->resolve_column( $new_cols, $id, $col, $cols );
 		}
 
 		# Re-add any custom columns:
-		$custom   = array_diff_key( $cols, $this->default_columns );
-		$new_cols = array_merge( $new_cols, $custom );
+		$custom   = \array_diff_key( $cols, $this->default_columns );
+		$new_cols = \array_merge( $new_cols, $custom );
 
 		$this->managed_columns = $new_cols;
 		return $this->managed_columns;
@@ -384,14 +350,11 @@ final class SaltusAdminCols implements Processable {
 
 			case 'view':
 				if ( $tax->public ) {
-					// https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/issues/1096
-					// @codingStandardsIgnoreStart
 					$out = sprintf(
 						'<a href="%1$s">%2$s</a>',
 						esc_url( get_term_link( $term ) ),
 						esc_html( $term->name )
 					);
-					// @codingStandardsIgnoreEnd
 				} else {
 					$out = esc_html( $term->name );
 				}
@@ -434,45 +397,40 @@ final class SaltusAdminCols implements Processable {
 	 * @param array<string,mixed> $args  Array of arguments for this field.
 	 */
 	public function col_post_field( \WP_Post $post, string $field, array $args ): void {
-		switch ( $field ) {
+		// Handle date fields with common logic
+		$date_fields = [ 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ];
 
-			case 'post_date':
-			case 'post_date_gmt':
-			case 'post_modified':
-			case 'post_modified_gmt':
-				if ( get_post_field( $field, $post ) === '0000-00-00 00:00:00' ) {
-					break;
-				}
-				if ( ! isset( $args['date_format'] ) ) {
-					$args['date_format'] = get_option( 'date_format' );
-				}
-				echo esc_html( mysql2date( $args['date_format'], get_post_field( $field, $post ) ) );
-				break;
-
-			case 'post_status':
-				$status = get_post_status_object( get_post_status( $post ) );
-				if ( $status ) {
-					echo esc_html( $status->label );
-				}
-				break;
-
-			case 'post_author':
-				echo esc_html( get_the_author() );
-				break;
-
-			case 'post_title':
-				echo esc_html( get_the_title() );
-				break;
-
-			case 'post_excerpt':
-				echo esc_html( get_the_excerpt() );
-				break;
-
-			default:
-				echo esc_html( get_post_field( $field, $post ) );
-				break;
+		if ( in_array( $field, $date_fields, true ) ) {
+			$value = get_post_field( $field, $post );
+			if ( $value === '0000-00-00 00:00:00' ) {
+				return;
+			}
+			$format = $args['date_format'] ?? get_option( 'date_format' );
+			echo esc_html( mysql2date( $format, $value ) );
+			return;
 		}
+
+		// Map other fields to handlers
+		$handlers = [
+			'post_status'  => function () use ( $post ) {
+				$status = get_post_status_object( get_post_status( $post ) );
+				return esc_html( $status->label ?? '' );
+			},
+			'post_author'  => fn() => esc_html( get_the_author() ),
+			'post_title'   => fn() => esc_html( get_the_title() ),
+			'post_excerpt' => fn() => esc_html( get_the_excerpt() ),
+		];
+
+		if ( isset( $handlers[ $field ] ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo $handlers[ $field ]();
+			return;
+		}
+
+		// Default
+		echo esc_html( get_post_field( $field, $post ) );
 	}
+
 
 	/**
 	 * Outputs column data for a post's featured image.
@@ -654,36 +612,24 @@ final class SaltusAdminCols implements Processable {
 	 * @return array<string,string> The list of SQL clauses to apply to the query.
 	 */
 	public static function get_sort_taxonomy_clauses( array $clauses, array $vars, array $sortables ): array {
-		global $wpdb; // Global WPDB class object
-
-		if ( ! isset( $vars['orderby'] ) ) {
-			return [];
-		}
-
-		if ( ! is_string( $vars['orderby'] ) ) {
-			return [];
-		}
-
-		if ( ! isset( $sortables[ $vars['orderby'] ] ) ) {
+		/** @var \wpdb $wpdb */
+		global $wpdb;
+		if ( ! isset( $vars['orderby'] ) ||
+			! \is_string( $vars['orderby'] ) ||
+			! isset( $sortables[ $vars['orderby'] ] ) ) {
 			return [];
 		}
 
 		$admin_col = $sortables[ $vars['orderby'] ];
 
-		if ( ! is_array( $admin_col ) ) {
-			return [];
-		}
-
-		if ( isset( $admin_col['sortable'] ) && ! $admin_col['sortable'] ) {
-			return [];
-		}
-
-		if ( ! isset( $admin_col['taxonomy'] ) ) {
+		if ( ! is_array( $admin_col ) ||
+			! isset( $admin_col['taxonomy'] ) ||
+			( isset( $admin_col['sortable'] ) && ! $admin_col['sortable'] ) ) {
 			return [];
 		}
 
 		# Taxonomy term ordering courtesy of http://scribu.net/wordpress/sortable-taxonomy-columns.html
-		$clauses['join']    .= "
+		$clauses['join']   .= "
 			LEFT OUTER JOIN {$wpdb->term_relationships} as ext_cpts_tr
 			ON ( {$wpdb->posts}.ID = ext_cpts_tr.object_id )
 			LEFT OUTER JOIN {$wpdb->term_taxonomy} as ext_cpts_tt
@@ -691,11 +637,72 @@ final class SaltusAdminCols implements Processable {
 			LEFT OUTER JOIN {$wpdb->terms} as ext_cpts_t
 			ON ( ext_cpts_tt.term_id = ext_cpts_t.term_id )
 		";
-		$clauses['where']   .= $wpdb->prepare( ' AND ( taxonomy = %s OR taxonomy IS NULL )', $admin_col['taxonomy'] );
-		$clauses['groupby']  = 'ext_cpts_tr.object_id';
-		$clauses['orderby']  = 'GROUP_CONCAT( ext_cpts_t.name ORDER BY name ASC ) ';
+		$clauses['where']  .= $wpdb->prepare( ' AND ( taxonomy = %s OR taxonomy IS NULL )', $admin_col['taxonomy'] );
+		$clauses['groupby'] = 'ext_cpts_tr.object_id';
+		$clauses['orderby'] = 'GROUP_CONCAT( ext_cpts_t.name ORDER BY name ASC ) ';
+		// Default to DESC to match WordPress behaviour when order is not specified.
 		$clauses['orderby'] .= ( isset( $vars['order'] ) && ( strtoupper( $vars['order'] ) === 'ASC' ) ) ? 'ASC' : 'DESC';
 
 		return $clauses;
+	}
+
+	/**
+	 * Normalizes column args to a consistent array shape.
+	*/
+	private function normalize_columns(): void {
+		foreach ( $this->args as $id => $col ) {
+			if ( $col === 'author' ) {
+				$this->args[ $id ] = [ 'type' => 'author' ];
+			} elseif ( \is_string( $col ) ) {
+				$this->args[ $id ] = [
+					'type'  => 'native',
+					'value' => $col,
+				];
+			} else {
+				$this->args[ $id ] = \array_merge( [ 'type' => 'custom' ], $col );
+			}
+		}
+	}
+
+
+	/**
+	 * Applies a single normalized column to the columns array.
+	 *
+	 * @param array<string,string> $new_cols
+	 * @param array<string,mixed>  $col
+	 * @param array<string,string> $cols
+	 * @return array<string,string>
+	 */
+	private function resolve_column( array $new_cols, string $id, array $col, array $cols ): array {
+		if ( $col['type'] === 'author' ) {
+			$key              = \class_exists( 'coauthors_plus' ) ? 'coauthors' : 'author';
+			$new_cols[ $key ] = \esc_html__( 'Author', 'saltus-framework' );
+			return $new_cols;
+		}
+
+		if ( $col['type'] === 'native' ) {
+			$value = $col['value'];
+			if ( isset( $cols[ $value ] ) ) {
+				$new_cols[ $value ] = $cols[ $value ];
+			} elseif ( isset( $cols[ $id ] ) ) {
+				$new_cols[ $id ] = \esc_html( $value );
+			}
+			return $new_cols;
+		}
+
+		$title = isset( $col['title_cb'] )
+			? \call_user_func( $col['title_cb'], $col )
+			: \esc_html( $this->get_item_title( $col, $id ) );
+
+		if ( isset( $col['title_icon'] ) ) {
+			$title = \sprintf(
+				'<span class="dashicons %s" aria-hidden="true"></span><span class="screen-reader-text">%s</span>',
+				\esc_attr( $col['title_icon'] ),
+				$title
+			);
+		}
+
+		$new_cols[ $id ] = $title;
+		return $new_cols;
 	}
 }

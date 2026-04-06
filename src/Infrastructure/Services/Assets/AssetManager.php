@@ -33,7 +33,7 @@ class AssetManager implements Service {
 	 */
 	public function __construct( $dependencies ) {
 		if ( empty( $dependencies['project'] ) || ! $dependencies['project'] instanceof Project ) {
-			throw Invalid::from( 'project' );
+			throw Invalid::from( 'project' );  //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		if ( ! defined( 'SALTUS_ENV' ) ) {

@@ -44,10 +44,10 @@ final class FailedToMakeInstance
 	 *
 	 * @return static
 	 */
-	public static function for_unresolved_interface( string $interface ) {
+	public static function for_unresolved_interface( string $unresolved_interface ) {
 		$message = \sprintf(
 			'Could not resolve the interface "%s" to an instantiable class, probably forgot to bind an implementation.',
-			$interface
+			$unresolved_interface
 		);
 
 		return new self( $message, self::UNRESOLVED_INTERFACE );

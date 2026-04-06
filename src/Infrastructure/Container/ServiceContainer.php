@@ -54,7 +54,7 @@ class ServiceContainer
 	 */
 	public function get( string $id ) {
 		if ( ! $this->has( $id ) ) {
-			throw Invalid::from_id( esc_html( $id ) );
+			throw Invalid::from_id( $id ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		$service = $this->offsetGet( $id );
@@ -149,7 +149,7 @@ class ServiceContainer
 		$service = $this->make( $service_class, $dependencies );
 
 		if ( ! $service instanceof Service ) {
-			throw Invalid::from( esc_html( $service ) );
+			throw Invalid::from( $service ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		return $service;

@@ -49,7 +49,7 @@ class GenericContainer
 	 */
 	public function get( string $id ) {
 		if ( ! $this->has( $id ) ) {
-			throw Invalid::from_id( $id );
+			throw Invalid::from_id( $id ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		$service = $this->offsetGet( $id );
@@ -114,7 +114,7 @@ class GenericContainer
 		$service = $this->make( $service_class );
 
 		if ( ! $service instanceof Service ) {
-			throw Invalid::from( $service );
+			throw Invalid::from( $service ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		return $service;
@@ -148,7 +148,7 @@ class GenericContainer
 		try {
 			return new ReflectionClass( $service_class );
 		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( $service_class );
+			throw FailedToMakeInstance::for_unreflectable_class( $service_class ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 	}
 
@@ -162,7 +162,7 @@ class GenericContainer
 	 */
 	private function ensure_is_instantiable( ReflectionClass $reflection ) {
 		if ( ! $reflection->isInstantiable() ) {
-			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() );
+			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 	}
 

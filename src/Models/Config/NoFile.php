@@ -6,4 +6,3 @@ use Noodlehaus\AbstractConfig;
 class NoFile extends AbstractConfig {
 
 }
-

@@ -1,5 +1,5 @@
 parameters:
-    level: 5
+    level: 7
     checkExplicitMixedMissingReturn: false
     reportUnmatchedIgnoredErrors: false
     bootstrapFiles:
