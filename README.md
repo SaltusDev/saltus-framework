@@ -131,7 +131,7 @@ Saltus Framework provides several hooks to customize its behavior.
 | :--- | :--- | :--- |
 | `saltus/framework/duplicate_post/after` | Triggered after a post is successfully duplicated. | `string $post_type`, `int $original_post_id`, `int $new_post_id` |
 | `saltus/framework/admin_filters/filter_output/{$filter_id}` | Allows overriding the HTML output of a specific admin filter. | `SaltusAdminFilters $instance`, `array $filter_args`, `string $element_id` |
-| `saltus/framework/drop_and_drop/update_menu_order` | Triggered after the menu order is updated via drag and drop. | None |
+| `saltus/framework/drag_and_drop/update_menu_order` | Triggered after the menu order is updated via drag and drop. | None |
 
 ### Filters
 
