@@ -530,6 +530,7 @@ final class SaltusAdminFilters implements Processable {
 	private function resolve_meta_filter_state( array $filter, array $options ): array {
 		$selected = wp_unslash( get_query_var( $filter['key'] ) );
 
+		$use_key = false;
 		if ( isset( $filter['use_key'] ) ) {
 			$use_key = (bool) $filter['use_key'];
 		} else {
