@@ -57,7 +57,7 @@ final class SaltusDuplicate implements Processable {
 		if ( isset( $_GET['duplication_error'], $_GET['_error_nonce'] ) &&
 			wp_verify_nonce( sanitize_key( $_GET['_error_nonce'] ), 'duplication_error_notice' ) ) {
 			echo '<div class="notice notice-error"><p>'
-				. esc_html__( 'Item could not be duplicated.', 'saltus-framework' )
+				. esc_html( urldecode( (string) $_GET['duplication_error'] ) )
 				. '</p></div>';
 		}
 	}
