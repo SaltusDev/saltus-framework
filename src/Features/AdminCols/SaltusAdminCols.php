@@ -680,7 +680,7 @@ final class SaltusAdminCols implements Processable {
 			return $new_cols;
 		}
 
-		if ( $col['type'] === 'existing' ) {
+		if ( $col['type'] === 'native' ) {
 			$value = $col['value'];
 			if ( isset( $cols[ $value ] ) ) {
 				$new_cols[ $value ] = $cols[ $value ];
