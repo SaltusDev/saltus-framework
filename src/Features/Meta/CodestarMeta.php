@@ -108,37 +108,31 @@ final class CodestarMeta implements Processable {
 			return;
 		}
 
-		if ( ! empty( $box_settings['data_type'] ) && $box_settings['data_type'] === 'serialize' ) {
-			$post_type = $this->name;
-			if ( ! empty( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
-				foreach ( $box_settings['sections'] as $section ) {
-					if ( ! empty( $section['fields'] ) ) {
-						$this->create_meta_fields_serialized( $section['fields'], $box_id, $post_type );
-					}
-				}
-			} elseif ( ! empty( $box_settings['fields'] ) ) {
-				$this->create_meta_fields_serialized( $box_settings['fields'], $box_id, $post_type );
-			}
-		}
-		if ( empty( $box_settings['data_type'] ) ||
-			$box_settings['data_type'] === 'unserialize' ) {
-			$post_type = $this->name;
+		$post_type = $this->name;
+		$data_type = $box_settings['data_type'] ?? 'unserialize'; // default
 
-			if ( ! empty( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
-				foreach ( $box_settings['sections'] as $section ) {
-					if ( ! empty( $section['fields'] ) ) {
-						foreach ( $section['fields'] as $meta_name => $want_to_register_fields ) {
-							$this->create_meta_fields_not_serialized( $meta_name, $want_to_register_fields, $post_type );
-						}
-					}
-				}
-			} elseif ( ! empty( $box_settings['fields'] ) ) {
-				foreach ( $box_settings['fields'] as $meta_name => $want_to_register_fields ) {
-					$this->create_meta_fields_not_serialized( $meta_name, $want_to_register_fields, $post_type );
+		$process_fields = function ( array $fields, bool $serialized ) use ( $box_id, $post_type ) {
+			if ( $serialized ) {
+				$this->create_meta_fields_serialized( $fields, $box_id, $post_type );
+			} else {
+				foreach ( $fields as $meta_name => $meta_fields ) {
+					$this->create_meta_fields_not_serialized( $meta_name, $meta_fields, $post_type );
 				}
 			}
+		};
+
+		$serialized = $data_type === 'serialize';
+		if ( ! empty( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
+			foreach ( $box_settings['sections'] as $section ) {
+				if ( ! empty( $section['fields'] ) ) {
+					$process_fields( $section['fields'], $serialized );
+				}
+			}
+		} elseif ( ! empty( $box_settings['fields'] ) ) {
+			$process_fields( $box_settings['fields'], $serialized );
 		}
 	}
+
 
 	/**
 	 * Setup REST API fields

@@ -141,39 +141,36 @@ final class SaltusDragAndDrop implements Processable {
 		$query_result = $wpdb->query( $query_prepared );
 	}
 
-	public function pre_get_posts( $wp_query ) {
-
+	public function pre_get_posts( \WP_Query $wp_query ): void {
 		if ( ! isset( $wp_query->query['post_type'] ) ) {
 			return;
 		}
 
 		if ( is_admin() ) {
-			// skip if its already being sorted
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			if ( isset( $_GET['orderby'] ) ) {
-				return;
-			}
-			// skip if its another CPT
-			if ( $wp_query->query['post_type'] !== $this->name ) {
-				return;
-			}
-			$wp_query->set( 'orderby', 'menu_order' );
-			$wp_query->set( 'order', 'ASC' );
+			$this->pre_get_posts_admin( $wp_query );
 			return;
 		}
 
-		$active = false;
+		$this->pre_get_posts_frontend( $wp_query );
+	}
 
-		if ( is_array( $wp_query->query['post_type'] ) &&
-			in_array( $this->name, $wp_query->query['post_type'], true ) ) {
-			$active = true;
-		}
-		if ( $this->name === $wp_query->query['post_type'] ) {
-			$active = true;
+	private function pre_get_posts_admin( \WP_Query $wp_query ): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['orderby'] ) || $wp_query->query['post_type'] !== $this->name ) {
+			return;
 		}
 
-		if ( ! $active ) {
-			return false;
+		$wp_query->set( 'orderby', 'menu_order' );
+		$wp_query->set( 'order', 'ASC' );
+	}
+
+	private function pre_get_posts_frontend( \WP_Query $wp_query ): void {
+		$post_type = $wp_query->query['post_type'];
+		$is_active = $post_type === $this->name ||
+			( is_array( $post_type ) && in_array( $this->name, $post_type, true ) );
+
+		if ( ! $is_active ) {
+			return;
 		}
 
 		if ( isset( $wp_query->query['suppress_filters'] ) ) {

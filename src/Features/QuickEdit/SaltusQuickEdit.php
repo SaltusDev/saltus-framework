@@ -125,7 +125,7 @@ final class SaltusQuickEdit implements Processable {
 				<fieldset class="inline-edit-col-right">
 					<div class="inline-edit-col">
 						<label>
-							<span class="title"><?= esc_html( $field['title'] ); ?></span>
+							<span class="title"><?php echo esc_html( $field['title'] ); ?></span>
 							<input type="text" name="<?php echo esc_attr( $meta_key ); ?>" value="" />
 						</label>
 					</div>

@@ -3,6 +3,25 @@
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-04-07
+	- New: Add h3 to meta sections
+	- Fix: typo in drag and drop filter
+	- Docs: Add docs for patching codestar
+	- Docs: Add docs for existing hooks
+	- Improvement: Reduce complexity and improve typing safety
+	- Chore: Update dependencies
+	- Test: Test phpstan level 7
+
+## [1.3.3] - 2026-03-20
+	- Rework remember tabs
+	- Allow models to pass schema for meta fields
+	- Fix schema for other types of meta
+	- Wrap registering gutenberger block
+	- Allow assets to skip prefixing
+	- Allow admin cols to get called on rest api endpoints
+	- Allow duplicate to run on rest api endpoints
+	- Fix: Patch codestar framework
+
 ## [1.3.2] - 2025-09-21
 	- Fix: Add Assets data container to allow add_data
 
