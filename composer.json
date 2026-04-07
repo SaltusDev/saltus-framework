@@ -34,7 +34,7 @@
 		}
 	},
 	"require": {
-		"php": ">=7.2",
+		"php": ">=7.4",
 		"hassankhan/config": "^3.2.0"
 	},
 	"require-dev": {
