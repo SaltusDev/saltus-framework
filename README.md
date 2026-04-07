@@ -5,7 +5,7 @@ We built it to make things easier and faster for developers with different skill
 
 ## Version
 
-## Current version [1.3.2] - 2025-09-21
+## Current version [1.3.4] - 2026-04-07
 
 See [change log file](CHANGELOG.md) for full details.
 
@@ -26,7 +26,7 @@ See [change log file](CHANGELOG.md) for full details.
 
 ### Requirements
 
-Saltus Framework requires PHP 7.0+
+Saltus Framework requires PHP 7.4+
 
 ## Getting Started
 
