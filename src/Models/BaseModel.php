@@ -391,10 +391,10 @@ abstract class BaseModel {
 	 * @param array  $replace Placeholder replace values.
 	 * @return string
 	 */
-	private function resolve_message( string $key, string $defaul_msg, array $search, array $replace ): string {
+	private function resolve_message( string $key, string $default_msg, array $search, array $replace ): string {
 		return isset( $this->messages[ $key ] )
 			? str_replace( $search, $replace, $this->messages[ $key ] )
-			: $defaul_msg;
+			: $default_msg;
 	}
 
 	/**
