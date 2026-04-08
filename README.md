@@ -3,6 +3,12 @@ Saltus Framework helps you develop WordPress plugins that are based on Custom Po
 
 We built it to make things easier and faster for developers with different skills. Add metaboxes, settings pages and other enhancements with just a few lines of code.
 
+## Version
+
+### Current version [1.3.4] - 2026-04-07
+
+See [change log file](CHANGELOG.md) for full details.
+
 ### Features
 	* Create Custom Post Types easily
 	* Control all labels and messages
@@ -16,10 +22,11 @@ We built it to make things easier and faster for developers with different skill
 	* Create Taxonomies easily
 	* Control labels
 	* Associate with any existing post type
+	* Add quick edit fields
 
 ### Requirements
 
-Saltus Framework requires PHP 7.0+
+Saltus Framework requires PHP 7.4+
 
 ## Getting Started
 
@@ -116,7 +123,30 @@ Example File for a Taxonomy Model (Soon)
 
 ## Filters/Hooks
 
-(More Info Soon)
+Saltus Framework provides several hooks to customize its behavior.
+
+### Actions
+
+| Hook | Description | Parameters |
+| :--- | :--- | :--- |
+| `saltus/framework/duplicate_post/after` | Triggered after a post is successfully duplicated. | `string $post_type`, `int $original_post_id`, `int $new_post_id` |
+| `saltus/framework/admin_filters/filter_output/{$filter_id}` | Allows overriding the HTML output of a specific admin filter. | `SaltusAdminFilters $instance`, `array $filter_args`, `string $element_id` |
+| `saltus/framework/drag_and_drop/update_menu_order` | Triggered after the menu order is updated via drag and drop. | None |
+
+### Filters
+
+| Hook | Description | Parameters | Default |
+| :--- | :--- | :--- | :--- |
+| `saltus/framework/modeler/priority` | Filters the priority of the `init` hook used to register models. | `int $priority` | `1` |
+| `saltus/framework/services` | Filters the list of service classes to be registered. | `array $services` | Core services array |
+| `saltus/framework/models/path` | Filters the directory path where model files are located. | `string $path` | `{project_path}/src/models/` |
+| `saltus/framework/models/extra_models` | Allows adding extra model configurations programmatically. | `array $extra_models` | `[]` |
+| `saltus/framework/admin_filters/category_list` | Filters the term name shown in taxonomy dropdown filters. | `string $name`, `WP_Term $term` | `$term->name` |
+| `saltus/framework/meta/matched_fields` | Filters the mapping between Saltus field types and Codestar field types. | `array $field_map` | Built-in map |
+| `saltus/framework/duplicate_post/args` | Filters the data used to create a new duplicated post. | `array $args`, `int $original_post_id` | Copied post data |
+| `saltus/framework/duplicate_post/excluded_meta_keys` | Filters meta keys that should not be copied during duplication. | `array $keys` | `['_wp_old_slug', '_edit_lock', '_edit_last']` |
+| `saltus/framework/admin_filters/{$post_type}/filter_query/{$filter_id}` | Filters the query arguments for a specific admin filter. | `array $vars`, `array $query`, `array $filter` | `[]` |
+
 
 
 ## Credits and Licenses:
@@ -125,7 +155,21 @@ Includes a simplified version of SoberWP/Models. Their license is in lib/sobwewp
 
 Includes the [Codestart Framework](https://codestarframework.com/) which is [licensed under GPL](https://codestarframework.com/license/).
 
+### Patching Codestar Framework
+
+Every time the Codestar Framework is updated, our custom fixes may be overwritten. To re-apply the patches located in `lib/codestar-framework/patches`, run the following command from the repository root:
+
+```bash
+for f in lib/codestar-framework/patches/*; do git apply "$f"; done
+```
+
 Includes support for [github-updater](https://github.com/afragen/github-updater) to keep track on updates through the WordPress backend.
 * Download [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
 * Activate via WordPress
+
+## Building
+
+### Disadvantages of classmap
+As we move from 'files' to 'classmap', heed this:
+> Manual Updates: If you add new classes, you must regenerate the classmap by running composer dump-autoload.

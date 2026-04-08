@@ -1,4 +1,9 @@
+# dev
 vendor/
-.vscode
+
+# editor/OS files
 .DS_Store
 **/.DS_Store
+.vscode
+*~
+saltus-framework.code-workspace

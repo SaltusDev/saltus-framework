@@ -5,7 +5,7 @@ use Saltus\WP\Framework\Exception\SaltusFrameworkThrowable;
 
 use RuntimeException;
 
-class FailedToMakeInstance
+final class FailedToMakeInstance
 	extends RuntimeException
 	implements SaltusFrameworkThrowable {
 
@@ -33,7 +33,7 @@ class FailedToMakeInstance
 			$interface_or_class
 		);
 
-		return new static( $message, static::CIRCULAR_REFERENCE );
+		return new self( $message, self::CIRCULAR_REFERENCE );
 	}
 
 	/**
@@ -44,13 +44,13 @@ class FailedToMakeInstance
 	 *
 	 * @return static
 	 */
-	public static function for_unresolved_interface( string $interface ) {
+	public static function for_unresolved_interface( string $unresolved_interface ) {
 		$message = \sprintf(
 			'Could not resolve the interface "%s" to an instantiable class, probably forgot to bind an implementation.',
-			$interface
+			$unresolved_interface
 		);
 
-		return new static( $message, static::UNRESOLVED_INTERFACE );
+		return new self( $message, self::UNRESOLVED_INTERFACE );
 	}
 
 	/**
@@ -68,7 +68,7 @@ class FailedToMakeInstance
 			$interface_or_class
 		);
 
-		return new static( $message, static::UNREFLECTABLE_CLASS );
+		return new self( $message, self::UNREFLECTABLE_CLASS );
 	}
 
 	/**
@@ -77,51 +77,51 @@ class FailedToMakeInstance
 	 *
 	 * @param string $argument_name Name of the argument that could not be
 	 *                              resolved.
-	 * @param string $class         Class that had the argument in its
+	 * @param string $service_class Class that had the argument in its
 	 *                              constructor.
 	 * @return static
 	 */
-	public static function for_unresolved_argument( string $argument_name, string $class ) {
+	public static function for_unresolved_argument( string $argument_name, string $service_class ) {
 		$message = \sprintf(
 			'Could not resolve the argument "%s" while trying to instantiate the class "%s".',
 			$argument_name,
-			$class
+			$service_class
 		);
 
-		return new static( $message, static::UNRESOLVED_ARGUMENT );
+		return new self( $message, self::UNRESOLVED_ARGUMENT );
 	}
 
 	/**
 	 * Create a new instance of the exception for a class that was meant to be
 	 * reused but was not yet instantiated.
 	 *
-	 * @param string $class Class that was not yet instantiated.
+	 * @param string $service_class Class that was not yet instantiated.
 	 *
 	 * @return static
 	 */
-	public static function for_uninstantiated_shared_instance( string $class ) {
+	public static function for_uninstantiated_shared_instance( string $service_class ) {
 		$message = \sprintf(
 			'Could not retrieve the shared instance for "%s" as it was not instantiated yet.',
-			$class
+			$service_class
 		);
 
-		return new static( $message, static::UNINSTANTIATED_SHARED_INSTANCE );
+		return new self( $message, self::UNINSTANTIATED_SHARED_INSTANCE );
 	}
 
 	/**
 	 * Create a new instance of the exception for a delegate that was requested
 	 * for a class that doesn't have one.
 	 *
-	 * @param string $class Class for which there is no delegate.
+	 * @param string $service_class Class for which there is no delegate.
 	 *
 	 * @return static
 	 */
-	public static function for_invalid_delegate( string $class ) {
+	public static function for_invalid_delegate( string $service_class ) {
 		$message = \sprintf(
 			'Could not retrieve a delegate for "%s", none was defined.',
-			$class
+			$service_class
 		);
 
-		return new static( $message, static::INVALID_DELEGATE );
+		return new self( $message, self::INVALID_DELEGATE );
 	}
 }

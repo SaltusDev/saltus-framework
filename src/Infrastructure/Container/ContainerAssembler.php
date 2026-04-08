@@ -7,8 +7,10 @@ namespace Saltus\WP\Framework\Infrastructure\Container;
  */
 class ContainerAssembler {
 
-	public function create() {
-		return new GenericContainer();
+	public function create( $container ) {
+		if ( ! class_exists( $container ) ) {
+			throw new \InvalidArgumentException( esc_html( "Container class $container does not exist." ) );
+		}
+		return new $container();
 	}
-
 }

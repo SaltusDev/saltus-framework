@@ -6,6 +6,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 };
 
 /**
+ * Class UpdateMenuDragAndDrop
+ *
+ * Handles the drag-and-drop functionality for updating menu order.
  */
 class UpdateMenuDragAndDrop implements Actionable {
 
@@ -15,10 +18,20 @@ class UpdateMenuDragAndDrop implements Actionable {
 	 */
 	public function __construct() {}
 
+
+	/**
+	 * Register the WordPress action for handling the AJAX request.
+	 */
 	public function add_action() {
-		add_action( 'wp_ajax_dda-update-menu-order', array( $this, 'update_menu_order' ) );
+		add_action( 'wp_ajax_saltus-framwork-drop-and-drag-update-menu-order', array( $this, 'update_menu_order' ) );
 	}
 
+	/**
+	 * Handle the AJAX request to update the menu order.
+	 *
+	 * Validates the nonce, checks user permissions, and updates the menu order
+	 * in the database based on the provided data.
+	 */
 	public function update_menu_order() {
 		global $wpdb;
 
@@ -36,10 +49,6 @@ class UpdateMenuDragAndDrop implements Actionable {
 
 		// can't trust much parse_str
 		parse_str( $_POST['order'], $data );
-
-		if ( ! is_array( $data ) ) {
-			return false;
-		}
 
 		$id_arr = array();
 		foreach ( $data as $id_sorted ) {
@@ -76,6 +85,6 @@ class UpdateMenuDragAndDrop implements Actionable {
 			);
 		}
 
-		do_action( 'dda_update_menu_order' );
+		do_action( 'saltus/framework/drag_and_drop/update_menu_order' );
 	}
 }

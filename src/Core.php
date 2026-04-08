@@ -2,6 +2,7 @@
 /**
  * Saltus Framework
  *
+ * @version 1.3.1
  */
 namespace Saltus\WP\Framework;
 
@@ -20,14 +21,15 @@ use Saltus\WP\Framework\Infrastructure\Plugin\{
 };
 
 
-use Saltus\WP\Framework\Features\Meta\Meta;
-use Saltus\WP\Framework\Features\Settings\Settings;
-use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
-use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
-use Saltus\WP\Framework\Features\Duplicate\Duplicate;
-use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\Features\AdminCols\AdminCols;
 use Saltus\WP\Framework\Features\AdminFilters\AdminFilters;
+use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
+use Saltus\WP\Framework\Features\Duplicate\Duplicate;
+use Saltus\WP\Framework\Features\Meta\Meta;
+use Saltus\WP\Framework\Features\QuickEdit\QuickEdit;
+use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
+use Saltus\WP\Framework\Features\Settings\Settings;
+use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 
 
 class Core implements Plugin {
@@ -36,7 +38,7 @@ class Core implements Plugin {
 	const SERVICES_FILTER = 'services';
 
 	// Prefixes to use.
-	const HOOK_PREFIX    = '';
+	const HOOK_PREFIX    = 'saltus/framework/';
 	const SERVICE_PREFIX = '';
 
 
@@ -107,7 +109,9 @@ class Core implements Plugin {
 		// 3- Create a "store" with a factory
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
+		/** @deprecated 1.2.0 */
 		$priority = apply_filters( 'saltus_modeler_priority', 1 );
+		$priority = apply_filters( 'saltus/framework/modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
@@ -186,7 +190,7 @@ class Core implements Plugin {
 			 *                                Service interface.
 			 */
 			$services = \apply_filters(
-				static::HOOK_PREFIX . static::SERVICES_FILTER,
+				static::HOOK_PREFIX . static::SERVICES_FILTER, // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 				$services
 			);
 		}
@@ -208,9 +212,10 @@ class Core implements Plugin {
 			'admin_cols'    => AdminCols::class,
 			'admin_filters' => AdminFilters::class,
 			'draganddrop'   => DragAndDrop::class,
-			'remember_tabs' => RememberTabs::class,
 			'duplicate'     => Duplicate::class,
 			'meta'          => Meta::class,
+			'quick_edit'    => QuickEdit::class,
+			'remember_tabs' => RememberTabs::class,
 			'settings'      => Settings::class,
 			'single_export' => SingleExport::class,
 		];

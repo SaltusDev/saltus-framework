@@ -12,15 +12,30 @@ use Saltus\WP\Framework\Infrastructure\Service\{
  */
 final class SaltusDuplicate implements Processable {
 
+	/**
+	 * @var string $name The name of the custom post type (CPT)
+	 */
 	private $name;
+
+	/**
+	 * @var string $label The label for duplicate link.
+	 */
 	private $label;
+
+	/**
+	 * @var string $attr_title The title for the duplicate link.
+	 */
 	private $attr_title;
 
 	/**
-	 * Instantiate this Service object.
+	 * Constructor.
 	 *
+	 * @param string $name The name of the custom post type (CPT).
+	 * @param array  $args Additional arguments.
+	 *                     - 'label': The label for the duplicate link.
+	 *                     - 'attr_title': The title for the duplicate link.
 	 */
-	public function __construct( string $name, array $project = null, array $args ) {
+	public function __construct( string $name, array $args ) {
 		$this->name       = $name;
 		$this->label      = ! empty( $args['label'] ) ? $args['label'] : 'Duplicate';
 		$this->attr_title = ! empty( $args['attr_title'] ) ? $args['attr_title'] : 'Duplicate this entry';
@@ -33,11 +48,27 @@ final class SaltusDuplicate implements Processable {
 		// if cpt is hierarchical
 		add_filter( 'page_row_actions', array( $this, 'row_link' ), 10, 2 );
 
-		add_action( 'admin_action_' . $this->name . '_duplicate_post', array( $this, 'duplicate' ) );
+		add_action( 'admin_action_saltus_framework_' . $this->name . '_duplicate_post', array( $this, 'duplicate' ) );
+
+		add_action( 'admin_notices', [ $this, 'duplication_error_notice' ] );
 	}
 
+	public function duplication_error_notice() {
+		if ( isset( $_GET['duplication_error'], $_GET['_error_nonce'] ) &&
+			wp_verify_nonce( sanitize_key( $_GET['_error_nonce'] ), 'duplication_error_notice' ) ) {
+			echo '<div class="notice notice-error"><p>'
+				. esc_html( urldecode( (string) $_GET['duplication_error'] ) )
+				. '</p></div>';
+		}
+	}
 	/*
 	* Add a duplicate link to action list for this cpt row_actions
+	*
+	* @param array $actions The actions for the row.
+	* @param object $post The post object.
+	*
+	* @return array The modified actions.
+	*
 	*/
 	public function row_link( $actions, $post ) {
 
@@ -52,9 +83,9 @@ final class SaltusDuplicate implements Processable {
 		$actions['duplicate'] = sprintf(
 			'<a href="%1$s" title="%2$s" rel="permalink">%3$s</a>',
 			wp_nonce_url(
-				'admin.php?action=' . $this->name . '_duplicate_post&post=' . $post->ID,
+				'admin.php?action=saltus_framework_' . $this->name . '_duplicate_post&post=' . $post->ID,
 				basename( __FILE__ ),
-				'saltus_duplicate_nonce'
+				'saltus_framework_duplicate_nonce'
 			),
 			esc_attr( $this->attr_title ),
 			esc_html( $this->label )
@@ -62,36 +93,91 @@ final class SaltusDuplicate implements Processable {
 		return $actions;
 	}
 
+	/**
+	 * Duplicate a CPT
+	 * @return never
+	 */
 	public function duplicate() {
+		$error_nonce   = wp_create_nonce( 'duplication_error_notice' );
+		$base_redirect = admin_url( 'edit.php' );
 
-		global $wpdb;
-		$error_msg = esc_html__( 'Item cannot be found. Please select one to duplicate.', 'saltus' );
-
-		// Die if post not selected
-		if ( ! ( isset( $_GET['post'] ) || isset( $_POST['post'] ) || ( isset( $_REQUEST['action'] ) && 'saltus_duplicate_post' === $_REQUEST['action'] ) ) ) {
-			wp_die( esc_html__( 'Please select an item to duplicate.', 'saltus' ) );
-		}
+		// note: base_redirect is a reference.
+		$error_redirect = function ( string $message ) use ( &$base_redirect, $error_nonce ): string {
+			return add_query_arg(
+				[
+					'duplication_error' => rawurlencode( $message ),
+					'_error_nonce'      => $error_nonce,
+				],
+				$base_redirect
+			);
+		};
 
 		// Verify nonce
-		if ( ! isset( $_GET['saltus_duplicate_nonce'] ) || ! wp_verify_nonce( $_GET['saltus_duplicate_nonce'], basename( __FILE__ ) ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			wp_die( $error_msg );
+		if ( ! isset( $_GET['saltus_framework_duplicate_nonce'] ) ||
+			! wp_verify_nonce( sanitize_key( $_GET['saltus_framework_duplicate_nonce'] ), basename( __FILE__ ) ) ) {
+			wp_safe_redirect( $error_redirect( __( 'Security check failed.', 'saltus-framework' ) ) );
+			exit;
+		}
+
+		// exit if post not selected
+		if ( ! ( isset( $_GET['post'] ) || isset( $_POST['post'] ) ) ) {
+			wp_safe_redirect( $error_redirect( __( 'Please select an item to duplicate.', 'saltus-framework' ) ) );
+			exit;
 		}
 
 		// Get id of post to be duplicated and data from it
-		$post_id = ( isset( $_GET['post'] ) ? absint( $_GET['post'] ) : absint( $_POST['post'] ) );
-		$post    = get_post( $post_id );
-
-		// duplicate the post
-		if ( ! isset( $post ) || $post === null ) {
-			return;
+		$post_id = absint( $_GET['post'] ?? $_POST['post'] ?? 0 );
+		if ( ! get_post( $post_id ) ) {
+			wp_safe_redirect( $error_redirect( __( 'Item could not be found.', 'saltus-framework' ) ) );
+			exit;
 		}
 
-		// args for new post
+		$post_type = get_post_type( $post_id );
+		if ( ! $post_type ) {
+			wp_safe_redirect( $error_redirect( __( 'Item type could not be determined.', 'saltus-framework' ) ) );
+			exit;
+		}
+
+		$post_type_object = get_post_type_object( $post_type );
+		if ( ! $post_type_object ) {
+			wp_safe_redirect( $error_redirect( __( 'Item type is not registered.', 'saltus-framework' ) ) );
+			exit;
+		}
+		$base_redirect = admin_url( add_query_arg( 'post_type', $post_type, 'edit.php' ) );
+
+		if ( ! current_user_can( $post_type_object->cap->edit_posts ) ) {
+			wp_safe_redirect( $error_redirect( __( 'You do not have permission to do this.', 'saltus-framework' ) ) );
+			exit;
+		}
+
+		$new_post_id_or_error = $this->perform_duplication( $post_id );
+
+		if ( is_wp_error( $new_post_id_or_error ) ) {
+			wp_safe_redirect( $error_redirect( $new_post_id_or_error->get_error_message() ) );
+			exit;
+		}
+
+		wp_safe_redirect( $base_redirect );
+		exit;
+	}
+
+	/**
+	 * Perform the actual duplication logic.
+	 *
+	 * @param int $post_id The ID of the post to duplicate.
+	 * @return int|\WP_Error The new post ID on success, or WP_Error on failure.
+	 */
+	public function perform_duplication( int $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new \WP_Error( 'duplicate_failed', __( 'Post not found.', 'saltus-framework' ) );
+		}
+
+		// Prepare Args (Add filter for title/status/etc)
 		$args = array(
 			'comment_status' => $post->comment_status,
 			'ping_status'    => $post->ping_status,
-			'post_author'    => $post->post_author,
+			'post_author'    => get_current_user_id() ?: $post->post_author,
 			'post_content'   => $post->post_content,
 			'post_excerpt'   => $post->post_excerpt,
 			'post_name'      => $post->post_name,
@@ -104,49 +190,63 @@ final class SaltusDuplicate implements Processable {
 			'menu_order'     => $post->menu_order,
 		);
 
-		// insert the new post
-		$new_post_id = wp_insert_post( $args );
+		$args = apply_filters( 'saltus/framework/duplicate_post/args', $args, $post_id );
 
-		// add taxonomy terms to the new post
-		// identify taxonomies that apply to the post type
+		// insert the new post
+		// @phpstan-ignore argument.type
+		$new_post_id = wp_insert_post( $args, true );
+
+		if ( is_wp_error( $new_post_id ) ) {
+			return $new_post_id;
+		}
+
+		// Clone Taxonomies
 		$taxonomies = get_object_taxonomies( $post->post_type );
 
-		// add the taxonomy terms to the new post
 		foreach ( $taxonomies as $taxonomy ) {
-
 			$post_terms = wp_get_object_terms( $post_id, $taxonomy, array( 'fields' => 'slugs' ) );
 			wp_set_object_terms( $new_post_id, $post_terms, $taxonomy, false );
 		}
 
-		// use SQL queries to duplicate postmeta
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query_prepared = $wpdb->prepare( "SELECT meta_key, meta_value FROM $wpdb->postmeta WHERE post_id=%s", $post_id );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query_result = $wpdb->get_results( $query_prepared );
+		// Clone Meta
+		$all_meta = get_post_meta( $post_id );
 
-		if ( count( $query_result ) === 0 ) {
-			return;
-		}
+		if ( ! empty( $all_meta ) ) {
 
-		$insert_query = "INSERT INTO $wpdb->postmeta ( post_id, meta_key, meta_value )";
-		foreach ( $query_result as $post_meta ) {
+			/**
+			 * Filter the list of meta keys to exclude when duplicating a post.
+			 *
+			 * _edit_lock and _edit_last are set by wp_insert_post() itself, so
+			 * copying them again would create duplicate rows with stale values.
+			 *
+			 * @param string[] $excluded_keys Meta keys that should not be copied.
+			 */
+			$excluded_keys = apply_filters(
+				'saltus/framework/duplicate_post/excluded_meta_keys',
+				[
+					'_wp_old_slug',
+					'_edit_lock',
+					'_edit_last',
+				]
+			);
 
-			$meta_key = $post_meta->meta_key;
+			foreach ( $all_meta as $meta_key => $meta_values ) {
 
-			if ( $meta_key === '_wp_old_slug' ) {
-				continue;
+				if ( in_array( $meta_key, $excluded_keys, true ) ) {
+					continue;
+				}
+
+				foreach ( $meta_values as $meta_value ) {
+					// get_post_meta() returns values already unserialized; update_post_meta()
+					// will re-serialize them correctly when writing back.
+					update_post_meta( $new_post_id, $meta_key, maybe_unserialize( $meta_value ) );
+				}
 			}
-			$sql_query_sel[] = $wpdb->prepare( "SELECT %s, %s, %s", $new_post_id, $meta_key, $post_meta->meta_value);
 		}
 
-		$insert_query .= implode( ' UNION ALL ', $sql_query_sel );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( $insert_query );
+		// Trigger Action
+		do_action( 'saltus/framework/duplicate_post/after', $post->post_type, $post_id, $new_post_id );
 
-		// redirect to admin screen depending on post type
-		$post_type = get_post_type( $post_id );
-
-		wp_safe_redirect( admin_url( 'edit.php?post_type=' . $post_type ) );
-
+		return $new_post_id;
 	}
 }

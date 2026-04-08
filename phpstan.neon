@@ -1,0 +1,13 @@
+parameters:
+    level: 7
+    checkExplicitMixedMissingReturn: false
+    reportUnmatchedIgnoredErrors: false
+    bootstrapFiles:
+        - ./build/stubs.php
+    excludePaths:
+        - **/node_modules/*
+        - **/vendor/*
+        - **/tests/*
+        - !**/*.php
+    paths:
+        - ./src

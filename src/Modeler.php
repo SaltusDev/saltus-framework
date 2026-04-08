@@ -18,7 +18,6 @@ class Modeler {
 	public function __construct( $model_factory ) {
 		$this->model_factory = $model_factory;
 		// should contain a list of loaded models
-
 	}
 
 	public function init( $project_path ) {
@@ -36,7 +35,11 @@ class Modeler {
 
 		$path = $project_path . '/src/models/';
 		if ( has_filter( 'saltus_models_path' ) ) {
+			/** @deprecated 1.2.0 */
 			$path = apply_filters( 'saltus_models_path', $path );
+		}
+		if ( has_filter( 'saltus/framework/models/path' ) ) {
+			$path = apply_filters( 'saltus/framework/models/path', $path );
 		}
 
 		if ( file_exists( $path ) ) {
@@ -53,10 +56,23 @@ class Modeler {
 			$path_dir      = new \RecursiveDirectoryIterator( $path );
 			$path_dir_iter = new \RecursiveIteratorIterator( $path_dir );
 
+			$files = [];
 			foreach ( $path_dir_iter as $filename => $file ) {
 				if ( ! in_array( pathinfo( $file, PATHINFO_EXTENSION ), [ 'json', 'php', 'yml', 'yaml' ], true ) ) {
 					continue;
 				}
+				$files[] = $file; // Collect valid files
+			}
+
+			// sort by ascending names so it loads in the desired order
+			usort(
+				$files,
+				function ( $a, $b ) {
+					return strcmp( $a->getFilename(), $b->getFilename() );
+				}
+			); // Sort by filename
+
+			foreach ( $files as $file ) { // Iterate over sorted files
 				$config = new Config( $file );
 				( $this->is_multiple( $config ) ?
 					$this->iterate_multiple( $config ) :
@@ -67,9 +83,25 @@ class Modeler {
 
 		// check for models added with filters
 		if ( has_filter( 'saltus_models' ) ) {
-			$model  = apply_filters( 'saltus_models', [] );
+			/** @deprecated 1.2.0 */
+			$model = apply_filters( 'saltus_models', [] );
 			( ! empty( $model ) && count( $model ) > 0 ?
-					$this->iterate_multiple($model ) :
+					$this->iterate_multiple( $model ) :
+					$this->create( $model )
+				);
+		}
+		// check for models added with filters
+		if ( has_filter( 'saltus/framework/models/extra_models' ) ) {
+			/**
+			 * parse the models and create them.
+			 * Useful for models that are the parsed models
+			 *
+			 * @param array $empty_list Empty list for extra models
+			 */
+			$empty_list = [];
+			$model      = apply_filters( 'saltus/framework/models/extra_models', $empty_list );
+			( ! empty( $model ) && count( $model ) > 0 ?
+					$this->iterate_multiple( $model ) :
 					$this->create( $model )
 				);
 		}
@@ -112,5 +144,4 @@ class Modeler {
 	protected function add( $model ) {
 		$this->model_list[ $model->get_type() ] = $model;
 	}
-
 }

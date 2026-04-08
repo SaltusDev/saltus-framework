@@ -1,6 +1,13 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
+/**
+ * Post Type Model
+ *
+ * This model is used to register a custom post type
+ *
+ * @see https://developer.wordpress.org/reference/functions/register_post_type/
+ */
 class PostType extends BaseModel implements Model {
 
 	/**
@@ -27,7 +34,6 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Get default Options
 	 *
-	 * Turn it public, change menu position and add `supports` list.
 	 *
 	 * @return array The list of options settings
 	 */
@@ -41,13 +47,15 @@ class PostType extends BaseModel implements Model {
 		if ( $this->config->has( 'supports' ) ) {
 			$options['supports'] = $this->config->get( 'supports' );
 		}
+		if ( $this->config->has( 'meta' ) ) {
+			$options['supports'][] = 'custom-fields';
+		}
 		return $options;
 	}
 
 
 	/**
-	 *
-	 *
+	 * Set the meta fields
 	 */
 	protected function set_meta() {
 
@@ -116,8 +124,6 @@ class PostType extends BaseModel implements Model {
 
 	/**
 	 * Register Post Type
-	 *
-	 * @return void
 	 */
 	protected function register() {
 		$args = array_merge( $this->args, $this->options );
@@ -136,21 +142,16 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Adds filters to change post update messages
 	 * TODO: accept overrides
-	 *
-	 * @return void
 	 */
 	protected function set_updated_messages() {
-
 		add_filter( 'post_updated_messages', [ $this, 'post_updated_messages' ], 1 );
 		add_filter( 'bulk_post_updated_messages', [ $this, 'bulk_post_updated_messages' ], 1, 2 );
-
 	}
 
 	/**
 	 * Adds filters to change the ui labels
 	 *
 	 * @param array $ui_labels
-	 * @return void
 	 */
 	protected function set_ui_labels( array $ui_labels ) {
 
@@ -179,16 +180,16 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Sets the placeholder text for the title field for this post type.
 	 *
-	 * @param string  $title The placeholder text.
-	 * @param WP_Post $post  The current post.
-	 * @return string The updated placeholder text.
+	 * @param string  $title  The placeholder text.
+	 * @param \WP_Post $post  The current post.
+	 *
+	 * @return string         The updated placeholder text.
 	 */
-	public function enter_title_here( string $title, \WP_Post $post ) : string {
+	public function enter_title_here( string $title, \WP_Post $post ): string {
 		if ( $this->name !== $post->post_type ) {
 			return $title;
 		}
 
 		return $this->ui_labels['enter_title_here'];
 	}
-
 }

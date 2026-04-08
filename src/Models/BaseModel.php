@@ -55,6 +55,11 @@ abstract class BaseModel {
 	protected $one_low;
 	protected $ui_labels;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param AbstractConfig $config_data The configuration data for the model.
+	 */
 	public function __construct( AbstractConfig $config_data ) {
 		$this->data   = $config_data->all();
 		$this->config = $config_data;
@@ -73,7 +78,6 @@ abstract class BaseModel {
 
 		// set messages to override
 		$this->set_messages( $config_data );
-
 	}
 
 	/**
@@ -92,6 +96,8 @@ abstract class BaseModel {
 	 * Set name
 	 *
 	 * Required to register post type
+	 *
+	 * @param string $name The name of the post type.
 	 */
 	protected function set_name( string $name ) {
 		$this->name = $name;
@@ -101,6 +107,8 @@ abstract class BaseModel {
 	 * Set labels to override in ui
 	 *
 	 * Based on labels.overrides.ui values
+	 *
+	 * @param AbstractConfig $config The configuration labels for the model.
 	 */
 	protected function set_ui_label_overrides( AbstractConfig $config ) {
 		$this->ui_labels = ( $config['labels.overrides.ui'] ? $config['labels.overrides.ui'] : [] );
@@ -110,6 +118,8 @@ abstract class BaseModel {
 	 * Set messages overrides
 	 *
 	 * Based on labels.overrides.messages and label.overrides.bulk_messages values
+	 *
+	 * @param AbstractConfig $config The configuration labels for the model.
 	 */
 	protected function set_messages( AbstractConfig $config ) {
 		$this->messages      = ( $config['labels.overrides.messages'] ? $config['labels.overrides.messages'] : [] );
@@ -120,6 +130,8 @@ abstract class BaseModel {
 	 * Set required labels
 	 *
 	 * Based on name, or keys labels.has-one and labels.has-many
+	 *
+	 * @param AbstractConfig $config The configuration labels for the model.
 	 */
 	protected function set_name_labels( AbstractConfig $config ) {
 		$this->one            = ( $config['labels.has_one'] ? $config['labels.has_one'] : ucfirst( $this->name ) );
@@ -145,15 +157,17 @@ abstract class BaseModel {
 	 * Set config
 	 *
 	 * Merge and/or replace defaults with user config
+	 *
+	 * @param array $options User defined options
 	 */
 	protected function set_options( array $options ) {
 		if ( empty( $this->data['options'] ) ) {
 			$this->options = $options;
 			return;
 		}
-		if ( $this->data['options'] ) {
-			$options = array_replace( $options, $this->data['options'] );
-		}
+
+		$options = array_replace( $options, $this->data['options'] );
+
 		$this->options = $options;
 	}
 
@@ -161,6 +175,8 @@ abstract class BaseModel {
 	 * Set label overrides
 	 *
 	 * If key labels.overrides exists, add to or replace label defaults
+	 *
+	 * @param array $labels User defined labels
 	 */
 	protected function set_labels( array $labels ) {
 		if ( empty( $this->config['labels.overrides.labels'] ) ) {
@@ -188,94 +204,197 @@ abstract class BaseModel {
 	 *   9 => "Post scheduled for: [date]. {Preview post}"
 	 *  10 => "Post draft updated. {Preview post}"
 	 *
-	 * @param array[] $messages An array of post updated message arrays keyed by post type.
-	 * @return array[] Updated array of post updated messages.
+	 * @param array $messages An array of post updated message arrays keyed by post type.
+	 *
+	 * @return array          Updated array of post updated messages.
 	 */
-	public function post_updated_messages( array $messages ) : array {
-		global $post;
 
-		$pto       = get_post_type_object( $this->name );
+	/**
+	 * Filter post updated messages for this CPT.
+	 *
+	 * @param array $messages Post updated messages.
+	 * @return array
+	 */
+	public function post_updated_messages( array $messages ): array {
+		$post = get_post();
+		if ( ! $post ) {
+			return $messages;
+		}
+
+		$pto = get_post_type_object( $this->name );
+		if ( ! $pto ) {
+			return $messages;
+		}
+
 		$date      = esc_html( date_i18n( 'M j, Y @ G:i', strtotime( $post->post_date ) ) );
 		$permalink = esc_url( get_permalink( $post ) );
 		$preview   = esc_url( get_preview_post_link( $post ) );
 
-		// placeholders
 		$search  = [ '{permalink}', '{date}', '{preview_url}' ];
 		$replace = [ $permalink, $date, $preview ];
 
-		// check if there are overrides, otherwise use defaults
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$revision_title = isset( $_GET['revision'] )
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			? wp_post_revision_title( absint( $_GET['revision'] ), false )
+			: false;
+
 		$messages[ $this->name ] = [
-			1  => isset( $this->messages['post_updated'] ) ?
-				str_replace( $search, $replace, $this->messages['post_updated'] ) :
-				sprintf(
-					( $pto->publicly_queryable ? '%1$s updated. <a href="%2$s">View %3$s</a>' : '%1$s updated.' ),
-					esc_html( $this->one ),
-					esc_url( get_permalink( $post ) ),
-					esc_html( $this->one_low )
-				),
-			2  => isset( $this->messages['custom_field_updated'] ) ?
-				str_replace( $search, $replace, $this->messages['custom_field_updated'] ) :
-				'Custom field updated.',
-			3  => isset( $this->messages['custom_field_deleted'] ) ?
-				str_replace( $search, $replace, $this->messages['custom_field_deleted'] ) :
-				'Custom field deleted.',
-			4  => isset( $this->messages['post_updated_short'] ) ?
-				str_replace( $search, $replace, $this->messages['post_updated_short'] ) :
-				sprintf(
-					'%s updated.',
-					esc_html( $this->one )
-				),
-			5  => isset( $_GET['revision'] ) ?
-				( isset( $this->messages['post_updated_short'] ) ? str_replace( $search, $replace, $this->messages['post_updated_short'] ) :
-					sprintf(
-					'%1$s restored to revision from %2$s',
-					esc_html( $this->one ),
-					wp_post_revision_title( intval( $_GET['revision'] ), false )
+			1  => $this->resolve_message(
+				'post_updated',
+				$pto->publicly_queryable
+					? \sprintf(
+						/* translators: 1: post type label, 2: permalink, 3: post type label lowercase */
+						__( '%1$s updated. <a href="%2$s">View %3$s</a>', 'saltus-framework' ),
+						esc_html( $this->one ),
+						$permalink,
+						esc_html( $this->one_low )
 					)
-				) :
-				false,
-			6  => isset( $this->messages['post_published'] ) ?
-				str_replace( $search, $replace, $this->messages['post_published'] ) :
-				sprintf(
-					( $pto->publicly_queryable ? '%1$s published. <a href="%2$s">View %3$s</a>' : '%1$s published.' ),
-					esc_html( $this->one ),
-					esc_url( get_permalink( $post ) ),
-					esc_html( $this->one_low )
-				),
-			7  => isset( $this->messages['post_saved'] ) ?
-				str_replace( $search, $replace, $this->messages['post_saved'] ) :
-				sprintf(
-					'%s saved.',
+					: \sprintf(
+						/* translators: 1: post type label */
+						__( '%s updated.', 'saltus-framework' ),
+						esc_html( $this->one )
+					),
+				$search,
+				$replace
+			),
+			2  => $this->resolve_message(
+				'custom_field_updated',
+				__( 'Custom field updated.', 'saltus-framework' ),
+				$search,
+				$replace
+			),
+			3  => $this->resolve_message(
+				'custom_field_deleted',
+				__( 'Custom field deleted.', 'saltus-framework' ),
+				$search,
+				$replace
+			),
+			4  => $this->resolve_message(
+				'post_updated_short',
+				\sprintf(
+					/* translators: 1: post type label */
+					__( '%s updated.', 'saltus-framework' ),
 					esc_html( $this->one )
 				),
-			8  => isset( $this->messages['post_submitted'] ) ?
-				str_replace( $search, $replace, $this->messages['post_submitted'] ) :
-				sprintf(
-					( $pto->publicly_queryable ? '%1$s submitted. <a target="_blank" href="%2$s">Preview %3$s</a>' : '%1$s submitted.' ),
-					esc_html( $this->one ),
-					esc_url( get_preview_post_link( $post ) ),
-					esc_html( $this->one_low )
+				$search,
+				$replace
+			),
+			5  => $revision_title
+				? $this->resolve_message(
+					'post_restored',
+					\sprintf(
+						/* translators: 1: post type label, 2: revision date */
+						__( '%1$s restored to revision from %2$s', 'saltus-framework' ),
+						esc_html( $this->one ),
+						$revision_title
+					),
+					$search,
+					$replace
+				)
+				: false,
+			6  => $this->resolve_message(
+				'post_published',
+				$pto->publicly_queryable
+					? \sprintf(
+						/* translators: 1: post type label, 2: permalink, 3: post type label lowercase */
+						__( '%1$s published. <a href="%2$s">View %3$s</a>', 'saltus-framework' ),
+						esc_html( $this->one ),
+						$permalink,
+						esc_html( $this->one_low )
+					)
+					: \sprintf(
+						/* translators: 1: post type label */
+						__( '%s published.', 'saltus-framework' ),
+						esc_html( $this->one )
+					),
+				$search,
+				$replace
+			),
+			7  => $this->resolve_message(
+				'post_saved',
+				\sprintf(
+					/* translators: 1: post type label */
+					__( '%s saved.', 'saltus-framework' ),
+					esc_html( $this->one )
 				),
-			9  => isset( $this->messages['post_schedulled'] ) ?
-				str_replace( $search, $replace, $this->messages['post_schedulled'] ) :
-				sprintf(
-					( $pto->publicly_queryable ? '%1$s scheduled for: <strong>%2$s</strong>. <a target="_blank" href="%3$s">Preview %4$s</a>' : '%1$s scheduled for: <strong>%2$s</strong>.' ),
-					esc_html( $this->one ),
-					esc_html( date_i18n( 'M j, Y @ G:i', strtotime( $post->post_date ) ) ),
-					esc_url( get_permalink( $post ) ),
-					esc_html( $this->one_low )
-				),
-			10 => isset( $this->messages['post_draft_updated'] ) ?
-				str_replace( $search, $replace, $this->messages['post_draft_updated'] ) :
-				sprintf(
-					( $pto->publicly_queryable ? '%1$s draft updated. <a target="_blank" href="%2$s">Preview %3$s</a>' : '%1$s draft updated.' ),
-					esc_html( $this->one ),
-					esc_url( get_preview_post_link( $post ) ),
-					esc_html( $this->one_low )
-				),
+				$search,
+				$replace
+			),
+			8  => $this->resolve_message(
+				'post_submitted',
+				$pto->publicly_queryable
+					? \sprintf(
+						/* translators: 1: post type label, 2: preview url, 3: post type label lowercase */
+						__( '%1$s submitted. <a target="_blank" href="%2$s">Preview %3$s</a>', 'saltus-framework' ),
+						esc_html( $this->one ),
+						$preview,
+						esc_html( $this->one_low )
+					)
+					: \sprintf(
+						/* translators: 1: post type label */
+						__( '%s submitted.', 'saltus-framework' ),
+						esc_html( $this->one )
+					),
+				$search,
+				$replace
+			),
+			9  => $this->resolve_message(
+				'post_scheduled',
+				$pto->publicly_queryable
+					? \sprintf(
+						/* translators: 1: post type label, 2: date, 3: permalink, 4: post type label lowercase */
+						__( '%1$s scheduled for: <strong>%2$s</strong>. <a target="_blank" href="%3$s">Preview %4$s</a>', 'saltus-framework' ),
+						esc_html( $this->one ),
+						$date,
+						$permalink,
+						esc_html( $this->one_low )
+					)
+					: \sprintf(
+						/* translators: 1: post type label, 2: date */
+						__( '%1$s scheduled for: <strong>%2$s</strong>.', 'saltus-framework' ),
+						esc_html( $this->one ),
+						$date
+					),
+				$search,
+				$replace
+			),
+			10 => $this->resolve_message(
+				'post_draft_updated',
+				$pto->publicly_queryable
+					? \sprintf(
+						/* translators: 1: post type label, 2: preview url, 3: post type label lowercase */
+						__( '%1$s draft updated. <a target="_blank" href="%2$s">Preview %3$s</a>', 'saltus-framework' ),
+						esc_html( $this->one ),
+						$preview,
+						esc_html( $this->one_low )
+					)
+					: \sprintf(
+						/* translators: 1: post type label */
+						__( '%s draft updated.', 'saltus-framework' ),
+						esc_html( $this->one )
+					),
+				$search,
+				$replace
+			),
 		];
 
 		return $messages;
+	}
+
+	/**
+	 * Resolve a message from overrides or use the default.
+	 *
+	 * @param string $key     Message key.
+	 * @param string $default Default message.
+	 * @param array  $search  Placeholder search values.
+	 * @param array  $replace Placeholder replace values.
+	 * @return string
+	 */
+	private function resolve_message( string $key, string $default_msg, array $search, array $replace ): string {
+		return isset( $this->messages[ $key ] )
+			? str_replace( $search, $replace, $this->messages[ $key ] )
+			: $default_msg;
 	}
 
 	/**
@@ -291,9 +410,10 @@ abstract class BaseModel {
 	 *
 	 * @param array[] $messages An array of bulk post updated message arrays keyed by post type.
 	 * @param int[]   $counts   An array of counts for each key in `$messages`.
-	 * @return array Updated array of bulk post updated messages.
+	 *
+	 * @return array            Updated array of bulk post updated messages.
 	 */
-	public function bulk_post_updated_messages( array $messages, array $counts ) : array {
+	public function bulk_post_updated_messages( array $messages, array $counts ): array {
 		$messages[ $this->name ] = [
 			'updated'   => isset( $this->bulk_messages['updated_singular'] ) && isset( $this->bulk_messages['updated_plural'] ) ?
 				$this->n( $this->bulk_messages['updated_singular'], $this->bulk_messages['updated_plural'], $counts['updated'] ) :
@@ -346,9 +466,10 @@ abstract class BaseModel {
 	 * @param string $single The text that will be used if $number is 1
 	 * @param string $plural The text that will be used if $number is not 1
 	 * @param int    $number The number to compare against to use either `$single` or `$plural`
-	 * @return string Either `$single` or `$plural` text
+	 *
+	 * @return string        Either `$single` or `$plural` text
 	 */
-	protected static function n( string $single, string $plural, int $number ) : string {
-		return ( 1 === intval( $number ) ) ? $single : $plural;
+	protected static function n( string $single, string $plural, int $number ): string {
+		return ( intval( $number ) === 1 ) ? $single : $plural;
 	}
 }

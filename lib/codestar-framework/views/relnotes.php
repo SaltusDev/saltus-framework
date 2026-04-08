@@ -1,5 +1,12 @@
 <?php if ( ! defined( 'ABSPATH' ) ) { die; } // Cannot access directly. ?>
 
+<h3>v2.3.1</h3>
+<ul>
+  <li>Added: PHP 8.x compatible.</li>
+  <li>Added: WordPress 6.4 compatible.</li>
+  <li>Fixed: PHP 8.x deprecated notices.</li>
+</ul>
+
 <h3>v2.3.0</h3>
 <ul>
   <li>Added: WordPress 6.2 compatible.</li>

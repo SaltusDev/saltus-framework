@@ -10,6 +10,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 
 /**
+ * Class DragAndDrop
+ *
+ * Enable an option to manage drag and drop functionality in the admin area.
  */
 class DragAndDrop implements Service, Conditional, Actionable, Assembly {
 
@@ -20,33 +23,29 @@ class DragAndDrop implements Service, Conditional, Actionable, Assembly {
 	public function __construct() {}
 
 	/**
-	 * Create a new instance of the service provider
-	 *
-	 * @return object The new instance
-	 */
-	public static function make( $name, $project, $args ) {
-		return new SaltusDragAndDrop( $name, $project, $args );
-	}
-
-	/**
 	 * Check whether the conditional service is currently needed.
 	 *
 	 * @return bool Whether the conditional service is needed.
 	 */
 	public static function is_needed(): bool {
-
-		/*
-		 * This service loads in most screens:
-		 * - admin: in the edit screen
-		 * - ajax:  while updating menu order
-		 * - front: during pre_get_posts, etc
-		 */
 		return is_admin();
 	}
 
+	/**
+	 * Create a new instance of the service provider
+	 *
+	 * @return object The new instance
+	 */
+	public static function make( $name, $project, $args ) {
+		return new SaltusDragAndDrop( $name, $project );
+	}
+
+	/**
+	 * Update menu drag and drop in the database
+	 *
+	 */
 	public function add_action() {
 		$actions = new UpdateMenuDragAndDrop();
 		$actions->add_action();
 	}
-
 }

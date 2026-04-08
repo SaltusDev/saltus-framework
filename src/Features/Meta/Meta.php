@@ -8,8 +8,17 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 };
 
 /**
+ * Class Meta
+ *
+ * Enable an option to manage meta fields
  */
 final class Meta implements Service, Conditional, Assembly {
+
+	/**
+	 * Instantiate this Service object.
+	 *
+	 */
+	public function __construct() {}
 
 	/**
 	 * Check whether the conditional service is currently needed.
@@ -18,29 +27,21 @@ final class Meta implements Service, Conditional, Assembly {
 	 */
 	public static function is_needed(): bool {
 		/*
-		 * Only load this sample service on the admin backend.
-		 * If this conditional returns false, the service is never even
-		 * instantiated.
+		 * Load everywhere since its needed via REST API
 		 */
-		return \is_admin() && ! \wp_doing_ajax();
-	}
-
-	/**
-	 * Instantiate this Service object.
-	 *
-	 */
-	public function __construct() {
-
+		return true;
 	}
 
 	/**
 	 * Create a new instance of the service provider
 	 *
+	 * @param string $name        The name of the custom post type (CPT)
+	 * @param array|null $project Project information.
+	 * @param array|null $args    Additional arguments.
+	 *
 	 * @return object The new instance
 	 */
 	public static function make( $name, $project, $args ) {
-		return new CodestarMeta( $name, $project, $args );
+		return new CodestarMeta( $name, $args );
 	}
-
 }
-

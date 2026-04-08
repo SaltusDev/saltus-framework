@@ -199,7 +199,7 @@
 .csf-nav ul li .csf-arrow:after {
   content: "\f054";
   display: inline-block;
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   font-size: 9px;
   line-height: 1;
@@ -540,6 +540,9 @@
 .csf-theme-dark .csf-nav > ul > li:last-child > a {
   border: none;
 }
+.csf-theme-dark .csf-nav-normal ul li h3 {
+  margin:0;
+}
 .csf-theme-dark .csf-nav-normal ul li a {
   border-bottom-width: 1px;
   border-bottom-style: solid;
@@ -634,6 +637,9 @@
 .csf-theme-light .csf-nav-normal > ul {
   margin-right: -1px;
   margin-bottom: -1px;
+}
+.csf-theme-light .csf-nav-normal > ul li h3 {
+  margin:0;
 }
 .csf-theme-light .csf-nav-normal > ul li a {
   border-bottom: 1px solid #ccd0d4;
@@ -1112,7 +1118,7 @@
   top: auto;
   left: auto;
   right: auto;
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   font-size: 12px;
   text-align: center;
@@ -1409,7 +1415,7 @@
   left: 0;
   text-align: center;
   font-size: 10px;
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   content: "\f00c";
   width: 16px;
@@ -1547,7 +1553,7 @@
   left: 0;
   text-align: center;
   font-size: 10px;
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   content: "\f00c";
   width: 16px;
@@ -1894,7 +1900,7 @@
   background-color: #ddd;
 }
 .csf-field-spinner .ui-spinner .ui-spinner-button:before {
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   font-size: 14px;
   line-height: 14px;
@@ -2482,7 +2488,7 @@
 .csf-field .chosen-container-single .chosen-single abbr {
   top: 0;
   right: 20px;
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   font-size: 12px;
   height: 100%;
@@ -2498,7 +2504,7 @@
   color: #555;
 }
 .csf-field .chosen-container-multi .chosen-choices li.search-choice .search-choice-close {
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   font-size: 12px;
   height: 100%;
@@ -2516,7 +2522,7 @@
   color: #555;
 }
 .csf-field .chosen-container-single .chosen-single div b {
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   font-size: 14px;
   color: #aaa;
@@ -2545,7 +2551,7 @@
   background: none;
 }
 .csf-field .chosen-container-single .chosen-search:before {
-  font-family: "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Pro", "Font Awesome 5 Free", "FontAwesome";
   font-weight: 900;
   font-size: 11px;
   content: "\f002";

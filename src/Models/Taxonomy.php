@@ -1,10 +1,16 @@
 <?php
 namespace Saltus\WP\Framework\Models;
 
+/**
+ * Taxonomy Model
+ *
+ * This model is used to register a custom taxonomy
+ *
+ * @see https://developer.wordpress.org/reference/functions/register_taxonomy/
+ */
 class Taxonomy extends BaseModel implements Model {
 
 	// data req for register_taxonomy()
-	private $links = 'post';
 	private $associations;
 
 	/**
@@ -106,8 +112,7 @@ class Taxonomy extends BaseModel implements Model {
 	}
 
 	/**
-	 *
-	 *
+	 * Set meta fields
 	 */
 	private function set_meta() {
 
