@@ -17,15 +17,17 @@ interface ToolInterface {
 
 	/**
 	* Get the JSON Schema for tool parameters.
+	*
+	* @return array<string, mixed>
 	*/
 	public function getParameters(): array;
 
 	/**
 	* Execute the tool with given arguments.
 	*
-	* @param array $args Tool arguments from the AI.
+	* @param array<string, mixed> $args Tool arguments from the AI.
 	* @param WordPressClient $client WP REST API client.
-	* @return array Result data (will be wrapped in content).
+	* @return array<string, mixed> Result data (will be wrapped in content).
 	*/
 	public function handle( array $args, WordPressClient $client ): array;
 }

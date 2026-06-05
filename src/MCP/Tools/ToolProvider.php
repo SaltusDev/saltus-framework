@@ -23,6 +23,8 @@ class ToolProvider {
 
 	/**
 	* Get all tool definitions for MCP tools/list response.
+	*
+	* @return list<array{name: string, description: string, inputSchema: array<string, mixed>}>
 	*/
 	public function getDefinitions(): array {
 		$definitions = [];

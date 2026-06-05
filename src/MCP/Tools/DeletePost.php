@@ -13,6 +13,9 @@ class DeletePost implements ToolInterface {
 		return 'Delete (trash or force delete) a post by ID';
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	public function getParameters(): array {
 		return [
 			'post_id'   => [
@@ -33,6 +36,10 @@ class DeletePost implements ToolInterface {
 		];
 	}
 
+	/**
+	* @param array<string, mixed> $args
+	* @return array<string, mixed>
+	*/
 	public function handle( array $args, WordPressClient $client ): array {
 		$postId   = $args['post_id'] ?? 0;
 		$postType = $args['post_type'] ?? 'posts';

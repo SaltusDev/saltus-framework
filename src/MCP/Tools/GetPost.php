@@ -13,6 +13,9 @@ class GetPost implements ToolInterface {
 		return 'Get a single post by ID with all fields and meta data';
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	public function getParameters(): array {
 		return [
 			'post_id'   => [
@@ -28,6 +31,10 @@ class GetPost implements ToolInterface {
 		];
 	}
 
+	/**
+	* @param array<string, mixed> $args
+	* @return array<string, mixed>
+	*/
 	public function handle( array $args, WordPressClient $client ): array {
 		$postId   = $args['post_id'] ?? 0;
 		$postType = $args['post_type'] ?? 'posts';

@@ -13,6 +13,9 @@ class CreatePost implements ToolInterface {
 		return 'Create a new post in any registered Custom Post Type';
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	public function getParameters(): array {
 		return [
 			'post_type' => [
@@ -59,6 +62,10 @@ class CreatePost implements ToolInterface {
 		];
 	}
 
+	/**
+	* @param array<string, mixed> $args
+	* @return array<string, mixed>
+	*/
 	public function handle( array $args, WordPressClient $client ): array {
 		$postType = $args['post_type'] ?? 'posts';
 
