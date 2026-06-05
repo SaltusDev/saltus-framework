@@ -13,6 +13,9 @@ class ListModels implements ToolInterface {
 		return 'List all registered Custom Post Types and Taxonomies on the WordPress site';
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	public function getParameters(): array {
 		return [
 			'type' => [
@@ -24,6 +27,10 @@ class ListModels implements ToolInterface {
 		];
 	}
 
+	/**
+	* @param array<string, mixed> $args
+	* @return array<string, mixed>
+	*/
 	public function handle( array $args, WordPressClient $client ): array {
 		$type   = $args['type'] ?? 'all';
 		$result = [];
@@ -41,6 +48,10 @@ class ListModels implements ToolInterface {
 		return $result;
 	}
 
+	/**
+	* @param array<string, mixed> $data
+	 * @return list<array<string, mixed>>
+	 */
 	private function formatPostTypes( array $data ): array {
 		$types = [];
 		foreach ( $data as $slug => $type ) {
@@ -60,6 +71,10 @@ class ListModels implements ToolInterface {
 		return $types;
 	}
 
+	/**
+	* @param array<string, mixed> $data
+	 * @return list<array<string, mixed>>
+	 */
 	private function formatTaxonomies( array $data ): array {
 		$taxonomies = [];
 		foreach ( $data as $slug => $tax ) {

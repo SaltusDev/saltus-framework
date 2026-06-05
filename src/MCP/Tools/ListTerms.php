@@ -15,6 +15,9 @@ class ListTerms implements ToolInterface
 		return 'List terms from a taxonomy (categories, tags, or custom taxonomies)';
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	public function getParameters(): array
 	{
 		return [
@@ -40,6 +43,10 @@ class ListTerms implements ToolInterface
 		];
 	}
 
+	/**
+	* @param array<string, mixed> $args
+	* @return array<string, mixed>
+	*/
 	public function handle(array $args, WordPressClient $client): array
 	{
 		$taxonomy = $args['taxonomy'] ?? 'categories';

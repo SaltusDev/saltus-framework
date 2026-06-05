@@ -15,6 +15,9 @@ class ListPosts implements ToolInterface
 		return 'Query posts from a Custom Post Type with optional filters';
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	public function getParameters(): array
 	{
 		return [
@@ -56,6 +59,10 @@ class ListPosts implements ToolInterface
 		];
 	}
 
+	/**
+	* @param array<string, mixed> $args
+	* @return array<string, mixed>
+	*/
 	public function handle(array $args, WordPressClient $client): array
 	{
 		$postType = $args['post_type'] ?? 'posts';

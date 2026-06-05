@@ -13,6 +13,9 @@ class CreateTerm implements ToolInterface {
 		return 'Create a new term in a taxonomy';
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	public function getParameters(): array {
 		return [
 			'taxonomy'    => [
@@ -40,6 +43,10 @@ class CreateTerm implements ToolInterface {
 		];
 	}
 
+	/**
+	* @param array<string, mixed> $args
+	* @return array<string, mixed>
+	*/
 	public function handle( array $args, WordPressClient $client ): array {
 		$taxonomy = $args['taxonomy'] ?? '';
 		$name     = $args['name'] ?? '';
