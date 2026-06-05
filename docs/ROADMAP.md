@@ -22,14 +22,14 @@ Embed a **Model Context Protocol (MCP) server** directly in the Saltus Framework
 |------|--------|
 | MCP core protocol (initialize, tools, resources) | ✓ Done |
 | 9 Phase 1 CRUD tools (models, posts, terms) | ✓ Done |
-| Interactive setup wizard | ✗ Remove |
-| Environment-variable-only config (`SALTUS_WP_URL`, `SALTUS_WP_USERNAME`, `SALTUS_WP_PASSWORD`) | ☐ |
-| `Config::fromEnv()` — no file I/O, no home dir writes | ☐ |
+| Interactive setup wizard | ✓ Removed |
+| Environment-variable-only config (`SALTUS_WP_URL`, `SALTUS_WP_USERNAME`, `SALTUS_WP_PASSWORD`) | ✓ Done |
+| `Config::fromEnv()` — no file I/O, no home dir writes | ✓ Done |
 | PHPUnit tests for every tool class (mock WP REST API via Guzzle mock handler) | ✓ Done |
-| PHPStan Level 7 compliance for all `src/MCP/` code | ☐ |
-| MCP Prompts support (`prompts/list`, `prompts/get`) — 3 prompt templates | ☐ |
-| Input validation — JSON Schema validation on tool args before REST API call | ☐ |
-| Retry logic with exponential backoff in `WordPressClient` | ☐ |
+| PHPStan Level 7 compliance for all `src/MCP/` code | ✓ Done |
+| MCP Prompts support (`prompts/list`, `prompts/get`) — 3 prompt templates | ✓ Done |
+| Input validation — JSON Schema validation on tool args before REST API call | ✓ Done |
+| Retry logic with exponential backoff in `WordPressClient` | ✓ Done |
 | `--help` flag with complete usage reference | ✓ Done |
 | Update `README.md` with MCP usage and client configuration examples | ✓ Done |
 
