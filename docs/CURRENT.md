@@ -1,8 +1,15 @@
 # Current: Live Working State
 
-## Active Focus
-- **Phase 1: MCP Foundation Hardening** — remove file I/O, env-var-only config, tests, PHPStan, prompts.
-- **Phase 2: Framework REST API** — expose framework features as `saltus-framework/v1/` routes.
+## Working
+- Implement `src/Rest/` namespace with REST controllers exposing framework features as `saltus-framework/v1/` routes @since 2026-06-06
+
+## Next
+- Wire new REST controllers to MCP tools (duplicate_post, export_post, get/update_settings, reorder_posts, get_meta_fields)
+- Update MCP resources to call framework REST endpoints for live data
+- Plan Phase 2 release (v1.0)
+
+## Blocked
+- (none)
 
 ## Recent Changes
 - Initial MCP server (v0.1) with 9 CRUD tools: `list_models`, `get_model`, `list_posts`, `get_post`, `create_post`, `update_post`, `delete_post`, `list_terms`, `create_term`.
@@ -23,13 +30,6 @@
 - Implemented PromptProvider with 3 prompt templates (create_content, analyze_content, site_overview) wired to prompts/list and prompts/get.
 - Implemented input validation via Validator class — JSON Schema checks (required, type, enum) before REST API calls.
 - Added Guzzle retry middleware with exponential backoff (1s→2s→4s→8s, max 4) on 429/5xx and ConnectException.
-
-## Next Up
-- Add REST API namespace `saltus-framework/v1/` in `src/Rest/`.
-- Build controllers for duplicate, export, settings, meta, reorder, models.
-- Wire new REST controllers to MCP tools (duplicate_post, export_post, get/update_settings, reorder_posts, get_meta_fields).
-- Update resources to call framework REST endpoints for live data.
-- Plan Phase 2 release (v1.0).
 
 ## Known Issues
 - Reference `phpstan_errors.txt` for current static analysis warnings/errors (Level 7 clean).
