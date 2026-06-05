@@ -29,6 +29,9 @@ class Config {
 		return $this->password;
 	}
 
+	/**
+	* @return array<string, string>
+	*/
 	public function toArray(): array {
 		return [
 			'site_url' => $this->siteUrl,
@@ -37,11 +40,40 @@ class Config {
 		];
 	}
 
+	/**
+	* @param array<string, string> $data
+	*/
 	public static function fromArray( array $data ): self {
 		return new self(
 			$data['site_url'] ?? '',
 			$data['username'] ?? '',
 			$data['password'] ?? ''
 		);
+	}
+
+	public static function fromEnv(): self {
+		$siteUrl  = getenv( 'SALTUS_WP_URL' );
+		$username = getenv( 'SALTUS_WP_USERNAME' );
+		$password = getenv( 'SALTUS_WP_PASSWORD' );
+
+		if ( $siteUrl === false || $username === false || $password === false ) {
+			$missing = [];
+			if ( $siteUrl === false ) {
+				$missing[] = 'SALTUS_WP_URL';
+			}
+			if ( $username === false ) {
+				$missing[] = 'SALTUS_WP_USERNAME';
+			}
+			if ( $password === false ) {
+				$missing[] = 'SALTUS_WP_PASSWORD';
+			}
+			throw new \RuntimeException(
+				'Missing required environment variable(s): '
+				. implode( ', ', $missing )
+				. '. Set them before running the MCP server.'
+			);
+		}
+
+		return new self( $siteUrl, $username, $password );
 	}
 }
