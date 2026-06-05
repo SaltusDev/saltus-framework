@@ -168,6 +168,49 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
 * Activate via WordPress
 
+## MCP Server
+
+Saltus Framework includes a **Model Context Protocol (MCP) server** that lets AI assistants (Claude, Copilot, etc.) interact with your WordPress site via the REST API.
+
+### Quick Start
+
+```bash
+# Run the setup wizard (one-time)
+php bin/mcp-server --setup
+
+# Start the MCP server for AI assistant use
+php bin/mcp-server
+```
+
+The wizard will ask for your WordPress site URL, username, and application password. Configuration is saved to `~/.saltus-mcp/config.json`.
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_models` | List all registered CPTs and taxonomies |
+| `get_model` | Get details of a specific post type or taxonomy |
+| `list_posts` | Query posts with filters (status, search, pagination) |
+| `get_post` | Get a single post with all fields and meta |
+| `create_post` | Create a new post in any CPT |
+| `update_post` | Update an existing post's fields and meta |
+| `delete_post` | Trash or force delete a post |
+| `list_terms` | List terms from a taxonomy |
+| `create_term` | Create a new term in a taxonomy |
+
+### Requirements
+
+- WordPress 5.6+ (Application Passwords API)
+- Application Password generated from Users → Profile in WP Admin
+- The plugin using Saltus Framework must be active
+
+### Configuration
+
+```bash
+php bin/mcp-server --reconfigure   # Re-run setup wizard
+php bin/mcp-server --help          # Full usage guide
+```
+
 ## Building
 
 ### Disadvantages of classmap
