@@ -9,8 +9,6 @@
  *
  * Usage:
  *   php bin/mcp-server              # Start MCP server (stdin/stdout)
- *   php bin/mcp-server --setup      # Run interactive setup wizard
- *   php bin/mcp-server --reconfigure # Re-run setup wizard
  *   php bin/mcp-server --help       # Show this help
  */
 
@@ -32,17 +30,20 @@ support the Model Context Protocol (MCP).
 
 USAGE
   php bin/mcp-server              Start the MCP server (stdin/stdout loop)
-  php bin/mcp-server --setup      Run the interactive setup wizard
-  php bin/mcp-server --reconfigure Re-run setup wizard
   php bin/mcp-server --help       Show this help
 
 CONFIGURATION
-  On first run, the server will prompt you to configure:
-	- WordPress site URL (e.g., https://example.com)
-	- WordPress username (with application password permissions)
-	- Application password
+  The server reads credentials from environment variables:
 
-  Configuration is stored at ~/.saltus-mcp/config.json
+	SALTUS_WP_URL       WordPress site URL (e.g., https://example.com)
+	SALTUS_WP_USERNAME  WordPress username with REST API access
+	SALTUS_WP_PASSWORD  Application password for the user
+
+  Example:
+	export SALTUS_WP_URL=https://example.com
+	export SALTUS_WP_USERNAME=myuser
+	export SALTUS_WP_PASSWORD=abcd 1234 efgh 5678
+	php bin/mcp-server
 
 REQUIREMENTS
   - WordPress site with REST API enabled (default since WP 4.7)
@@ -50,11 +51,11 @@ REQUIREMENTS
   - The Saltus Framework plugin active on the WordPress site
 
 EXAMPLES
-  # Start the server for AI assistant use:
+  # Set credentials and start the server:
+  export SALTUS_WP_URL=https://example.com
+  export SALTUS_WP_USERNAME=admin
+  export SALTUS_WP_PASSWORD='myapppassword'
   php bin/mcp-server
-
-  # Reconfigure:
-  php bin/mcp-server --reconfigure
 
 HELP;
 	exit(0);
@@ -81,38 +82,16 @@ if (!$loaded) {
 	exit(1);
 }
 
-use Saltus\WP\Framework\MCP\Config\ConfigManager;
+use Saltus\WP\Framework\MCP\Config\Config;
 use Saltus\WP\Framework\MCP\Server;
 
-$configManager = new ConfigManager();
-
-// Handle setup wizard
-if (in_array('--setup', $argv, true) || in_array('--reconfigure', $argv, true)) {
-	try {
-		$configManager->runWizard();
-	} catch (\RuntimeException $e) {
-		fwrite(STDERR, "Error: {$e->getMessage()}\n");
-		exit(1);
-	}
-	exit(0);
-}
-
-// Load config
+// Load config from environment variables
 try {
-	$config = $configManager->load();
+	$config = Config::fromEnv();
 } catch (\RuntimeException $e) {
 	fwrite(STDERR, "Error: {$e->getMessage()}\n");
+	fwrite(STDERR, "Run with --help for usage information.\n");
 	exit(1);
-}
-
-if (!$config) {
-	fwrite(STDOUT, "No configuration found. Starting setup wizard...\n");
-	try {
-		$config = $configManager->runWizard();
-	} catch (\RuntimeException $e) {
-		fwrite(STDERR, "Error: {$e->getMessage()}\n");
-		exit(1);
-	}
 }
 
 $server = new Server($config);
