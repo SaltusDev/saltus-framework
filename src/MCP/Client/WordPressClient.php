@@ -3,6 +3,10 @@ namespace Saltus\WP\Framework\MCP\Client;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Saltus\WP\Framework\MCP\Config\Config;
 
 class WordPressClient {
@@ -12,7 +16,33 @@ class WordPressClient {
 
 	public function __construct( Config $config ) {
 		$this->config = $config;
+
+		$handler = HandlerStack::create();
+		$handler->push( Middleware::retry(
+			function ( int $retries, RequestInterface $request, ?ResponseInterface $response = null, ?\Throwable $exception = null ): bool {
+				if ( $retries >= 4 ) {
+					return false;
+				}
+
+				if ( $response !== null ) {
+					$status = $response->getStatusCode();
+					return in_array( $status, [ 429, 500, 502, 503, 504 ], true );
+				}
+
+				if ( $exception !== null ) {
+					return $exception instanceof \GuzzleHttp\Exception\ConnectException;
+				}
+
+				return false;
+			},
+			function ( int $retries ): int {
+				$delay = (int) ( 1000 * pow( 2, $retries - 1 ) );
+				return min( $delay, 8000 );
+			}
+		) );
+
 		$this->client = new Client([
+			'handler'  => $handler,
 			'base_uri' => $config->getApiUrl(),
 			'auth'     => [ $config->getUsername(), $config->getPassword() ],
 			'timeout'  => 30,
@@ -23,6 +53,10 @@ class WordPressClient {
 		]);
 	}
 
+	/**
+	* @param array<string, mixed> $query
+	* @return array<string, mixed>
+	*/
 	public function get( string $endpoint, array $query = [] ): array {
 		try {
 			$response = $this->client->get( $endpoint, [ 'query' => $query ] );
@@ -32,6 +66,10 @@ class WordPressClient {
 		}
 	}
 
+	/**
+	* @param array<string, mixed> $data
+	* @return array<string, mixed>
+	*/
 	public function post( string $endpoint, array $data = [] ): array {
 		try {
 			$response = $this->client->post( $endpoint, [ 'json' => $data ] );
@@ -41,6 +79,10 @@ class WordPressClient {
 		}
 	}
 
+	/**
+	* @param array<string, mixed> $data
+	* @return array<string, mixed>
+	*/
 	public function put( string $endpoint, array $data = [] ): array {
 		try {
 			$response = $this->client->put( $endpoint, [ 'json' => $data ] );
@@ -50,6 +92,10 @@ class WordPressClient {
 		}
 	}
 
+	/**
+	* @param array<string, mixed> $query
+	* @return array<string, mixed>
+	*/
 	public function delete( string $endpoint, array $query = [] ): array {
 		try {
 			$response = $this->client->delete( $endpoint, [ 'query' => $query ] );
@@ -63,6 +109,9 @@ class WordPressClient {
 		return $this->config;
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	private function decode( string $body ): array {
 		$data = json_decode( $body, true );
 		if ( ! is_array( $data ) ) {
@@ -72,6 +121,9 @@ class WordPressClient {
 		return $data;
 	}
 
+	/**
+	* @return array<string, mixed>
+	*/
 	private function handleError( GuzzleException $e ): array {
 		if ( method_exists( $e, 'getResponse' ) && $e->getResponse() ) {
 			$body = $e->getResponse()->getBody()->getContents();
