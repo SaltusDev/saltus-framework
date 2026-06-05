@@ -1,0 +1,119 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Saltus Framework MCP Server
+ *
+ * Entry point for the Model Context Protocol server.
+ * Connects to a WordPress site via REST API to provide
+ * AI-driven tools for managing content, models, and settings.
+ *
+ * Usage:
+ *   php bin/mcp-server              # Start MCP server (stdin/stdout)
+ *   php bin/mcp-server --setup      # Run interactive setup wizard
+ *   php bin/mcp-server --reconfigure # Re-run setup wizard
+ *   php bin/mcp-server --help       # Show this help
+ */
+
+// Prevent web access
+if (PHP_SAPI !== 'cli') {
+	die('This script can only be run from the command line.');
+}
+
+// Show help
+if (in_array('--help', $argv, true)) {
+	echo <<<HELP
+
+Saltus Framework MCP Server v0.1.0
+===================================
+
+An MCP server that connects to a WordPress site using the Saltus Framework
+via the WordPress REST API. Designed for use with AI assistants that
+support the Model Context Protocol (MCP).
+
+USAGE
+  php bin/mcp-server              Start the MCP server (stdin/stdout loop)
+  php bin/mcp-server --setup      Run the interactive setup wizard
+  php bin/mcp-server --reconfigure Re-run setup wizard
+  php bin/mcp-server --help       Show this help
+
+CONFIGURATION
+  On first run, the server will prompt you to configure:
+	- WordPress site URL (e.g., https://example.com)
+	- WordPress username (with application password permissions)
+	- Application password
+
+  Configuration is stored at ~/.saltus-mcp/config.json
+
+REQUIREMENTS
+  - WordPress site with REST API enabled (default since WP 4.7)
+  - Application password set up for the user (WP 5.6+)
+  - The Saltus Framework plugin active on the WordPress site
+
+EXAMPLES
+  # Start the server for AI assistant use:
+  php bin/mcp-server
+
+  # Reconfigure:
+  php bin/mcp-server --reconfigure
+
+HELP;
+	exit(0);
+}
+
+// Autoload
+$autoloadPaths = [
+	__DIR__ . '/../vendor/autoload.php',
+	__DIR__ . '/../../vendor/autoload.php',
+	__DIR__ . '/../../../vendor/autoload.php',
+];
+
+$loaded = false;
+foreach ($autoloadPaths as $path) {
+	if (file_exists($path)) {
+		require_once $path;
+		$loaded = true;
+		break;
+	}
+}
+
+if (!$loaded) {
+	fwrite(STDERR, "Error: Could not find Composer autoload. Run 'composer install' first.\n");
+	exit(1);
+}
+
+use Saltus\WP\Framework\MCP\Config\ConfigManager;
+use Saltus\WP\Framework\MCP\Server;
+
+$configManager = new ConfigManager();
+
+// Handle setup wizard
+if (in_array('--setup', $argv, true) || in_array('--reconfigure', $argv, true)) {
+	try {
+		$configManager->runWizard();
+	} catch (\RuntimeException $e) {
+		fwrite(STDERR, "Error: {$e->getMessage()}\n");
+		exit(1);
+	}
+	exit(0);
+}
+
+// Load config
+try {
+	$config = $configManager->load();
+} catch (\RuntimeException $e) {
+	fwrite(STDERR, "Error: {$e->getMessage()}\n");
+	exit(1);
+}
+
+if (!$config) {
+	fwrite(STDOUT, "No configuration found. Starting setup wizard...\n");
+	try {
+		$config = $configManager->runWizard();
+	} catch (\RuntimeException $e) {
+		fwrite(STDERR, "Error: {$e->getMessage()}\n");
+		exit(1);
+	}
+}
+
+$server = new Server($config);
+$server->run();
