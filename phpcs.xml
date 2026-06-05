@@ -77,6 +77,14 @@
 	<!-- php compat -->
 	<rule ref="PHPCompatibility"/>
 
+	<!-- Allow PSR-style naming in MCP module -->
+	<rule ref="WordPress.NamingConventions.ValidFunctionName">
+		<exclude-pattern>*/src/MCP/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.NamingConventions.ValidVariableName">
+		<exclude-pattern>*/src/MCP/*</exclude-pattern>
+	</rule>
+
 	<!-- phpcs parameters -->
 	<file>./src/</file>
 	<arg name="extensions" value="php" />
