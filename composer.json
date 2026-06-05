@@ -35,7 +35,8 @@
 	},
 	"require": {
 		"php": ">=7.4",
-		"hassankhan/config": "^3.2.0"
+		"hassankhan/config": "^3.2.0",
+		"guzzlehttp/guzzle": "^7.0"
 	},
 	"require-dev": {
 		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
