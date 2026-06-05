@@ -3,44 +3,25 @@ namespace Saltus\WP\Framework\MCP;
 
 use Saltus\WP\Framework\MCP\Client\WordPressClient;
 use Saltus\WP\Framework\MCP\Config\Config;
-use Saltus\WP\Framework\MCP\Config\ConfigManager;
+use Saltus\WP\Framework\MCP\Prompts\PromptProvider;
 use Saltus\WP\Framework\MCP\Resources\ResourceProvider;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
+use Saltus\WP\Framework\MCP\Validation\Validator;
 
 class Server {
 
-	private Config $config;
 	private WordPressClient $client;
 	private ToolProvider $toolProvider;
 	private ResourceProvider $resourceProvider;
-
-	private bool $initialized = false;
+	private PromptProvider $promptProvider;
 
 	public function __construct( Config $config ) {
-		$this->config           = $config;
 		$this->client           = new WordPressClient( $config );
 		$this->toolProvider     = new ToolProvider();
 		$this->resourceProvider = new ResourceProvider();
+		$this->promptProvider   = new PromptProvider();
 
 		$this->registerTools();
-	}
-
-	public static function fromConfigManager( ConfigManager $configManager ): self {
-		$config = $configManager->load();
-
-		if ( ! $config ) {
-			echo json_encode([
-				'jsonrpc' => '2.0',
-				'error'   => [
-					'code'    => -32000,
-					'message' => 'No configuration found. Run the setup wizard first.',
-				],
-				'id'      => null,
-			]) . "\n";
-			exit( 1 );
-		}
-
-		return new self( $config );
 	}
 
 	/**
@@ -50,7 +31,7 @@ class Server {
 		while ( true ) {
 			$line = fgets( STDIN );
 
-			if ( $line === false || $line === null ) {
+			if ( $line === false ) {
 				break;
 			}
 
@@ -73,6 +54,10 @@ class Server {
 		}
 	}
 
+	/**
+	* @param array<string, mixed> $request
+	* @return array<string, mixed>|null
+	*/
 	private function handleRequest( array $request ): ?array {
 		$method = $request['method'] ?? '';
 		$id     = $request['id'] ?? null;
@@ -83,6 +68,7 @@ class Server {
 				return $this->handleInitialize( $id );
 
 			case 'initialized':
+			case 'notifications/initialized':
 				return null;
 
 			case 'tools/list':
@@ -97,9 +83,11 @@ class Server {
 			case 'resources/read':
 				return $this->handleResourcesRead( $id, $params );
 
-			case 'notifications/initialized':
-				$this->initialized = true;
-				return null;
+			case 'prompts/list':
+				return $this->handlePromptsList( $id );
+
+			case 'prompts/get':
+				return $this->handlePromptsGet( $id, $params );
 
 			default:
 				return [
@@ -113,9 +101,10 @@ class Server {
 		}
 	}
 
-	private function handleInitialize( $id ): array {
-		$this->initialized = true;
-
+	/**
+	* @return array<string, mixed>
+	*/
+	private function handleInitialize( mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
@@ -133,7 +122,10 @@ class Server {
 		];
 	}
 
-	private function handleToolsList( $id ): array {
+	/**
+	* @return array<string, mixed>
+	*/
+	private function handleToolsList( mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
@@ -143,7 +135,11 @@ class Server {
 		];
 	}
 
-	private function handleToolsCall( $id, array $params ): array {
+	/**
+	* @param array<string, mixed> $params
+	* @return array<string, mixed>
+	*/
+	private function handleToolsCall( mixed $id, array $params ): array {
 		$toolName  = $params['name'] ?? '';
 		$arguments = $params['arguments'] ?? [];
 
@@ -155,6 +151,19 @@ class Server {
 				'error'   => [
 					'code'    => -32602,
 					'message' => "Unknown tool: {$toolName}",
+				],
+				'id'      => $id,
+			];
+		}
+
+		$schema   = $tool->getParameters();
+		$valid    = Validator::validate( $arguments, $schema );
+		if ( ! $valid['valid'] ) {
+			return [
+				'jsonrpc' => '2.0',
+				'error'   => [
+					'code'    => -32602,
+					'message' => 'Invalid parameters: ' . implode( '; ', $valid['errors'] ),
 				],
 				'id'      => $id,
 			];
@@ -199,7 +208,10 @@ class Server {
 		}
 	}
 
-	private function handleResourcesList( $id ): array {
+	/**
+	* @return array<string, mixed>
+	*/
+	private function handleResourcesList( mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
@@ -209,7 +221,11 @@ class Server {
 		];
 	}
 
-	private function handleResourcesRead( $id, array $params ): array {
+	/**
+	* @param array<string, mixed> $params
+	* @return array<string, mixed>
+	*/
+	private function handleResourcesRead( mixed $id, array $params ): array {
 		$uri = $params['uri'] ?? '';
 
 		$result = $this->resourceProvider->resolve( $uri );
@@ -220,6 +236,47 @@ class Server {
 				'error'   => [
 					'code'    => -32602,
 					'message' => "Resource not found: {$uri}",
+				],
+				'id'      => $id,
+			];
+		}
+
+		return [
+			'jsonrpc' => '2.0',
+			'id'      => $id,
+			'result'  => $result,
+		];
+	}
+
+	/**
+	* @return array<string, mixed>
+	*/
+	private function handlePromptsList( mixed $id ): array {
+		return [
+			'jsonrpc' => '2.0',
+			'id'      => $id,
+			'result'  => [
+				'prompts' => $this->promptProvider->list(),
+			],
+		];
+	}
+
+	/**
+	* @param array<string, mixed> $params
+	* @return array<string, mixed>
+	*/
+	private function handlePromptsGet( mixed $id, array $params ): array {
+		$name      = $params['name'] ?? '';
+		$arguments = $params['arguments'] ?? [];
+
+		$result = $this->promptProvider->get( $name, $arguments );
+
+		if ( ! $result ) {
+			return [
+				'jsonrpc' => '2.0',
+				'error'   => [
+					'code'    => -32602,
+					'message' => "Prompt not found: {$name}",
 				],
 				'id'      => $id,
 			];
