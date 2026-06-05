@@ -4,10 +4,12 @@ namespace Saltus\WP\Framework\MCP\Resources;
 class ResourceProvider
 {
 	/**
- 	* Get all resource definitions for MCP resources/list response.
- 	*
- 	* Resources are static data URIs the AI can read.
- 	*/
+  	* Get all resource definitions for MCP resources/list response.
+  	*
+  	* Resources are static data URIs the AI can read.
+  	*
+  	* @return list<array{uri: string, name: string, description: string, mimeType: string}>
+  	*/
 	public function getDefinitions(): array
 	{
 		return [
@@ -33,10 +35,11 @@ class ResourceProvider
 	}
 
 	/**
- 	* Resolve a resource URI to its content.
- 	*
- 	* @return array{contents: array}|null
- 	*/
+  	* Resolve a resource URI to its content.
+  	*
+	 * @param array<string, mixed> $context
+  	 * @return array{contents: list<array{uri: string, mimeType: string, text: string}>}|null
+  	*/
 	public function resolve(string $uri, array $context = []): ?array
 	{
 		switch ($uri) {
@@ -46,10 +49,10 @@ class ResourceProvider
 						[
 							'uri' => $uri,
 							'mimeType' => 'application/json',
-							'text' => json_encode([
+							'text' => json_encode([ 
 								'description' => 'Use list_models or get_model tool to interact with registered models',
 								'hint' => 'Call tools/list_models() to fetch live data from your WordPress site',
-							], JSON_PRETTY_PRINT),
+							], JSON_PRETTY_PRINT) ?: '',
 						],
 					],
 				];
@@ -60,7 +63,7 @@ class ResourceProvider
 						[
 							'uri' => $uri,
 							'mimeType' => 'application/json',
-							'text' => json_encode([
+							'text' => json_encode([ 
 								'available_features' => [
 									'admin_cols' => 'Custom admin list table columns',
 									'admin_filters' => 'Admin list table filters',
@@ -72,7 +75,7 @@ class ResourceProvider
 									'settings' => 'Settings pages via Codestar Framework',
 									'single_export' => 'Single post XML export',
 								],
-							], JSON_PRETTY_PRINT),
+							], JSON_PRETTY_PRINT) ?: '',
 						],
 					],
 				];
@@ -83,12 +86,12 @@ class ResourceProvider
 						[
 							'uri' => $uri,
 							'mimeType' => 'application/json',
-							'text' => json_encode([
+							'text' => json_encode([ 
 								'framework' => 'Saltus Framework',
 								'version' => '1.3.4',
 								'mcp_server' => 'v0.1.0',
 								'status' => 'connected',
-							], JSON_PRETTY_PRINT),
+							], JSON_PRETTY_PRINT) ?: '',
 						],
 					],
 				];
