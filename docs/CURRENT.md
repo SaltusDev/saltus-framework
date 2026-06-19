@@ -1,10 +1,9 @@
 # Current: Live Working State
 
 ## Working
-- (none)
+- Tag v1.0 release @since 2026-06-19
 
 ## Next
-- Tag v1.0 release
 - Plan Phase 3: Premium Polish (SSE transport, caching, audit trail, rate limiting)
 
 ## Blocked
