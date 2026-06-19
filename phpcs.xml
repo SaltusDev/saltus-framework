@@ -77,15 +77,18 @@
 	<!-- php compat -->
 	<rule ref="PHPCompatibility"/>
 
-	<!-- Allow PSR-style naming in MCP module -->
+	<!-- Allow PSR-style naming in MCP module and REST controllers -->
 	<rule ref="WordPress.NamingConventions.ValidFunctionName">
 		<exclude-pattern>*/src/MCP/*</exclude-pattern>
+		<exclude-pattern>*/src/Rest/*</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.NamingConventions.ValidVariableName">
 		<exclude-pattern>*/src/MCP/*</exclude-pattern>
+		<exclude-pattern>*/src/Rest/*</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.Security.EscapeOutput">
 		<exclude-pattern>*/src/MCP/*</exclude-pattern>
+		<exclude-pattern>*/src/Rest/*</exclude-pattern>
 	</rule>
 
 	<!-- phpcs parameters -->
