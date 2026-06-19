@@ -88,17 +88,17 @@ Embed a **Model Context Protocol (MCP) server** directly in the Saltus Framework
 
 **Theme:** Production hardening — caching, audit, SSE transport, multi-site.
 
-| Feature | Description |
-|---------|-------------|
-| **SSE transport** | Serve MCP over HTTP (not just stdio) for remote connections |
-| **Multi-site management** | Named site profiles, switchable at runtime |
-| **Role-based access** | Map MCP tool access to WP user roles |
-| **Audit trail** | Every tool call logged with timestamp, user, args, result |
-| **Rate limiting** | Throttle requests per client |
-| **Caching layer** | Cache `list_models`, `list_posts` with TTL |
-| **Structured error codes** | Machine-readable error codes + resolution hints |
-| **Health monitoring** | Endpoint with version, error rate, latency stats |
-| **Configuration profiles** | `--profile=high-volume`, `--profile=strict` |
+| Feature | Description | Status |
+|---------|-------------|--------|
+| **SSE transport** | Serve MCP over HTTP (not just stdio) for remote connections | ○ |
+| **Multi-site management** | Named site profiles, switchable at runtime | ○ |
+| **Role-based access** | Map MCP tool access to WP user roles | ○ |
+| **Audit trail** | Every tool call logged with timestamp, user, args, result | ✓ |
+| **Rate limiting** | Throttle requests per client | ✓ |
+| **Caching layer** | Cache `list_models`, `list_posts` with TTL | ✓ |
+| **Structured error codes** | Machine-readable error codes + resolution hints | ✓ |
+| **Health monitoring** | Endpoint with version, error rate, latency stats | ○ |
+| **Configuration profiles** | `--profile=high-volume`, `--profile=strict` | ○ |
 
 **Exit criteria:** SSE server running, caching reduces REST calls by 60%+, audit log operational, v2.0 release.
 
