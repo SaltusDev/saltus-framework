@@ -4,14 +4,17 @@ namespace Saltus\WP\Framework\Tests\MCP\Resources;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Resources\ResourceProvider;
+use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class ResourceProviderTest extends TestCase
 {
     private ResourceProvider $provider;
+    private WordPressClient $client;
 
     protected function setUp(): void
     {
-        $this->provider = new ResourceProvider();
+        $this->client = $this->createMock(WordPressClient::class);
+        $this->provider = new ResourceProvider($this->client);
     }
 
     public function testGetDefinitionsReturnsThree(): void
@@ -39,13 +42,42 @@ class ResourceProviderTest extends TestCase
         }
     }
 
-    public function testResolveModelsReturnsContent(): void
+    public function testResolveModelsReturnsLiveData(): void
     {
+        $this->client->expects($this->once())
+            ->method('get')
+            ->with('saltus-framework/v1/models')
+            ->willReturn([
+                ['name' => 'book', 'type' => 'post_type', 'label_singular' => 'Book'],
+                ['name' => 'author', 'type' => 'taxonomy', 'label_singular' => 'Author'],
+            ]);
+
         $result = $this->provider->resolve('saltus://models');
         $this->assertNotNull($result);
         $this->assertArrayHasKey('contents', $result);
         $this->assertCount(1, $result['contents']);
         $this->assertSame('saltus://models', $result['contents'][0]['uri']);
+
+        $text = $result['contents'][0]['text'];
+        $decoded = json_decode($text, true);
+        $this->assertCount(2, $decoded);
+        $this->assertSame('book', $decoded[0]['name']);
+    }
+
+    public function testResolveModelsHandlesApiError(): void
+    {
+        $this->client->expects($this->once())
+            ->method('get')
+            ->with('saltus-framework/v1/models')
+            ->willReturn(['code' => 'rest_forbidden', 'message' => 'Forbidden']);
+
+        $result = $this->provider->resolve('saltus://models');
+        $this->assertNotNull($result);
+
+        $text = $result['contents'][0]['text'];
+        $decoded = json_decode($text, true);
+        $this->assertArrayHasKey('error', $decoded);
+        $this->assertSame('Forbidden', $decoded['error']);
     }
 
     public function testResolveFeaturesReturnsContent(): void

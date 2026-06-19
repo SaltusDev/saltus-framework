@@ -12,6 +12,7 @@
     <source>
         <include>
             <directory>src/MCP/</directory>
+            <directory>src/Rest/</directory>
         </include>
     </source>
 </phpunit>
