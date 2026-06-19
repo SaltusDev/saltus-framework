@@ -6,6 +6,12 @@ use Saltus\WP\Framework\MCP\Config\Config;
 use Saltus\WP\Framework\MCP\Prompts\PromptProvider;
 use Saltus\WP\Framework\MCP\Resources\ResourceProvider;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
+use Saltus\WP\Framework\MCP\Tools\DuplicatePost;
+use Saltus\WP\Framework\MCP\Tools\ExportPost;
+use Saltus\WP\Framework\MCP\Tools\GetSettings;
+use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
+use Saltus\WP\Framework\MCP\Tools\ReorderPosts;
+use Saltus\WP\Framework\MCP\Tools\GetMetaFields;
 use Saltus\WP\Framework\MCP\Validation\Validator;
 
 class Server {
@@ -18,7 +24,7 @@ class Server {
 	public function __construct( Config $config ) {
 		$this->client           = new WordPressClient( $config );
 		$this->toolProvider     = new ToolProvider();
-		$this->resourceProvider = new ResourceProvider();
+		$this->resourceProvider = new ResourceProvider( $this->client );
 		$this->promptProvider   = new PromptProvider();
 
 		$this->registerTools();
@@ -300,6 +306,12 @@ class Server {
 			Tools\DeletePost::class,
 			Tools\ListTerms::class,
 			Tools\CreateTerm::class,
+			Tools\DuplicatePost::class,
+			Tools\ExportPost::class,
+			Tools\GetSettings::class,
+			Tools\UpdateSettings::class,
+			Tools\ReorderPosts::class,
+			Tools\GetMetaFields::class,
 		];
 
 		foreach ( $toolClasses as $class ) {

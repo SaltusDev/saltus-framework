@@ -1,8 +1,16 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Resources;
 
+use Saltus\WP\Framework\MCP\Client\WordPressClient;
+
 class ResourceProvider
 {
+	private WordPressClient $client;
+
+	public function __construct( WordPressClient $client ) {
+		$this->client = $client;
+	}
+
 	/**
   	* Get all resource definitions for MCP resources/list response.
   	*
@@ -16,7 +24,7 @@ class ResourceProvider
 			[
 				'uri' => 'saltus://models',
 				'name' => 'All Registered Models',
-				'description' => 'List of all registered post types and taxonomies',
+				'description' => 'List of all registered post types and taxonomies from the framework REST API',
 				'mimeType' => 'application/json',
 			],
 			[
@@ -44,15 +52,18 @@ class ResourceProvider
 	{
 		switch ($uri) {
 			case 'saltus://models':
+				$models = $this->client->get( 'saltus-framework/v1/models' );
 				return [
 					'contents' => [
 						[
 							'uri' => $uri,
 							'mimeType' => 'application/json',
-							'text' => json_encode([ 
-								'description' => 'Use list_models or get_model tool to interact with registered models',
-								'hint' => 'Call tools/list_models() to fetch live data from your WordPress site',
-							], JSON_PRETTY_PRINT) ?: '',
+							'text' => json_encode(
+								isset( $models['code'] )
+									? [ 'error' => $models['message'] ?? 'Failed to fetch models' ]
+									: $models,
+								JSON_PRETTY_PRINT
+							) ?: '{}',
 						],
 					],
 				];
