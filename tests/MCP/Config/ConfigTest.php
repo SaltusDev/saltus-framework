@@ -9,41 +9,38 @@ class ConfigTest extends TestCase
 {
     public function testConstructorTrimsTrailingSlash(): void
     {
-        $config = new Config('https://example.com/', 'user', 'pass');
+        $config = new Config(['site_url' => 'https://example.com/', 'username' => 'user', 'password' => 'pass']);
         $this->assertSame('https://example.com', $config->getSiteUrl());
     }
 
     public function testConstructorKeepsUrlWithoutTrailingSlash(): void
     {
-        $config = new Config('https://example.com', 'user', 'pass');
+        $config = new Config(['site_url' => 'https://example.com', 'username' => 'user', 'password' => 'pass']);
         $this->assertSame('https://example.com', $config->getSiteUrl());
     }
 
     public function testGetApiUrlAppendsWpJson(): void
     {
-        $config = new Config('https://example.com', 'user', 'pass');
+        $config = new Config(['site_url' => 'https://example.com', 'username' => 'user', 'password' => 'pass']);
         $this->assertSame('https://example.com/wp-json/', $config->getApiUrl());
     }
 
     public function testGetUsername(): void
     {
-        $config = new Config('https://example.com', 'testuser', 'secret');
+        $config = new Config(['site_url' => 'https://example.com', 'username' => 'testuser', 'password' => 'secret']);
         $this->assertSame('testuser', $config->getUsername());
     }
 
     public function testGetPassword(): void
     {
-        $config = new Config('https://example.com', 'user', 'secret123');
+        $config = new Config(['site_url' => 'https://example.com', 'username' => 'user', 'password' => 'secret123']);
         $this->assertSame('secret123', $config->getPassword());
     }
 
     public function testToArray(): void
     {
-        $config = new Config('https://example.com', 'user', 'pass');
+        $config = new Config(['site_url' => 'https://example.com', 'username' => 'user', 'password' => 'pass']);
         $expected = [
-            'site_url' => 'https://example.com',
-            'username' => 'user',
-            'password' => 'pass',
             'cache_enabled' => true,
             'cache_ttl' => 300,
             'cache_ttl_models' => 600,
@@ -52,6 +49,9 @@ class ConfigTest extends TestCase
             'rate_limit_window' => 60,
             'audit_enabled' => true,
             'audit_log_file' => null,
+            'site_url' => 'https://example.com',
+            'username' => 'user',
+            'password' => 'pass',
         ];
         $this->assertSame($expected, $config->toArray());
     }
@@ -101,7 +101,7 @@ class ConfigTest extends TestCase
 
     public function testConstructorDefaults(): void
     {
-        $config = new Config('https://example.com', 'u', 'p');
+        $config = new Config(['site_url' => 'https://example.com', 'username' => 'u', 'password' => 'p']);
         $this->assertTrue($config->isCacheEnabled());
         $this->assertSame(300, $config->getCacheTtl());
         $this->assertSame(600, $config->getCacheTtlModels());
@@ -114,7 +114,19 @@ class ConfigTest extends TestCase
 
     public function testConstructorCustomValues(): void
     {
-        $config = new Config('https://example.com', 'u', 'p', false, 120, 300, false, 10, 30, false, '/tmp/audit.log');
+        $config = new Config([
+            'site_url' => 'https://example.com',
+            'username' => 'u',
+            'password' => 'p',
+            'cache_enabled' => false,
+            'cache_ttl' => 120,
+            'cache_ttl_models' => 300,
+            'rate_limit_enabled' => false,
+            'rate_limit_max' => 10,
+            'rate_limit_window' => 30,
+            'audit_enabled' => false,
+            'audit_log_file' => '/tmp/audit.log',
+        ]);
         $this->assertFalse($config->isCacheEnabled());
         $this->assertSame(120, $config->getCacheTtl());
         $this->assertSame(300, $config->getCacheTtlModels());
