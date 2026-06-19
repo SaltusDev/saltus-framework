@@ -1,9 +1,14 @@
 <?php
 namespace Saltus\WP\Framework\MCP;
 
+use Saltus\WP\Framework\MCP\Audit\AuditEntry;
+use Saltus\WP\Framework\MCP\Audit\AuditLogger;
+use Saltus\WP\Framework\MCP\Cache\InMemoryCache;
 use Saltus\WP\Framework\MCP\Client\WordPressClient;
 use Saltus\WP\Framework\MCP\Config\Config;
+use Saltus\WP\Framework\MCP\Error\McpError;
 use Saltus\WP\Framework\MCP\Prompts\PromptProvider;
+use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Resources\ResourceProvider;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\MCP\Tools\DuplicatePost;
@@ -20,12 +25,22 @@ class Server {
 	private ToolProvider $toolProvider;
 	private ResourceProvider $resourceProvider;
 	private PromptProvider $promptProvider;
+	private ?RateLimiter $rateLimiter;
+	private ?AuditLogger $auditLogger;
 
 	public function __construct( Config $config ) {
-		$this->client           = new WordPressClient( $config );
+		$cache = $config->isCacheEnabled() ? new InMemoryCache() : null;
+
+		$this->client           = new WordPressClient( $config, $cache );
 		$this->toolProvider     = new ToolProvider();
 		$this->resourceProvider = new ResourceProvider( $this->client );
 		$this->promptProvider   = new PromptProvider();
+		$this->rateLimiter      = $config->isRateLimitEnabled()
+			? new RateLimiter( $config->getRateLimitMax(), $config->getRateLimitWindow() )
+			: null;
+		$this->auditLogger      = $config->isAuditEnabled()
+			? new AuditLogger( true, true, $config->getAuditLogFile() )
+			: null;
 
 		$this->registerTools();
 	}
@@ -96,14 +111,10 @@ class Server {
 				return $this->handlePromptsGet( $id, $params );
 
 			default:
-				return [
-					'jsonrpc' => '2.0',
-					'error'   => [
-						'code'    => -32601,
-						'message' => "Method not found: {$method}",
-					],
-					'id'      => $id,
-				];
+				return $this->buildError(
+					McpError::notFound( 'method', "{$method}" ),
+					$id
+				);
 		}
 	}
 
@@ -149,46 +160,47 @@ class Server {
 		$toolName  = $params['name'] ?? '';
 		$arguments = $params['arguments'] ?? [];
 
+		$entry = $this->auditLogger !== null ? new AuditEntry( $toolName, $arguments ) : null;
+
+		if ( $this->rateLimiter !== null ) {
+			$rateResult = $this->rateLimiter->check( 'default' );
+			if ( ! $rateResult->allowed ) {
+				$entry?->complete( 'rate_limited', 'rate_limited', 'Rate limit exceeded' );
+				$this->auditLogger?->record( $entry );
+				return $this->buildError(
+					McpError::fromRateLimit( $rateResult->retryAfter ?? 1, $rateResult->remaining ),
+					$id
+				);
+			}
+		}
+
 		$tool = $this->toolProvider->get( $toolName );
 
 		if ( ! $tool ) {
-			return [
-				'jsonrpc' => '2.0',
-				'error'   => [
-					'code'    => -32602,
-					'message' => "Unknown tool: {$toolName}",
-				],
-				'id'      => $id,
-			];
+			$entry?->complete( 'error', 'tool_not_found', "Unknown tool: {$toolName}" );
+			$this->auditLogger?->record( $entry );
+			return $this->buildError( McpError::notFound( 'tool', $toolName ), $id );
 		}
 
 		$schema   = $tool->getParameters();
 		$valid    = Validator::validate( $arguments, $schema );
 		if ( ! $valid['valid'] ) {
-			return [
-				'jsonrpc' => '2.0',
-				'error'   => [
-					'code'    => -32602,
-					'message' => 'Invalid parameters: ' . implode( '; ', $valid['errors'] ),
-				],
-				'id'      => $id,
-			];
+			$entry?->complete( 'validation_error', 'invalid_params', implode( '; ', $valid['errors'] ) );
+			$this->auditLogger?->record( $entry );
+			return $this->buildError( McpError::fromValidation( $valid['errors'] ), $id );
 		}
 
 		try {
 			$result = $tool->handle( $arguments, $this->client );
 
 			if ( isset( $result['code'] ) && isset( $result['message'] ) ) {
-				return [
-					'jsonrpc' => '2.0',
-					'isError' => true,
-					'error'   => [
-						'code'    => -32000,
-						'message' => $result['message'],
-					],
-					'id'      => $id,
-				];
+				$entry?->complete( 'error', $result['code'], $result['message'] );
+				$this->auditLogger?->record( $entry );
+				return $this->buildError( McpError::fromApiError( $result ), $id );
 			}
+
+			$entry?->complete( 'success' );
+			$this->auditLogger?->record( $entry );
 
 			return [
 				'jsonrpc' => '2.0',
@@ -203,14 +215,9 @@ class Server {
 				],
 			];
 		} catch ( \Throwable $e ) {
-			return [
-				'jsonrpc' => '2.0',
-				'error'   => [
-					'code'    => -32000,
-					'message' => $e->getMessage(),
-				],
-				'id'      => $id,
-			];
+			$entry?->complete( 'exception', 'tool_exception', $e->getMessage() );
+			$this->auditLogger?->record( $entry );
+			return $this->buildError( McpError::fromThrowable( $e ), $id );
 		}
 	}
 
@@ -237,14 +244,7 @@ class Server {
 		$result = $this->resourceProvider->resolve( $uri );
 
 		if ( ! $result ) {
-			return [
-				'jsonrpc' => '2.0',
-				'error'   => [
-					'code'    => -32602,
-					'message' => "Resource not found: {$uri}",
-				],
-				'id'      => $id,
-			];
+			return $this->buildError( McpError::notFound( 'resource', $uri ), $id );
 		}
 
 		return [
@@ -278,20 +278,25 @@ class Server {
 		$result = $this->promptProvider->get( $name, $arguments );
 
 		if ( ! $result ) {
-			return [
-				'jsonrpc' => '2.0',
-				'error'   => [
-					'code'    => -32602,
-					'message' => "Prompt not found: {$name}",
-				],
-				'id'      => $id,
-			];
+			return $this->buildError( McpError::notFound( 'prompt', $name ), $id );
 		}
 
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
 			'result'  => $result,
+		];
+	}
+
+	/**
+	* @return array<string, mixed>
+	*/
+	private function buildError( McpError $error, mixed $id ): array {
+		return [
+			'jsonrpc' => '2.0',
+			'isError' => true,
+			'error'   => $error->toArray(),
+			'id'      => $id,
 		];
 	}
 
