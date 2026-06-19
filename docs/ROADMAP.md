@@ -3,7 +3,9 @@
 ## Current Status
 - Version: 1.3.4 (as of 2026-04-07)
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
-- First MCP server (v0.1) shipped on `feature/mcp-v0`.
+- MCP v0.1 server with 15 tools (9 Phase 1 + 6 Phase 2)
+- Phase 2 REST API complete: 8 routes registered in `saltus-framework/v1/`
+- Active development on `feature/mcp-v0` branch.
 
 ---
 
@@ -45,16 +47,16 @@ Embed a **Model Context Protocol (MCP) server** directly in the Saltus Framework
 
 #### REST Controllers (new `src/Rest/` namespace)
 
-| Route | Method | Controller | Wraps |
-|-------|--------|------------|-------|
-| `/models` | GET | `ModelsController` | `Modeler` — list loaded models with full config |
-| `/models/{post_type}` | GET | `ModelsController` | Model config, features, meta, settings |
-| `/duplicate/{post_id}` | POST | `DuplicateController` | `SaltusDuplicate::perform_duplication()` |
-| `/export/{post_id}` | GET | `ExportController` | `SaltusSingleExport` — WXR export |
-| `/settings/{post_type}` | GET | `SettingsController` | `get_option($settings_id)` |
-| `/settings/{post_type}` | PUT | `SettingsController` | `update_option($settings_id, $data)` |
-| `/meta/{post_type}` | GET | `MetaController` | List meta field definitions from model config |
-| `/reorder` | POST | `ReorderController` | Batch `menu_order` update |
+| Route | Method | Controller | Status | Wraps |
+|-------|--------|------------|--------|-------|
+| `/models` | GET | `ModelsController` | ✓ Done | `Modeler` — list loaded models with full config |
+| `/models/{post_type}` | GET | `ModelsController` | ✓ Done | Model config, features, meta, settings |
+| `/duplicate/{post_id}` | POST | `DuplicateController` | ✓ Done | `SaltusDuplicate::perform_duplication()` |
+| `/export/{post_id}` | GET | `ExportController` | ✓ Done | WXR export via `export_wp()` |
+| `/settings/{post_type}` | GET | `SettingsController` | ✓ Done | `get_option($settings_id)` |
+| `/settings/{post_type}` | PUT | `SettingsController` | ✓ Done | `update_option($settings_id, $data)` |
+| `/meta/{post_type}` | GET | `MetaController` | ✓ Done | List meta field definitions from model config |
+| `/reorder` | POST | `ReorderController` | ✓ Done | Batch `menu_order` update |
 
 **Registration:** `Core::register()` adds `add_action('rest_api_init', [$restServer, 'register_routes'])`.
 
@@ -62,20 +64,23 @@ Embed a **Model Context Protocol (MCP) server** directly in the Saltus Framework
 
 #### New MCP Tools
 
-| Tool | Calls |
-|------|-------|
-| `duplicate_post` | `POST /saltus-framework/v1/duplicate/{id}` |
-| `export_post` | `GET /saltus-framework/v1/export/{id}` |
-| `get_settings` | `GET /saltus-framework/v1/settings/{post_type}` |
-| `update_settings` | `PUT /saltus-framework/v1/settings/{post_type}` |
-| `reorder_posts` | `POST /saltus-framework/v1/reorder` |
-| `get_meta_fields` | `GET /saltus-framework/v1/meta/{post_type}` |
+| Tool | Calls | Status |
+|------|-------|--------|
+| `duplicate_post` | `POST /saltus-framework/v1/duplicate/{id}` | ✓ Done |
+| `export_post` | `GET /saltus-framework/v1/export/{id}` | ✓ Done |
+| `get_settings` | `GET /saltus-framework/v1/settings/{post_type}` | ✓ Done |
+| `update_settings` | `PUT /saltus-framework/v1/settings/{post_type}` | ✓ Done |
+| `reorder_posts` | `POST /saltus-framework/v1/reorder` | ✓ Done |
+| `get_meta_fields` | `GET /saltus-framework/v1/meta/{post_type}` | ✓ Done |
 
 #### Updated MCP Resources
 
-`saltus://models` and `saltus://features` return live data by calling framework REST endpoints instead of hardcoded text.
+| Resource | Status |
+|----------|--------|
+| `saltus://models` | ✓ Returns live data from `GET /saltus-framework/v1/models` |
+| `saltus://features` | ○ Still static — no dedicated REST endpoint for features list |
 
-**Exit criteria:** All 8 REST routes registered and tested; all 6 new MCP tools operational; v1.0 release tag.
+**Exit criteria:** All 8 REST routes registered and tested ✓; all 6 new MCP tools operational ✓; v1.0 release tag ○ (pending).
 
 ---
 
