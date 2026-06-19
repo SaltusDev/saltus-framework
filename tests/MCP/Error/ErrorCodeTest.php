@@ -44,15 +44,6 @@ class ErrorCodeTest extends TestCase
         $this->assertSame(-32000, ErrorCode::getJsonRpcCode(ErrorCode::TOOL_EXCEPTION));
         $this->assertSame(-32000, ErrorCode::getJsonRpcCode('unknown_code'));
     }
-
-    public function testGetDefaultMessage(): void
-    {
-        $this->assertSame('The requested tool was not found', ErrorCode::getDefaultMessage(ErrorCode::TOOL_NOT_FOUND));
-        $this->assertSame('Invalid parameters provided', ErrorCode::getDefaultMessage(ErrorCode::INVALID_PARAMS));
-        $this->assertSame('Rate limit exceeded', ErrorCode::getDefaultMessage(ErrorCode::RATE_LIMITED));
-        $this->assertSame('Unknown error', ErrorCode::getDefaultMessage('unknown_code'));
-    }
-
     public function testGetHints(): void
     {
         $hints = ErrorCode::getHints(ErrorCode::AUTH_ERROR);

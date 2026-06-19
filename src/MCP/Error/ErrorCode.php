@@ -76,20 +76,6 @@ class ErrorCode {
 		};
 	}
 
-	public static function getDefaultMessage( string $code ): string {
-		return match ( $code ) {
-			self::TOOL_NOT_FOUND     => 'The requested tool was not found',
-			self::INVALID_PARAMS     => 'Invalid parameters provided',
-			self::RATE_LIMITED       => 'Rate limit exceeded',
-			self::AUTH_ERROR         => 'Authentication failed',
-			self::API_ERROR          => 'WordPress REST API returned an error',
-			self::RESOURCE_NOT_FOUND => 'The requested resource was not found',
-			self::INTERNAL_ERROR     => 'Internal server error',
-			self::TOOL_EXCEPTION     => 'Unexpected error in tool execution',
-			default                  => 'Unknown error',
-		};
-	}
-
 	/**
 	 * @return list<string>
 	 */
