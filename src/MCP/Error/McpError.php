@@ -49,9 +49,7 @@ class McpError {
 		$code    = $wpError['code'] ?? 'unknown';
 		$message = $wpError['message'] ?? 'Unknown WordPress API error';
 
-		$appCode = $code === 'rest_forbidden' || str_starts_with( (string) $code, 'rest_' )
-			? ErrorCode::API_ERROR
-			: ErrorCode::API_ERROR;
+		$appCode = ErrorCode::API_ERROR;
 
 		if ( str_starts_with( (string) $code, 'rest_forbidden' ) || str_starts_with( (string) $code, 'rest_cannot' ) ) {
 			$appCode = ErrorCode::AUTH_ERROR;
