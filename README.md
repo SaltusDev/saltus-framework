@@ -47,7 +47,7 @@ Once the framework is installed and Composer's autoloader is loaded by your plug
 
 ```php
     $autoload = __DIR__ . '/vendor/autoload.php';
-    if ( file_exists( $autoload ) ) {
+    if ( is_readable( $autoload ) ) {
       require_once $autoload;
     }
 
