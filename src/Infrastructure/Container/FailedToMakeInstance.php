@@ -40,7 +40,7 @@ final class FailedToMakeInstance
 	 * Create a new instance of the exception for an interface that could not
 	 * be resolved to an instantiable class.
 	 *
-	 * @param string $interface Interface that was left unresolved.
+	 * @param string $unresolved_interface Interface that was left unresolved.
 	 *
 	 * @return static
 	 */

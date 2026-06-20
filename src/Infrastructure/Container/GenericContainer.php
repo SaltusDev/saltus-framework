@@ -19,6 +19,8 @@ use Saltus\WP\Framework\Infrastructure\Service\{
  *
  * Extends ArrayObject to have default implementations for iterators and
  * array access.
+ *
+ * @extends ArrayObject<string, mixed>
  */
 class GenericContainer
 	extends ArrayObject
@@ -27,7 +29,7 @@ class GenericContainer
 	/**
 	 * @var Instantiator $instantiator Instantiates services.
 	 */
-	protected $instantiator;
+	protected Instantiator $instantiator;
 
 	/**
 	 * Constructor.
@@ -74,23 +76,27 @@ class GenericContainer
 	 * @param string  $id      Identifier of the service.
 	 * @param Service $service Service to put into the container.
 	 */
-	public function put( string $id, $service ) {
+	public function put( string $id, $service ): void {
 		$this->offsetSet( $id, $service );
 	}
 
 	/**
 	 * Register a single service, and add it to the container
 	 *
-	 * @param string $id               Identifier of the service.
-	 * @param string $service_class    Fully qualified class name of the service.
-	 * @param array|null $dependencies Optional. Dependencies for the service.
+	 * @param string            $id               Identifier of the service.
+	 * @param string            $service_class    Fully qualified class name of the service.
+	 * @param array<int, mixed> $dependencies      Dependencies for the service.
 	 */
-	public function register( string $id, string $service_class, ?array $dependencies = null ) {
+	public function register( string $id, string $service_class, array $dependencies = [] ): void {
 
 		// Only instantiate services that are actually needed.
 		if ( is_a( $service_class, Conditional::class, true ) &&
 			! $service_class::is_needed() ) {
 			return;
+		}
+
+		if ( ! class_exists( $service_class ) ) {
+			throw FailedToMakeInstance::for_unreflectable_class( $service_class ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		$service = $this->instantiate( $service_class );
@@ -102,13 +108,13 @@ class GenericContainer
 	/**
 	 * Instantiate a single service.
 	 *
-	 * @param string $service_class Service class to instantiate.
+	 * @param class-string $service_class Service class to instantiate.
 	 *
 	 * @throws Invalid If the service could not be properly instantiated.
 	 *
 	 * @return Service Instantiated service.
 	 */
-	private function instantiate( $service_class ): Service {
+	private function instantiate( string $service_class ): Service {
 
 		// The service needs to be registered, so instantiate right away.
 		$service = $this->make( $service_class );
@@ -123,11 +129,11 @@ class GenericContainer
 	/**
 	 * Make an object instance out of an interface or class.
 	 *
-	 * @param string $interface_or_class Interface or class name
-	 * @param array  $dependencies   Optional. Dependencies of the class.
+	 * @param class-string      $interface_or_class Interface or class name
+	 * @param array<int, mixed> $dependencies        Optional. Dependencies of the class.
 	 * @return object Instantiated object.
 	 */
-	private function make( string $interface_or_class, ?array $dependencies = [] ) {
+	private function make( string $interface_or_class, array $dependencies = [] ): object {
 
 		$reflection = $this->get_class_reflection( $interface_or_class );
 		$this->ensure_is_instantiable( $reflection );
@@ -140,27 +146,22 @@ class GenericContainer
 	/**
 	 * Get the reflection for a class.
 	 *
-	 * @param string $service_class Class name
-	 * @throws FailedToMakeInstance If the class could not be reflected.
-	 * @return ReflectionClass      Class reflection.
+	 * @param class-string $service_class Class name
+	 * @return ReflectionClass<object> Class reflection.
 	 */
 	private function get_class_reflection( string $service_class ): ReflectionClass {
-		try {
-			return new ReflectionClass( $service_class );
-		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( $service_class ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
-		}
+		return new ReflectionClass( $service_class );
 	}
 
 
 	/**
 	 * Ensure that a given reflected class is instantiable.
 	 *
-	 * @param ReflectionClass $reflection Reflected class to check.
+	 * @param ReflectionClass<object> $reflection Reflected class to check.
 	 *
 	 * @throws FailedToMakeInstance If the interface could not be resolved.
 	 */
-	private function ensure_is_instantiable( ReflectionClass $reflection ) {
+	private function ensure_is_instantiable( ReflectionClass $reflection ): void {
 		if ( ! $reflection->isInstantiable() ) {
 			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
@@ -177,12 +178,12 @@ class GenericContainer
 			/**
 			 * Make an object instance out of an interface or class.
 			 *
-			 * @param string $service_class  Class name.
-			 * @param array  $dependencies   Optional. Dependencies of the class.
+				 * @param class-string      $service_class  Class name.
+				 * @param array<int, mixed> $dependencies   Optional. Dependencies of the class.
 			 *
 			 * @return object Instantiated object.
 			 */
-			public function instantiate( string $service_class, array $dependencies = [] ) {
+			public function instantiate( string $service_class, array $dependencies = [] ): object {
 				return new $service_class( ...$dependencies );
 			}
 		};

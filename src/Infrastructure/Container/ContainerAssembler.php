@@ -7,7 +7,10 @@ namespace Saltus\WP\Framework\Infrastructure\Container;
  */
 class ContainerAssembler {
 
-	public function create( $container ) {
+	/**
+	 * @param class-string $container
+	 */
+	public function create( string $container ): object {
 		if ( ! class_exists( $container ) ) {
 			throw new \InvalidArgumentException( esc_html( "Container class $container does not exist." ) );
 		}
