@@ -1,8 +1,8 @@
 {
 	"name": "saltus/framework",
-	"type": "project",
+	"type": "library",
 	"license": "GPL-3.0-only",
-	"description": "",
+	"description": "A WordPress framework for building plugins around custom post types, taxonomies, meta boxes, settings pages, and admin tooling.",
 	"homepage": "https://saltus.io/",
 	"authors": [
 		{
@@ -12,13 +12,18 @@
 		}
 	],
 	"keywords": [
-		"wordpress", "composer", "vagrant", "wp"
+		"wordpress",
+		"framework",
+		"custom-post-types",
+		"taxonomies",
+		"meta-boxes",
+		"settings",
+		"admin"
 	],
-	"repositories": {
-		"0": {
-			"type": "composer",
-			"url": "https://wpackagist.org"
-		}
+	"support": {
+		"source": "https://github.com/SaltusDev/saltus-framework",
+		"issues": "https://github.com/SaltusDev/saltus-framework/issues",
+		"docs": "https://github.com/SaltusDev/saltus-framework/wiki"
 	},
 	"autoload": {
 		"psr-4": {
@@ -51,7 +56,6 @@
 		"yoast/phpunit-polyfills": "^4.0"
 	},
 	"scripts": {
-		"test": "./vendor/bin/phpunit -c phpunit.xml",
 		"phpstan": "./vendor/bin/phpstan analyse --memory-limit=2G",
 		"phpcs": "./vendor/bin/phpcs --standard=phpcs.xml"
 	},
