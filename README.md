@@ -28,6 +28,14 @@ See [change log file](CHANGELOG.md) for full details.
 
 Saltus Framework requires PHP 7.4+
 
+### Installation
+
+Install the framework in your plugin with Composer:
+
+```bash
+composer require saltus/framework
+```
+
 ## Getting Started
 
 ### Demo
@@ -35,9 +43,14 @@ Saltus Framework requires PHP 7.4+
 Refer to the [Framework Demo](https://github.com/SaltusDev/framework-demo) for a complete plugin example and to the [Wiki](https://github.com/SaltusDev/saltus-framework/wiki) for complete documentation.
 
 
-Once the framework is included in your plugin, you can initialize it the following way:
+Once the framework is installed and Composer's autoloader is loaded by your plugin, you can initialize it the following way:
 
 ```php
+    $autoload = __DIR__ . '/vendor/autoload.php';
+    if ( is_readable( $autoload ) ) {
+      require_once $autoload;
+    }
+
     if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 
       /*
