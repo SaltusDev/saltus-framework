@@ -123,6 +123,8 @@ Embed a **Model Context Protocol (MCP) server** directly in the Saltus Framework
 
 ---
 
+*Plugin Generator moved to its own repository — see [docs/PLUGIN_GENERATOR_ROADMAP.md](./PLUGIN_GENERATOR_ROADMAP.md).*
+
 ## Framework Core Roadmap
 
 ### Short-term Goals
