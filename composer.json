@@ -3,12 +3,12 @@
 	"type": "library",
 	"license": "GPL-3.0-only",
 	"description": "A WordPress framework for building plugins around custom post types, taxonomies, meta boxes, settings pages, and admin tooling.",
-	"homepage": "https://saltus.io/",
+	"homepage": "https://saltus.dev/",
 	"authors": [
 		{
 			"name": "Saltus Plugin Framework",
-			"email": "web@saltus.io",
-			"homepage": "https://saltus.io/"
+			"email": "web@goodomens.studio",
+			"homepage": "https://saltus.dev/"
 		}
 	],
 	"keywords": [

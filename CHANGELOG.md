@@ -3,6 +3,9 @@
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-06-20
+	- Chore: Package it for packagist
+
 ## [1.3.4] - 2026-04-07
 	- New: Add h3 to meta sections
 	- Fix: typo in drag and drop filter
