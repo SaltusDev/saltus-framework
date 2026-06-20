@@ -30,7 +30,7 @@ class WalkerTaxonomyDropdown extends \Walker {
 	/**
 	 * Class constructor.
 	 *
-	 * @param array|null $args Optional arguments.
+	 * @param array<string, mixed>|null $args Optional arguments.
 	 *                         - 'field': The field to use for the dropdown value.
 	 */
 	public function __construct( ?array $args = null ) {
@@ -43,19 +43,21 @@ class WalkerTaxonomyDropdown extends \Walker {
 	 * Start the element output.
 	 *
 	 * @param string $output            Passed by reference. Used to append additional content.
-	 * @param object $term_object       Term data object.
+	 * @param \WP_Term $term_object     Term data object.
 	 * @param int    $depth             Depth of term in reference to parents.
-	 * @param array  $args              Optional arguments.
+	 * @param array<string, mixed> $args Optional arguments.
 	 *                                  - 'taxonomy': The taxonomy name.
 	 *                                  - 'selected_cats': Array of selected term values.
 	 *                                  - 'selected': Array of selected term IDs.
 	 *                                  - 'show_count': Whether to show the term count.
-	 * @param int    $current_object_id Current object ID
 	 * @param int    $current_object_id Current object ID.
 	 */
-	public function start_el( &$output, $term_object, $depth = 0, $args = [], $current_object_id = 0 ) {
+	public function start_el( &$output, $term_object, $depth = 0, $args = [], $current_object_id = 0 ): void {
 		$pad = str_repeat( '&nbsp;', $depth * 3 );
 		$tax = get_taxonomy( $args['taxonomy'] );
+		if ( ! $tax ) {
+			return;
+		}
 
 		if ( $this->field ) {
 			$value = $term_object->{$this->field};
