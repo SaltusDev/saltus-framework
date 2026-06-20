@@ -45,23 +45,24 @@ class Core implements Plugin {
 	/**
 	 * If services can be filtered out
 	 * @var bool */
-	protected $enable_filters;
+	protected bool $enable_filters = true;
 
 	/**
 	 * Service list
 	 **/
-	protected $service_container;
+	protected ServiceContainer $service_container;
 
 	/** A list of paths and urls */
-	protected $project = [];
+	/** @var array<string, mixed> */
+	protected array $project = [];
 
 	/** Loads paths and models */
-	protected $modeler;
+	protected ?Modeler $modeler = null;
 
 	/**
 	 * Instanciates Services
 	 */
-	protected $instantiator;
+	protected ?object $instantiator = null;
 
 	public function __construct( string $project_path ) {
 
@@ -82,7 +83,7 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function register() {
+	public function register(): void {
 		// Todo validate key:
 		\register_activation_hook(
 			__FILE__,
@@ -130,7 +131,7 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function activate() {
+	public function activate(): void {
 		$this->register_services();
 
 		foreach ( $this->service_container as $service ) {
@@ -147,7 +148,7 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function deactivate() {
+	public function deactivate(): void {
 		$this->register_services();
 
 		foreach ( $this->service_container as $service ) {
@@ -166,7 +167,7 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function register_services() {
+	public function register_services(): void {
 
 		// Bail early so we don't instantiate services twice.
 		if ( count( $this->service_container ) > 0 ) {
@@ -189,10 +190,10 @@ class Core implements Plugin {
 			 *                                classes need to implement the
 			 *                                Service interface.
 			 */
-			$services = \apply_filters(
-				static::HOOK_PREFIX . static::SERVICES_FILTER, // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
-				$services
-			);
+				$services = \apply_filters(
+					'saltus/framework/services',
+					$services
+				);
 		}
 
 		$dependencies = [ $this->project ];
@@ -204,8 +205,8 @@ class Core implements Plugin {
 	/**
 	 * Get the list of services to register.
 	 *
-	 * @return array<string> Associative array of identifiers mapped to fully
-	 *                       qualified class names.
+	 * @return array<string, class-string> Associative array of identifiers mapped
+	 *                                     to fully qualified class names.
 	 */
 	protected function get_service_classes(): array {
 		return [
@@ -226,7 +227,7 @@ class Core implements Plugin {
 	 * Get the Container that contains the services that make up the
 	 * plugin.
 	 *
-	 * @return Container Container of the plugin.
+	 * @return Container<string, mixed> Container of the plugin.
 	 */
 	public function get_container(): Container {
 		return $this->service_container;

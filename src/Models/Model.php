@@ -8,12 +8,12 @@ interface Model {
 	 * Setup the data needed to register
 	 *
 	 */
-	public function setup();
+	public function setup(): void;
 
 	/**
 	 * Get the type of the model
 	 *
 	 * @return string The type of Model
 	 */
-	public function get_type();
+	public function get_type(): string;
 }
