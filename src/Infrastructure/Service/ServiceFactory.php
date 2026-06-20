@@ -5,7 +5,11 @@ use Saltus\WP\Framework\Infrastructure\Service\Service;
 
 class ServiceFactory implements Service, Factory {
 
-	public function create( string $class_name, $args = [] ) {
+	/**
+	 * @param class-string      $class_name Class to instantiate.
+	 * @param array<int, mixed> $args       Constructor arguments.
+	 */
+	public function create( string $class_name, array $args = [] ): object {
 		if ( ! class_exists( $class_name ) ) {
 			throw new \InvalidArgumentException( esc_html( "Class $class_name does not exist." ) );
 		}

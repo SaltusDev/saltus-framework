@@ -10,28 +10,31 @@ use Saltus\WP\Framework\Infrastructure\Service\Service;
  */
 class AssetManager implements Service {
 
-	private $project;
+	private Project $project;
 
 	/**
 	 * Suffix for filename
 	 */
-	public $suffix;
+	public string $suffix;
 
 	/**
 	 * Assets Directory
 	 */
-	public $dir;
+	public string $dir;
 
 	/**
 	 * Plugin Root Directory
 	 */
-	public $root_file_path;
+	public string $root_file_path;
 
 	/**
 	 * Instantiate this Service object.
 	 *
 	 */
-	public function __construct( $dependencies ) {
+	/**
+	 * @param array<string, mixed> $dependencies Constructor dependencies.
+	 */
+	public function __construct( array $dependencies ) {
 		if ( empty( $dependencies['project'] ) || ! $dependencies['project'] instanceof Project ) {
 			throw Invalid::from( 'project' );  //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
@@ -54,7 +57,10 @@ class AssetManager implements Service {
 	 * @param string[] $dependencies Optional. An array of registered script handles. Default empty array.
 	 *
 	 */
-	public function load_admin_styles( $src, $dependencies = [] ) {
+	/**
+	 * @param array<int, string> $dependencies
+	 */
+	public function load_admin_styles( string $src, array $dependencies = [] ): void {
 
 		add_action(
 			'admin_enqueue_scripts',
@@ -82,7 +88,7 @@ class AssetManager implements Service {
 	 *
 	 * @return string
 	 */
-	private function prepare_src( $src ) {
+	private function prepare_src( string $src ): string {
 		$src_path = dirname( $src );
 		$src_name = pathinfo( $src, PATHINFO_FILENAME );
 		$src_ext  = pathinfo( $src, PATHINFO_EXTENSION );
@@ -101,7 +107,7 @@ class AssetManager implements Service {
 	 *
 	 * @return string
 	 */
-	private function prepare_name( $src ) {
+	private function prepare_name( string $src ): string {
 		$src_name = pathinfo( $src, PATHINFO_FILENAME );
 		$src_ext  = pathinfo( $src, PATHINFO_EXTENSION );
 		if ( SALTUS_ENV !== 'development' ) {
@@ -118,7 +124,11 @@ class AssetManager implements Service {
 	 *
 	 * @return string[]
 	 */
-	private function prepare_dependencies( $dependencies ) {
+	/**
+	 * @param array<int|string, string> $dependencies An array of registered script handles.
+	 * @return array<int, string>
+	 */
+	private function prepare_dependencies( array $dependencies ): array {
 		$prepared = [];
 		foreach ( $dependencies as $index => $dependency_name ) {
 			if ( \is_string( $index ) && ( $dependency_name === 'skip' || $dependency_name === 'external' ) ) {
@@ -141,7 +151,10 @@ class AssetManager implements Service {
 	 *
 	 * @return string The name used to register the asset
 	 */
-	public function register_style( $src = '', $dependencies = [] ) {
+	/**
+	 * @param array<int|string, string> $dependencies
+	 */
+	public function register_style( string $src = '', array $dependencies = [] ): string {
 		$src = $this->prepare_src( $src );
 		return $this->register_fullpath_style( $src, $dependencies );
 	}
@@ -154,7 +167,10 @@ class AssetManager implements Service {
 	 *
 	 * @return string The name used to register the asset
 	 */
-	public function register_fullpath_style( $src = '', $dependencies = [] ) {
+	/**
+	 * @param array<int|string, string> $dependencies
+	 */
+	public function register_fullpath_style( string $src = '', array $dependencies = [] ): string {
 
 		$name         = $this->prepare_name( $src );
 		$dependencies = $this->prepare_dependencies( $dependencies );
@@ -176,7 +192,10 @@ class AssetManager implements Service {
 	 *
 	 * @return string The name used to register the asset
 	 */
-	public function register_script( $src = '', $dependencies = [], $in_footer = \false ) {
+	/**
+	 * @param array<int|string, string> $dependencies
+	 */
+	public function register_script( string $src = '', array $dependencies = [], bool $in_footer = \false ): string {
 		$src = $this->prepare_src( $src );
 		return $this->register_fullpath_script( $src, $dependencies, $in_footer );
 	}
@@ -190,7 +209,10 @@ class AssetManager implements Service {
 	 *
 	 * @return string The name used to register the asset
 	 */
-	public function register_fullpath_script( $src = '', $dependencies = [], $in_footer = \false ) {
+	/**
+	 * @param array<int|string, string> $dependencies
+	 */
+	public function register_fullpath_script( string $src = '', array $dependencies = [], bool $in_footer = \false ): string {
 
 		$name         = $this->prepare_name( $src );
 		$dependencies = $this->prepare_dependencies( $dependencies );
@@ -213,7 +235,7 @@ class AssetManager implements Service {
 	 *
 	 * @return string The name used to register the asset
 	 */
-	public function register_asset( AssetsContainer $assets_container, Asset $asset ) {
+	public function register_asset( AssetsContainer $assets_container, Asset $asset ): string {
 
 		if ( $asset->type === 'style' ) {
 			$name = $this->register_style(
@@ -240,17 +262,15 @@ class AssetManager implements Service {
 	/**
 	 * Register multiple assets to the Container
 	 *
-	 * @param array|ArrayAccess $assets_list     The list of assets to register.
-	 * @param AssetsContainer   $assets_container The container to hold the assets.
+	 * @param iterable<Asset>  $assets_list      The list of assets to register.
+	 * @param AssetsContainer  $assets_container The container to hold the assets.
 	 *
 	 * @return void
 	 */
-	public function register_assets( $assets_list, AssetsContainer $assets_container ) {
+	public function register_assets( iterable $assets_list, AssetsContainer $assets_container ): void {
 
-		if ( is_array( $assets_list ) || $assets_list instanceof \ArrayAccess ) {
-			foreach ( $assets_list as $asset ) {
-				$this->register_asset( $assets_container, $asset );
-			}
+		foreach ( $assets_list as $asset ) {
+			$this->register_asset( $assets_container, $asset );
 		}
 	}
 
@@ -261,10 +281,7 @@ class AssetManager implements Service {
 	 *
 	 * @return void
 	 */
-	public function enqueue_assets( $assets_container ) {
-		if ( ! $assets_container instanceof AssetsContainer ) {
-			return;
-		}
+	public function enqueue_assets( AssetsContainer $assets_container ): void {
 		foreach ( $assets_container->getAll() as $asset ) {
 			$name = $this->prepare_name( $asset->source );
 			if ( $asset->type === 'script' ) {
@@ -280,11 +297,11 @@ class AssetManager implements Service {
 	 *
 	 * @param string $handle      The handle of the asset to enqueue.
 	 * @param string $obj_js_name The name of the JavaScript object to localize.
-	 * @param array  $data_list   The data to localize.
+	 * @param array<string, mixed> $data_list The data to localize.
 	 *
 	 * @return void
 	 */
-	public function add_data( string $handle, string $obj_js_name, array $data_list ) {
+	public function add_data( string $handle, string $obj_js_name, array $data_list ): void {
 		$name = $this->prepare_name( $handle );
 		wp_localize_script(
 			$name,
@@ -297,9 +314,9 @@ class AssetManager implements Service {
 	 * Register a Gutenberg block.
 	 *
 	 * @param string $block_name    The name of the block, including namespace.
-	 * @param string $script_src    The path to the script to enqueue, relative to the assets directory.
-	 * @param string $style_src     The path to the style to enqueue, relative to the assets directory.
-	 * @param array  $data          Additional data for the block registration.
+	 * @param string               $script_handle The registered script handle.
+	 * @param string               $style_handle  The registered style handle.
+	 * @param array<string, mixed> $data          Additional data for the block registration.
 	 *
 	 * @return void
 	 */
@@ -308,7 +325,7 @@ class AssetManager implements Service {
 		string $script_handle,
 		string $style_handle,
 		array $data
-	) {
+	): void {
 		if ( ! empty( $script_handle ) ) {
 			$data['editor_script'] = $this->prepare_name( $script_handle );
 		}
