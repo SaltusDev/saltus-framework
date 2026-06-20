@@ -36,7 +36,7 @@ class DragAndDrop implements Service, Conditional, Actionable, Assembly {
 	 *
 	 * @return object The new instance
 	 */
-	public static function make( $name, $project, $args ) {
+	public static function make( string $name, array $project, array $args ): object {
 		return new SaltusDragAndDrop( $name, $project );
 	}
 
@@ -44,7 +44,7 @@ class DragAndDrop implements Service, Conditional, Actionable, Assembly {
 	 * Update menu drag and drop in the database
 	 *
 	 */
-	public function add_action() {
+	public function add_action(): void {
 		$actions = new UpdateMenuDragAndDrop();
 		$actions->add_action();
 	}

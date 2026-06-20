@@ -31,7 +31,7 @@ final class SaltusDuplicate implements Processable {
 	 * Constructor.
 	 *
 	 * @param string $name The name of the custom post type (CPT).
-	 * @param array  $args Additional arguments.
+	 * @param array<string, string> $args Additional arguments.
 	 *                     - 'label': The label for the duplicate link.
 	 *                     - 'attr_title': The title for the duplicate link.
 	 */
@@ -41,7 +41,7 @@ final class SaltusDuplicate implements Processable {
 		$this->attr_title = ! empty( $args['attr_title'] ) ? $args['attr_title'] : 'Duplicate this entry';
 	}
 
-	public function process() {
+	public function process(): void {
 
 		// non hierarchical
 		add_filter( 'post_row_actions', array( $this, 'row_link' ), 10, 2 );
@@ -53,7 +53,7 @@ final class SaltusDuplicate implements Processable {
 		add_action( 'admin_notices', [ $this, 'duplication_error_notice' ] );
 	}
 
-	public function duplication_error_notice() {
+	public function duplication_error_notice(): void {
 		if ( isset( $_GET['duplication_error'], $_GET['_error_nonce'] ) &&
 			wp_verify_nonce( sanitize_key( $_GET['_error_nonce'] ), 'duplication_error_notice' ) ) {
 			echo '<div class="notice notice-error"><p>'
@@ -70,7 +70,11 @@ final class SaltusDuplicate implements Processable {
 	* @return array The modified actions.
 	*
 	*/
-	public function row_link( $actions, $post ) {
+	/**
+	 * @param array<string, string> $actions The actions for the row.
+	 * @return array<string, string> The modified actions.
+	 */
+	public function row_link( array $actions, \WP_Post $post ): array {
 
 		if ( $post->post_type !== $this->name ) {
 			return $actions;
@@ -205,6 +209,9 @@ final class SaltusDuplicate implements Processable {
 
 		foreach ( $taxonomies as $taxonomy ) {
 			$post_terms = wp_get_object_terms( $post_id, $taxonomy, array( 'fields' => 'slugs' ) );
+			if ( is_wp_error( $post_terms ) ) {
+				continue;
+			}
 			wp_set_object_terms( $new_post_id, $post_terms, $taxonomy, false );
 		}
 

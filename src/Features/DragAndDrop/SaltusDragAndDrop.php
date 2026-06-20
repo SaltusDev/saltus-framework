@@ -7,19 +7,23 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 final class SaltusDragAndDrop implements Processable {
 
-	private $name;
-	private $project;
+	private string $name;
+	/** @var array<string, mixed> */
+	private array $project;
 
 		/**
 	 * Instantiate this Service object.
 	 *
 	 */
+		/**
+		 * @param array<string, mixed> $project Project data.
+		 */
 	public function __construct( string $name, array $project ) {
 		$this->project = $project;
 		$this->name    = $name;
 	}
 
-	public function process() {
+	public function process(): void {
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'load_script_css' ) );
 		add_action( 'admin_init', array( $this, 'refresh' ) );
@@ -30,11 +34,11 @@ final class SaltusDragAndDrop implements Processable {
 		add_filter( 'get_next_post_sort', array( $this, 'next_post_sort' ) );
 	}
 
-	private function check_load_script_css() {
+	private function check_load_script_css(): bool {
 		$active = false;
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			return;
+			return false;
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
@@ -52,7 +56,7 @@ final class SaltusDragAndDrop implements Processable {
 		return $active;
 	}
 
-	public function load_script_css() {
+	public function load_script_css(): void {
 		if ( ! $this->check_load_script_css() ) {
 			return;
 		}
@@ -72,43 +76,43 @@ final class SaltusDragAndDrop implements Processable {
 		wp_enqueue_style( 'drag_drop_order', $this->project['root_url'] . '/Feature/DragAndDrop/order.css', array(), '1' );
 	}
 
-	public function previous_post_where( $where ) {
+	public function previous_post_where( string $where ): string {
 		global $post;
 
-		if ( isset( $post->post_type ) && $post->post_type === $this->name ) {
+		if ( $post instanceof \WP_Post && $post->post_type === $this->name ) {
 			$where = preg_replace( "/p.post_date < \'[0-9\-\s\:]+\'/i", "p.menu_order > '" . $post->menu_order . "'", $where );
 		}
 		return $where;
 	}
 
-	public function previous_post_sort( $orderby ) {
+	public function previous_post_sort( string $orderby ): string {
 		global $post;
 
-		if ( isset( $post->post_type ) && $post->post_type === $this->name ) {
+		if ( $post instanceof \WP_Post && $post->post_type === $this->name ) {
 			$orderby = 'ORDER BY p.menu_order ASC LIMIT 1';
 		}
 		return $orderby;
 	}
 
-	public function next_post_where( $where ) {
+	public function next_post_where( string $where ): string {
 		global $post;
 
-		if ( isset( $post->post_type ) && $post->post_type === $this->name ) {
+		if ( $post instanceof \WP_Post && $post->post_type === $this->name ) {
 			$where = preg_replace( "/p.post_date > \'[0-9\-\s\:]+\'/i", "p.menu_order < '" . $post->menu_order . "'", $where );
 		}
 		return $where;
 	}
 
-	public function next_post_sort( $orderby ) {
+	public function next_post_sort( string $orderby ): string {
 		global $post;
 
-		if ( isset( $post->post_type ) && $post->post_type === $this->name ) {
+		if ( $post instanceof \WP_Post && $post->post_type === $this->name ) {
 			$orderby = 'ORDER BY p.menu_order DESC LIMIT 1';
 		}
 		return $orderby;
 	}
 
-	public function refresh() {
+	public function refresh(): void {
 		global $wpdb;
 
 		$query = "SELECT count(*) as cnt, max(menu_order) as max, min(menu_order) as min
