@@ -37,12 +37,12 @@ class SingleExport implements Service, Conditional, Assembly {
 	 * Create a new instance of the service provider
 	 *
 	 * @param string $name        The name of the custom post type (CPT) to export.
-	 * @param array|null $project Project information.
-	 * @param array|null $args    Additional arguments for the export.
+	 * @param array<string, mixed> $project Project information.
+	 * @param array<string, mixed> $args    Additional arguments for the export.
 	 *
 	 * @return object The new instance
 	 */
-	public static function make( $name, $project, $args ) {
+	public static function make( string $name, array $project, array $args ): object {
 		return new SaltusSingleExport( $name, $args );
 	}
 }
