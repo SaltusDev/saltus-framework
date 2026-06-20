@@ -185,6 +185,16 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 
 ## Building
 
+### Quality checks
+
+Run the static analysis and coding-standard checks from the repository root:
+
+```bash
+composer phpstan
+composer phpcs
+composer validate --strict
+```
+
 ### Disadvantages of classmap
 As we move from 'files' to 'classmap', heed this:
 > Manual Updates: If you add new classes, you must regenerate the classmap by running composer dump-autoload.

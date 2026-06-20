@@ -8,6 +8,7 @@ parameters:
         - **/node_modules/*
         - **/vendor/*
         - **/tests/*
+        - src/Infrastructure/Services/Assets/AssetLoader.php
         - !**/*.php
     paths:
         - ./src
