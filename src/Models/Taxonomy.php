@@ -146,11 +146,7 @@ class Taxonomy extends BaseModel implements Model {
 	}
 
 	public function register_associations(): void {
-		if ( ! is_array( $this->associations ) ) {
-			return;
-		}
-
-		foreach ( $this->associations as $association ) {
+		foreach ( (array) $this->associations as $association ) {
 			register_taxonomy_for_object_type( $this->get_registration_name(), $association );
 		}
 	}

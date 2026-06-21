@@ -40,9 +40,6 @@ class UpdateMenuDragAndDrop implements Actionable {
 		}
 
 		if ( ! isset( $_POST['order'] ) || ! is_string( $_POST['order'] ) ) {
-			 return;
-		}
-		if ( empty( $_POST['order'] ) ) {
 			return;
 		}
 
