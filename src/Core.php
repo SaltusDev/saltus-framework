@@ -110,9 +110,7 @@ class Core implements Plugin {
 		// 3- Create a "store" with a factory
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
-		/** @deprecated 1.2.0 */
-		$priority = apply_filters( 'saltus_modeler_priority', 1 );
-		$priority = apply_filters( 'saltus/framework/modeler/priority', 1 );
+		$priority      = apply_filters( static::HOOK_PREFIX . 'modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
@@ -190,10 +188,10 @@ class Core implements Plugin {
 			 *                                classes need to implement the
 			 *                                Service interface.
 			 */
-				$services = \apply_filters(
-					'saltus/framework/services',
-					$services
-				);
+			$services = \apply_filters(
+				static::HOOK_PREFIX . static::SERVICES_FILTER, // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+				$services
+			);
 		}
 
 		$dependencies = [ $this->project ];
