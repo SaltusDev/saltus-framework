@@ -117,7 +117,7 @@ class GenericContainer
 	private function instantiate( string $service_class, array $dependencies = [] ): Service {
 
 		// The service needs to be registered, so instantiate right away.
-		$service = $this->make( $service_class );
+		$service = $this->make( $service_class, $dependencies );
 
 		if ( ! $service instanceof Service ) {
 			throw Invalid::from( $service ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
