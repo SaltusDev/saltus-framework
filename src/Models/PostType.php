@@ -171,7 +171,7 @@ class PostType extends BaseModel implements Model {
 	 * @return boolean status
 	 */
 	public function disable_block_editor( bool $current_status, string $post_type ): bool {
-		if ( $post_type === $this->name ) {
+		if ( $post_type === $this->get_registration_name() ) {
 			return false;
 		}
 		return $current_status;

@@ -485,7 +485,7 @@ abstract class BaseModel {
 	 *
 	 * @return lowercase-string&non-empty-string
 	 */
-	protected function get_registration_name(): string {
+	public function get_registration_name(): string {
 		/** @var lowercase-string $name */
 		$name = sanitize_key( $this->name );
 		if ( $name === '' ) {

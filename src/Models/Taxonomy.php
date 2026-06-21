@@ -141,7 +141,7 @@ class Taxonomy extends BaseModel implements Model {
 	 */
 	private function register(): void {
 		$args = array_merge( $this->args, $this->options );
-		register_taxonomy( $this->name, $this->associations, $args );
+		register_taxonomy( $this->get_registration_name(), $this->associations, $args );
 		add_action( 'init', array( $this, 'register_associations' ) );
 	}
 
