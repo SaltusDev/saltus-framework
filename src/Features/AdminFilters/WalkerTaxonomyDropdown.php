@@ -54,7 +54,11 @@ class WalkerTaxonomyDropdown extends \Walker {
 	 */
 	public function start_el( &$output, $term_object, $depth = 0, $args = [], $current_object_id = 0 ): void {
 		$pad = str_repeat( '&nbsp;', $depth * 3 );
+		if ( empty( $args['taxonomy'] ) ) {
+			return;
+		}
 		$tax = get_taxonomy( $args['taxonomy'] );
+
 		if ( ! $tax ) {
 			return;
 		}

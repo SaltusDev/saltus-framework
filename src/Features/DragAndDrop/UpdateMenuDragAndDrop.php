@@ -39,6 +39,9 @@ class UpdateMenuDragAndDrop implements Actionable {
 			return;
 		}
 
+		if ( ! isset( $_POST['order'] ) || ! is_string( $_POST['order'] ) ) {
+			 return;
+		}
 		if ( empty( $_POST['order'] ) ) {
 			return;
 		}
@@ -50,7 +53,7 @@ class UpdateMenuDragAndDrop implements Actionable {
 		// can't trust much parse_str
 		parse_str( $_POST['order'], $data );
 
-			$id_arr = array();
+		$id_arr = array();
 		foreach ( $data as $id_sorted ) {
 			if ( ! is_iterable( $id_sorted ) ) {
 				continue;
