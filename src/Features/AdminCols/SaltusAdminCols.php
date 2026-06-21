@@ -385,11 +385,16 @@ final class SaltusAdminCols implements Processable {
 			case 'edit':
 				if ( current_user_can( $tax->cap->edit_terms ) ) {
 					$term_link = get_edit_term_link( $term->term_id, $taxonomy, $post->post_type );
-					$out       = sprintf(
-						'<a href="%1$s">%2$s</a>',
-						esc_url( is_string( $term_link ) ? $term_link : '' ),
-						esc_html( $term->name )
-					);
+
+					if ( is_string( $term_link ) ) {
+						$out = sprintf(
+							'<a href="%s">%s</a>',
+							esc_url( $term_link ),
+							esc_html( $term->name )
+						);
+					} else {
+						$out = esc_html( $term->name );
+					}
 				} else {
 					$out = esc_html( $term->name );
 				}
