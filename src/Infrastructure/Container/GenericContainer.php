@@ -99,7 +99,7 @@ class GenericContainer
 			throw FailedToMakeInstance::for_unreflectable_class( $service_class ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
-		$service = $this->instantiate( $service_class );
+		$service = $this->instantiate( $service_class, $dependencies );
 
 		$this->put( $id, $service );
 	}
@@ -114,7 +114,7 @@ class GenericContainer
 	 *
 	 * @return Service Instantiated service.
 	 */
-	private function instantiate( string $service_class ): Service {
+	private function instantiate( string $service_class, array $dependencies = [] ): Service {
 
 		// The service needs to be registered, so instantiate right away.
 		$service = $this->make( $service_class );

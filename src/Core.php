@@ -116,7 +116,8 @@ class Core implements Plugin {
 		// 3- Create a "store" with a factory
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
-		$priority      = apply_filters( static::HOOK_PREFIX . 'modeler/priority', 1 );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+		$priority = apply_filters( static::HOOK_PREFIX . 'modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
@@ -194,11 +195,13 @@ class Core implements Plugin {
 			 *                                classes need to implement the
 			 *                                Service interface.
 			 */
-			if (empty($hook_name)) {
-				 throw new \InvalidArgumentException( esc_html__( 'Hook name cannot be empty', 'saltus' ) );
+			$hook_name = static::HOOK_PREFIX . static::SERVICES_FILTER;
+			if ( empty( $hook_name ) ) {
+				throw new \InvalidArgumentException( esc_html__( 'Hook name cannot be empty', 'saltus' ) );
 			}
 			$services = \apply_filters(
-				static::HOOK_PREFIX . static::SERVICES_FILTER, // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+				$hook_name,
 				$services
 			);
 		}
