@@ -34,10 +34,16 @@ use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 
 class Core implements Plugin {
 
-	// Main filters to control the flow of the plugin from outside code.
+	/**
+	Main filters to control the flow of the plugin from outside code.
+	@var non-empty-string
+	*/
 	const SERVICES_FILTER = 'services';
 
-	// Prefixes to use.
+	/**
+	Prefixes to use.
+	@var non-empty-string
+	*/
 	const HOOK_PREFIX    = 'saltus/framework/';
 	const SERVICE_PREFIX = '';
 
@@ -188,6 +194,9 @@ class Core implements Plugin {
 			 *                                classes need to implement the
 			 *                                Service interface.
 			 */
+			if (empty($hook_name)) {
+				 throw new \InvalidArgumentException( esc_html__( 'Hook name cannot be empty', 'saltus' ) );
+			}
 			$services = \apply_filters(
 				static::HOOK_PREFIX . static::SERVICES_FILTER, // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 				$services

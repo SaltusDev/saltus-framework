@@ -445,7 +445,7 @@ final class SaltusAdminCols implements Processable {
 					return '';
 				}
 				$status = get_post_status_object( $post_status );
-				return esc_html( $status->label ?? '' );
+				return esc_html( is_object( $status ) ? $status->label : '' );
 			},
 			'post_author'  => fn() => esc_html( get_the_author() ),
 			'post_title'   => fn() => esc_html( get_the_title() ),
