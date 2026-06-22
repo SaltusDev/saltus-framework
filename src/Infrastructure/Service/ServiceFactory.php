@@ -11,7 +11,7 @@ class ServiceFactory implements Service, Factory {
 	 */
 	public function create( string $class_name, array $args = [] ): object {
 		if ( ! class_exists( $class_name ) ) {
-			throw new \InvalidArgumentException( esc_html( "Class $class_name does not exist." ) );
+			throw new \InvalidArgumentException( "Class $class_name does not exist." ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$reflection = new \ReflectionClass( $class_name );

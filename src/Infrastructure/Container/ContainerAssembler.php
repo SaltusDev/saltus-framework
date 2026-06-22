@@ -12,7 +12,7 @@ class ContainerAssembler {
 	 */
 	public function create( string $container ): object {
 		if ( ! class_exists( $container ) ) {
-			throw new \InvalidArgumentException( esc_html( "Container class $container does not exist." ) );
+			throw new \InvalidArgumentException( "Container class $container does not exist." ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return new $container();
 	}
