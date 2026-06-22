@@ -80,7 +80,7 @@ final class SaltusDragAndDrop implements Processable {
 		global $post;
 
 		if ( $post instanceof \WP_Post && $post->post_type === $this->name ) {
-			$where = preg_replace( "/p.post_date < \'[0-9\-\s\:]+\'/i", "p.menu_order > '" . $post->menu_order . "'", $where );
+			$where = preg_replace( "/p.post_date < \'[0-9\-\s\:]+\'/i", "p.menu_order > '" . (int) $post->menu_order . "'", $where );
 		}
 		return $where;
 	}
@@ -98,7 +98,7 @@ final class SaltusDragAndDrop implements Processable {
 		global $post;
 
 		if ( $post instanceof \WP_Post && $post->post_type === $this->name ) {
-			$where = preg_replace( "/p.post_date > \'[0-9\-\s\:]+\'/i", "p.menu_order < '" . $post->menu_order . "'", $where );
+			$where = preg_replace( "/p.post_date > \'[0-9\-\s\:]+\'/i", "p.menu_order < '" . (int) $post->menu_order . "'", $where );
 		}
 		return $where;
 	}
