@@ -492,6 +492,19 @@ abstract class BaseModel {
 			throw new \InvalidArgumentException( 'Model name cannot be empty.' );
 		}
 
+		$max_length = $this->get_type() === 'taxonomy' ? 32 : 20;
+
+		if ( strlen( $name ) > $max_length ) {
+			throw new \InvalidArgumentException(
+				sprintf(
+					'Model name "%s" exceeds the maximum %d character limit for %s registration.',
+					$name,
+					$max_length,
+					$this->get_type()
+				)
+			);
+		}
+
 		return $name;
 	}
 }
