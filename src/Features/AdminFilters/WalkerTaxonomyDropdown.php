@@ -52,7 +52,7 @@ class WalkerTaxonomyDropdown extends \Walker {
 	 *                                  - 'show_count': Whether to show the term count.
 	 * @param int    $current_object_id Current object ID.
 	 */
-	public function start_el( &$output, $term_object, $depth = 0, $args = [], $current_object_id = 0 ): void {
+	public function start_el( &$output, $term_object, $depth = 0, $args = [], $current_object_id = 0 ) {
 		$pad = str_repeat( '&nbsp;', $depth * 3 );
 		if ( empty( $args['taxonomy'] ) ) {
 			return;
