@@ -89,7 +89,7 @@ class ModelFactory {
 
 			$config_value = $config->get( $service_name );
 			$service      = $this->app->get( $service_name );
-			$service_imp  = $service->make( $cpt->name, $this->project, $config_value );
+			$service_imp  = $service::make( $cpt->name, $this->project, $config_value );
 
 			if ( $service_imp instanceof Processable ) {
 				$service_imp->process();
@@ -126,7 +126,7 @@ class ModelFactory {
 			// make sure $args is an array
 			$args        = is_array( $args ) ? $args : [];
 			$service     = $this->app->get( $normalized_feature_name );
-			$service_imp = $service->make( $cpt->get_registration_name(), $this->project, $args );
+			$service_imp = $service::make( $cpt->get_registration_name(), $this->project, $args );
 
 			if ( $service_imp instanceof Processable ) {
 				$service_imp->process();
