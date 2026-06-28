@@ -56,6 +56,14 @@ class ListPosts implements ToolInterface
 				'description' => 'Sort order',
 				'default' => 'desc',
 			],
+			'terms' => [
+				'type' => 'object',
+				'description' => 'Taxonomy term filters as {taxonomy_rest_base: [term_id, ...]}',
+				'additionalProperties' => [
+					'type' => 'array',
+					'items' => ['type' => 'number'],
+				],
+			],
 		];
 	}
 
@@ -80,6 +88,8 @@ class ListPosts implements ToolInterface
 		if (!empty($args['search'])) {
 			$query['search'] = $args['search'];
 		}
+
+		$query = $this->appendTermFilters($query, $args['terms'] ?? [], $client);
 
 		$restBase = $this->getRestBase($postType, $client);
 		$posts = $client->get("wp/v2/{$restBase}", $query);
@@ -120,5 +130,55 @@ class ListPosts implements ToolInterface
 		}
 
 		return $postType;
+	}
+
+	/**
+	* @param array<string, mixed> $query
+	* @param mixed $terms
+	* @return array<string, mixed>
+	*/
+	private function appendTermFilters(array $query, mixed $terms, WordPressClient $client): array
+	{
+		if (!is_array($terms)) {
+			return $query;
+		}
+
+		$restBases = $this->getTaxonomyRestBases($client);
+
+		foreach ($terms as $taxonomy => $termIds) {
+			if (!is_string($taxonomy) || !is_array($termIds)) {
+				continue;
+			}
+
+			$ids = array_values(array_filter(array_map('intval', $termIds)));
+			if ($ids === []) {
+				continue;
+			}
+
+			$query[$restBases[$taxonomy] ?? $taxonomy] = $ids;
+		}
+
+		return $query;
+	}
+
+	/**
+	* @return array<string, string>
+	*/
+	private function getTaxonomyRestBases(WordPressClient $client): array
+	{
+		$taxonomies = $client->get('wp/v2/taxonomies');
+		$restBases = [];
+
+		foreach ($taxonomies as $slug => $taxonomy) {
+			if (!is_string($slug) || !is_array($taxonomy)) {
+				continue;
+			}
+
+			$restBase = is_string($taxonomy['rest_base'] ?? null) ? $taxonomy['rest_base'] : $slug;
+			$restBases[$slug] = $restBase;
+			$restBases[$restBase] = $restBase;
+		}
+
+		return $restBases;
 	}
 }
