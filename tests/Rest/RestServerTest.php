@@ -16,7 +16,7 @@ class RestServerTest extends TestCase {
 		global $wp_rest_routes_registered;
 		$wp_rest_routes_registered = [];
 
-		$this->modeler = $this->createMock( Modeler::class );
+		$this->modeler = $this->createStub( Modeler::class );
 		$this->server  = new RestServer( $this->modeler );
 	}
 
