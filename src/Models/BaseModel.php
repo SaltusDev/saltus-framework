@@ -514,4 +514,31 @@ abstract class BaseModel {
 
 		return $name;
 	}
+
+	/**
+	 * Return registration options after defaults and model overrides are merged.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_options(): array {
+		return $this->options;
+	}
+
+	public function get_rest_base(): string {
+		return is_string( $this->options['rest_base'] ?? null )
+			? $this->options['rest_base']
+			: $this->get_registration_name();
+	}
+
+	public function get_label_singular(): string {
+		return $this->one;
+	}
+
+	public function get_label_plural(): string {
+		return $this->many;
+	}
+
+	public function get_featured_image_label(): string {
+		return $this->featured_image;
+	}
 }
