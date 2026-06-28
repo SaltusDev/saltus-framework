@@ -71,13 +71,30 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 	class WP_REST_Request {
 		private array $params      = [];
 		private array $json_params = [];
+		private string $method     = 'GET';
+		private string $route      = '';
 
-		public function __construct( array $params = [] ) {
+		public function __construct( array|string $method_or_params = [], string $route = '' ) {
+			if ( is_string( $method_or_params ) ) {
+				$this->method = $method_or_params;
+				$this->route  = $route;
+				return;
+			}
+
+			$params = $method_or_params;
 			$this->params = $params;
 		}
 
 		public function get_param( string $key ): mixed {
 			return $this->params[ $key ] ?? null;
+		}
+
+		public function get_params(): array {
+			return $this->params;
+		}
+
+		public function set_param( string $key, mixed $value ): void {
+			$this->params[ $key ] = $value;
 		}
 
 		public function set_json_params( array $params ): void {
@@ -86,6 +103,18 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 
 		public function get_json_params(): array {
 			return $this->json_params;
+		}
+
+		public function set_body_params( array $params ): void {
+			$this->json_params = $params;
+		}
+
+		public function get_method(): string {
+			return $this->method;
+		}
+
+		public function get_route(): string {
+			return $this->route;
 		}
 	}
 }
@@ -133,6 +162,8 @@ if ( ! class_exists( 'WP_Post' ) ) {
 }
 
 $wp_rest_routes_registered = [];
+$wp_abilities_registered   = [];
+$wp_rest_request_log       = [];
 $wp_current_user_can       = true;
 $wp_posts                  = [];
 $wp_options                = [];
@@ -141,6 +172,26 @@ if ( ! function_exists( 'register_rest_route' ) ) {
 	function register_rest_route( string $namespace, string $route, array $args = [], bool $override = false ): void {
 		global $wp_rest_routes_registered;
 		$wp_rest_routes_registered[] = compact( 'namespace', 'route', 'args', 'override' );
+	}
+}
+
+if ( ! function_exists( 'wp_register_ability' ) ) {
+	function wp_register_ability( string $name, array $args ): void {
+		global $wp_abilities_registered;
+		$wp_abilities_registered[ $name ] = $args;
+	}
+}
+
+if ( ! function_exists( 'rest_do_request' ) ) {
+	function rest_do_request( WP_REST_Request $request ): WP_REST_Response {
+		global $wp_rest_request_log;
+		$wp_rest_request_log[] = [
+			'method' => $request->get_method(),
+			'route'  => $request->get_route(),
+			'params' => $request->get_json_params(),
+			'query'  => $request->get_params(),
+		];
+		return new WP_REST_Response( [ 'ok' => true, 'route' => $request->get_route() ] );
 	}
 }
 
@@ -199,6 +250,13 @@ if ( ! function_exists( 'apply_filters' ) ) {
 
 if ( ! function_exists( 'do_action' ) ) {
 	function do_action( string $tag, mixed ...$args ): void {}
+}
+
+if ( ! function_exists( 'add_action' ) ) {
+	function add_action( string $hook_name, callable $callback, int $priority = 10, int $accepted_args = 1 ): void {
+		global $wp_actions_registered;
+		$wp_actions_registered[] = compact( 'hook_name', 'callback', 'priority', 'accepted_args' );
+	}
 }
 
 if ( ! function_exists( 'has_filter' ) ) {
@@ -282,6 +340,19 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
 	}
 }
 
+if ( ! function_exists( 'register_taxonomy' ) ) {
+	function register_taxonomy( string $taxonomy, array|string $object_type, array $args = [] ): void {
+		global $wp_taxonomies_registered;
+		$wp_taxonomies_registered[ $taxonomy ] = compact( 'taxonomy', 'object_type', 'args' );
+	}
+}
+
+if ( ! function_exists( 'register_taxonomy_for_object_type' ) ) {
+	function register_taxonomy_for_object_type( string $taxonomy, string $object_type ): bool {
+		return true;
+	}
+}
+
 if ( ! function_exists( 'get_object_taxonomies' ) ) {
 	function get_object_taxonomies( string|array|WP_Post $object, string $output = 'names' ): array {
 		return [];
@@ -321,9 +392,29 @@ if ( ! function_exists( 'get_post_type_object' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_taxonomy' ) ) {
+	function get_taxonomy( string $taxonomy ): ?stdClass {
+		global $wp_taxonomy_objects;
+		if ( isset( $wp_taxonomy_objects[ $taxonomy ] ) ) {
+			return $wp_taxonomy_objects[ $taxonomy ];
+		}
+
+		return (object) [
+			'name'      => $taxonomy,
+			'rest_base' => $taxonomy,
+		];
+	}
+}
+
 if ( ! function_exists( 'trailingslashit' ) ) {
 	function trailingslashit( string $path ): string {
 		return rtrim( $path, '/\\' ) . '/';
+	}
+}
+
+if ( ! function_exists( 'plugins_url' ) ) {
+	function plugins_url( string $path = '', string $plugin = '' ): string {
+		return 'http://example.com/wp-content/plugins/' . ltrim( $path, '/' );
 	}
 }
 

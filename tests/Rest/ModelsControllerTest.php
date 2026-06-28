@@ -5,7 +5,9 @@ namespace Saltus\WP\Framework\Tests\Rest;
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Rest\ModelsController;
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Config\NoFile;
 use Saltus\WP\Framework\Models\Model;
+use Saltus\WP\Framework\Models\Taxonomy;
 use WP_REST_Request;
 use WP_Error;
 
@@ -124,6 +126,34 @@ class ModelsControllerTest extends TestCase {
 		$this->assertSame( 'post_type', $data['type'] );
 		$this->assertSame( 'Books', $data['label_singular'] );
 		$this->assertSame( 'Books', $data['label_plural'] );
+	}
+
+	public function testGetItemReturnsTaxonomyMetadata(): void {
+		$taxonomy = new Taxonomy(
+			new NoFile(
+				[
+					'type'         => 'category',
+					'name'         => 'genre',
+					'associations' => [ 'movie', 'book' ],
+					'options'      => [
+						'rest_base' => 'genres',
+					],
+				]
+			)
+		);
+		$taxonomy->setup();
+
+		$this->modeler->method( 'get_models' )->willReturn( [ 'genre' => $taxonomy ] );
+
+		$request = new WP_REST_Request( [ 'post_type' => 'genre' ] );
+		$result  = $this->controller->get_item( $request );
+
+		$data = rest_ensure_response( $result )->get_data();
+		$this->assertSame( 'genre', $data['name'] );
+		$this->assertSame( 'taxonomy', $data['type'] );
+		$this->assertSame( 'genres', $data['rest_base'] );
+		$this->assertSame( [ 'movie', 'book' ], $data['associations'] );
+		$this->assertTrue( $data['hierarchical'] );
 	}
 
 	/**

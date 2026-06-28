@@ -8,6 +8,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Taxonomy;
 
 class ModelsController extends WP_REST_Controller {
 
@@ -107,15 +108,25 @@ class ModelsController extends WP_REST_Controller {
 	 * @return array<string, mixed>
 	 */
 	private function prepare_model_for_response( $model, WP_REST_Request $request ): array {
-		return [
-			'name'           => $model->name ?? '',
+		$options = method_exists( $model, 'get_options' ) ? $model->get_options() : ( $model->options ?? [] );
+
+		$data = [
+			'name'           => method_exists( $model, 'get_registration_name' ) ? $model->get_registration_name() : ( $model->name ?? '' ),
 			'type'           => $model->get_type(),
-			'label_singular' => $model->one ?? '',
-			'label_plural'   => $model->many ?? '',
-			'featured_image' => $model->featured_image ?? '',
+			'label_singular' => method_exists( $model, 'get_label_singular' ) ? $model->get_label_singular() : ( $model->one ?? '' ),
+			'label_plural'   => method_exists( $model, 'get_label_plural' ) ? $model->get_label_plural() : ( $model->many ?? '' ),
+			'featured_image' => method_exists( $model, 'get_featured_image_label' ) ? $model->get_featured_image_label() : ( $model->featured_image ?? '' ),
 			'description'    => $model->description ?? '',
-			'is_public'      => $model->options['public'] ?? true,
-			'show_in_rest'   => $model->options['show_in_rest'] ?? true,
+			'is_public'      => $options['public'] ?? true,
+			'show_in_rest'   => $options['show_in_rest'] ?? true,
+			'rest_base'      => method_exists( $model, 'get_rest_base' ) ? $model->get_rest_base() : ( $options['rest_base'] ?? ( $model->name ?? '' ) ),
 		];
+
+		if ( $model instanceof Taxonomy ) {
+			$data['associations'] = $model->get_associations();
+			$data['hierarchical'] = $model->is_hierarchical();
+		}
+
+		return $data;
 	}
 }
