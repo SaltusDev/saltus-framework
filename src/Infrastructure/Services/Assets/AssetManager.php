@@ -214,8 +214,12 @@ class AssetManager implements Service {
 	 */
 	public function register_fullpath_script( string $src = '', array $dependencies = [], bool $in_footer = \false ): string {
 
-		$name         = $this->prepare_name( $src );
+		/** @var non-empty-string $name */
+		$name = $this->prepare_name( $src );
+		/** @var array<non-empty-string> $dependencies */
 		$dependencies = $this->prepare_dependencies( $dependencies );
+		/** @var non-empty-string|false $src */
+		$src = $src !== '' ? $src : false;
 		wp_register_script(
 			$name,
 			$src,
@@ -283,6 +287,7 @@ class AssetManager implements Service {
 	 */
 	public function enqueue_assets( AssetsContainer $assets_container ): void {
 		foreach ( $assets_container->getAll() as $asset ) {
+			/** @var non-empty-string $name */
 			$name = $this->prepare_name( $asset->source );
 			if ( $asset->type === 'script' ) {
 				wp_enqueue_script( $name );

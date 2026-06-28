@@ -108,7 +108,8 @@ class GenericContainer
 	/**
 	 * Instantiate a single service.
 	 *
-	 * @param class-string $service_class Service class to instantiate.
+	 * @param class-string  $service_class Service class to instantiate.
+	 * @param array<mixed>  $dependencies  Optional dependencies.
 	 *
 	 * @throws Invalid If the service could not be properly instantiated.
 	 *
