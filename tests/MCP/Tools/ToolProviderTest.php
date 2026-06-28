@@ -17,7 +17,7 @@ class ToolProviderTest extends TestCase
 
     public function testRegisterAndGet(): void
     {
-        $tool = $this->createMock(ToolInterface::class);
+        $tool = $this->createStub(ToolInterface::class);
         $tool->method('getName')->willReturn('test_tool');
 
         $this->provider->register($tool);
@@ -31,10 +31,10 @@ class ToolProviderTest extends TestCase
 
     public function testAllReturnsAllRegistered(): void
     {
-        $tool1 = $this->createMock(ToolInterface::class);
+        $tool1 = $this->createStub(ToolInterface::class);
         $tool1->method('getName')->willReturn('tool_a');
 
-        $tool2 = $this->createMock(ToolInterface::class);
+        $tool2 = $this->createStub(ToolInterface::class);
         $tool2->method('getName')->willReturn('tool_b');
 
         $this->provider->register($tool1);
@@ -48,7 +48,7 @@ class ToolProviderTest extends TestCase
 
     public function testGetDefinitions(): void
     {
-        $tool = $this->createMock(ToolInterface::class);
+        $tool = $this->createStub(ToolInterface::class);
         $tool->method('getName')->willReturn('my_tool');
         $tool->method('getDescription')->willReturn('Does something');
         $tool->method('getParameters')->willReturn(['param' => ['type' => 'string']]);
@@ -64,10 +64,10 @@ class ToolProviderTest extends TestCase
 
     public function testRegisterOverwritesExisting(): void
     {
-        $tool1 = $this->createMock(ToolInterface::class);
+        $tool1 = $this->createStub(ToolInterface::class);
         $tool1->method('getName')->willReturn('dup');
 
-        $tool2 = $this->createMock(ToolInterface::class);
+        $tool2 = $this->createStub(ToolInterface::class);
         $tool2->method('getName')->willReturn('dup');
 
         $this->provider->register($tool1);
