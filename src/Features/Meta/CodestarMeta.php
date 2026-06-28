@@ -7,23 +7,26 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 };
 
 
+/**
+ * @phpstan-type MetaConfig array<string|int, mixed>
+ */
 final class CodestarMeta implements Processable {
 
 	/**
 	 * @var string $name The name of the custom post type (CPT)
 	 */
-	private $name;
+	private string $name;
 
 	/**
-	 * @var array $meta The meta fields
+	 * @var array<string, MetaConfig> $meta The meta fields
 	 */
-	private $meta;
+	private array $meta;
 
 	/**
 	 * Instantiate the Codestar Framework Fields object.
 	 *
 	 * @param string  $name The name of the custom post type (CPT)
-	 * @param array   $meta Meta fields.
+	 * @param array<string, MetaConfig> $meta Meta fields.
 	 */
 	public function __construct( string $name, array $meta ) {
 		$this->name = $name;
@@ -33,7 +36,7 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Process the functionality
 	 */
-	public function process() {
+	public function process(): void {
 
 		/**
 		 * Create Metaboxes
@@ -52,11 +55,11 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Create metabox
 	 *
-	 * @param mixed $box_id       Identifier of the metabox
-	 * @param array $box_settings Paramaters for the box
+	 * @param string     $box_id       Identifier of the metabox
+	 * @param MetaConfig $box_settings Paramaters for the box
 	 *
 	 */
-	private function create_metabox( $box_id, $box_settings ) {
+	private function create_metabox( string $box_id, array $box_settings ): void {
 
 		$default_args = array(
 			'post_type' => $this->name,
@@ -98,11 +101,11 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Register REST API
 	 *
-	 * @param mixed $box_id       Identifier of the metabox
-	 * @param array $box_settings Paramaters for the box
+	 * @param string     $box_id       Identifier of the metabox
+	 * @param MetaConfig $box_settings Paramaters for the box
 	 *
 	 */
-	private function register_rest_api( $box_id, $box_settings ) {
+	private function register_rest_api( string $box_id, array $box_settings ): void {
 
 		if ( empty( $box_settings['register_rest_api'] ) || $box_settings['register_rest_api'] !== true ) {
 			return;
@@ -111,15 +114,18 @@ final class CodestarMeta implements Processable {
 		$post_type = $this->name;
 		$data_type = $box_settings['data_type'] ?? 'unserialize'; // default
 
-		$process_fields = function ( array $fields, bool $serialized ) use ( $box_id, $post_type ) {
-			if ( $serialized ) {
-				$this->create_meta_fields_serialized( $fields, $box_id, $post_type );
-			} else {
-				foreach ( $fields as $meta_name => $meta_fields ) {
-					$this->create_meta_fields_not_serialized( $meta_name, $meta_fields, $post_type );
+			/**
+			 * @param array<string|int, MetaConfig> $fields
+			 */
+			$process_fields = function ( array $fields, bool $serialized ) use ( $box_id, $post_type ): void {
+				if ( $serialized ) {
+					$this->create_meta_fields_serialized( $fields, $box_id, $post_type );
+				} else {
+					foreach ( $fields as $meta_name => $meta_fields ) {
+						$this->create_meta_fields_not_serialized( $meta_name, $meta_fields, $post_type );
+					}
 				}
-			}
-		};
+			};
 
 		$serialized = $data_type === 'serialize';
 		if ( ! empty( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
@@ -137,11 +143,11 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Setup REST API fields
 	 *
-	 * @param array $fields Fields to be registered
+	 * @param array<string|int, MetaConfig> $fields Fields to be registered
 	 *
-	 * @return array $rest_fields Fields to be registered in REST API
+	 * @return array<string|int, MetaConfig> $rest_fields Fields to be registered in REST API
 	 */
-	private function setup_restapi_fields( $fields ) {
+	private function setup_restapi_fields( array $fields ): array {
 		$rest_fields = [];
 		$rest_types  = $this->match_fields();
 		foreach ( $fields as $name => $attributes ) {
@@ -164,13 +170,13 @@ final class CodestarMeta implements Processable {
 	 * Create meta fields that are not serialized
 	 * Hooks into REST API
 	 *
-	 * @param string $meta_name   Name of the meta field
-	 * @param array  $field_args  All the field arguments
-	 * @param string $post_type   Post type to register the meta field for
+	 * @param string     $meta_name  Name of the meta field
+	 * @param MetaConfig $field_args All the field arguments
+	 * @param string     $post_type  Post type to register the meta field for
 	 */
-	private function create_meta_fields_not_serialized( $meta_name, $field_args, $post_type ) {
+	private function create_meta_fields_not_serialized( string $meta_name, array $field_args, string $post_type ): void {
 
-		$meta_type = is_array( $field_args ) ? ( $field_args['type'] ?? 'object' ) : $field_args;
+		$meta_type = $field_args['type'] ?? 'object';
 
 		$rest_types = $this->match_fields();
 		$rest_type  = $this->get_field_type( $meta_type, $rest_types );
@@ -213,11 +219,11 @@ final class CodestarMeta implements Processable {
 	 * Create meta fields that are serialized
 	 * Hooks into REST API
 	 *
-	 * @param array  $meta_fields Meta fields to be registered
-	 * @param string $meta_name   Name of the meta field
-	 * @param string $post_type   Post type to register the meta field for
+	 * @param array<string|int, MetaConfig> $meta_fields Meta fields to be registered
+	 * @param string                       $meta_name   Name of the meta field
+	 * @param string                       $post_type   Post type to register the meta field for
 	 */
-	private function create_meta_fields_serialized( $meta_fields, $meta_name, $post_type ) {
+	private function create_meta_fields_serialized( array $meta_fields, string $meta_name, string $post_type ): void {
 
 		$meta_type = 'object';
 
@@ -249,9 +255,9 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Match fields to their types
 	 *
-	 * @return array Array of field types
+	 * @return array<string, string> Array of field types
 	 */
-	private function match_fields() {
+	private function match_fields(): array {
 
 		$field_type_map = [
 			'accordion'    => 'string',
@@ -314,12 +320,12 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Get field type
 	 *
-	 * @param string     $field  Field name
-	 * @param array|null $fields Optional. Fields to match against
+	 * @param string                    $field  Field name
+	 * @param array<string, string>|null $fields Optional. Fields to match against
 	 *
 	 * @return string|null Field type or null if not found
 	 */
-	private function get_field_type( $field, ?array $fields = null ) {
+	private function get_field_type( string $field, ?array $fields = null ): ?string {
 		if ( $fields === null ) {
 			$fields = $this->match_fields();
 		}
@@ -333,11 +339,11 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Create section using builtin Codestart method
 	 *
-	 * @param string $id      Identifier of the section
-	 * @param array  $section Parameters for the section
+	 * @param string     $id      Identifier of the section
+	 * @param MetaConfig $section Parameters for the section
 	 * @return void
 	 */
-	private function create_section( $id, $section ) {
+	private function create_section( string $id, array $section ): void {
 
 		if ( ! class_exists( '\CSF' ) ) {
 			return;
@@ -348,11 +354,11 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Prepare fields to make sure they have all necessary parameters
 	 *
-	 * @param array  $fields  Fields to be prepared
+	 * @param array<string|int, MetaConfig> $fields Fields to be prepared
 	 *
-	 * @return array Array of fields prepared to be rendered by CodestarFields
+	 * @return array<int, MetaConfig> Array of fields prepared to be rendered by CodestarFields
 	 */
-	private function prepare_fields( $fields ) {
+	private function prepare_fields( array $fields ): array {
 
 		foreach ( $fields as $key => &$field ) {
 
@@ -374,10 +380,10 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Function to sanitize meta on save
 	 *
-	 * @param $request with meta info
-	 * @param $post_id
-	 * @param $csf class
-	 * @return array
+	 * @param mixed $request Request with meta info.
+	 * @param mixed $post_id Post ID.
+	 * @param mixed $csf     CSF object.
+	 * @return mixed
 	 */
 	public function sanitize_meta_save( $request, $post_id, $csf ) {
 

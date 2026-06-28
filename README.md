@@ -3,9 +3,11 @@ Saltus Framework helps you develop WordPress plugins that are based on Custom Po
 
 We built it to make things easier and faster for developers with different skills. Add metaboxes, settings pages and other enhancements with just a few lines of code.
 
+Visit saltus.dev for more information.
+
 ## Version
 
-### Current version [1.3.4] - 2026-04-07
+### Current version [1.3.5] - 2026-06-20
 
 See [change log file](CHANGELOG.md) for full details.
 
@@ -28,6 +30,14 @@ See [change log file](CHANGELOG.md) for full details.
 
 Saltus Framework requires PHP 7.4+
 
+### Installation
+
+Install the framework in your plugin with Composer:
+
+```bash
+composer require saltus/framework
+```
+
 ## Getting Started
 
 ### Demo
@@ -35,9 +45,14 @@ Saltus Framework requires PHP 7.4+
 Refer to the [Framework Demo](https://github.com/SaltusDev/framework-demo) for a complete plugin example and to the [Wiki](https://github.com/SaltusDev/saltus-framework/wiki) for complete documentation.
 
 
-Once the framework is included in your plugin, you can initialize it the following way:
+Once the framework is installed and Composer's autoloader is loaded by your plugin, you can initialize it the following way:
 
 ```php
+    $autoload = __DIR__ . '/vendor/autoload.php';
+    if ( is_readable( $autoload ) ) {
+      require_once $autoload;
+    }
+
     if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 
       /*
@@ -212,6 +227,16 @@ php bin/mcp-server --help          # Full usage guide
 ```
 
 ## Building
+
+### Quality checks
+
+Run the static analysis and coding-standard checks from the repository root:
+
+```bash
+composer phpstan
+composer phpcs
+composer validate --strict
+```
 
 ### Disadvantages of classmap
 As we move from 'files' to 'classmap', heed this:

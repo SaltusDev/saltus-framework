@@ -22,15 +22,18 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * The name of the custom post type (CPT)
 	 */
-	private $name;
+	private string $name;
 
 	/**
 	 * List of columns
 	 */
-	private $args;
+	/** @var array<string, mixed> */
+	private array $args;
 
+	/** @var array<string, string>|null */
 	private ?array $default_columns = null;
 
+	/** @var array<string, string>|null */
 	private ?array $managed_columns = null;
 
 	private const DEFAULT_KEEP_COLUMNS = [ 'cb', 'title' ];
@@ -39,7 +42,7 @@ final class SaltusAdminCols implements Processable {
 	 * Instantiate this Service object.
 	 *
 	 * @param string $name The name of the custom post type (CPT)
-	 * @param array  $args List of columns
+	 * @param array<string, mixed> $args List of columns
 	 */
 	public function __construct( string $name, array $args ) {
 		$this->name = $name;
@@ -53,7 +56,7 @@ final class SaltusAdminCols implements Processable {
 	 *
 	 * @return void
 	 */
-	public function process() {
+	public function process(): void {
 
 		add_filter( 'manage_posts_columns',                       [ $this, 'log_default_cols' ], 0 );
 		add_filter( 'manage_pages_columns',                       [ $this, 'log_default_cols' ], 0 );
@@ -69,15 +72,15 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		add_action( 'load-edit.php',                              [ $this, 'default_sort' ] );
-		add_filter( 'pre_get_posts',                              [ $this, 'maybe_sort_by_fields' ] );
+		add_action( 'pre_get_posts',                              [ $this, 'maybe_sort_by_fields' ] );
 		add_filter( 'posts_clauses',                              [ $this, 'maybe_sort_by_taxonomy' ], 10, 2 );
 	}
 
 	/**
 	 * Logs the default columns so we don't remove any custom columns added by other plugins.
 	 *
-	 * @param array $cols The default columns for this post type screen
-	 * @return array The default columns for this post type screen
+	 * @param array<string, string> $cols The default columns for this post type screen
+	 * @return array<string, string> The default columns for this post type screen
 	 */
 	public function log_default_cols( array $cols ): array {
 		$this->default_columns = $cols;
@@ -138,6 +141,9 @@ final class SaltusAdminCols implements Processable {
 		$admin_cols = array_filter( $this->args );
 
 		foreach ( $admin_cols as $id => $col ) {
+			if ( ! is_array( $col ) ) {
+				continue;
+			}
 
 			if ( isset( $col['cap'] ) && ! \current_user_can( $col['cap'] ) ) {
 				continue;
@@ -146,7 +152,7 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		# Re-add any custom columns:
-		$custom   = \array_diff_key( $cols, $this->default_columns );
+		$custom   = \array_diff_key( $cols, $this->default_columns ?? [] );
 		$new_cols = \array_merge( $new_cols, $custom );
 
 		$this->managed_columns = $new_cols;
@@ -252,6 +258,9 @@ final class SaltusAdminCols implements Processable {
 			if ( $args['date_format'] === true ) {
 				$args['date_format'] = get_option( 'date_format' );
 			}
+			if ( ! is_string( $args['date_format'] ) ) {
+				$args['date_format'] = 'Y-m-d';
+			}
 			$echo = $this->col_date_format( $vals, $args['date_format'] );
 		} else {
 			foreach ( $vals as $val ) {
@@ -274,10 +283,18 @@ final class SaltusAdminCols implements Processable {
 	 * @param string       $date_format The date format to use.
 	 * @return array<string> The formatted date values.
 	 */
-	private function col_date_format( $vals, $date_format ) {
+	/**
+	 * @param array<int, mixed> $vals
+	 * @return array<int, string>
+	 */
+	private function col_date_format( array $vals, string $date_format ): array {
 
 		$echo = [];
 		foreach ( $vals as $val ) {
+			if ( ! is_scalar( $val ) ) {
+				continue;
+			}
+			$val = (string) $val;
 			try {
 				$val_time = ( new \DateTime( '@' . $val ) )->format( 'U' );
 			} catch ( \Exception $e ) {
@@ -289,9 +306,9 @@ final class SaltusAdminCols implements Processable {
 			}
 
 			if ( is_numeric( $val ) ) {
-				$echo[] = date_i18n( $date_format, (int) $val );
+				$echo[] = (string) date_i18n( $date_format, (int) $val );
 			} elseif ( ! empty( $val ) ) {
-				$echo[] = mysql2date( $date_format, $val );
+				$echo[] = (string) mysql2date( $date_format, $val );
 			}
 		}
 		return $echo;
@@ -344,15 +361,20 @@ final class SaltusAdminCols implements Processable {
 	 * @param \WP_Term            $term     The term object.
 	 * @param \WP_Post             $post     The post object.
 	 */
-	private function col_taxonomy_link( $link, $tax, $taxonomy, $term, $post ) {
+	private function col_taxonomy_link( string $link, \WP_Taxonomy $tax, string $taxonomy, \WP_Term $term, \WP_Post $post ): string {
 		$out = '';
 		switch ( $link ) {
 
 			case 'view':
 				if ( $tax->public ) {
+					$term_link = get_term_link( $term );
+					if ( is_wp_error( $term_link ) ) {
+						$out = esc_html( $term->name );
+						break;
+					}
 					$out = sprintf(
 						'<a href="%1$s">%2$s</a>',
-						esc_url( get_term_link( $term ) ),
+						esc_url( $term_link ),
 						esc_html( $term->name )
 					);
 				} else {
@@ -362,11 +384,17 @@ final class SaltusAdminCols implements Processable {
 
 			case 'edit':
 				if ( current_user_can( $tax->cap->edit_terms ) ) {
-					$out = sprintf(
-						'<a href="%1$s">%2$s</a>',
-						esc_url( get_edit_term_link( $term->term_id, $taxonomy, $post->post_type ) ),
-						esc_html( $term->name )
-					);
+					$term_link = get_edit_term_link( $term->term_id, $taxonomy, $post->post_type );
+
+					if ( is_string( $term_link ) ) {
+						$out = sprintf(
+							'<a href="%s">%s</a>',
+							esc_url( $term_link ),
+							esc_html( $term->name )
+						);
+					} else {
+						$out = esc_html( $term->name );
+					}
 				} else {
 					$out = esc_html( $term->name );
 				}
@@ -402,19 +430,27 @@ final class SaltusAdminCols implements Processable {
 
 		if ( in_array( $field, $date_fields, true ) ) {
 			$value = get_post_field( $field, $post );
-			if ( $value === '0000-00-00 00:00:00' ) {
+			if ( ! is_string( $value ) || $value === '0000-00-00 00:00:00' ) {
 				return;
 			}
 			$format = $args['date_format'] ?? get_option( 'date_format' );
-			echo esc_html( mysql2date( $format, $value ) );
+			if ( ! is_string( $format ) ) {
+				$format = 'Y-m-d';
+			}
+			$formatted = mysql2date( $format, $value );
+			echo esc_html( is_string( $formatted ) ? $formatted : '' );
 			return;
 		}
 
 		// Map other fields to handlers
 		$handlers = [
 			'post_status'  => function () use ( $post ) {
-				$status = get_post_status_object( get_post_status( $post ) );
-				return esc_html( $status->label ?? '' );
+				$post_status = get_post_status( $post );
+				if ( ! is_string( $post_status ) ) {
+					return '';
+				}
+				$status = get_post_status_object( $post_status );
+				return esc_html( is_object( $status ) ? $status->label : '' );
 			},
 			'post_author'  => fn() => esc_html( get_the_author() ),
 			'post_title'   => fn() => esc_html( get_the_title() ),
@@ -428,7 +464,8 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		// Default
-		echo esc_html( get_post_field( $field, $post ) );
+		$value = get_post_field( $field, $post );
+		echo esc_html( is_scalar( $value ) ? (string) $value : '' );
 	}
 
 
@@ -474,7 +511,7 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * Sets the default sort field and sort order on our post type admin screen.
 	 */
-	public function default_sort() {
+	public function default_sort(): void {
 		if ( $this->get_current_post_type() !== $this->name ) {
 			return;
 		}
@@ -512,7 +549,7 @@ final class SaltusAdminCols implements Processable {
 	 *
 	 * @param \WP_Query $wp_query The current `WP_Query` object.
 	 */
-	public function maybe_sort_by_fields( \WP_Query $wp_query ) {
+	public function maybe_sort_by_fields( \WP_Query $wp_query ): void {
 		if ( empty( $wp_query->query['post_type'] ) || ! in_array( $this->name, (array) $wp_query->query['post_type'], true ) ) {
 			return;
 		}
@@ -559,25 +596,8 @@ final class SaltusAdminCols implements Processable {
 	 * @return array<string,mixed> The list of private and public query vars to apply to the query.
 	 */
 	public static function get_sort_field_vars( array $vars, array $sortables ): array {
-		if ( ! isset( $vars['orderby'] ) ) {
-			return [];
-		}
-
-		if ( ! is_string( $vars['orderby'] ) ) {
-			return [];
-		}
-
-		if ( ! isset( $sortables[ $vars['orderby'] ] ) ) {
-			return [];
-		}
-
-		$admin_col = $sortables[ $vars['orderby'] ];
-
-		if ( ! is_array( $admin_col ) ) {
-			return [];
-		}
-
-		if ( isset( $admin_col['sortable'] ) && ! $admin_col['sortable'] ) {
+		$admin_col = self::get_requested_sortable_column( $vars, $sortables );
+		if ( $admin_col === null ) {
 			return [];
 		}
 
@@ -590,6 +610,9 @@ final class SaltusAdminCols implements Processable {
 				$return['orderby'] = $admin_col['orderby'];
 			}
 		} elseif ( isset( $admin_col['post_field'] ) ) {
+			if ( ! is_string( $admin_col['post_field'] ) ) {
+				return [];
+			}
 			$field             = str_replace( 'post_', '', $admin_col['post_field'] );
 			$return['orderby'] = $field;
 		}
@@ -599,6 +622,31 @@ final class SaltusAdminCols implements Processable {
 		}
 
 		return $return;
+	}
+
+	/**
+	 * Resolve the requested sortable admin column config.
+	 *
+	 * @param array<string,mixed> $vars      The public query vars.
+	 * @param array<string,mixed> $sortables Sortable column configs.
+	 * @return array<string,mixed>|null The requested column config.
+	 */
+	private static function get_requested_sortable_column( array $vars, array $sortables ): ?array {
+		if ( ! isset( $vars['orderby'] ) || ! is_string( $vars['orderby'] ) ) {
+			return null;
+		}
+
+		if ( ! isset( $sortables[ $vars['orderby'] ] ) || ! is_array( $sortables[ $vars['orderby'] ] ) ) {
+			return null;
+		}
+
+		$admin_col = $sortables[ $vars['orderby'] ];
+
+		if ( isset( $admin_col['sortable'] ) && ! $admin_col['sortable'] ) {
+			return null;
+		}
+
+		return $admin_col;
 	}
 
 	/**
@@ -658,8 +706,10 @@ final class SaltusAdminCols implements Processable {
 					'type'  => 'native',
 					'value' => $col,
 				];
-			} else {
+			} elseif ( \is_array( $col ) ) {
 				$this->args[ $id ] = \array_merge( [ 'type' => 'custom' ], $col );
+			} else {
+				$this->args[ $id ] = [ 'type' => 'custom' ];
 			}
 		}
 	}
@@ -682,10 +732,10 @@ final class SaltusAdminCols implements Processable {
 
 		if ( $col['type'] === 'native' ) {
 			$value = $col['value'];
-			if ( isset( $cols[ $value ] ) ) {
+			if ( is_string( $value ) && isset( $cols[ $value ] ) ) {
 				$new_cols[ $value ] = $cols[ $value ];
 			} elseif ( isset( $cols[ $id ] ) ) {
-				$new_cols[ $id ] = \esc_html( $value );
+				$new_cols[ $id ] = \esc_html( is_scalar( $value ) ? (string) $value : '' );
 			}
 			return $new_cols;
 		}

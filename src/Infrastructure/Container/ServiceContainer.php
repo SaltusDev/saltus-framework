@@ -25,7 +25,9 @@ use Saltus\WP\Framework\Infrastructure\Services\Assets\HasAssets;
  * Extend ArrayObject to have default implementations for iterators and
  * array access.
  *
- * Can trigger service registration proccess with CanRegister
+ * Can trigger service registration proccess with CanRegister.
+ *
+ * @extends ArrayObject<string, mixed>
  */
 class ServiceContainer
 	extends ArrayObject
@@ -34,7 +36,7 @@ class ServiceContainer
 	/**
 	 * Instanciates Services
 	 */
-	protected $instantiator;
+	protected Instantiator $instantiator;
 
 	/**
 	 * Service Container
@@ -81,7 +83,7 @@ class ServiceContainer
 	 *                         container.
 	 * @param Service $service Service to put into the container.
 	 */
-	public function put( string $id, $service ) {
+	public function put( string $id, $service ): void {
 		$this->offsetSet( $id, $service );
 	}
 
@@ -90,15 +92,20 @@ class ServiceContainer
 	 *
 	 * Runs Registerable, Actionable
 	 *
-	 * @param string $id
-	 * @param string $service_class
+	 * @param string            $id
+	 * @param string            $service_class
+	 * @param array<int, mixed> $dependencies
 	 */
-	public function register( string $id, string $service_class, array $dependencies ) {
+	public function register( string $id, string $service_class, array $dependencies ): void {
 
 		// Only instantiate services that are actually needed.
 		if ( is_a( $service_class, Conditional::class, true ) &&
 			! $service_class::is_needed() ) {
 			return;
+		}
+
+		if ( ! class_exists( $service_class ) ) {
+			throw FailedToMakeInstance::for_unreflectable_class( $service_class ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 
 		$service = $this->instantiate( $service_class, $dependencies );
@@ -137,13 +144,14 @@ class ServiceContainer
 	/**
 	 * Instantiate a single service.
 	 *
-	 * @param string $service_class Service class to instantiate.
+	 * @param class-string      $service_class Service class to instantiate.
+	 * @param array<int, mixed> $dependencies  Constructor dependencies.
 	 *
 	 * @throws Invalid If the service could not be properly instantiated.
 	 *
 	 * @return Service Instantiated service.
 	 */
-	private function instantiate( $service_class, array $dependencies ): Service {
+	private function instantiate( string $service_class, array $dependencies ): Service {
 
 		// The service needs to be registered, so instantiate right away.
 		$service = $this->make( $service_class, $dependencies );
@@ -158,14 +166,14 @@ class ServiceContainer
 	/**
 	 * Make an object instance out of an interface or class.
 	 *
-	 * @param string $interface_or_class Interface or class to make an object
-	 *                                   instance out of.
-	 * @param array  $dependencies       Optional. Additional arguments to pass
-	 *                                   to the constructor. Defaults to an
-	 *                                   empty array.
+	 * @param class-string      $interface_or_class Interface or class to make an object
+	 *                                              instance out of.
+	 * @param array<int, mixed> $dependencies        Optional. Additional arguments to pass
+	 *                                              to the constructor. Defaults to an
+	 *                                              empty array.
 	 * @return object Instantiated object.
 	 */
-	private function make( string $interface_or_class, array $dependencies = [] ) {
+	private function make( string $interface_or_class, array $dependencies = [] ): object {
 
 		$reflection = $this->get_class_reflection( $interface_or_class );
 		$this->ensure_is_instantiable( $reflection );
@@ -178,27 +186,22 @@ class ServiceContainer
 	/**
 	 * Get the reflection for a class or throw an exception.
 	 *
-	 * @param string $service_class Class to get the reflection for.
-	 * @return ReflectionClass Class reflection.
-	 * @throws FailedToMakeInstance If the class could not be reflected.
+	 * @param class-string $service_class Class to get the reflection for.
+	 * @return ReflectionClass<object> Class reflection.
 	 */
 	private function get_class_reflection( string $service_class ): ReflectionClass {
-		try {
-			return new ReflectionClass( $service_class );
-		} catch ( SaltusFrameworkThrowable $exception ) {
-			throw FailedToMakeInstance::for_unreflectable_class( esc_html( $service_class ) );
-		}
+		return new ReflectionClass( $service_class );
 	}
 
 
 	/**
 	 * Ensure that a given reflected class is instantiable.
 	 *
-	 * @param ReflectionClass $reflection Reflected class to check.
+	 * @param ReflectionClass<object> $reflection Reflected class to check.
 	 * @return void
 	 * @throws FailedToMakeInstance If the interface could not be resolved.
 	 */
-	private function ensure_is_instantiable( ReflectionClass $reflection ) {
+	private function ensure_is_instantiable( ReflectionClass $reflection ): void {
 		if ( ! $reflection->isInstantiable() ) {
 			throw FailedToMakeInstance::for_unresolved_interface( esc_html( $reflection->getName() ) );
 		}
@@ -215,11 +218,11 @@ class ServiceContainer
 			/**
 			 * Make an object instance out of an interface or class.
 			 *
-			 * @param string $service_class        Class to make an object instance out of.
-			 * @param array  $dependencies Optional. Dependencies of the class.
-			 * @return object Instantiated object.
-			 */
-			public function instantiate( string $service_class, array $dependencies = [] ) {
+				 * @param class-string      $service_class Class to make an object instance out of.
+				 * @param array<int, mixed> $dependencies  Optional. Dependencies of the class.
+				 * @return object Instantiated object.
+				 */
+			public function instantiate( string $service_class, array $dependencies = [] ): object {
 				return new $service_class( $dependencies );
 			}
 		};

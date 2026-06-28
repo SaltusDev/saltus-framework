@@ -2,6 +2,12 @@
 
 
 ## [Unreleased]
+	- Fix: Bring the source tree back to a clean PHPStan level 7 run.
+	- Improvement: Tighten service, model, asset, admin column, admin filter, and meta feature typing.
+	- Docs: Document local static-analysis and coding-standard checks.
+
+## [1.3.5] - 2026-06-20
+	- Chore: Package it for packagist
 
 ## [1.3.4] - 2026-04-07
 	- New: Add h3 to meta sections

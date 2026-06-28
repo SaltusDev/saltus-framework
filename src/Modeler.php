@@ -6,21 +6,25 @@
  */
 namespace Saltus\WP\Framework;
 
+use Noodlehaus\AbstractConfig;
 use Noodlehaus\Config;
 use Saltus\WP\Framework\Models\Config\NoFile;
+use Saltus\WP\Framework\Models\Model;
+use Saltus\WP\Framework\Models\ModelFactory;
 
 class Modeler {
 
-	protected $model_factory;
+	protected ModelFactory $model_factory;
 
-	protected $model_list;
+	/** @var array<string, Model> */
+	protected array $model_list = [];
 
-	public function __construct( $model_factory ) {
+	public function __construct( ModelFactory $model_factory ) {
 		$this->model_factory = $model_factory;
 		// should contain a list of loaded models
 	}
 
-	public function init( $project_path ) {
+	public function init( string $project_path ): void {
 		$path = $this->get_path( $project_path );
 		if ( ! $path ) {
 			return;
@@ -31,7 +35,7 @@ class Modeler {
 	/**
 	 * Get custom path
 	 */
-	protected function get_path( $project_path ) {
+	protected function get_path( string $project_path ): ?string {
 
 		$path = $project_path . '/src/models/';
 		if ( has_filter( 'saltus_models_path' ) ) {
@@ -45,13 +49,13 @@ class Modeler {
 		if ( file_exists( $path ) ) {
 			return $path;
 		}
-		return false;
+		return null;
 	}
 
 	/**
 	 * Load Models
 	 */
-	protected function load( $path ) {
+	protected function load( string $path ): void {
 		if ( file_exists( $path ) ) {
 			$path_dir      = new \RecursiveDirectoryIterator( $path );
 			$path_dir_iter = new \RecursiveIteratorIterator( $path_dir );
@@ -110,7 +114,7 @@ class Modeler {
 	/**
 	 * Is multidimensional config
 	 */
-	protected function is_multiple( $config ) {
+	protected function is_multiple( AbstractConfig $config ): bool {
 		return ( is_array( current( $config->all() ) ) );
 	}
 
@@ -119,7 +123,7 @@ class Modeler {
 	 *
 	 * Creates a new config from the part
 	 */
-	protected function iterate_multiple( $config ) {
+	protected function iterate_multiple( AbstractConfig $config ): void {
 		foreach ( $config as $single_config ) {
 			$this->create( new NoFile( $single_config ) );
 		}
@@ -130,10 +134,10 @@ class Modeler {
 	 *
 	 * @param $config The set of configurations for the cpt/tax
 	 */
-	protected function create( $config ) {
+	protected function create( AbstractConfig $config ): void {
 		$model = $this->model_factory->create( $config );
-		if ( $model === false ) {
-			return false;
+		if ( $model === null ) {
+			return;
 		}
 		$this->add( $model );
 	}

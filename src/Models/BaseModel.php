@@ -19,41 +19,45 @@ abstract class BaseModel {
 	 *
 	 * Includes Name, Type, etc
 	 *
-	 * @var array
+	 * @var array<string, mixed>
 	 */
-	protected $data;
+	protected array $data;
 
 	/**
 	 * Set of options for registering Post Types
 	 *
-	 * @var array
+	 * @var array<string, mixed>
 	 */
-	protected $options;
+	protected array $options = [];
 
 	/**
 	 * name is required by register_post_type() and register_taxonomy()
 	 */
-	public $name;
+	public string $name = '';
 
 	/**
 	 * Optional paramenters to register the cpt
 	 *
 	 * @see https://developer.wordpress.org/reference/functions/register_post_type/#parameters
 	 */
-	protected $args;
+	/** @var array<string, mixed> */
+	protected array $args = [];
 
 	/**
 	 * data req for computations
 	 */
-	protected $bulk_messages;
-	protected $i18n;
-	protected $featured_image;
-	protected $many;
-	protected $many_low;
-	protected $messages;
-	protected $one;
-	protected $one_low;
-	protected $ui_labels;
+	/** @var array<string, string> */
+	protected array $bulk_messages   = [];
+	protected string $i18n           = 'saltus';
+	protected string $featured_image = '';
+	protected string $many           = '';
+	protected string $many_low       = '';
+	/** @var array<string, string> */
+	protected array $messages = [];
+	protected string $one     = '';
+	protected string $one_low = '';
+	/** @var array<string, string> */
+	protected array $ui_labels = [];
 
 	/**
 	 * Constructor.
@@ -85,7 +89,7 @@ abstract class BaseModel {
 	 *
 	 * @return boolean
 	 */
-	protected function is_disabled() {
+	protected function is_disabled(): bool {
 		if ( empty( $this->data['active'] ) || $this->data['active'] === true ) {
 			return false;
 		}
@@ -99,7 +103,7 @@ abstract class BaseModel {
 	 *
 	 * @param string $name The name of the post type.
 	 */
-	protected function set_name( string $name ) {
+	protected function set_name( string $name ): void {
 		$this->name = $name;
 	}
 
@@ -110,8 +114,9 @@ abstract class BaseModel {
 	 *
 	 * @param AbstractConfig $config The configuration labels for the model.
 	 */
-	protected function set_ui_label_overrides( AbstractConfig $config ) {
-		$this->ui_labels = ( $config['labels.overrides.ui'] ? $config['labels.overrides.ui'] : [] );
+	protected function set_ui_label_overrides( AbstractConfig $config ): void {
+		$ui_labels       = $config['labels.overrides.ui'];
+		$this->ui_labels = is_array( $ui_labels ) ? $ui_labels : [];
 	}
 
 	/**
@@ -121,9 +126,11 @@ abstract class BaseModel {
 	 *
 	 * @param AbstractConfig $config The configuration labels for the model.
 	 */
-	protected function set_messages( AbstractConfig $config ) {
-		$this->messages      = ( $config['labels.overrides.messages'] ? $config['labels.overrides.messages'] : [] );
-		$this->bulk_messages = ( $config['labels.overrides.bulk_messages'] ? $config['labels.overrides.bulk_messages'] : [] );
+	protected function set_messages( AbstractConfig $config ): void {
+		$messages            = $config['labels.overrides.messages'];
+		$bulk_messages       = $config['labels.overrides.bulk_messages'];
+		$this->messages      = is_array( $messages ) ? $messages : [];
+		$this->bulk_messages = is_array( $bulk_messages ) ? $bulk_messages : [];
 	}
 
 	/**
@@ -133,11 +140,11 @@ abstract class BaseModel {
 	 *
 	 * @param AbstractConfig $config The configuration labels for the model.
 	 */
-	protected function set_name_labels( AbstractConfig $config ) {
-		$this->one            = ( $config['labels.has_one'] ? $config['labels.has_one'] : ucfirst( $this->name ) );
-		$this->many           = ( $config['labels.has_many'] ? $config['labels.has_many'] : ucfirst( $this->name . 's' ) );
-		$this->i18n           = ( $config['labels.text_domain'] ? $config['labels.text_domain'] : 'saltus' );
-		$this->featured_image = ( $config['labels.featured_image'] ? $config['labels.featured_image'] : '' );
+	protected function set_name_labels( AbstractConfig $config ): void {
+		$this->one            = is_string( $config['labels.has_one'] ) ? $config['labels.has_one'] : ucfirst( $this->name );
+		$this->many           = is_string( $config['labels.has_many'] ) ? $config['labels.has_many'] : ucfirst( $this->name . 's' );
+		$this->i18n           = is_string( $config['labels.text_domain'] ) ? $config['labels.text_domain'] : 'saltus';
+		$this->featured_image = is_string( $config['labels.featured_image'] ) ? $config['labels.featured_image'] : '';
 
 		# Lower-casing is not forced if the name looks like an initialism, eg. FAQ.
 		if ( ! preg_match( '/[A-Z]{2,}/', $this->one ) ) {
@@ -158,9 +165,9 @@ abstract class BaseModel {
 	 *
 	 * Merge and/or replace defaults with user config
 	 *
-	 * @param array $options User defined options
+	 * @param array<string, mixed> $options User defined options
 	 */
-	protected function set_options( array $options ) {
+	protected function set_options( array $options ): void {
 		if ( empty( $this->data['options'] ) ) {
 			$this->options = $options;
 			return;
@@ -176,9 +183,9 @@ abstract class BaseModel {
 	 *
 	 * If key labels.overrides exists, add to or replace label defaults
 	 *
-	 * @param array $labels User defined labels
+	 * @param array<string, string> $labels User defined labels
 	 */
-	protected function set_labels( array $labels ) {
+	protected function set_labels( array $labels ): void {
 		if ( empty( $this->config['labels.overrides.labels'] ) ) {
 			$labels = $labels;
 		}
@@ -212,8 +219,8 @@ abstract class BaseModel {
 	/**
 	 * Filter post updated messages for this CPT.
 	 *
-	 * @param array $messages Post updated messages.
-	 * @return array
+	 * @param array<string, array<int, string|false>> $messages Post updated messages.
+	 * @return array<string, array<int, string|false>>
 	 */
 	public function post_updated_messages( array $messages ): array {
 		$post = get_post();
@@ -386,9 +393,9 @@ abstract class BaseModel {
 	 * Resolve a message from overrides or use the default.
 	 *
 	 * @param string $key     Message key.
-	 * @param string $default Default message.
-	 * @param array  $search  Placeholder search values.
-	 * @param array  $replace Placeholder replace values.
+	 * @param string $default_msg Default message.
+	 * @param array<int, string> $search  Placeholder search values.
+	 * @param array<int, string> $replace Placeholder replace values.
 	 * @return string
 	 */
 	private function resolve_message( string $key, string $default_msg, array $search, array $replace ): string {
@@ -408,10 +415,10 @@ abstract class BaseModel {
 	 *  - trashed   => "Post moved to the trash." | "[n] posts moved to the trash."
 	 *  - untrashed => "Post restored from the trash." | "[n] posts restored from the trash."
 	 *
-	 * @param array[] $messages An array of bulk post updated message arrays keyed by post type.
-	 * @param int[]   $counts   An array of counts for each key in `$messages`.
+	 * @param array<string, array<string, string>> $messages An array of bulk post updated message arrays keyed by post type.
+	 * @param array<string, int>                   $counts   An array of counts for each key in `$messages`.
 	 *
-	 * @return array            Updated array of bulk post updated messages.
+	 * @return array<string, array<string, string>> Updated array of bulk post updated messages.
 	 */
 	public function bulk_post_updated_messages( array $messages, array $counts ): array {
 		$messages[ $this->name ] = [
@@ -471,5 +478,40 @@ abstract class BaseModel {
 	 */
 	protected static function n( string $single, string $plural, int $number ): string {
 		return ( intval( $number ) === 1 ) ? $single : $plural;
+	}
+
+	/**
+	 * Get the type of the model.
+	 *
+	 * @return string The model type (e.g. 'post_type', 'taxonomy').
+	 */
+	abstract public function get_type(): string;
+
+	/**
+	 * Return the sanitized model name for WordPress registration APIs.
+	 *
+	 * @return lowercase-string&non-empty-string
+	 */
+	public function get_registration_name(): string {
+		/** @var lowercase-string $name */
+		$name = sanitize_key( $this->name );
+		if ( $name === '' ) {
+			throw new \InvalidArgumentException( 'Model name cannot be empty.' );
+		}
+
+		$max_length = $this->get_type() === 'taxonomy' ? 32 : 20;
+
+		if ( strlen( $name ) > $max_length ) {
+			throw new \InvalidArgumentException(
+				sprintf(
+					'Model name "%s" exceeds the maximum %d character limit for %s registration.',
+					$name, // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are developer-facing.
+					$max_length, // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are developer-facing.
+					$this->get_type() // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are developer-facing.
+				)
+			);
+		}
+
+		return $name;
 	}
 }
