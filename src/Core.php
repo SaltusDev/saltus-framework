@@ -196,10 +196,7 @@ class Core implements Plugin {
 			 *                                Service interface.
 			 */
 			$hook_name = static::HOOK_PREFIX . static::SERVICES_FILTER;
-			if ( empty( $hook_name ) ) {
-				throw new \InvalidArgumentException( 'Hook name cannot be empty.' );
-			}
-			$services = \apply_filters(
+			$services  = \apply_filters(
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 				$hook_name,
 				$services
