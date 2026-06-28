@@ -117,7 +117,7 @@ class Core implements Plugin {
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
-		$priority = apply_filters( static::HOOK_PREFIX . 'modeler/priority', 1 );
+		$priority = (int) apply_filters( static::HOOK_PREFIX . 'modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
