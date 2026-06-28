@@ -13,7 +13,7 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Setup the data needed to register
 	 */
-	public function setup() {
+	public function setup(): void {
 		if ( $this->is_disabled() ) {
 			return;
 		}
@@ -35,9 +35,9 @@ class PostType extends BaseModel implements Model {
 	 * Get default Options
 	 *
 	 *
-	 * @return array The list of options settings
+	 * @return array<string, mixed> The list of options settings
 	 */
-	protected function get_default_options() {
+	protected function get_default_options(): array {
 		$options = [
 			'public'        => true,
 			'menu_position' => 5,
@@ -57,7 +57,7 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Set the meta fields
 	 */
-	protected function set_meta() {
+	protected function set_meta(): void {
 
 		$meta = [];
 		if ( $this->config->has( 'meta' ) ) {
@@ -69,7 +69,7 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Checks if has any meta fields
 	 */
-	public function has_meta() {
+	public function has_meta(): bool {
 
 		return count( $this->args['meta'] ) > 0;
 	}
@@ -80,9 +80,9 @@ class PostType extends BaseModel implements Model {
 	 *
 	 * Create an labels array and implement default singular and plural labels
 	 *
-	 * @return array The list of Labels
+	 * @return array<string, string> The list of Labels
 	 */
-	protected function get_default_labels() {
+	protected function get_default_labels(): array {
 
 		$many_lower = strtolower( $this->many );
 		$one_lower  = strtolower( $this->one );
@@ -125,9 +125,9 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Register Post Type
 	 */
-	protected function register() {
+	protected function register(): void {
 		$args = array_merge( $this->args, $this->options );
-		register_post_type( $this->name, $args );
+		register_post_type( $this->get_registration_name(), $args );
 	}
 
 	/**
@@ -135,7 +135,7 @@ class PostType extends BaseModel implements Model {
 	 *
 	 * @return string The type of Model
 	 */
-	public function get_type() {
+	public function get_type(): string {
 		return 'post_type';
 	}
 
@@ -143,7 +143,7 @@ class PostType extends BaseModel implements Model {
 	 * Adds filters to change post update messages
 	 * TODO: accept overrides
 	 */
-	protected function set_updated_messages() {
+	protected function set_updated_messages(): void {
 		add_filter( 'post_updated_messages', [ $this, 'post_updated_messages' ], 1 );
 		add_filter( 'bulk_post_updated_messages', [ $this, 'bulk_post_updated_messages' ], 1, 2 );
 	}
@@ -151,9 +151,9 @@ class PostType extends BaseModel implements Model {
 	/**
 	 * Adds filters to change the ui labels
 	 *
-	 * @param array $ui_labels
+	 * @param array<string, string> $ui_labels
 	 */
-	protected function set_ui_labels( array $ui_labels ) {
+	protected function set_ui_labels( array $ui_labels ): void {
 
 		if ( empty( $ui_labels ) ) {
 			return;
@@ -170,8 +170,8 @@ class PostType extends BaseModel implements Model {
 	 *
 	 * @return boolean status
 	 */
-	public function disable_block_editor( $current_status, $post_type ) {
-		if ( $post_type === $this->name ) {
+	public function disable_block_editor( bool $current_status, string $post_type ): bool {
+		if ( $post_type === $this->get_registration_name() ) {
 			return false;
 		}
 		return $current_status;
@@ -186,7 +186,7 @@ class PostType extends BaseModel implements Model {
 	 * @return string         The updated placeholder text.
 	 */
 	public function enter_title_here( string $title, \WP_Post $post ): string {
-		if ( $this->name !== $post->post_type ) {
+		if ( $this->get_registration_name() !== $post->post_type ) {
 			return $title;
 		}
 

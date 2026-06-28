@@ -12,28 +12,31 @@ use Saltus\WP\Framework\Infrastructure\Service\{
  *   - models can override the default sort order
  *   - reduce cyclomatic complexity of some functions
  */
+/**
+ * @phpstan-type FilterConfig array<string, mixed>
+ */
 final class SaltusAdminFilters implements Processable {
 
 	/**
 	 * @var string $name The name of the custom post type (CPT)
 	 */
-	private $name;
+	private string $name;
 
 	/**
-	 * @var array $args List of filters
+	 * @var array<string, FilterConfig> $args List of filters
 	 */
-	private $args;
+	private array $args;
 
 	/**
-	 * @var array $site_filters List of filters
+	 * @var array<string, FilterConfig> $site_filters List of filters
 	 */
-	public $site_filters = [];
+	public array $site_filters = [];
 
 	/**
 	 * Instantiate this Service object.
 	 *
 	 * @param string $name The name of the custom post type (CPT)
-	 * @param array  $args List of filters
+	 * @param array<string, FilterConfig> $args List of filters
 	 *
 	 */
 	public function __construct( string $name, array $args ) {
@@ -47,9 +50,9 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Process the filters.
 	 */
-	public function process() {
+	public function process(): void {
 		add_action( 'load-edit.php',         [ $this, 'default_filter' ] );
-		add_filter( 'pre_get_posts',         [ $this, 'maybe_filter' ] );
+		add_action( 'pre_get_posts',         [ $this, 'maybe_filter' ] );
 		add_filter( 'query_vars',            [ $this, 'add_query_vars' ] );
 		add_action( 'restrict_manage_posts', [ $this, 'filters' ] );
 	}
@@ -57,7 +60,7 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Sets the default sort field and sort order on our post type admin screen.
 	 */
-	public function default_filter() {
+	public function default_filter(): void {
 		if ( $this->get_current_post_type() !== $this->name ) {
 			return;
 		}
@@ -69,7 +72,7 @@ final class SaltusAdminFilters implements Processable {
 				continue;
 			}
 
-			if ( is_array( $filter ) && isset( $filter['default'] ) ) {
+			if ( isset( $filter['default'] ) ) {
 				$_GET[ $id ] = $filter['default'];
 				return;
 			}
@@ -81,7 +84,7 @@ final class SaltusAdminFilters implements Processable {
 	 *
 	 * @param \WP_Query $wp_query A `WP_Query` object
 	 */
-	public function maybe_filter( \WP_Query $wp_query ) {
+	public function maybe_filter( \WP_Query $wp_query ): void {
 		if ( empty( $wp_query->query['post_type'] ) || ! in_array( $this->name, (array) $wp_query->query['post_type'], true ) ) {
 			return;
 		}
@@ -107,11 +110,11 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Get private query vars derived from public filter query vars.
 	 *
-	 * @param array  $query     Public query vars.
-	 * @param array  $filters   Registered filters.
+	 * @param array<string, mixed>        $query     Public query vars.
+	 * @param array<string, FilterConfig> $filters   Registered filters.
 	 * @param string $post_type Post type.
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public static function get_filter_vars( array $query, array $filters, string $post_type ): array {
 		$return = [];
@@ -137,10 +140,15 @@ final class SaltusAdminFilters implements Processable {
 				continue;
 			}
 
-			$meta_query_key = wp_unslash( $query[ $filter_key ] );
+				$meta_query_key = wp_unslash( $query[ $filter_key ] );
+			if ( is_array( $meta_query_key ) ) {
+				$meta_query_key = array_map( 'strval', $meta_query_key );
+			} elseif ( $meta_query_key !== null ) {
+				$meta_query_key = (string) $meta_query_key;
+			}
 
-			$meta_query = self::build_meta_query( $filter, $meta_query_key );
-			$date_query = self::build_date_query( $filter, $meta_query_key );
+				$meta_query = self::build_meta_query( $filter, $meta_query_key );
+				$date_query = self::build_date_query( $filter, $meta_query_key );
 
 			if ( ! empty( $meta_query ) ) {
 				$return['meta_query'][] = $meta_query;
@@ -157,9 +165,9 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Determine if a filter should be processed.
 	 *
-	 * @param array  $query      Public query vars.
-	 * @param string $filter_key Filter key.
-	 * @param array  $filter     Filter config.
+	 * @param array<string, mixed> $query      Public query vars.
+	 * @param string              $filter_key Filter key.
+	 * @param FilterConfig        $filter     Filter config.
 	 *
 	 * @return bool
 	 */
@@ -179,12 +187,12 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Build a meta_query clause.
 	 *
-	 * @param array  $filter Filter config.
-	 * @param string $value  Public value.
+	 * @param FilterConfig                 $filter Filter config.
+	 * @param string|array<int, string>|null $meta_query_key Public value.
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
-	private static function build_meta_query( array $filter, string $meta_query_key ): array {
+	private static function build_meta_query( array $filter, $meta_query_key ): array {
 
 		if ( isset( $filter['meta_key'] ) ) {
 			// notice that the values and key are reversed for searching
@@ -205,6 +213,9 @@ final class SaltusAdminFilters implements Processable {
 		}
 
 		if ( isset( $filter['meta_key_exists'] ) ) {
+			if ( ! is_string( $meta_query_key ) ) {
+				return [];
+			}
 			return self::create_meta_clause(
 				$meta_query_key,
 				null,
@@ -213,6 +224,9 @@ final class SaltusAdminFilters implements Processable {
 		}
 
 		if ( isset( $filter['meta_exists'] ) ) {
+			if ( ! is_string( $meta_query_key ) ) {
+				return [];
+			}
 			return self::create_meta_clause(
 				$meta_query_key,
 				[ '', '0', 'false', 'null' ],
@@ -226,11 +240,11 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Create a single meta_query clause.
 	 *
-	 * @param string       $key    Meta key.
-	 * @param string|array $value  Meta value.
-	 * @param array        $args   Additional args.
+	 * @param string                       $meta_query_key Meta key.
+	 * @param string|array<int, string>|null $value        Meta value.
+	 * @param FilterConfig                 $args           Additional args.
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	private static function create_meta_clause( string $meta_query_key, $value, array $args ): array {
 
@@ -259,14 +273,18 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Build a date_query clause.
 	 *
-	 * @param array  $filter Filter config.
-	 * @param string $value  Public value.
+	 * @param FilterConfig                   $filter Filter config.
+	 * @param string|array<int, string>|null $meta_query_key Public value.
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
-	private static function build_date_query( array $filter, string $meta_query_key ): array {
+	private static function build_date_query( array $filter, $meta_query_key ): array {
 
 		if ( ! isset( $filter['post_date'] ) ) {
+			return [];
+		}
+
+		if ( ! is_string( $filter['post_date'] ) || ! is_string( $meta_query_key ) ) {
 			return [];
 		}
 
@@ -308,6 +326,9 @@ final class SaltusAdminFilters implements Processable {
 		return '';
 	}
 
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function resolve_filter_type( array $filter ): ?string {
 		if ( isset( $filter['taxonomy'] ) ) {
 			return 'taxonomy';
@@ -349,7 +370,6 @@ final class SaltusAdminFilters implements Processable {
 		}
 
 		foreach ( $this->args as $filter_id => $filter ) {
-
 			if ( isset( $filter['cap'] ) && ! current_user_can( $filter['cap'] ) ) {
 				continue;
 			}
@@ -380,6 +400,9 @@ final class SaltusAdminFilters implements Processable {
 		}
 	}
 
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function dispatch_filter(
 		string $type,
 		array $filter,
@@ -414,6 +437,9 @@ final class SaltusAdminFilters implements Processable {
 		}
 	}
 
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function render_taxonomy_filter(
 		array $filter,
 		string $id
@@ -424,20 +450,30 @@ final class SaltusAdminFilters implements Processable {
 		}
 
 		$taxonomy = $filter['taxonomy'];
+		if ( ! is_string( $taxonomy ) ) {
+			return;
+		}
 
 		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return;
 		}
 
 		$tax = get_taxonomy( $taxonomy );
+		if ( ! $tax ) {
+			return;
+		}
 
 		if ( ! isset( $filter['title'] ) ) {
 			$filter['title'] = $tax->labels->all_items;
 		}
 
-		$filter_key   = $filter['key'] ?? $id;
+		$filter_key = $filter['key'] ?? $id;
+		if ( ! is_string( $filter_key ) ) {
+			$filter_key = $id;
+		}
 		$selected     = wp_unslash( get_query_var( $filter_key ) );
 		$filter_label = $filter['label'] ?? $filter['title'];
+		$query_var    = is_string( $tax->query_var ) ? $tax->query_var : $taxonomy;
 
 		printf(
 			'<label for="%1$s" class="screen-reader-text">%2$s</label>',
@@ -455,7 +491,7 @@ final class SaltusAdminFilters implements Processable {
 				'option_none_value' => '',
 				'orderby'           => 'name',
 				'selected'          => $selected,
-				'selected_cats'     => get_query_var( $tax->query_var ),
+				'selected_cats'     => get_query_var( $query_var ),
 				'show_count'        => false,
 				'show_option_all'   => $filter_label,
 				'taxonomy'          => $taxonomy,
@@ -464,6 +500,9 @@ final class SaltusAdminFilters implements Processable {
 		);
 	}
 
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function render_meta_key_filter(
 		array $filter,
 		string $id,
@@ -490,6 +529,10 @@ final class SaltusAdminFilters implements Processable {
 			$use_key
 		);
 	}
+	/**
+	 * @param FilterConfig $filter
+	 * @return FilterConfig|null
+	 */
 	private function normalize_meta_filter( array $filter, string $id ): ?array {
 		if ( empty( $filter['meta_key'] ) ) {
 			return null;
@@ -501,6 +544,10 @@ final class SaltusAdminFilters implements Processable {
 
 		return $filter;
 	}
+	/**
+	 * @param FilterConfig $filter
+	 * @return array<string|int, mixed>
+	 */
 	private function resolve_meta_filter_options( array $filter, \wpdb $wpdb ): array {
 		$options = isset( $filter['options'] ) ? $filter['options'] : [];
 
@@ -509,24 +556,36 @@ final class SaltusAdminFilters implements Processable {
 		}
 
 		if ( ! empty( $options ) ) {
-			return $options;
+			return is_array( $options ) ? $options : [];
 		}
 
-		return $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT DISTINCT m.meta_value
+		if ( ! is_string( $filter['meta_key'] ) ) {
+			return [];
+		}
+
+		$sql = "SELECT DISTINCT m.meta_value
 				FROM {$wpdb->postmeta} m
 				INNER JOIN {$wpdb->posts} p ON p.ID = m.post_id
 				WHERE m.meta_key = %s
 				AND m.meta_value != ''
 				AND p.post_type = %s
-				ORDER BY m.meta_value ASC",
+				ORDER BY m.meta_value ASC";
+
+		return $wpdb->get_col(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL includes wpdb table names and is prepared here.
+				$sql, // @phpstan-ignore argument.type
 				$filter['meta_key'],
 				$this->name
 			)
 		);
 	}
 
+	/**
+	 * @param FilterConfig            $filter
+	 * @param array<string|int, mixed> $options
+	 * @return array{0: mixed, 1: bool}
+	 */
 	private function resolve_meta_filter_state( array $filter, array $options ): array {
 		$selected = wp_unslash( get_query_var( $filter['key'] ) );
 
@@ -545,6 +604,11 @@ final class SaltusAdminFilters implements Processable {
 		return array( $selected, $use_key );
 	}
 
+	/**
+	 * @param FilterConfig             $filter
+	 * @param array<string|int, mixed> $options
+	 * @param mixed                    $selected
+	 */
 	private function render_meta_filter_select(
 		array $filter,
 		string $id,
@@ -587,6 +651,9 @@ final class SaltusAdminFilters implements Processable {
 		);
 	}
 
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function render_meta_search_key_filter(
 		array $filter,
 		string $id
@@ -613,6 +680,9 @@ final class SaltusAdminFilters implements Processable {
 		);
 	}
 
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function render_meta_exists_filter(
 		array $filter,
 		string $id
@@ -635,6 +705,10 @@ final class SaltusAdminFilters implements Processable {
 		$this->render_meta_exists_select( $filter, $id, $fields, $selected );
 	}
 
+	/**
+	 * @param FilterConfig $filter
+	 * @return FilterConfig|null
+	 */
 	private function normalize_meta_exists_filter(
 		array $filter,
 		string $id
@@ -668,6 +742,11 @@ final class SaltusAdminFilters implements Processable {
 		return $filter;
 	}
 
+	/**
+	 * @param FilterConfig             $filter
+	 * @param array<string|int, mixed> $fields
+	 * @param mixed                    $selected
+	 */
 	private function render_meta_exists_checkbox(
 		array $filter,
 		string $id,
@@ -678,6 +757,8 @@ final class SaltusAdminFilters implements Processable {
 		$html = '';
 
 		foreach ( $fields as $value => $label ) {
+			$value = (string) $value;
+			$label = is_scalar( $label ) ? (string) $label : '';
 
 			$checkbox_id = esc_attr( $id . '-' . $value );
 			$html       .= sprintf(
@@ -699,6 +780,11 @@ final class SaltusAdminFilters implements Processable {
 		echo $html;
 	}
 
+	/**
+	 * @param FilterConfig             $filter
+	 * @param array<string|int, mixed> $fields
+	 * @param mixed                    $selected
+	 */
 	private function render_meta_exists_select(
 		array $filter,
 		string $id,
@@ -726,6 +812,8 @@ final class SaltusAdminFilters implements Processable {
 		}
 
 		foreach ( $fields as $value => $label ) {
+			$value = (string) $value;
+			$label = is_scalar( $label ) ? (string) $label : '';
 
 			$html .= sprintf(
 				'<option value="%1$s" %2$s>%3$s</option>',
@@ -742,6 +830,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function render_post_date_filter(
 		array $filter,
 		string $id
@@ -774,6 +865,9 @@ final class SaltusAdminFilters implements Processable {
 	/**
 	 * Render a post author filter.
 	 */
+	/**
+	 * @param FilterConfig $filter
+	 */
 	private function render_post_author_filter(
 		array $filter,
 		string $id,
@@ -800,13 +894,16 @@ final class SaltusAdminFilters implements Processable {
 
 		if ( ! isset( $filter['options'] ) ) {
 			# Fetch all the values for our field:
+			$sql = "
+				SELECT DISTINCT post_author
+				FROM {$wpdb->posts}
+				WHERE post_type = %s
+			";
+
 			$filter['options'] = $wpdb->get_col(
 				$wpdb->prepare(
-					"
-						SELECT DISTINCT post_author
-						FROM {$wpdb->posts}
-						WHERE post_type = %s
-					",
+					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL includes wpdb table names and is prepared here.
+					$sql, // @phpstan-ignore argument.type
 					$this->name
 				)
 			);

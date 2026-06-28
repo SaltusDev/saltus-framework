@@ -10,7 +10,7 @@ class AssetsContainer extends SimpleContainer implements Service {
 	/**
 	 * Get all elements stored in the container.
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public function getAll(): array {
 		return $this->getArrayCopy();

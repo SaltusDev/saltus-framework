@@ -33,11 +33,11 @@ final class SaltusSingleExport implements Processable {
 	/**
 	 * Constructor.
 	 *
-	 * @param string     $name The name of the custom post type (CPT) to export.
-	 * @param array|null $args Optional. Additional arguments for the export.
+	 * @param string                $name The name of the custom post type (CPT) to export.
+	 * @param array<string, string> $args Optional. Additional arguments for the export.
 	 *                         - 'label': The label for the export link.
 	 */
-	public function __construct( string $name, ?array $args = [] ) {
+	public function __construct( string $name, array $args = [] ) {
 		$this->name  = $name;
 		$this->label = ! empty( $args['label'] ) ? $args['label'] : 'Export This';
 	}
@@ -45,7 +45,7 @@ final class SaltusSingleExport implements Processable {
 	/**
 	 * Process the export functionality by hooking into WordPress actions.
 	 */
-	public function process() {
+	public function process(): void {
 		add_action( 'init', array( $this, 'init' ) );
 	}
 
@@ -56,7 +56,7 @@ final class SaltusSingleExport implements Processable {
 	 * Hooks into WordPress filters and actions to enable single entry export.
 	 *
 	 */
-	public function init() {
+	public function init(): void {
 
 		if ( ! current_user_can( 'export' ) ) {
 			return;
@@ -73,7 +73,7 @@ final class SaltusSingleExport implements Processable {
 	 * @param \WP_Post $post The current post object.
 	 *
 	 */
-	public function post_submitbox_misc_actions( $post ) {
+	public function post_submitbox_misc_actions( \WP_Post $post ): void {
 
 		// if it's not out cpt, do nothing
 		if ( $post->post_type !== $this->name ) {
@@ -114,11 +114,11 @@ final class SaltusSingleExport implements Processable {
 	 *
 	 * Adjusts the export query arguments to handle single entry export.
 	 *
-	 * @param array $args Query arguments for determining what should be exported.
+	 * @param array<string, mixed> $args Query arguments for determining what should be exported.
 	 *
-	 * @return array Modified query arguments.
+	 * @return array<string, mixed> Modified query arguments.
 	 */
-	public function export_args( $args ) {
+	public function export_args( array $args ): array {
 
 		// if no export_single var, it's a normal export - don't interfere
 		if ( ! isset( $_GET['export_single'] ) ) {
@@ -147,7 +147,7 @@ final class SaltusSingleExport implements Processable {
 	 *
 	 * @return string Modified SQL query.
 	 */
-	public function query( $query ) {
+	public function query( string $query ): string {
 		if ( ! isset( $_GET['export_single'] ) ) {
 			return $query;
 		}
@@ -184,4 +184,3 @@ final class SaltusSingleExport implements Processable {
 		return $query;
 	}
 }
-

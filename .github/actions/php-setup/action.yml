@@ -1,0 +1,42 @@
+name: Setup PHP
+description: Setup PHP with tools and restore Composer dependency cache
+
+inputs:
+  php-version:
+    description: PHP version to install
+    required: false
+    default: "8.3"
+  extensions:
+    description: PHP extensions to install
+    required: false
+    default: ""
+  cache-key:
+    description: Cache key for Composer packages
+    required: true
+  cache-restore-keys:
+    description: Newline-separated restore keys for the Composer cache
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Setup PHP ${{ inputs.php-version }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        coverage: none
+        tools: composer:v2
+        extensions: ${{ inputs.extensions }}
+
+    - name: Get Composer cache directory
+      id: composer-cache
+      shell: bash
+      run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Composer packages
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ inputs.cache-key }}
+        restore-keys: ${{ inputs.cache-restore-keys }}

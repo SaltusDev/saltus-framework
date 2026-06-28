@@ -3,12 +3,16 @@
 namespace Saltus\WP\Framework\Models;
 
 use Noodlehaus\AbstractConfig;
+use Saltus\WP\Framework\Infrastructure\Container\Container;
 use Saltus\WP\Framework\Infrastructure\Service\Processable;
 
 class ModelFactory {
 
-	protected $app;
-	protected $project;
+	/** @var Container<string, mixed> */
+	protected Container $app;
+
+	/** @var array<string, mixed> */
+	protected array $project;
 
 	private const POST     = 'post';
 	private const TAXONOMY = 'taxonomy';
@@ -16,10 +20,10 @@ class ModelFactory {
 	/**
 	 * Constructor.
 	 *
-	 * @param object $app     The application instance.
-	 * @param string $project The project data.
+	 * @param Container<string, mixed> $app     The application instance.
+	 * @param array<string, mixed>     $project The project data.
 	 */
-	public function __construct( $app, $project ) {
+	public function __construct( Container $app, array $project ) {
 		$this->app     = $app;
 		$this->project = $project;
 	}
@@ -29,13 +33,13 @@ class ModelFactory {
 	 *
 	 * @param AbstractConfig $config The configuration for the model.
 	 *
-	 * @return Model|bool The created model instance or false if the type is not recognized.
+	 * @return Model|null The created model instance or null if the type is not recognized.
 	 */
-	public function create( AbstractConfig $config ) {
+	public function create( AbstractConfig $config ): ?Model {
 
 		// soft fail
 		if ( ! $config->has( 'type' ) ) {
-			return false;
+			return null;
 		}
 
 		$type = $config->get( 'type' );
@@ -55,7 +59,7 @@ class ModelFactory {
 		$canonical = $type_map[ $type ] ?? null;
 		if ( ! $canonical ) {
 			// invalid type
-			return false;
+			return null;
 		}
 
 		if ( $canonical === self::POST ) {
@@ -71,16 +75,12 @@ class ModelFactory {
 			return $cpt;
 
 		}
-		if ( $canonical === self::TAXONOMY ) {
-			$taxonomy = new Taxonomy( $config );
-			$taxonomy->setup();
-			return $taxonomy;
-		}
-
-		return false;
+		$taxonomy = new Taxonomy( $config );
+		$taxonomy->setup();
+		return $taxonomy;
 	}
 
-	private function process_services( PostType $cpt, AbstractConfig $config ) {
+	private function process_services( PostType $cpt, AbstractConfig $config ): void {
 		$services = [ 'meta', 'settings' ];
 		foreach ( $services as $service_name ) {
 			if ( ! $config->has( $service_name ) || ! $this->app->has( $service_name ) ) {
@@ -89,37 +89,47 @@ class ModelFactory {
 
 			$config_value = $config->get( $service_name );
 			$service      = $this->app->get( $service_name );
-			$service_imp  = $service->make( $cpt->name, $this->project, $config_value );
+			$service_imp  = $service::make( $cpt->get_registration_name(), $this->project, $config_value );
 
 			if ( $service_imp instanceof Processable ) {
 				$service_imp->process();
 			}
 		}
 
+		$this->process_features( $cpt, $config );
+	}
+
+	private function process_features( PostType $cpt, AbstractConfig $config ): void {
 		$service_name = 'features';
-		if ( $config->has( $service_name ) ) {
-			$features = $config->get( $service_name );
+		if ( ! $config->has( $service_name ) ) {
+			return;
+		}
 
-			foreach ( $features as $feature_name => $args ) {
+		$features = $config->get( $service_name );
 
-				if ( ! $args ) {
-					continue;
-				}
-				$normalized_feature_name = strtolower( $feature_name );
+		if ( ! is_iterable( $features ) ) {
+			return;
+		}
 
-				// Feature is not available
-				if ( ! $this->app->has( $normalized_feature_name ) ) {
-					continue;
-				}
+		foreach ( $features as $feature_name => $args ) {
+			if ( ! $args ) {
+				continue;
+			}
 
-				// make sure $args is an array
-				$args        = is_array( $args ) ? $args : [];
-				$service     = $this->app->get( $normalized_feature_name );
-				$service_imp = $service->make( $cpt->name, $this->project, $args );
+			$normalized_feature_name = strtolower( $feature_name );
 
-				if ( $service_imp instanceof Processable ) {
-					$service_imp->process();
-				}
+			// Feature is not available
+			if ( ! $this->app->has( $normalized_feature_name ) ) {
+				continue;
+			}
+
+			// make sure $args is an array
+			$args        = is_array( $args ) ? $args : [];
+			$service     = $this->app->get( $normalized_feature_name );
+			$service_imp = $service::make( $cpt->get_registration_name(), $this->project, $args );
+
+			if ( $service_imp instanceof Processable ) {
+				$service_imp->process();
 			}
 		}
 	}

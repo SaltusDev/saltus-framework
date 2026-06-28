@@ -11,12 +11,13 @@ namespace Saltus\WP\Framework\Models;
 class Taxonomy extends BaseModel implements Model {
 
 	// data req for register_taxonomy()
-	private $associations;
+	/** @var array<int, string>|string */
+	private $associations = [];
 
 	/**
 	 * Setup the data needed to register
 	 */
-	public function setup() {
+	public function setup(): void {
 		if ( $this->is_disabled() ) {
 			return;
 		}
@@ -37,9 +38,9 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 * Make public and change menu position
 	 *
-	 * @return array The list of config settings
+	 * @return array<string, mixed> The list of config settings
 	 */
-	private function get_default_options() {
+	private function get_default_options(): array {
 		$options = [];
 		if ( ! $this->config->has( 'type' ) ) {
 			return $options;
@@ -61,9 +62,9 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 * Create an labels array and implement default singular and plural labels
 	 *
-	 * @return array The list of Labels
+	 * @return array<string, string> The list of Labels
 	 */
-	private function get_default_labels() {
+	private function get_default_labels(): array {
 		$labels = [
 			'menu_name'                  => $this->many,
 			'name'                       => $this->many,
@@ -90,14 +91,20 @@ class Taxonomy extends BaseModel implements Model {
 		return $labels;
 	}
 
-	private function get_default_associations() {
+	/**
+	 * @return array<int, string>
+	 */
+	private function get_default_associations(): array {
 		return [];
 	}
 
 	/**
 	 * Set Object types association to this taxonomy
 	 */
-	private function set_associations( array $associations ) {
+	/**
+	 * @param array<int, string> $associations
+	 */
+	private function set_associations( array $associations ): void {
 		if ( ! $this->config->has( 'associations' ) ) {
 			$this->associations = $associations;
 			return;
@@ -114,7 +121,7 @@ class Taxonomy extends BaseModel implements Model {
 	/**
 	 * Set meta fields
 	 */
-	private function set_meta() {
+	private function set_meta(): void {
 
 		$meta = [];
 		if ( $this->config->has( 'meta' ) ) {
@@ -132,19 +139,15 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 * @return void
 	 */
-	private function register() {
+	private function register(): void {
 		$args = array_merge( $this->args, $this->options );
-		register_taxonomy( $this->name, $this->associations, $args );
+		register_taxonomy( $this->get_registration_name(), $this->associations, $args );
 		add_action( 'init', array( $this, 'register_associations' ) );
 	}
 
-	public function register_associations() {
-		if ( $this->associations === null || ! is_array( $this->associations ) ) {
-			return;
-		}
-
-		foreach ( $this->associations as $association ) {
-			register_taxonomy_for_object_type( $this->name, $association );
+	public function register_associations(): void {
+		foreach ( (array) $this->associations as $association ) {
+			register_taxonomy_for_object_type( $this->get_registration_name(), $association );
 		}
 	}
 
@@ -153,7 +156,7 @@ class Taxonomy extends BaseModel implements Model {
 	 *
 	 * @return string The type of Model
 	 */
-	public function get_type() {
+	public function get_type(): string {
 		return 'taxonomy';
 	}
 }
