@@ -89,7 +89,7 @@ class ModelFactory {
 
 			$config_value = $config->get( $service_name );
 			$service      = $this->app->get( $service_name );
-			$service_imp  = $service::make( $cpt->name, $this->project, $config_value );
+			$service_imp  = $service::make( $cpt->get_registration_name(), $this->project, $config_value );
 
 			if ( $service_imp instanceof Processable ) {
 				$service_imp->process();
