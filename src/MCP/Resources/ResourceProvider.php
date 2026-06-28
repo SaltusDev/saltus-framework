@@ -81,6 +81,7 @@ class ResourceProvider
 									'drag_and_drop' => 'Drag-and-drop post reordering',
 									'duplicate' => 'Post cloning',
 									'meta' => 'Metaboxes via Codestar Framework',
+									'mcp' => 'Model Context Protocol tools with WordPress-native abilities when available and stdio fallback otherwise',
 									'quick_edit' => 'Quick edit fields',
 									'remember_tabs' => 'Admin tab state persistence',
 									'settings' => 'Settings pages via Codestar Framework',
