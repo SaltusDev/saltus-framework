@@ -7,6 +7,22 @@
 - Phase 2 REST API complete: 8 routes registered in `saltus-framework/v1/`
 - Active development on `feature/mcp-v0` branch.
 
+## Top Priority: WordPress 7.0 MCP/Abilities Integration
+
+**Theme:** Make Saltus MCP tools discoverable and usable through WordPress-native MCP/Abilities infrastructure as it becomes available in WordPress 7.0, while preserving the current REST-backed stdio MCP server as the compatibility layer.
+
+| Item | Status |
+|------|--------|
+| Track WordPress 7.0 MCP/Abilities API shape and naming as it stabilizes | ✓ Done |
+| Map each existing Saltus MCP tool to a WordPress-native ability definition | ✓ Done |
+| Register Saltus abilities from WordPress when the native API is present | ✓ Done |
+| Keep `bin/mcp-server` operational as a fallback for clients that connect over stdio | ✓ Done |
+| Reuse existing REST permission checks so abilities honor `current_user_can()` gates | ✓ Done |
+| Add compatibility tests for native abilities plus REST-backed MCP fallback | ✓ Done |
+| Document setup paths for WordPress-native MCP clients and standalone MCP clients | ✓ Done |
+
+**Exit criteria:** On WordPress 7.0+, Saltus capabilities are exposed through the native MCP/Abilities layer; on older WordPress versions, the current REST-backed MCP server continues to provide the same tool surface.
+
 ---
 
 ## MCP Server Roadmap
@@ -90,6 +106,7 @@ Embed a **Model Context Protocol (MCP) server** directly in the Saltus Framework
 
 | Feature | Description | Status |
 |---------|-------------|--------|
+| **WordPress 7.0 MCP/Abilities integration** | Register Saltus MCP tools as WordPress-native abilities when available, with stdio fallback | ○ Top priority |
 | **SSE transport** | Serve MCP over HTTP (not just stdio) for remote connections | ○ |
 | **Multi-site management** | Named site profiles, switchable at runtime | ○ |
 | **Role-based access** | Map MCP tool access to WP user roles | ○ |

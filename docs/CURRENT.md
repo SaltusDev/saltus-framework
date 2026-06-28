@@ -2,16 +2,21 @@
 
 ## Working
 - Tag v1.0 release @since 2026-06-19
-- Implement SSE transport: Serve MCP over HTTP for remote connections @since 2026-06-19
 
 ## Next
-- Multi-site management: Named site profiles, switchable at runtime
-- Role-based access: Map MCP tool access to WP user roles
-- Health monitoring: Endpoint with version, error rate, latency stats
-- Configuration profiles: `--profile=high-volume`, `--profile=strict`
 
 ## Recent Changes
+- WordPress 7.0 MCP/Abilities connector: `AbilityRegistrar` registers 15 Saltus tool definitions when `wp_register_ability()` exists
+- Shared `ToolFactory` keeps stdio MCP and native ability definitions on the same tool list
+- Native ability callbacks dispatch through `rest_do_request()` so existing REST permission callbacks remain authoritative
+- Added compatibility tests covering native ability registration, capability gating, and REST-backed dispatch
+- README documents both WordPress-native MCP client discovery and standalone stdio MCP client setup
 - Phase 3 progress: 4 of 9 items completed
+- Skipped SSE transport: Serve MCP over HTTP for remote connections
+- Skipped Multi-site management: Named site profiles, switchable at runtime
+- Skipped Role-based access: Map MCP tool access to WP user roles
+- Skipped Health monitoring: Endpoint with version, error rate, latency stats
+- Skipped Configuration profiles: `--profile=high-volume`, `--profile=strict`
 - Structured error codes: ErrorCode constants + McpError value object with resolution hints
 - Caching layer: CacheInterface + InMemoryCache integrated into WordPressClient GET
 - Rate limiting: Sliding-window RateLimiter throttles tool calls (default 60/60s)
