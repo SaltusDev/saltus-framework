@@ -481,6 +481,13 @@ abstract class BaseModel {
 	}
 
 	/**
+	 * Get the type of the model.
+	 *
+	 * @return string The model type (e.g. 'post_type', 'taxonomy').
+	 */
+	abstract public function get_type(): string;
+
+	/**
 	 * Return the sanitized model name for WordPress registration APIs.
 	 *
 	 * @return lowercase-string&non-empty-string
@@ -498,9 +505,9 @@ abstract class BaseModel {
 			throw new \InvalidArgumentException(
 				sprintf(
 					'Model name "%s" exceeds the maximum %d character limit for %s registration.',
-					$name,
-					$max_length,
-					$this->get_type()
+					$name, // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are developer-facing.
+					$max_length, // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are developer-facing.
+					$this->get_type() // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are developer-facing.
 				)
 			);
 		}
