@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -60,7 +60,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-phpcs-php8.3-composer-${{ hashFiles('composer.lock') }}
@@ -80,7 +80,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -94,7 +94,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-phpstan-php8.3-composer-${{ hashFiles('composer.lock') }}
@@ -134,7 +134,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -148,7 +148,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-dependencies-php${{ matrix.php }}-${{ matrix.dependencies }}-${{ hashFiles('composer.json', 'composer.lock') }}
@@ -156,17 +156,20 @@ jobs:
             ${{ runner.os }}-dependencies-php${{ matrix.php }}-${{ matrix.dependencies }}-
             ${{ runner.os }}-dependencies-php${{ matrix.php }}-
 
+      - name: Prepare runtime-only Composer manifest
+        run: jq 'del(."require-dev", ."autoload-dev", .scripts)' composer.json > composer.runtime.json
+
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
-        run: composer install --no-ansi --no-interaction --no-progress --prefer-dist
+        run: composer install --no-dev --no-ansi --no-interaction --no-progress --prefer-dist
 
       - name: Install highest dependencies
         if: matrix.dependencies == 'highest'
-        run: composer update --no-ansi --no-interaction --no-progress --prefer-dist
+        run: COMPOSER=composer.runtime.json composer update --no-dev --no-ansi --no-interaction --no-progress --prefer-dist
 
       - name: Install lowest dependencies
         if: matrix.dependencies == 'lowest'
-        run: composer update --prefer-lowest --prefer-stable --no-ansi --no-interaction --no-progress --prefer-dist
+        run: COMPOSER=composer.runtime.json composer update --no-dev --prefer-lowest --prefer-stable --no-ansi --no-interaction --no-progress --prefer-dist
 
       - name: Validate Composer platform compatibility
         run: composer check-platform-reqs --no-dev
