@@ -10,13 +10,8 @@ use Saltus\WP\Framework\MCP\Error\McpError;
 use Saltus\WP\Framework\MCP\Prompts\PromptProvider;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Resources\ResourceProvider;
+use Saltus\WP\Framework\MCP\Tools\ToolFactory;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
-use Saltus\WP\Framework\MCP\Tools\DuplicatePost;
-use Saltus\WP\Framework\MCP\Tools\ExportPost;
-use Saltus\WP\Framework\MCP\Tools\GetSettings;
-use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
-use Saltus\WP\Framework\MCP\Tools\ReorderPosts;
-use Saltus\WP\Framework\MCP\Tools\GetMetaFields;
 use Saltus\WP\Framework\MCP\Validation\Validator;
 
 class Server {
@@ -32,7 +27,7 @@ class Server {
 		$cache = $config->isCacheEnabled() ? new InMemoryCache() : null;
 
 		$this->client           = new WordPressClient( $config, $cache );
-		$this->toolProvider     = new ToolProvider();
+		$this->toolProvider     = ToolFactory::createDefaultProvider();
 		$this->resourceProvider = new ResourceProvider( $this->client );
 		$this->promptProvider   = new PromptProvider();
 		$this->rateLimiter      = $config->isRateLimitEnabled()
@@ -41,8 +36,6 @@ class Server {
 		$this->auditLogger      = $config->isAuditEnabled()
 			? new AuditLogger( true, true, $config->getAuditLogFile() )
 			: null;
-
-		$this->registerTools();
 	}
 
 	/**
@@ -300,27 +293,4 @@ class Server {
 		];
 	}
 
-	private function registerTools(): void {
-		$toolClasses = [
-			Tools\ListModels::class,
-			Tools\GetModel::class,
-			Tools\ListPosts::class,
-			Tools\GetPost::class,
-			Tools\CreatePost::class,
-			Tools\UpdatePost::class,
-			Tools\DeletePost::class,
-			Tools\ListTerms::class,
-			Tools\CreateTerm::class,
-			Tools\DuplicatePost::class,
-			Tools\ExportPost::class,
-			Tools\GetSettings::class,
-			Tools\UpdateSettings::class,
-			Tools\ReorderPosts::class,
-			Tools\GetMetaFields::class,
-		];
-
-		foreach ( $toolClasses as $class ) {
-			$this->toolProvider->register( new $class() );
-		}
-	}
 }
