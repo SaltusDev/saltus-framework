@@ -19,7 +19,7 @@ class MetaControllerTest extends TestCase {
 		$wp_rest_routes_registered = [];
 		$wp_current_user_can       = true;
 
-		$this->modeler    = $this->createMock( Modeler::class );
+		$this->modeler    = $this->createStub( Modeler::class );
 		$this->controller = new MetaController( $this->modeler );
 	}
 
@@ -260,24 +260,43 @@ class MetaControllerTest extends TestCase {
 	}
 
 	/**
-	 * @return \Saltus\WP\Framework\Models\Model&\PHPUnit\Framework\MockObject\MockObject
+	 * @return \Saltus\WP\Framework\Models\Model&object{args: array<string, mixed>}
 	 */
 	private function createModelMock( string $type, ?array $meta = null, string $label_singular = '', string $label_plural = '' ) {
-		$model = $this->createMock( \Saltus\WP\Framework\Models\Model::class );
-		$model->method( 'get_type' )->willReturn( $type );
-
-		$model->args = [];
+		$args = [];
 
 		if ( $meta !== null ) {
-			$model->args['meta'] = $meta;
+			$args['meta'] = $meta;
 		}
 		if ( $label_singular !== '' ) {
-			$model->args['label_singular'] = $label_singular;
+			$args['label_singular'] = $label_singular;
 		}
 		if ( $label_plural !== '' ) {
-			$model->args['label_plural'] = $label_plural;
+			$args['label_plural'] = $label_plural;
 		}
 
-		return $model;
+		return new class( $type, $args ) implements \Saltus\WP\Framework\Models\Model {
+			/** @var array<string, mixed> */
+			public array $args;
+			private string $type;
+
+			/**
+			 * @param array<string, mixed> $args
+			 */
+			public function __construct( string $type, array $args ) {
+				$this->type = $type;
+				$this->args = $args;
+			}
+
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return '';
+			}
+
+			public function get_type(): string {
+				return $this->type;
+			}
+		};
 	}
 }

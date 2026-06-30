@@ -13,7 +13,7 @@ class ResourceProviderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->client = $this->createMock(WordPressClient::class);
+        $this->client = $this->createStub(WordPressClient::class);
         $this->provider = new ResourceProvider($this->client);
     }
 
@@ -45,6 +45,8 @@ class ResourceProviderTest extends TestCase
 
     public function testResolveModelsReturnsLiveData(): void
     {
+        $this->useMockClient();
+
         $this->client->expects($this->once())
             ->method('get')
             ->with('saltus-framework/v1/models')
@@ -67,6 +69,8 @@ class ResourceProviderTest extends TestCase
 
     public function testResolveModelsHandlesApiError(): void
     {
+        $this->useMockClient();
+
         $this->client->expects($this->once())
             ->method('get')
             ->with('saltus-framework/v1/models')
@@ -83,6 +87,8 @@ class ResourceProviderTest extends TestCase
 
     public function testResolveMetaFieldsReturnsAggregateMetaFields(): void
     {
+        $this->useMockClient();
+
         $this->client->expects($this->once())
             ->method('get')
             ->with('saltus-framework/v1/meta')
@@ -120,6 +126,8 @@ class ResourceProviderTest extends TestCase
 
     public function testResolveMetaFieldsReturnsEmptyListWhenNoPostTypeModels(): void
     {
+        $this->useMockClient();
+
         $this->client->expects($this->once())
             ->method('get')
             ->with('saltus-framework/v1/meta')
@@ -136,6 +144,8 @@ class ResourceProviderTest extends TestCase
 
     public function testResolveMetaFieldsHandlesModelsApiError(): void
     {
+        $this->useMockClient();
+
         $this->client->expects($this->once())
             ->method('get')
             ->with('saltus-framework/v1/meta')
@@ -171,5 +181,11 @@ class ResourceProviderTest extends TestCase
     public function testResolveUnknownUriReturnsNull(): void
     {
         $this->assertNull($this->provider->resolve('saltus://unknown'));
+    }
+
+    private function useMockClient(): void
+    {
+        $this->client = $this->createMock(WordPressClient::class);
+        $this->provider = new ResourceProvider($this->client);
     }
 }

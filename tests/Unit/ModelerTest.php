@@ -15,17 +15,17 @@ class ModelerTest extends TestCase {
 	}
 
 	public function testGetModelsReturnsEmptyArrayInitially(): void {
-		$factory = $this->createMock( ModelFactory::class );
+		$factory = $this->createStub( ModelFactory::class );
 		$modeler = new Modeler( $factory );
 
 		$this->assertSame( [], $modeler->get_models() );
 	}
 
 	public function testAddStoresModelKeyedByName(): void {
-		$factory = $this->createMock( ModelFactory::class );
+		$factory = $this->createStub( ModelFactory::class );
 		$modeler = new Modeler( $factory );
 
-		$model = $this->createMock( Model::class );
+		$model = $this->createStub( Model::class );
 		$model->method( 'get_name' )->willReturn( 'movie' );
 
 		$this->callAdd( $modeler, $model );
@@ -36,13 +36,13 @@ class ModelerTest extends TestCase {
 	}
 
 	public function testAddStoresMultipleModels(): void {
-		$factory = $this->createMock( ModelFactory::class );
+		$factory = $this->createStub( ModelFactory::class );
 		$modeler = new Modeler( $factory );
 
-		$movie = $this->createMock( Model::class );
+		$movie = $this->createStub( Model::class );
 		$movie->method( 'get_name' )->willReturn( 'movie' );
 
-		$book = $this->createMock( Model::class );
+		$book = $this->createStub( Model::class );
 		$book->method( 'get_name' )->willReturn( 'book' );
 
 		$this->callAdd( $modeler, $movie );
@@ -52,13 +52,13 @@ class ModelerTest extends TestCase {
 	}
 
 	public function testAddWithSameNameOverwrites(): void {
-		$factory = $this->createMock( ModelFactory::class );
+		$factory = $this->createStub( ModelFactory::class );
 		$modeler = new Modeler( $factory );
 
-		$first = $this->createMock( Model::class );
+		$first = $this->createStub( Model::class );
 		$first->method( 'get_name' )->willReturn( 'movie' );
 
-		$second = $this->createMock( Model::class );
+		$second = $this->createStub( Model::class );
 		$second->method( 'get_name' )->willReturn( 'movie' );
 
 		$this->callAdd( $modeler, $first );

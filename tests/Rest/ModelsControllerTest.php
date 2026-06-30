@@ -22,7 +22,7 @@ class ModelsControllerTest extends TestCase {
 		$wp_rest_routes_registered = [];
 		$wp_current_user_can       = true;
 
-		$this->modeler    = $this->createMock( Modeler::class );
+		$this->modeler    = $this->createStub( Modeler::class );
 		$this->controller = new ModelsController( $this->modeler );
 	}
 
@@ -157,7 +157,7 @@ class ModelsControllerTest extends TestCase {
 	}
 
 	/**
-	 * @return Model&\PHPUnit\Framework\MockObject\MockObject
+	 * @return Model&object{name: string, one: string, many: string, type: string, description: string, featured_image: bool, options: array<string, mixed>}
 	 */
 	private function createModelMock(
 		string $type,
@@ -169,17 +169,49 @@ class ModelsControllerTest extends TestCase {
 		string $description = '',
 		bool $featuredImage = true
 	) {
-		$model = $this->createMock( Model::class );
-		$model->method( 'get_type' )->willReturn( $getType );
+		return new class( $type, $one, $many, $name, $getType, $options, $description, $featuredImage ) implements Model {
+			public string $type;
+			public string $one;
+			public string $many;
+			public string $name;
+			public string $description;
+			public bool $featured_image;
+			/** @var array<string, mixed> */
+			public array $options;
+			private string $getType;
 
-		$model->name           = $name;
-		$model->one            = $one;
-		$model->many           = $many;
-		$model->type           = $type;
-		$model->description    = $description;
-		$model->featured_image = $featuredImage;
-		$model->options        = $options;
+			/**
+			 * @param array<string, mixed> $options
+			 */
+			public function __construct(
+				string $type,
+				string $one,
+				string $many,
+				string $name,
+				string $getType,
+				array $options,
+				string $description,
+				bool $featuredImage
+			) {
+				$this->type           = $type;
+				$this->one            = $one;
+				$this->many           = $many;
+				$this->name           = $name;
+				$this->getType        = $getType;
+				$this->options        = $options;
+				$this->description    = $description;
+				$this->featured_image = $featuredImage;
+			}
 
-		return $model;
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return $this->name;
+			}
+
+			public function get_type(): string {
+				return $this->getType;
+			}
+		};
 	}
 }
