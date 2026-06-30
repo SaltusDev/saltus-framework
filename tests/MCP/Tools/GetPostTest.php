@@ -17,12 +17,12 @@ class GetPostTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertSame('get_post', $this->tool->getName());
+        $this->assertSame('get_post', $this->tool->get_name());
     }
 
     public function testGetParametersRequiresPostId(): void
     {
-        $params = $this->tool->getParameters();
+        $params = $this->tool->get_parameters();
         $this->assertArrayHasKey('post_id', $params);
         $this->assertTrue($params['post_id']['required']);
     }

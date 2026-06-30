@@ -14,11 +14,11 @@ class ListMetaFieldsTest extends TestCase {
 	}
 
 	public function testGetName(): void {
-		$this->assertSame( 'list_meta_fields', $this->tool->getName() );
+		$this->assertSame( 'list_meta_fields', $this->tool->get_name() );
 	}
 
 	public function testGetParametersAreEmpty(): void {
-		$this->assertSame( [], $this->tool->getParameters() );
+		$this->assertSame( [], $this->tool->get_parameters() );
 	}
 
 	public function testHandleListsAllPostTypeMetaFields(): void {

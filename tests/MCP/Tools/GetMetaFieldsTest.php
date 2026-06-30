@@ -17,17 +17,17 @@ class GetMetaFieldsTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertSame('get_meta_fields', $this->tool->getName());
+        $this->assertSame('get_meta_fields', $this->tool->get_name());
     }
 
     public function testGetDescription(): void
     {
-        $this->assertNotEmpty($this->tool->getDescription());
+        $this->assertNotEmpty($this->tool->get_description());
     }
 
     public function testGetParametersHasRequiredPostType(): void
     {
-        $params = $this->tool->getParameters();
+        $params = $this->tool->get_parameters();
         $this->assertArrayHasKey('post_type', $params);
         $this->assertTrue($params['post_type']['required']);
     }

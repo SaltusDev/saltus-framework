@@ -17,17 +17,17 @@ class UpdateSettingsTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertSame('update_settings', $this->tool->getName());
+        $this->assertSame('update_settings', $this->tool->get_name());
     }
 
     public function testGetDescription(): void
     {
-        $this->assertNotEmpty($this->tool->getDescription());
+        $this->assertNotEmpty($this->tool->get_description());
     }
 
     public function testGetParametersHasRequiredFields(): void
     {
-        $params = $this->tool->getParameters();
+        $params = $this->tool->get_parameters();
         $this->assertArrayHasKey('post_type', $params);
         $this->assertTrue($params['post_type']['required']);
         $this->assertArrayHasKey('settings', $params);

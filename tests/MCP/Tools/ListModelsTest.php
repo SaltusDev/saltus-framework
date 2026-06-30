@@ -17,17 +17,17 @@ class ListModelsTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertSame('list_models', $this->tool->getName());
+        $this->assertSame('list_models', $this->tool->get_name());
     }
 
     public function testGetDescription(): void
     {
-        $this->assertNotEmpty($this->tool->getDescription());
+        $this->assertNotEmpty($this->tool->get_description());
     }
 
     public function testGetParametersHasTypeFilter(): void
     {
-        $params = $this->tool->getParameters();
+        $params = $this->tool->get_parameters();
         $this->assertArrayHasKey('type', $params);
         $this->assertSame('string', $params['type']['type']);
     }

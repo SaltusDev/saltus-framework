@@ -15,7 +15,7 @@ class ListPostsTest extends TestCase {
 	}
 
 	public function testGetParametersIncludesTermFilters(): void {
-		$params = $this->tool->getParameters();
+		$params = $this->tool->get_parameters();
 
 		$this->assertArrayHasKey( 'terms', $params );
 		$this->assertSame( 'object', $params['terms']['type'] );

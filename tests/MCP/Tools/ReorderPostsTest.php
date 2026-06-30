@@ -17,17 +17,17 @@ class ReorderPostsTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertSame('reorder_posts', $this->tool->getName());
+        $this->assertSame('reorder_posts', $this->tool->get_name());
     }
 
     public function testGetDescription(): void
     {
-        $this->assertNotEmpty($this->tool->getDescription());
+        $this->assertNotEmpty($this->tool->get_description());
     }
 
     public function testGetParametersHasRequiredItems(): void
     {
-        $params = $this->tool->getParameters();
+        $params = $this->tool->get_parameters();
         $this->assertArrayHasKey('items', $params);
         $this->assertTrue($params['items']['required']);
     }
