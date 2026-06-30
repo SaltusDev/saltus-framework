@@ -183,6 +183,62 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
 * Activate via WordPress
 
+## WordPress-Native MCP/Abilities
+
+Saltus Framework exposes its AI-facing tool surface through the WordPress-native MCP/Abilities API. Native WordPress MCP clients can discover and call the `saltus/*` abilities directly from the active plugin.
+
+### Quick Start
+
+Install and activate the plugin that uses Saltus Framework on a WordPress version with the Abilities API. Saltus registers its abilities during `wp_abilities_api_init`; clients that understand WordPress-native MCP/Abilities can discover the `saltus/*` tools from WordPress.
+
+The standalone local stdio MCP server path has been skipped. Saltus MCP development targets WordPress-native abilities instead.
+
+### Capability Dispatch
+
+Abilities dispatch through WordPress REST requests, so existing REST permission callbacks and `current_user_can()` checks remain authoritative. WordPress versions without the Abilities API simply skip Saltus ability registration.
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_models` | List all registered CPTs and taxonomies |
+| `get_model` | Get details of a specific post type or taxonomy |
+| `list_posts` | Query posts with filters (status, search, pagination) |
+| `get_post` | Get a single post with all fields and meta |
+| `create_post` | Create a new post in any CPT |
+| `update_post` | Update an existing post's fields and meta |
+| `delete_post` | Trash or force delete a post |
+| `list_terms` | List terms from a taxonomy |
+| `create_term` | Create a new term in a taxonomy |
+| `duplicate_post` | Duplicate a WordPress post |
+| `export_post` | Export a post as WXR |
+| `get_settings` | Get Saltus settings for a post type |
+| `update_settings` | Update Saltus settings for a post type |
+| `reorder_posts` | Batch update post menu order |
+| `list_meta_fields` | Discover Saltus meta field definitions across all registered CPTs |
+| `get_meta_fields` | Get Saltus meta field definitions for a post type |
+
+Meta field discovery preserves the raw Saltus/Codestar configuration in `meta` and includes normalized MCP-friendly metadata in `normalized.fields` and `normalized.rest_meta_keys`. Nested fields are exposed as paths such as `points_info.coordinates.latitude`, with JSON-schema-like types and REST writability information.
+
+### Available Resources
+
+| Resource | Description |
+|----------|-------------|
+| `saltus://models` | List all registered Saltus models |
+| `saltus://meta-fields` | Legacy MCP resource for model-defined meta fields; WP7 clients should use `list_meta_fields` |
+| `saltus://features` | List framework features |
+| `saltus://status` | Framework and MCP/Abilities status |
+
+### Requirements
+
+- WordPress 7.0+ or a WordPress build that provides the Abilities API
+- A WordPress-native MCP/Abilities client
+- The plugin using Saltus Framework must be active
+
+### Configuration
+
+No local MCP server configuration is required for the WordPress-native path.
+
 ## Building
 
 ### Quality checks

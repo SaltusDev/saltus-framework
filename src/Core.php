@@ -2,7 +2,7 @@
 /**
  * Saltus Framework
  *
- * @version 1.3.1
+ * @version 2.0.0
  */
 namespace Saltus\WP\Framework;
 
@@ -30,6 +30,8 @@ use Saltus\WP\Framework\Features\QuickEdit\QuickEdit;
 use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
+use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\Rest\RestServer;
 
 
 class Core implements Plugin {
@@ -129,6 +131,12 @@ class Core implements Plugin {
 		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
 		// and stores the result in either list (cpt or tax list )
 		// TODO
+
+		// 5- Register REST API routes
+		$rest_server = new RestServer( $this->modeler );
+		add_action( 'rest_api_init', [ $rest_server, 'register_routes' ] );
+
+		// 6- MCP is registered through the default feature list.
 	}
 
 	/**
@@ -222,6 +230,7 @@ class Core implements Plugin {
 			'draganddrop'   => DragAndDrop::class,
 			'duplicate'     => Duplicate::class,
 			'meta'          => Meta::class,
+			'mcp'           => MCP::class,
 			'quick_edit'    => QuickEdit::class,
 			'remember_tabs' => RememberTabs::class,
 			'settings'      => Settings::class,

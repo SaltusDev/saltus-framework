@@ -145,7 +145,16 @@ class Modeler {
 	/**
 	 * Adds the model to a list
 	 */
-	protected function add( Model $model ): void {
-		$this->model_list[ $model->get_type() ] = $model;
+	protected function add( $model ) {
+		$this->model_list[ $model->name ] = $model;
+	}
+
+	/**
+	 * Return all loaded models.
+	 *
+	 * @return array<string, \Saltus\WP\Framework\Models\Model> Associative array keyed by model name.
+	 */
+	public function get_models(): array {
+		return $this->model_list ?? [];
 	}
 }

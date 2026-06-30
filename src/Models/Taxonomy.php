@@ -152,6 +152,24 @@ class Taxonomy extends BaseModel implements Model {
 	}
 
 	/**
+	 * @return list<string>
+	 */
+	public function get_associations(): array {
+		$associations = (array) $this->associations;
+
+		return array_values(
+			array_filter(
+				array_map( 'strval', $associations ),
+				static fn( string $association ): bool => $association !== ''
+			)
+		);
+	}
+
+	public function is_hierarchical(): bool {
+		return ! empty( $this->options['hierarchical'] );
+	}
+
+	/**
 	 * Get the type of the model
 	 *
 	 * @return string The type of Model
