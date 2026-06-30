@@ -47,13 +47,13 @@ class MCPFeatureTest extends TestCase {
 }
 
 class NativeAbilityRegistrar extends AbilityRegistrar {
-	public function hasNativeApi(): bool {
+	public function has_native_api(): bool {
 		return true;
 	}
 }
 
 class LegacyAbilityRegistrar extends AbilityRegistrar {
-	public function hasNativeApi(): bool {
+	public function has_native_api(): bool {
 		return false;
 	}
 }

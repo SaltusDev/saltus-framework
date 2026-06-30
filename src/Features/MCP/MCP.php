@@ -14,14 +14,14 @@ use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
  */
 class MCP implements Service, Registerable {
 
-	private AbilityRegistrar $abilityRegistrar;
+	private AbilityRegistrar $ability_registrar;
 
 	/**
 	 * @param array<int, mixed> $dependencies Framework dependencies injected by the service container.
 	 */
-	public function __construct( array $dependencies = [], ?AbilityRegistrar $abilityRegistrar = null ) {
-		$hasDependencies        = $dependencies !== [];
-		$this->abilityRegistrar = $abilityRegistrar ?? new AbilityRegistrar();
+	public function __construct( array $dependencies = [], ?AbilityRegistrar $ability_registrar = null ) {
+		$has_dependencies        = $dependencies !== [];
+		$this->ability_registrar = $ability_registrar ?? new AbilityRegistrar();
 	}
 
 	public function register(): void {
@@ -32,18 +32,18 @@ class MCP implements Service, Registerable {
 		add_action(
 			'wp_abilities_api_categories_init',
 			function (): void {
-				$this->abilityRegistrar->registerCategory();
+				$this->ability_registrar->register_category();
 			}
 		);
 		add_action(
 			'wp_abilities_api_init',
 			function (): void {
-				$this->abilityRegistrar->register();
+				$this->ability_registrar->register();
 			}
 		);
 	}
 
 	public function transport(): string {
-		return $this->abilityRegistrar->hasNativeApi() ? 'native' : 'legacy';
+		return $this->ability_registrar->has_native_api() ? 'native' : 'legacy';
 	}
 }
