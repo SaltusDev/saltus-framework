@@ -6,7 +6,7 @@ class ToolFactory {
 	/**
 	 * @return list<class-string<ToolInterface>>
 	 */
-	public static function defaultToolClasses(): array {
+	public static function default_tool_classes(): array {
 		return [
 			ListModels::class,
 			GetModel::class,
@@ -27,10 +27,10 @@ class ToolFactory {
 		];
 	}
 
-	public static function createDefaultProvider(): ToolProvider {
+	public static function create_default_provider(): ToolProvider {
 		$provider = new ToolProvider();
 
-		foreach ( self::defaultToolClasses() as $class ) {
+		foreach ( self::default_tool_classes() as $class ) {
 			$provider->register( new $class() );
 		}
 

@@ -18,7 +18,7 @@ class ToolProviderTest extends TestCase
     public function testRegisterAndGet(): void
     {
         $tool = $this->createStub(ToolInterface::class);
-        $tool->method('getName')->willReturn('test_tool');
+        $tool->method('get_name')->willReturn('test_tool');
 
         $this->provider->register($tool);
         $this->assertSame($tool, $this->provider->get('test_tool'));
@@ -32,10 +32,10 @@ class ToolProviderTest extends TestCase
     public function testAllReturnsAllRegistered(): void
     {
         $tool1 = $this->createStub(ToolInterface::class);
-        $tool1->method('getName')->willReturn('tool_a');
+        $tool1->method('get_name')->willReturn('tool_a');
 
         $tool2 = $this->createStub(ToolInterface::class);
-        $tool2->method('getName')->willReturn('tool_b');
+        $tool2->method('get_name')->willReturn('tool_b');
 
         $this->provider->register($tool1);
         $this->provider->register($tool2);
@@ -49,12 +49,12 @@ class ToolProviderTest extends TestCase
     public function testGetDefinitions(): void
     {
         $tool = $this->createStub(ToolInterface::class);
-        $tool->method('getName')->willReturn('my_tool');
-        $tool->method('getDescription')->willReturn('Does something');
-        $tool->method('getParameters')->willReturn(['param' => ['type' => 'string']]);
+        $tool->method('get_name')->willReturn('my_tool');
+        $tool->method('get_description')->willReturn('Does something');
+        $tool->method('get_parameters')->willReturn(['param' => ['type' => 'string']]);
 
         $this->provider->register($tool);
-        $defs = $this->provider->getDefinitions();
+        $defs = $this->provider->get_definitions();
 
         $this->assertCount(1, $defs);
         $this->assertSame('my_tool', $defs[0]['name']);
@@ -65,10 +65,10 @@ class ToolProviderTest extends TestCase
     public function testRegisterOverwritesExisting(): void
     {
         $tool1 = $this->createStub(ToolInterface::class);
-        $tool1->method('getName')->willReturn('dup');
+        $tool1->method('get_name')->willReturn('dup');
 
         $tool2 = $this->createStub(ToolInterface::class);
-        $tool2->method('getName')->willReturn('dup');
+        $tool2->method('get_name')->willReturn('dup');
 
         $this->provider->register($tool1);
         $this->provider->register($tool2);

@@ -7,7 +7,7 @@ class ToolProvider {
 	private array $tools = [];
 
 	public function register( ToolInterface $tool ): void {
-		$this->tools[ $tool->getName() ] = $tool;
+		$this->tools[ $tool->get_name() ] = $tool;
 	}
 
 	public function get( string $name ): ?ToolInterface {
@@ -26,13 +26,13 @@ class ToolProvider {
 	*
 	* @return list<array{name: string, description: string, inputSchema: array<string, mixed>}>
 	*/
-	public function getDefinitions(): array {
+	public function get_definitions(): array {
 		$definitions = [];
 		foreach ( $this->tools as $tool ) {
 			$definitions[] = [
-				'name'        => $tool->getName(),
-				'description' => $tool->getDescription(),
-				'inputSchema' => $tool->getParameters(),
+				'name'        => $tool->get_name(),
+				'description' => $tool->get_description(),
+				'inputSchema' => $tool->get_parameters(),
 			];
 		}
 

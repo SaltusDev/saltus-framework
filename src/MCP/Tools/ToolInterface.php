@@ -8,19 +8,19 @@ interface ToolInterface {
 	/**
 	* Get the tool name (used in MCP protocol).
 	*/
-	public function getName(): string;
+	public function get_name(): string;
 
 	/**
 	* Get the tool description for the AI.
 	*/
-	public function getDescription(): string;
+	public function get_description(): string;
 
 	/**
 	* Get the JSON Schema for tool parameters.
 	*
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array;
+	public function get_parameters(): array;
 
 	/**
 	* Execute the tool with given arguments.
