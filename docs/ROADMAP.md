@@ -1,11 +1,12 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: 2.0.0 (as of 2026-06-30)
+- Version: 2.0.0 (released 2026-06-30)
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
 - WordPress-native MCP/Abilities surface with 16 tools (9 Phase 1 + 7 Phase 2)
 - Phase 2 REST API complete: 8 routes registered in `saltus-framework/v1/`
-- Active development on `feature/mcp-v0` branch.
+- Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes
+- **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
 
@@ -106,7 +107,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | Raw Saltus/Codestar meta config exposed to WP7 MCP clients | ✓ Done |
 | Flatten nested meta fields into client-friendly paths and JSON-schema-like types | ✓ Done |
 
-**Exit criteria:** All 9 REST routes registered and tested ✓; all 7 new MCP tools operational ✓; v1.0 release tag ○ (pending).
+**Exit criteria:** All 9 REST routes registered and tested ✓; all 7 new MCP tools operational ✓; v2.0.0 release tag ✓.
 
 ---
 
@@ -128,7 +129,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | **Health monitoring** | Endpoint with version, error rate, latency stats | Skipped |
 | **Configuration profiles** | `--profile=high-volume`, `--profile=strict` | Skipped |
 
-**Exit criteria:** Caching reduces REST calls by 60%+, audit log operational, v2.0 release. SSE, multi-site, role mapping, health monitoring, and configuration profiles are skipped for this track.
+**Exit criteria:** Caching reduces REST calls by 60%+, audit log operational, v2.0 release ✓. SSE, multi-site, role mapping, health monitoring, and configuration profiles are skipped for this track.
 
 ---
 
