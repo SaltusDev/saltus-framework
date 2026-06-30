@@ -10,31 +10,31 @@ class ConfigTest extends TestCase
     public function testConstructorTrimsTrailingSlash(): void
     {
         $config = new Config(['site_url' => 'https://example.com/', 'username' => 'user', 'password' => 'pass']);
-        $this->assertSame('https://example.com', $config->getSiteUrl());
+        $this->assertSame('https://example.com', $config->get_site_url());
     }
 
     public function testConstructorKeepsUrlWithoutTrailingSlash(): void
     {
         $config = new Config(['site_url' => 'https://example.com', 'username' => 'user', 'password' => 'pass']);
-        $this->assertSame('https://example.com', $config->getSiteUrl());
+        $this->assertSame('https://example.com', $config->get_site_url());
     }
 
     public function testGetApiUrlAppendsWpJson(): void
     {
         $config = new Config(['site_url' => 'https://example.com', 'username' => 'user', 'password' => 'pass']);
-        $this->assertSame('https://example.com/wp-json/', $config->getApiUrl());
+        $this->assertSame('https://example.com/wp-json/', $config->get_api_url());
     }
 
     public function testGetUsername(): void
     {
         $config = new Config(['site_url' => 'https://example.com', 'username' => 'testuser', 'password' => 'secret']);
-        $this->assertSame('testuser', $config->getUsername());
+        $this->assertSame('testuser', $config->get_username());
     }
 
     public function testGetPassword(): void
     {
         $config = new Config(['site_url' => 'https://example.com', 'username' => 'user', 'password' => 'secret123']);
-        $this->assertSame('secret123', $config->getPassword());
+        $this->assertSame('secret123', $config->get_password());
     }
 
     public function testToArray(): void
@@ -53,7 +53,7 @@ class ConfigTest extends TestCase
             'username' => 'user',
             'password' => 'pass',
         ];
-        $this->assertSame($expected, $config->toArray());
+        $this->assertSame($expected, $config->to_array());
     }
 
     public function testFromArray(): void
@@ -63,16 +63,16 @@ class ConfigTest extends TestCase
             'username' => 'admin',
             'password' => 'hunter2',
         ];
-        $config = Config::fromArray($data);
-        $this->assertSame('https://example.com', $config->getSiteUrl());
-        $this->assertSame('admin', $config->getUsername());
-        $this->assertSame('hunter2', $config->getPassword());
-        $this->assertTrue($config->isCacheEnabled());
-        $this->assertSame(300, $config->getCacheTtl());
-        $this->assertSame(600, $config->getCacheTtlModels());
-        $this->assertTrue($config->isRateLimitEnabled());
-        $this->assertSame(60, $config->getRateLimitMax());
-        $this->assertSame(60, $config->getRateLimitWindow());
+        $config = Config::from_array($data);
+        $this->assertSame('https://example.com', $config->get_site_url());
+        $this->assertSame('admin', $config->get_username());
+        $this->assertSame('hunter2', $config->get_password());
+        $this->assertTrue($config->is_cache_enabled());
+        $this->assertSame(300, $config->get_cache_ttl());
+        $this->assertSame(600, $config->get_cache_ttl_models());
+        $this->assertTrue($config->is_rate_limit_enabled());
+        $this->assertSame(60, $config->get_rate_limit_max());
+        $this->assertSame(60, $config->get_rate_limit_window());
     }
 
     public function testFromArrayWithTrailingSlash(): void
@@ -82,34 +82,34 @@ class ConfigTest extends TestCase
             'username' => 'u',
             'password' => 'p',
         ];
-        $config = Config::fromArray($data);
-        $this->assertSame('https://example.com', $config->getSiteUrl());
+        $config = Config::from_array($data);
+        $this->assertSame('https://example.com', $config->get_site_url());
     }
 
     public function testFromArrayWithMissingFields(): void
     {
         $data = [];
-        $config = Config::fromArray($data);
-        $this->assertSame('', $config->getSiteUrl());
-        $this->assertSame('', $config->getUsername());
-        $this->assertSame('', $config->getPassword());
-        $this->assertTrue($config->isCacheEnabled());
-        $this->assertSame(300, $config->getCacheTtl());
-        $this->assertTrue($config->isRateLimitEnabled());
-        $this->assertSame(60, $config->getRateLimitMax());
+        $config = Config::from_array($data);
+        $this->assertSame('', $config->get_site_url());
+        $this->assertSame('', $config->get_username());
+        $this->assertSame('', $config->get_password());
+        $this->assertTrue($config->is_cache_enabled());
+        $this->assertSame(300, $config->get_cache_ttl());
+        $this->assertTrue($config->is_rate_limit_enabled());
+        $this->assertSame(60, $config->get_rate_limit_max());
     }
 
     public function testConstructorDefaults(): void
     {
         $config = new Config(['site_url' => 'https://example.com', 'username' => 'u', 'password' => 'p']);
-        $this->assertTrue($config->isCacheEnabled());
-        $this->assertSame(300, $config->getCacheTtl());
-        $this->assertSame(600, $config->getCacheTtlModels());
-        $this->assertTrue($config->isRateLimitEnabled());
-        $this->assertSame(60, $config->getRateLimitMax());
-        $this->assertSame(60, $config->getRateLimitWindow());
-        $this->assertTrue($config->isAuditEnabled());
-        $this->assertNull($config->getAuditLogFile());
+        $this->assertTrue($config->is_cache_enabled());
+        $this->assertSame(300, $config->get_cache_ttl());
+        $this->assertSame(600, $config->get_cache_ttl_models());
+        $this->assertTrue($config->is_rate_limit_enabled());
+        $this->assertSame(60, $config->get_rate_limit_max());
+        $this->assertSame(60, $config->get_rate_limit_window());
+        $this->assertTrue($config->is_audit_enabled());
+        $this->assertNull($config->get_audit_log_file());
     }
 
     public function testConstructorCustomValues(): void
@@ -127,14 +127,14 @@ class ConfigTest extends TestCase
             'audit_enabled' => false,
             'audit_log_file' => '/tmp/audit.log',
         ]);
-        $this->assertFalse($config->isCacheEnabled());
-        $this->assertSame(120, $config->getCacheTtl());
-        $this->assertSame(300, $config->getCacheTtlModels());
-        $this->assertFalse($config->isRateLimitEnabled());
-        $this->assertSame(10, $config->getRateLimitMax());
-        $this->assertSame(30, $config->getRateLimitWindow());
-        $this->assertFalse($config->isAuditEnabled());
-        $this->assertSame('/tmp/audit.log', $config->getAuditLogFile());
+        $this->assertFalse($config->is_cache_enabled());
+        $this->assertSame(120, $config->get_cache_ttl());
+        $this->assertSame(300, $config->get_cache_ttl_models());
+        $this->assertFalse($config->is_rate_limit_enabled());
+        $this->assertSame(10, $config->get_rate_limit_max());
+        $this->assertSame(30, $config->get_rate_limit_window());
+        $this->assertFalse($config->is_audit_enabled());
+        $this->assertSame('/tmp/audit.log', $config->get_audit_log_file());
     }
 
     public function testFromArrayCustomValues(): void
@@ -152,14 +152,14 @@ class ConfigTest extends TestCase
             'audit_enabled' => false,
             'audit_log_file' => '/tmp/custom_audit.log',
         ];
-        $config = Config::fromArray($data);
-        $this->assertFalse($config->isCacheEnabled());
-        $this->assertSame(60, $config->getCacheTtl());
-        $this->assertSame(120, $config->getCacheTtlModels());
-        $this->assertFalse($config->isRateLimitEnabled());
-        $this->assertSame(100, $config->getRateLimitMax());
-        $this->assertSame(30, $config->getRateLimitWindow());
-        $this->assertFalse($config->isAuditEnabled());
-        $this->assertSame('/tmp/custom_audit.log', $config->getAuditLogFile());
+        $config = Config::from_array($data);
+        $this->assertFalse($config->is_cache_enabled());
+        $this->assertSame(60, $config->get_cache_ttl());
+        $this->assertSame(120, $config->get_cache_ttl_models());
+        $this->assertFalse($config->is_rate_limit_enabled());
+        $this->assertSame(100, $config->get_rate_limit_max());
+        $this->assertSame(30, $config->get_rate_limit_window());
+        $this->assertFalse($config->is_audit_enabled());
+        $this->assertSame('/tmp/custom_audit.log', $config->get_audit_log_file());
     }
 }
