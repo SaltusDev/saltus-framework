@@ -17,10 +17,10 @@ class ResourceProviderTest extends TestCase
         $this->provider = new ResourceProvider($this->client);
     }
 
-    public function testGetDefinitionsReturnsThree(): void
+    public function testGetDefinitionsReturnsFour(): void
     {
         $definitions = $this->provider->getDefinitions();
-        $this->assertCount(3, $definitions);
+        $this->assertCount(4, $definitions);
     }
 
     public function testGetDefinitionsContainExpectedUris(): void
@@ -28,6 +28,7 @@ class ResourceProviderTest extends TestCase
         $definitions = $this->provider->getDefinitions();
         $uris = array_map(fn ($d) => $d['uri'], $definitions);
         $this->assertContains('saltus://models', $uris);
+        $this->assertContains('saltus://meta-fields', $uris);
         $this->assertContains('saltus://features', $uris);
         $this->assertContains('saltus://status', $uris);
     }
@@ -78,6 +79,73 @@ class ResourceProviderTest extends TestCase
         $decoded = json_decode($text, true);
         $this->assertArrayHasKey('error', $decoded);
         $this->assertSame('Forbidden', $decoded['error']);
+    }
+
+    public function testResolveMetaFieldsReturnsAggregateMetaFields(): void
+    {
+        $this->client->expects($this->once())
+            ->method('get')
+            ->with('saltus-framework/v1/meta')
+            ->willReturn([
+                'post_types' => [
+                    [
+                        'post_type' => 'book',
+                        'label_singular' => 'Book',
+                        'label_plural' => 'Books',
+                        'meta' => [
+                            ['id' => 'isbn', 'type' => 'text', 'title' => 'ISBN'],
+                        ],
+                    ],
+                    [
+                        'post_type' => 'movie',
+                        'label_singular' => 'Movie',
+                        'label_plural' => 'Movies',
+                        'meta' => [],
+                    ],
+                ],
+            ]);
+
+        $result = $this->provider->resolve('saltus://meta-fields');
+        $this->assertNotNull($result);
+
+        $decoded = json_decode($result['contents'][0]['text'], true);
+        $this->assertCount(2, $decoded['post_types']);
+        $this->assertSame('book', $decoded['post_types'][0]['post_type']);
+        $this->assertSame('Book', $decoded['post_types'][0]['label_singular']);
+        $this->assertSame('Books', $decoded['post_types'][0]['label_plural']);
+        $this->assertSame('isbn', $decoded['post_types'][0]['meta'][0]['id']);
+        $this->assertSame('movie', $decoded['post_types'][1]['post_type']);
+        $this->assertSame([], $decoded['post_types'][1]['meta']);
+    }
+
+    public function testResolveMetaFieldsReturnsEmptyListWhenNoPostTypeModels(): void
+    {
+        $this->client->expects($this->once())
+            ->method('get')
+            ->with('saltus-framework/v1/meta')
+            ->willReturn([
+                'post_types' => [],
+            ]);
+
+        $result = $this->provider->resolve('saltus://meta-fields');
+        $this->assertNotNull($result);
+
+        $decoded = json_decode($result['contents'][0]['text'], true);
+        $this->assertSame(['post_types' => []], $decoded);
+    }
+
+    public function testResolveMetaFieldsHandlesModelsApiError(): void
+    {
+        $this->client->expects($this->once())
+            ->method('get')
+            ->with('saltus-framework/v1/meta')
+            ->willReturn(['code' => 'rest_forbidden', 'message' => 'Forbidden']);
+
+        $result = $this->provider->resolve('saltus://meta-fields');
+        $this->assertNotNull($result);
+
+        $decoded = json_decode($result['contents'][0]['text'], true);
+        $this->assertSame(['error' => 'Forbidden'], $decoded);
     }
 
     public function testResolveFeaturesReturnsContent(): void

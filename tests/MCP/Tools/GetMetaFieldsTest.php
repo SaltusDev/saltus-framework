@@ -44,6 +44,21 @@ class GetMetaFieldsTest extends TestCase
                     ['id' => 'author', 'type' => 'text', 'title' => 'Author'],
                     ['id' => 'isbn', 'type' => 'text', 'title' => 'ISBN'],
                 ],
+                'normalized' => [
+                    'fields' => [
+                        [
+                            'path' => 'author',
+                            'type' => 'string',
+                            'meta_key' => 'author',
+                        ],
+                    ],
+                    'rest_meta_keys' => [
+                        [
+                            'meta_key' => 'author',
+                            'writable_rest' => true,
+                        ],
+                    ],
+                ],
             ]);
 
         $result = $this->tool->handle(['post_type' => 'book'], $client);
@@ -51,6 +66,8 @@ class GetMetaFieldsTest extends TestCase
         $this->assertSame('book', $result['post_type']);
         $this->assertCount(2, $result['meta']);
         $this->assertSame('author', $result['meta'][0]['id']);
+        $this->assertSame('author', $result['normalized']['fields'][0]['path']);
+        $this->assertSame('author', $result['normalized']['rest_meta_keys'][0]['meta_key']);
     }
 
     public function testHandleMissingPostTypeReturnsError(): void

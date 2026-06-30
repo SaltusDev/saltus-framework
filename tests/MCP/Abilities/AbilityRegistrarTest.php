@@ -23,8 +23,9 @@ class AbilityRegistrarTest extends TestCase {
 
 		$registered = ( new AbilityRegistrar() )->register();
 
-		$this->assertCount( 15, $registered );
+		$this->assertCount( 16, $registered );
 		$this->assertArrayHasKey( 'saltus/list-models', $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/list-meta-fields', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/get-meta-fields', $wp_abilities_registered );
 		$this->assertSame( 'List Models', $wp_abilities_registered['saltus/list-models']['label'] );
 		$this->assertSame( 'list_models', $wp_abilities_registered['saltus/list-models']['meta']['mcp_tool'] );
@@ -94,5 +95,18 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertSame( '/wp/v2/movie', $wp_rest_request_log[0]['route'] );
 		$this->assertSame( [ 12 ], $wp_rest_request_log[0]['query']['genres'] );
 		$this->assertSame( 6, $wp_rest_request_log[0]['query']['per_page'] );
+	}
+
+	public function testListMetaFieldsCallbackDispatchesThroughRestRequest(): void {
+		global $wp_abilities_registered, $wp_rest_request_log;
+
+		( new AbilityRegistrar() )->register();
+
+		$callback = $wp_abilities_registered['saltus/list-meta-fields']['execute_callback'];
+		$result   = $callback();
+
+		$this->assertSame( [ 'ok' => true, 'route' => '/saltus-framework/v1/meta' ], $result );
+		$this->assertSame( 'GET', $wp_rest_request_log[0]['method'] );
+		$this->assertSame( '/saltus-framework/v1/meta', $wp_rest_request_log[0]['route'] );
 	}
 }
