@@ -114,8 +114,8 @@ class MetaController extends WP_REST_Controller {
 		if ( ! isset( $model->args['meta'] ) || empty( $model->args['meta'] ) ) {
 			return rest_ensure_response(
 				[
-					'post_type' => $post_type,
-					'meta'      => [],
+					'post_type'  => $post_type,
+					'meta'       => [],
 					'normalized' => $this->normalize_meta_fields( [] ),
 				]
 			);
@@ -424,15 +424,15 @@ class MetaController extends WP_REST_Controller {
 
 	private function get_schema_type( string $codestar_type ): string {
 		$field_type_map = [
-			'number'     => 'number',
-			'background' => 'object',
+			'number'      => 'number',
+			'background'  => 'object',
 			'color_group' => 'object',
-			'fieldset'   => 'object',
-			'group'      => 'object',
-			'map'        => 'object',
-			'media'      => 'array',
-			'select'     => 'array',
-			'repeater'   => 'array',
+			'fieldset'    => 'object',
+			'group'       => 'object',
+			'map'         => 'object',
+			'media'       => 'array',
+			'select'      => 'array',
+			'repeater'    => 'array',
 		];
 
 		return $field_type_map[ $codestar_type ] ?? 'string';

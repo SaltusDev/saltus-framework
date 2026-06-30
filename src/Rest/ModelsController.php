@@ -109,6 +109,7 @@ class ModelsController extends WP_REST_Controller {
 	 * @param \Saltus\WP\Framework\Models\Model $model
 	 * @return array<string, mixed>
 	 */
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Response shape handles both model API and legacy properties.
 	private function prepare_model_for_response( $model, WP_REST_Request $request ): array {
 		$options = method_exists( $model, 'get_options' ) ? $model->get_options() : ( $model->options ?? [] );
 
