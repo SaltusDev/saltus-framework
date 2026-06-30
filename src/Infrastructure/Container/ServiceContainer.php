@@ -203,7 +203,7 @@ class ServiceContainer
 	 */
 	private function ensure_is_instantiable( ReflectionClass $reflection ): void {
 		if ( ! $reflection->isInstantiable() ) {
-			throw FailedToMakeInstance::for_unresolved_interface( esc_html( $reflection->get_name() ) );
+			throw FailedToMakeInstance::for_unresolved_interface( esc_html( $reflection->getName() ) );
 		}
 	}
 

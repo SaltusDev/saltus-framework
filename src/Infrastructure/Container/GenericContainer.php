@@ -164,7 +164,7 @@ class GenericContainer
 	 */
 	private function ensure_is_instantiable( ReflectionClass $reflection ): void {
 		if ( ! $reflection->isInstantiable() ) {
-			throw FailedToMakeInstance::for_unresolved_interface( $reflection->get_name() ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
+			throw FailedToMakeInstance::for_unresolved_interface( $reflection->getName() ); //phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is not rendered as output
 		}
 	}
 
