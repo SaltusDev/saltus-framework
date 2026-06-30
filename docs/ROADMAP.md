@@ -1,7 +1,7 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: 1.4.0 (as of 2026-06-30)
+- Version: 2.0.0 (as of 2026-06-30)
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
 - WordPress-native MCP/Abilities surface with 16 tools (9 Phase 1 + 7 Phase 2)
 - Phase 2 REST API complete: 8 routes registered in `saltus-framework/v1/`

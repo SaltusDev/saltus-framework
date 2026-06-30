@@ -1,9 +1,12 @@
 # Current: Live Working State
 
 ## Working
-- Prepare v1.0 release tag @since 2026-06-30
+- Cut v2.0.0 release @since 2026-06-30
 
 ## Next
+- Fix 318 pre-existing PHPStan errors in legacy core code
+- Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php)
+- Add unit/integration tests for refactored legacy paths
 
 ## Recent Changes
 - Added strict phpunit.xml config with random execution order, failOn* and beStrictAbout* flags
