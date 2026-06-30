@@ -13,8 +13,8 @@ class RateLimitResultTest extends TestCase
 
         $this->assertTrue($result->allowed);
         $this->assertSame(42, $result->remaining);
-        $this->assertSame(1000.5, $result->resetAt);
-        $this->assertSame(5, $result->retryAfter);
+        $this->assertSame(1000.5, $result->reset_at);
+        $this->assertSame(5, $result->retry_after);
     }
 
     public function testAllowedResult(): void
@@ -23,8 +23,8 @@ class RateLimitResultTest extends TestCase
 
         $this->assertTrue($result->allowed);
         $this->assertSame(59, $result->remaining);
-        $this->assertSame(1234.0, $result->resetAt);
-        $this->assertNull($result->retryAfter);
+        $this->assertSame(1234.0, $result->reset_at);
+        $this->assertNull($result->retry_after);
     }
 
     public function testBlockedResult(): void
@@ -33,7 +33,7 @@ class RateLimitResultTest extends TestCase
 
         $this->assertFalse($result->allowed);
         $this->assertSame(0, $result->remaining);
-        $this->assertSame(999.0, $result->resetAt);
-        $this->assertSame(30, $result->retryAfter);
+        $this->assertSame(999.0, $result->reset_at);
+        $this->assertSame(30, $result->retry_after);
     }
 }

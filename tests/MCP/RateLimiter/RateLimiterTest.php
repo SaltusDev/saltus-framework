@@ -76,8 +76,8 @@ class RateLimiterTest extends TestCase
         $limiter->check('slow');
         $result = $limiter->check('slow');
 
-        $this->assertNotNull($result->retryAfter);
-        $this->assertGreaterThanOrEqual(1, $result->retryAfter);
+        $this->assertNotNull($result->retry_after);
+        $this->assertGreaterThanOrEqual(1, $result->retry_after);
     }
 
     public function testResetAtIsFutureTimestamp(): void
@@ -85,6 +85,6 @@ class RateLimiterTest extends TestCase
         $limiter = new RateLimiter(1, 60);
 
         $result = $limiter->check('future');
-        $this->assertGreaterThan(microtime(true), $result->resetAt);
+        $this->assertGreaterThan(microtime(true), $result->reset_at);
     }
 }
