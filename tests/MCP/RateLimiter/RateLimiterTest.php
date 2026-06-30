@@ -35,6 +35,7 @@ class RateLimiterTest extends TestCase
         $limiter = new RateLimiter(1, 0);
 
         $limiter->check('bob');
+        usleep(1000);
         $result = $limiter->check('bob');
         $this->assertTrue($result->allowed);
     }
