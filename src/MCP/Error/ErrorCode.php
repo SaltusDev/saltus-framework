@@ -3,14 +3,14 @@ namespace Saltus\WP\Framework\MCP\Error;
 
 class ErrorCode {
 
-	public const TOOL_NOT_FOUND      = 'tool_not_found';
-	public const INVALID_PARAMS      = 'invalid_params';
-	public const RATE_LIMITED        = 'rate_limited';
-	public const AUTH_ERROR          = 'auth_error';
-	public const API_ERROR           = 'api_error';
-	public const RESOURCE_NOT_FOUND  = 'resource_not_found';
-	public const INTERNAL_ERROR      = 'internal_error';
-	public const TOOL_EXCEPTION      = 'tool_exception';
+	public const TOOL_NOT_FOUND     = 'tool_not_found';
+	public const INVALID_PARAMS     = 'invalid_params';
+	public const RATE_LIMITED       = 'rate_limited';
+	public const AUTH_ERROR         = 'auth_error';
+	public const API_ERROR          = 'api_error';
+	public const RESOURCE_NOT_FOUND = 'resource_not_found';
+	public const INTERNAL_ERROR     = 'internal_error';
+	public const TOOL_EXCEPTION     = 'tool_exception';
 
 	private const HINTS = [
 		self::TOOL_NOT_FOUND     => [
@@ -48,7 +48,7 @@ class ErrorCode {
 		],
 	];
 
-	public static function getHttpStatus( string $code ): int {
+	public static function get_http_status( string $code ): int {
 		return match ( $code ) {
 			self::TOOL_NOT_FOUND     => 404,
 			self::INVALID_PARAMS     => 422,
@@ -62,7 +62,7 @@ class ErrorCode {
 		};
 	}
 
-	public static function getJsonRpcCode( string $code ): int {
+	public static function get_json_rpc_code( string $code ): int {
 		return match ( $code ) {
 			self::TOOL_NOT_FOUND     => -32602,
 			self::INVALID_PARAMS     => -32602,
@@ -79,7 +79,7 @@ class ErrorCode {
 	/**
 	 * @return list<string>
 	 */
-	public static function getHints( string $code ): array {
+	public static function get_hints( string $code ): array {
 		return self::HINTS[ $code ] ?? [ 'No additional hints available' ];
 	}
 }

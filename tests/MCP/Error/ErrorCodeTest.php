@@ -21,36 +21,36 @@ class ErrorCodeTest extends TestCase
 
     public function testGetHttpStatus(): void
     {
-        $this->assertSame(404, ErrorCode::getHttpStatus(ErrorCode::TOOL_NOT_FOUND));
-        $this->assertSame(422, ErrorCode::getHttpStatus(ErrorCode::INVALID_PARAMS));
-        $this->assertSame(429, ErrorCode::getHttpStatus(ErrorCode::RATE_LIMITED));
-        $this->assertSame(401, ErrorCode::getHttpStatus(ErrorCode::AUTH_ERROR));
-        $this->assertSame(502, ErrorCode::getHttpStatus(ErrorCode::API_ERROR));
-        $this->assertSame(404, ErrorCode::getHttpStatus(ErrorCode::RESOURCE_NOT_FOUND));
-        $this->assertSame(500, ErrorCode::getHttpStatus(ErrorCode::INTERNAL_ERROR));
-        $this->assertSame(500, ErrorCode::getHttpStatus(ErrorCode::TOOL_EXCEPTION));
-        $this->assertSame(500, ErrorCode::getHttpStatus('unknown_code'));
+        $this->assertSame(404, ErrorCode::get_http_status(ErrorCode::TOOL_NOT_FOUND));
+        $this->assertSame(422, ErrorCode::get_http_status(ErrorCode::INVALID_PARAMS));
+        $this->assertSame(429, ErrorCode::get_http_status(ErrorCode::RATE_LIMITED));
+        $this->assertSame(401, ErrorCode::get_http_status(ErrorCode::AUTH_ERROR));
+        $this->assertSame(502, ErrorCode::get_http_status(ErrorCode::API_ERROR));
+        $this->assertSame(404, ErrorCode::get_http_status(ErrorCode::RESOURCE_NOT_FOUND));
+        $this->assertSame(500, ErrorCode::get_http_status(ErrorCode::INTERNAL_ERROR));
+        $this->assertSame(500, ErrorCode::get_http_status(ErrorCode::TOOL_EXCEPTION));
+        $this->assertSame(500, ErrorCode::get_http_status('unknown_code'));
     }
 
     public function testGetJsonRpcCode(): void
     {
-        $this->assertSame(-32602, ErrorCode::getJsonRpcCode(ErrorCode::TOOL_NOT_FOUND));
-        $this->assertSame(-32602, ErrorCode::getJsonRpcCode(ErrorCode::INVALID_PARAMS));
-        $this->assertSame(-32000, ErrorCode::getJsonRpcCode(ErrorCode::RATE_LIMITED));
-        $this->assertSame(-32000, ErrorCode::getJsonRpcCode(ErrorCode::AUTH_ERROR));
-        $this->assertSame(-32000, ErrorCode::getJsonRpcCode(ErrorCode::API_ERROR));
-        $this->assertSame(-32602, ErrorCode::getJsonRpcCode(ErrorCode::RESOURCE_NOT_FOUND));
-        $this->assertSame(-32000, ErrorCode::getJsonRpcCode(ErrorCode::INTERNAL_ERROR));
-        $this->assertSame(-32000, ErrorCode::getJsonRpcCode(ErrorCode::TOOL_EXCEPTION));
-        $this->assertSame(-32000, ErrorCode::getJsonRpcCode('unknown_code'));
+        $this->assertSame(-32602, ErrorCode::get_json_rpc_code(ErrorCode::TOOL_NOT_FOUND));
+        $this->assertSame(-32602, ErrorCode::get_json_rpc_code(ErrorCode::INVALID_PARAMS));
+        $this->assertSame(-32000, ErrorCode::get_json_rpc_code(ErrorCode::RATE_LIMITED));
+        $this->assertSame(-32000, ErrorCode::get_json_rpc_code(ErrorCode::AUTH_ERROR));
+        $this->assertSame(-32000, ErrorCode::get_json_rpc_code(ErrorCode::API_ERROR));
+        $this->assertSame(-32602, ErrorCode::get_json_rpc_code(ErrorCode::RESOURCE_NOT_FOUND));
+        $this->assertSame(-32000, ErrorCode::get_json_rpc_code(ErrorCode::INTERNAL_ERROR));
+        $this->assertSame(-32000, ErrorCode::get_json_rpc_code(ErrorCode::TOOL_EXCEPTION));
+        $this->assertSame(-32000, ErrorCode::get_json_rpc_code('unknown_code'));
     }
     public function testGetHints(): void
     {
-        $hints = ErrorCode::getHints(ErrorCode::AUTH_ERROR);
+        $hints = ErrorCode::get_hints(ErrorCode::AUTH_ERROR);
         $this->assertContains('Check SALTUS_WP_USERNAME has the required capabilities', $hints);
         $this->assertContains('Verify the application password is correct and not expired', $hints);
 
-        $hints = ErrorCode::getHints('unknown_code');
+        $hints = ErrorCode::get_hints('unknown_code');
         $this->assertSame(['No additional hints available'], $hints);
     }
 }
