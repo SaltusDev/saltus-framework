@@ -9,18 +9,19 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Saltus\WP\Framework\MCP\Cache\CacheInterface;
 use Saltus\WP\Framework\MCP\Config\Config;
+use Saltus\WP\Framework\MCP\Support\Json;
 
 class WordPressClient {
 
 	private Client $client;
 	private Config $config;
 	private ?CacheInterface $cache;
-	private int $defaultTtl;
+	private int $default_ttl;
 
 	public function __construct( Config $config, ?CacheInterface $cache = null ) {
-		$this->config     = $config;
-		$this->cache      = $cache;
-		$this->defaultTtl = $config->getCacheTtl();
+		$this->config      = $config;
+		$this->cache       = $cache;
+		$this->default_ttl = $config->get_cache_ttl();
 
 		$handler = HandlerStack::create();
 		$handler->push( Middleware::retry(
@@ -48,8 +49,8 @@ class WordPressClient {
 
 		$this->client = new Client([
 			'handler'  => $handler,
-			'base_uri' => $config->getApiUrl(),
-			'auth'     => [ $config->getUsername(), $config->getPassword() ],
+			'base_uri' => $config->get_api_url(),
+			'auth'     => [ $config->get_username(), $config->get_password() ],
 			'timeout'  => 30,
 			'headers'  => [
 				'Accept'     => 'application/json',
@@ -64,7 +65,7 @@ class WordPressClient {
 	*/
 	public function get( string $endpoint, array $query = [] ): array {
 		if ( $this->cache !== null ) {
-			$key    = $this->buildCacheKey( 'GET', $endpoint, $query );
+			$key    = $this->build_cache_key( 'GET', $endpoint, $query );
 			$cached = $this->cache->get( $key );
 			if ( $cached !== null ) {
 				return $cached;
@@ -76,12 +77,12 @@ class WordPressClient {
 			$data     = $this->decode( $response->getBody()->getContents() );
 
 			if ( $this->cache !== null && ! isset( $data['code'] ) ) {
-				$this->cache->set( $key, $data, $this->defaultTtl );
+				$this->cache->set( $key, $data, $this->default_ttl );
 			}
 
 			return $data;
 		} catch ( GuzzleException $e ) {
-			return $this->handleError( $e );
+			return $this->handle_error( $e );
 		}
 	}
 
@@ -92,10 +93,10 @@ class WordPressClient {
 	public function post( string $endpoint, array $data = [] ): array {
 		try {
 			$response = $this->client->post( $endpoint, [ 'json' => $data ] );
-			$this->invalidateCache();
+			$this->invalidate_cache();
 			return $this->decode( $response->getBody()->getContents() );
 		} catch ( GuzzleException $e ) {
-			return $this->handleError( $e );
+			return $this->handle_error( $e );
 		}
 	}
 
@@ -106,10 +107,10 @@ class WordPressClient {
 	public function put( string $endpoint, array $data = [] ): array {
 		try {
 			$response = $this->client->put( $endpoint, [ 'json' => $data ] );
-			$this->invalidateCache();
+			$this->invalidate_cache();
 			return $this->decode( $response->getBody()->getContents() );
 		} catch ( GuzzleException $e ) {
-			return $this->handleError( $e );
+			return $this->handle_error( $e );
 		}
 	}
 
@@ -120,25 +121,25 @@ class WordPressClient {
 	public function delete( string $endpoint, array $query = [] ): array {
 		try {
 			$response = $this->client->delete( $endpoint, [ 'query' => $query ] );
-			$this->invalidateCache();
+			$this->invalidate_cache();
 			return $this->decode( $response->getBody()->getContents() );
 		} catch ( GuzzleException $e ) {
-			return $this->handleError( $e );
+			return $this->handle_error( $e );
 		}
 	}
 
 	/**
 	* @param array<string, mixed> $query
 	*/
-	private function buildCacheKey( string $method, string $endpoint, array $query = [] ): string {
-		return hash( 'sha256', strtoupper( $method ) . ':' . $endpoint . ':' . json_encode( $query ) );
+	private function build_cache_key( string $method, string $endpoint, array $query = [] ): string {
+		return hash( 'sha256', strtoupper( $method ) . ':' . $endpoint . ':' . Json::encode( $query ) );
 	}
 
-	private function invalidateCache(): void {
+	private function invalidate_cache(): void {
 		$this->cache?->clear();
 	}
 
-	public function getConfig(): Config {
+	public function get_config(): Config {
 		return $this->config;
 	}
 
@@ -148,7 +149,6 @@ class WordPressClient {
 	private function decode( string $body ): array {
 		$data = json_decode( $body, true );
 		if ( ! is_array( $data ) ) {
-			trigger_error( 'WordPress API returned invalid JSON: ' . substr( $body, 0, 200 ), E_USER_WARNING );
 			return [];
 		}
 		return $data;
@@ -157,9 +157,10 @@ class WordPressClient {
 	/**
 	* @return array<string, mixed>
 	*/
-	private function handleError( GuzzleException $e ): array {
+	private function handle_error( GuzzleException $e ): array {
 		if ( method_exists( $e, 'getResponse' ) && $e->getResponse() ) {
 			$body = $e->getResponse()->getBody()->getContents();
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_decode -- Decoding API responses must work outside WordPress.
 			$data = json_decode( $body, true );
 			if ( is_array( $data ) ) {
 				return $data;
