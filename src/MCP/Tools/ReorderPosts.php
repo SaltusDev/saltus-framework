@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class ReorderPosts implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'reorder_posts';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Reorder multiple posts by updating their menu_order values in a single batch operation';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'items' => [
 				'type'        => 'array',

@@ -17,17 +17,17 @@ class CreatePostTest extends TestCase
 
     public function testGetName(): void
     {
-        $this->assertSame('create_post', $this->tool->getName());
+        $this->assertSame('create_post', $this->tool->get_name());
     }
 
     public function testGetDescription(): void
     {
-        $this->assertNotEmpty($this->tool->getDescription());
+        $this->assertNotEmpty($this->tool->get_description());
     }
 
     public function testGetParametersHasRequiredTitle(): void
     {
-        $params = $this->tool->getParameters();
+        $params = $this->tool->get_parameters();
         $this->assertArrayHasKey('title', $params);
         $this->assertTrue($params['title']['required']);
     }

@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class DeletePost implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'delete_post';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Delete (trash or force delete) a post by ID';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'post_id'   => [
 				'type'        => 'number',
@@ -41,11 +41,11 @@ class DeletePost implements ToolInterface {
 	* @return array<string, mixed>
 	*/
 	public function handle( array $args, WordPressClient $client ): array {
-		$postId   = $args['post_id'] ?? 0;
-		$postType = $args['post_type'] ?? 'posts';
-		$force    = ! empty( $args['force'] );
+		$post_id   = $args['post_id'] ?? 0;
+		$post_type = $args['post_type'] ?? 'posts';
+		$force     = ! empty( $args['force'] );
 
-		if ( ! $postId ) {
+		if ( ! $post_id ) {
 			return [
 				'code'    => 'invalid_params',
 				'message' => 'post_id is required',
@@ -54,7 +54,7 @@ class DeletePost implements ToolInterface {
 
 		$query = [ 'force' => $force ];
 
-		$result = $client->delete( "wp/v2/{$postType}/{$postId}", $query );
+		$result = $client->delete( "wp/v2/{$post_type}/{$post_id}", $query );
 
 		if ( isset( $result['code'] ) ) {
 			return $result;
@@ -62,7 +62,7 @@ class DeletePost implements ToolInterface {
 
 		return [
 			'deleted'     => true,
-			'previous_id' => $result['previous']['id'] ?? $postId,
+			'previous_id' => $result['previous']['id'] ?? $post_id,
 			'status'      => $result['status'] ?? 'trash',
 		];
 	}

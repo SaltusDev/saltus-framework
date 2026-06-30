@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class CreatePost implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'create_post';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Create a new post in any registered Custom Post Type';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'post_type' => [
 				'type'        => 'string',
@@ -66,8 +66,9 @@ class CreatePost implements ToolInterface {
 	* @param array<string, mixed> $args
 	* @return array<string, mixed>
 	*/
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Optional post fields map directly to the REST payload.
 	public function handle( array $args, WordPressClient $client ): array {
-		$postType = $args['post_type'] ?? 'posts';
+		$post_type = $args['post_type'] ?? 'posts';
 
 		$data = [
 			'title'  => $args['title'] ?? '',
@@ -91,12 +92,12 @@ class CreatePost implements ToolInterface {
 		}
 
 		if ( ! empty( $args['terms'] ) ) {
-			foreach ( $args['terms'] as $taxonomy => $termIds ) {
-				$data[ $taxonomy ] = $termIds;
+			foreach ( $args['terms'] as $taxonomy => $term_ids ) {
+				$data[ $taxonomy ] = $term_ids;
 			}
 		}
 
-		$result = $client->post( "wp/v2/{$postType}", $data );
+		$result = $client->post( "wp/v2/{$post_type}", $data );
 
 		if ( isset( $result['code'] ) ) {
 			return $result;

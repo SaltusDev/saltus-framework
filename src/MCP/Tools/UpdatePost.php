@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class UpdatePost implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'update_post';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Update an existing post\'s fields and meta data';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'post_id'   => [
 				'type'        => 'number',
@@ -61,11 +61,12 @@ class UpdatePost implements ToolInterface {
 	* @param array<string, mixed> $args
 	* @return array<string, mixed>
 	*/
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Optional post fields map directly to the REST payload.
 	public function handle( array $args, WordPressClient $client ): array {
-		$postId   = $args['post_id'] ?? 0;
-		$postType = $args['post_type'] ?? 'posts';
+		$post_id   = $args['post_id'] ?? 0;
+		$post_type = $args['post_type'] ?? 'posts';
 
-		if ( ! $postId ) {
+		if ( ! $post_id ) {
 			return [
 				'code'    => 'invalid_params',
 				'message' => 'post_id is required',
@@ -90,7 +91,7 @@ class UpdatePost implements ToolInterface {
 			];
 		}
 
-		$result = $client->put( "wp/v2/{$postType}/{$postId}", $data );
+		$result = $client->put( "wp/v2/{$post_type}/{$post_id}", $data );
 
 		if ( isset( $result['code'] ) ) {
 			return $result;

@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class CreateTerm implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'create_term';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Create a new term in a taxonomy';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'taxonomy'    => [
 				'type'        => 'string',
@@ -47,6 +47,7 @@ class CreateTerm implements ToolInterface {
 	* @param array<string, mixed> $args
 	* @return array<string, mixed>
 	*/
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Optional term fields map directly to the REST payload.
 	public function handle( array $args, WordPressClient $client ): array {
 		$taxonomy = $args['taxonomy'] ?? '';
 		$name     = $args['name'] ?? '';

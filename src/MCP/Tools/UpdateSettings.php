@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class UpdateSettings implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'update_settings';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Update the Saltus Framework settings for a specific post type';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'post_type' => [
 				'type'        => 'string',
@@ -36,10 +36,10 @@ class UpdateSettings implements ToolInterface {
 	* @return array<string, mixed>
 	*/
 	public function handle( array $args, WordPressClient $client ): array {
-		$postType = $args['post_type'] ?? '';
-		$settings = $args['settings'] ?? [];
+		$post_type = $args['post_type'] ?? '';
+		$settings  = $args['settings'] ?? [];
 
-		if ( ! $postType ) {
+		if ( ! $post_type ) {
 			return [
 				'code'    => 'invalid_params',
 				'message' => 'post_type is required',
@@ -53,14 +53,14 @@ class UpdateSettings implements ToolInterface {
 			];
 		}
 
-		$result = $client->put( "saltus-framework/v1/settings/{$postType}", $settings );
+		$result = $client->put( "saltus-framework/v1/settings/{$post_type}", $settings );
 
 		if ( isset( $result['code'] ) ) {
 			return $result;
 		}
 
 		return [
-			'post_type' => $result['post_type'] ?? $postType,
+			'post_type' => $result['post_type'] ?? $post_type,
 			'settings'  => $result['settings'] ?? [],
 			'status'    => $result['status'] ?? 'unknown',
 		];
