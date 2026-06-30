@@ -15,7 +15,7 @@ class AuditLoggerTest extends TestCase
         $entry->complete('success');
         $logger->record($entry);
 
-        $stats = $logger->getStats();
+        $stats = $logger->get_stats();
         $this->assertSame(1, $stats['total']);
         $this->assertSame(0, $stats['errors']);
     }
@@ -32,7 +32,7 @@ class AuditLoggerTest extends TestCase
         $fail->complete('error', 'api_error', 'fail');
         $logger->record($fail);
 
-        $stats = $logger->getStats();
+        $stats = $logger->get_stats();
         $this->assertSame(2, $stats['total']);
         $this->assertSame(1, $stats['errors']);
     }
@@ -44,7 +44,7 @@ class AuditLoggerTest extends TestCase
         $entry->complete('success');
         $logger->record($entry);
 
-        $this->assertSame(0, $logger->getStats()['total']);
+        $this->assertSame(0, $logger->get_stats()['total']);
     }
 
     public function testGetRecentEntriesReturnsLatest(): void
@@ -57,7 +57,7 @@ class AuditLoggerTest extends TestCase
             $logger->record($e);
         }
 
-        $recent = $logger->getRecentEntries(2);
+        $recent = $logger->get_recent_entries(2);
         $this->assertCount(2, $recent);
         $this->assertSame('tool_3', $recent[0]['tool']);
         $this->assertSame('tool_4', $recent[1]['tool']);
@@ -73,7 +73,7 @@ class AuditLoggerTest extends TestCase
             $logger->record($e);
         }
 
-        $stats = $logger->getStats();
+        $stats = $logger->get_stats();
         $this->assertSame(3, $stats['total']);
     }
 
@@ -105,7 +105,7 @@ class AuditLoggerTest extends TestCase
         $e->complete('success');
         $logger->record($e);
 
-        $stats = $logger->getStats();
+        $stats = $logger->get_stats();
         $this->assertArrayHasKey('total', $stats);
         $this->assertArrayHasKey('errors', $stats);
         $this->assertArrayHasKey('recent', $stats);

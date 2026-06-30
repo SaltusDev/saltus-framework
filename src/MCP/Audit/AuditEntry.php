@@ -3,54 +3,54 @@ namespace Saltus\WP\Framework\MCP\Audit;
 
 class AuditEntry {
 
-	private string $toolName;
+	private string $tool_name;
 	/** @var array<string, mixed> */
 	private array $arguments;
-	private float $startedAt;
-	private ?float $completedAt;
+	private float $started_at;
+	private ?float $completed_at;
 	private string $status;
-	private ?string $errorCode;
-	private ?string $errorMessage;
+	private ?string $error_code;
+	private ?string $error_message;
 
 	/**
 	 * @param array<string, mixed> $arguments
 	 */
-	public function __construct( string $toolName, array $arguments ) {
-		$this->toolName  = $toolName;
-		$this->arguments = $arguments;
-		$this->startedAt = microtime( true );
-		$this->completedAt = null;
-		$this->status     = 'started';
-		$this->errorCode  = null;
-		$this->errorMessage = null;
+	public function __construct( string $tool_name, array $arguments ) {
+		$this->tool_name     = $tool_name;
+		$this->arguments     = $arguments;
+		$this->started_at    = microtime( true );
+		$this->completed_at  = null;
+		$this->status        = 'started';
+		$this->error_code    = null;
+		$this->error_message = null;
 	}
 
-	public function complete( string $status, ?string $errorCode = null, ?string $errorMessage = null ): void {
-		$this->completedAt   = microtime( true );
+	public function complete( string $status, ?string $error_code = null, ?string $error_message = null ): void {
+		$this->completed_at  = microtime( true );
 		$this->status        = $status;
-		$this->errorCode     = $errorCode;
-		$this->errorMessage  = $errorMessage;
+		$this->error_code    = $error_code;
+		$this->error_message = $error_message;
 	}
 
-	public function getDuration(): ?float {
-		if ( $this->completedAt === null ) {
+	public function get_duration(): ?float {
+		if ( $this->completed_at === null ) {
 			return null;
 		}
-		return ( $this->completedAt - $this->startedAt ) * 1000;
+		return ( $this->completed_at - $this->started_at ) * 1000;
 	}
 
 	/**
 	 * @return array<string, mixed>
 	 */
-	public function toArray(): array {
+	public function to_array(): array {
 		return [
-			'timestamp'    => gmdate( 'Y-m-d\TH:i:s.v\Z', (int) $this->startedAt ),
-			'tool'         => $this->toolName,
-			'arguments'    => $this->arguments,
-			'status'       => $this->status,
-			'duration_ms'  => $this->getDuration(),
-			'error_code'   => $this->errorCode,
-			'error_message' => $this->errorMessage,
+			'timestamp'     => gmdate( 'Y-m-d\TH:i:s.v\Z', (int) $this->started_at ),
+			'tool'          => $this->tool_name,
+			'arguments'     => $this->arguments,
+			'status'        => $this->status,
+			'duration_ms'   => $this->get_duration(),
+			'error_code'    => $this->error_code,
+			'error_message' => $this->error_message,
 		];
 	}
 }

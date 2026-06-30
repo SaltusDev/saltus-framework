@@ -1,33 +1,36 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Audit;
 
+use Saltus\WP\Framework\MCP\Support\Json;
+
 class AuditLogger {
 
 	private bool $enabled;
-	private int $maxMemoryEntries;
+	private int $max_memory_entries;
 	/** @var list<AuditEntry> */
 	private array $entries = [];
-	private bool $logToStderr;
-	private ?string $logFile;
+	private bool $log_to_stderr;
+	private ?string $log_file;
 	/** @var resource|null */
-	private $fileHandle;
+	private $file_handle;
 
 	public function __construct(
 		bool $enabled = true,
-		bool $logToStderr = true,
-		?string $logFile = null,
-		int $maxMemoryEntries = 1000
+		bool $log_to_stderr = true,
+		?string $log_file = null,
+		int $max_memory_entries = 1000
 	) {
-		$this->enabled          = $enabled;
-		$this->logToStderr      = $logToStderr;
-		$this->logFile          = $logFile;
-		$this->maxMemoryEntries = $maxMemoryEntries;
-		$this->fileHandle       = null;
+		$this->enabled            = $enabled;
+		$this->log_to_stderr      = $log_to_stderr;
+		$this->log_file           = $log_file;
+		$this->max_memory_entries = $max_memory_entries;
+		$this->file_handle        = null;
 	}
 
 	public function __destruct() {
-		if ( $this->fileHandle !== null ) {
-			fclose( $this->fileHandle );
+		if ( $this->file_handle !== null ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- MCP audit logging uses an optional CLI file handle.
+			fclose( $this->file_handle );
 		}
 	}
 
@@ -38,31 +41,32 @@ class AuditLogger {
 
 		$this->entries[] = $entry;
 
-		if ( count( $this->entries ) > $this->maxMemoryEntries ) {
+		if ( count( $this->entries ) > $this->max_memory_entries ) {
 			array_shift( $this->entries );
 		}
 
-		$line = json_encode( $entry->toArray(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
+		$line = Json::encode( $entry->to_array(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
 
-		if ( $this->logToStderr ) {
+		if ( $this->log_to_stderr ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- STDERR is the expected MCP CLI diagnostics stream.
 			fwrite( STDERR, $line );
 		}
 
-		if ( $this->logFile !== null ) {
-			$this->writeFile( $line );
+		if ( $this->log_file !== null ) {
+			$this->write_file( $line );
 		}
 	}
 
 	/**
 	 * @return list<array<string, mixed>>
 	 */
-	public function getRecentEntries( int $limit = 100 ): array {
+	public function get_recent_entries( int $limit = 100 ): array {
 		$result = [];
 		$count  = count( $this->entries );
 		$start  = max( 0, $count - $limit );
 
 		for ( $i = $start; $i < $count; $i++ ) {
-			$result[] = $this->entries[ $i ]->toArray();
+			$result[] = $this->entries[ $i ]->to_array();
 		}
 
 		return $result;
@@ -71,32 +75,33 @@ class AuditLogger {
 	/**
 	 * @return array{total: int, recent: list<array<string, mixed>>}
 	 */
-	public function getStats(): array {
-		$errorCount = 0;
+	public function get_stats(): array {
+		$error_count = 0;
 		foreach ( $this->entries as $entry ) {
-			$arr = $entry->toArray();
+			$arr = $entry->to_array();
 			if ( $arr['status'] !== 'success' ) {
-				$errorCount++;
+				++$error_count;
 			}
 		}
 
 		return [
-			'total'       => count( $this->entries ),
-			'errors'      => $errorCount,
-			'recent'      => $this->getRecentEntries( 10 ),
+			'total'  => count( $this->entries ),
+			'errors' => $error_count,
+			'recent' => $this->get_recent_entries( 10 ),
 		];
 	}
 
-	private function writeFile( string $line ): void {
-		if ( $this->fileHandle === null ) {
-			$handle = fopen( $this->logFile, 'a' );
+	private function write_file( string $line ): void {
+		if ( $this->file_handle === null ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- MCP audit logging may run before WP_Filesystem is available.
+			$handle = fopen( $this->log_file, 'a' );
 			if ( $handle === false ) {
-				trigger_error( 'AuditLogger: could not open log file: ' . $this->logFile, E_USER_WARNING );
 				return;
 			}
-			$this->fileHandle = $handle;
+			$this->file_handle = $handle;
 		}
 
-		fwrite( $this->fileHandle, $line );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- MCP audit logging uses the opened CLI file handle.
+		fwrite( $this->file_handle, $line );
 	}
 }

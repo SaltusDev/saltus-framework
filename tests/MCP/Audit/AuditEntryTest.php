@@ -10,7 +10,7 @@ class AuditEntryTest extends TestCase
     public function testConstructorSetsToolNameAndArguments(): void
     {
         $entry = new AuditEntry('list_models', ['type' => 'all']);
-        $arr = $entry->toArray();
+        $arr = $entry->to_array();
 
         $this->assertSame('list_models', $arr['tool']);
         $this->assertSame(['type' => 'all'], $arr['arguments']);
@@ -19,7 +19,7 @@ class AuditEntryTest extends TestCase
     public function testInitialStatusIsStarted(): void
     {
         $entry = new AuditEntry('get_post', ['id' => 1]);
-        $arr = $entry->toArray();
+        $arr = $entry->to_array();
 
         $this->assertSame('started', $arr['status']);
         $this->assertNull($arr['duration_ms']);
@@ -31,7 +31,7 @@ class AuditEntryTest extends TestCase
         usleep(1000);
         $entry->complete('success');
 
-        $arr = $entry->toArray();
+        $arr = $entry->to_array();
 
         $this->assertSame('success', $arr['status']);
         $this->assertNotNull($arr['duration_ms']);
@@ -45,7 +45,7 @@ class AuditEntryTest extends TestCase
         $entry = new AuditEntry('delete_post', ['id' => 99]);
         $entry->complete('error', 'rest_forbidden', 'You cannot delete this post');
 
-        $arr = $entry->toArray();
+        $arr = $entry->to_array();
 
         $this->assertSame('error', $arr['status']);
         $this->assertSame('rest_forbidden', $arr['error_code']);
@@ -55,7 +55,7 @@ class AuditEntryTest extends TestCase
     public function testTimestampFormat(): void
     {
         $entry = new AuditEntry('list_posts', []);
-        $arr = $entry->toArray();
+        $arr = $entry->to_array();
 
         $this->assertMatchesRegularExpression(
             '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/',
@@ -69,7 +69,7 @@ class AuditEntryTest extends TestCase
         $entry->complete('error', 'e1', 'first');
         $entry->complete('success');
 
-        $arr = $entry->toArray();
+        $arr = $entry->to_array();
         $this->assertSame('success', $arr['status']);
         $this->assertNull($arr['error_code']);
         $this->assertNull($arr['error_message']);
@@ -78,6 +78,6 @@ class AuditEntryTest extends TestCase
     public function testGetDurationBeforeComplete(): void
     {
         $entry = new AuditEntry('test', []);
-        $this->assertNull($entry->getDuration());
+        $this->assertNull($entry->get_duration());
     }
 }
