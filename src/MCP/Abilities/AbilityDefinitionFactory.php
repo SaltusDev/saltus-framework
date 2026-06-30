@@ -163,6 +163,9 @@ class AbilityDefinitionFactory {
 				$route  = '/saltus-framework/v1/reorder';
 				$body   = [ 'items' => $args['items'] ?? [] ];
 				break;
+			case 'list_meta_fields':
+				$route = '/saltus-framework/v1/meta';
+				break;
 			case 'get_meta_fields':
 				$route = '/saltus-framework/v1/meta/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) );
 				break;
@@ -228,8 +231,9 @@ class AbilityDefinitionFactory {
 
 		if ( function_exists( 'get_post_type_object' ) ) {
 			$object = get_post_type_object( $postType );
-			if ( is_object( $object ) && is_string( $object->rest_base ?? null ) && $object->rest_base !== '' ) {
-				return $object->rest_base;
+			$restBase = $this->objectRestBase( $object );
+			if ( $restBase !== null ) {
+				return $restBase;
 			}
 		}
 
@@ -239,12 +243,23 @@ class AbilityDefinitionFactory {
 	private function taxonomyRestBase( string $taxonomy ): string {
 		if ( function_exists( 'get_taxonomy' ) ) {
 			$object = get_taxonomy( $taxonomy );
-			if ( is_object( $object ) && is_string( $object->rest_base ?? null ) && $object->rest_base !== '' ) {
-				return $object->rest_base;
+			$restBase = $this->objectRestBase( $object );
+			if ( $restBase !== null ) {
+				return $restBase;
 			}
 		}
 
 		return $taxonomy;
+	}
+
+	private function objectRestBase( mixed $object ): ?string {
+		if ( ! is_object( $object ) || ! property_exists( $object, 'rest_base' ) ) {
+			return null;
+		}
+
+		$restBase = $object->rest_base;
+
+		return is_string( $restBase ) && $restBase !== '' ? $restBase : null;
 	}
 
 	private function error( string $code, string $message, int $status ): \WP_Error {

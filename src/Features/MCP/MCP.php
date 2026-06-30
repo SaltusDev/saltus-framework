@@ -9,8 +9,8 @@ use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
  * Enables Saltus MCP support.
  *
  * WordPress-native abilities are registered when the host WordPress version
- * exposes the Abilities API. Older WordPress versions continue to use the
- * standalone stdio MCP server as the compatibility path.
+ * exposes the Abilities API. Older WordPress versions skip native ability
+ * registration.
  */
 class MCP implements Service, Registerable {
 
@@ -20,6 +20,7 @@ class MCP implements Service, Registerable {
 	 * @param array<int, mixed> $dependencies Framework dependencies injected by the service container.
 	 */
 	public function __construct( array $dependencies = [], ?AbilityRegistrar $abilityRegistrar = null ) {
+		$hasDependencies        = $dependencies !== [];
 		$this->abilityRegistrar = $abilityRegistrar ?? new AbilityRegistrar();
 	}
 
@@ -28,8 +29,18 @@ class MCP implements Service, Registerable {
 			return;
 		}
 
-		add_action( 'wp_abilities_api_categories_init', [ $this->abilityRegistrar, 'registerCategory' ] );
-		add_action( 'wp_abilities_api_init', [ $this->abilityRegistrar, 'register' ] );
+		add_action(
+			'wp_abilities_api_categories_init',
+			function (): void {
+				$this->abilityRegistrar->registerCategory();
+			}
+		);
+		add_action(
+			'wp_abilities_api_init',
+			function (): void {
+				$this->abilityRegistrar->register();
+			}
+		);
 	}
 
 	public function transport(): string {

@@ -22,6 +22,7 @@ class ToolFactory {
 			GetSettings::class,
 			UpdateSettings::class,
 			ReorderPosts::class,
+			ListMetaFields::class,
 			GetMetaFields::class,
 		];
 	}

@@ -47,8 +47,12 @@ class GetMetaFields implements ToolInterface {
 		}
 
 		return [
-			'post_type' => $result['post_type'] ?? $postType,
-			'meta'      => $result['meta'] ?? [],
+			'post_type'  => $result['post_type'] ?? $postType,
+			'meta'       => $result['meta'] ?? [],
+			'normalized' => $result['normalized'] ?? [
+				'fields'         => [],
+				'rest_meta_keys' => [],
+			],
 		];
 	}
 }
