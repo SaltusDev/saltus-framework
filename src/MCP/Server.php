@@ -10,6 +10,7 @@ use Saltus\WP\Framework\MCP\Error\McpError;
 use Saltus\WP\Framework\MCP\Prompts\PromptProvider;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Resources\ResourceProvider;
+use Saltus\WP\Framework\MCP\Support\Json;
 use Saltus\WP\Framework\MCP\Tools\ToolFactory;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\MCP\Validation\Validator;
@@ -17,24 +18,24 @@ use Saltus\WP\Framework\MCP\Validation\Validator;
 class Server {
 
 	private WordPressClient $client;
-	private ToolProvider $toolProvider;
-	private ResourceProvider $resourceProvider;
-	private PromptProvider $promptProvider;
-	private ?RateLimiter $rateLimiter;
-	private ?AuditLogger $auditLogger;
+	private ToolProvider $tool_provider;
+	private ResourceProvider $resource_provider;
+	private PromptProvider $prompt_provider;
+	private ?RateLimiter $rate_limiter;
+	private ?AuditLogger $audit_logger;
 
 	public function __construct( Config $config ) {
-		$cache = $config->isCacheEnabled() ? new InMemoryCache() : null;
+		$cache = $config->is_cache_enabled() ? new InMemoryCache() : null;
 
-		$this->client           = new WordPressClient( $config, $cache );
-		$this->toolProvider     = ToolFactory::createDefaultProvider();
-		$this->resourceProvider = new ResourceProvider( $this->client );
-		$this->promptProvider   = new PromptProvider();
-		$this->rateLimiter      = $config->isRateLimitEnabled()
-			? new RateLimiter( $config->getRateLimitMax(), $config->getRateLimitWindow() )
+		$this->client            = new WordPressClient( $config, $cache );
+		$this->tool_provider     = ToolFactory::create_default_provider();
+		$this->resource_provider = new ResourceProvider( $this->client );
+		$this->prompt_provider   = new PromptProvider();
+		$this->rate_limiter      = $config->is_rate_limit_enabled()
+			? new RateLimiter( $config->get_rate_limit_max(), $config->get_rate_limit_window() )
 			: null;
-		$this->auditLogger      = $config->isAuditEnabled()
-			? new AuditLogger( true, true, $config->getAuditLogFile() )
+		$this->audit_logger      = $config->is_audit_enabled()
+			? new AuditLogger( true, true, $config->get_audit_log_file() )
 			: null;
 	}
 
@@ -59,10 +60,11 @@ class Server {
 				continue;
 			}
 
-			$response = $this->handleRequest( $request );
+			$response = $this->handle_request( $request );
 
 			if ( $response !== null ) {
-				echo json_encode( $response ) . "\n";
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON-RPC responses must be emitted as raw JSON.
+				echo Json::encode( $response ) . "\n";
 				fflush( STDOUT );
 			}
 		}
@@ -72,40 +74,41 @@ class Server {
 	* @param array<string, mixed> $request
 	* @return array<string, mixed>|null
 	*/
-	private function handleRequest( array $request ): ?array {
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- JSON-RPC method dispatch is intentionally explicit.
+	private function handle_request( array $request ): ?array {
 		$method = $request['method'] ?? '';
 		$id     = $request['id'] ?? null;
 		$params = $request['params'] ?? [];
 
 		switch ( $method ) {
 			case 'initialize':
-				return $this->handleInitialize( $id );
+				return $this->handle_initialize( $id );
 
 			case 'initialized':
 			case 'notifications/initialized':
 				return null;
 
 			case 'tools/list':
-				return $this->handleToolsList( $id );
+				return $this->handle_tools_list( $id );
 
 			case 'tools/call':
-				return $this->handleToolsCall( $id, $params );
+				return $this->handle_tools_call( $id, $params );
 
 			case 'resources/list':
-				return $this->handleResourcesList( $id );
+				return $this->handle_resources_list( $id );
 
 			case 'resources/read':
-				return $this->handleResourcesRead( $id, $params );
+				return $this->handle_resources_read( $id, $params );
 
 			case 'prompts/list':
-				return $this->handlePromptsList( $id );
+				return $this->handle_prompts_list( $id );
 
 			case 'prompts/get':
-				return $this->handlePromptsGet( $id, $params );
+				return $this->handle_prompts_get( $id, $params );
 
 			default:
-				return $this->buildError(
-					McpError::notFound( 'method', "{$method}" ),
+				return $this->build_error(
+					McpError::not_found( 'method', "{$method}" ),
 					$id
 				);
 		}
@@ -114,7 +117,7 @@ class Server {
 	/**
 	* @return array<string, mixed>
 	*/
-	private function handleInitialize( mixed $id ): array {
+	private function handle_initialize( mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
@@ -135,12 +138,12 @@ class Server {
 	/**
 	* @return array<string, mixed>
 	*/
-	private function handleToolsList( mixed $id ): array {
+	private function handle_tools_list( mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
 			'result'  => [
-				'tools' => $this->toolProvider->getDefinitions(),
+				'tools' => $this->tool_provider->get_definitions(),
 			],
 		];
 	}
@@ -149,38 +152,39 @@ class Server {
 	* @param array<string, mixed> $params
 	* @return array<string, mixed>
 	*/
-	private function handleToolsCall( mixed $id, array $params ): array {
-		$toolName  = $params['name'] ?? '';
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded -- Tool call orchestration keeps audit, rate-limit, validation, and execution in one flow.
+	private function handle_tools_call( mixed $id, array $params ): array {
+		$tool_name = $params['name'] ?? '';
 		$arguments = $params['arguments'] ?? [];
 
-		$entry = $this->auditLogger !== null ? new AuditEntry( $toolName, $arguments ) : null;
+		$entry = $this->audit_logger !== null ? new AuditEntry( $tool_name, $arguments ) : null;
 
-		if ( $this->rateLimiter !== null ) {
-			$rateResult = $this->rateLimiter->check( 'default' );
-			if ( ! $rateResult->allowed ) {
+		if ( $this->rate_limiter !== null ) {
+			$rate_result = $this->rate_limiter->check( 'default' );
+			if ( ! $rate_result->allowed ) {
 				$entry?->complete( 'rate_limited', 'rate_limited', 'Rate limit exceeded' );
-				$this->auditLogger?->record( $entry );
-				return $this->buildError(
-					McpError::fromRateLimit( $rateResult->retryAfter ?? 1, $rateResult->remaining ),
+				$this->audit_logger?->record( $entry );
+				return $this->build_error(
+					McpError::from_rate_limit( $rate_result->retry_after ?? 1, $rate_result->remaining ),
 					$id
 				);
 			}
 		}
 
-		$tool = $this->toolProvider->get( $toolName );
+		$tool = $this->tool_provider->get( $tool_name );
 
 		if ( ! $tool ) {
-			$entry?->complete( 'error', 'tool_not_found', "Unknown tool: {$toolName}" );
-			$this->auditLogger?->record( $entry );
-			return $this->buildError( McpError::notFound( 'tool', $toolName ), $id );
+			$entry?->complete( 'error', 'tool_not_found', "Unknown tool: {$tool_name}" );
+			$this->audit_logger?->record( $entry );
+			return $this->build_error( McpError::not_found( 'tool', $tool_name ), $id );
 		}
 
-		$schema   = $tool->getParameters();
-		$valid    = Validator::validate( $arguments, $schema );
+		$schema = $tool->get_parameters();
+		$valid  = Validator::validate( $arguments, $schema );
 		if ( ! $valid['valid'] ) {
 			$entry?->complete( 'validation_error', 'invalid_params', implode( '; ', $valid['errors'] ) );
-			$this->auditLogger?->record( $entry );
-			return $this->buildError( McpError::fromValidation( $valid['errors'] ), $id );
+			$this->audit_logger?->record( $entry );
+			return $this->build_error( McpError::from_validation( $valid['errors'] ), $id );
 		}
 
 		try {
@@ -188,12 +192,12 @@ class Server {
 
 			if ( isset( $result['code'] ) && isset( $result['message'] ) ) {
 				$entry?->complete( 'error', $result['code'], $result['message'] );
-				$this->auditLogger?->record( $entry );
-				return $this->buildError( McpError::fromApiError( $result ), $id );
+				$this->audit_logger?->record( $entry );
+				return $this->build_error( McpError::from_api_error( $result ), $id );
 			}
 
 			$entry?->complete( 'success' );
-			$this->auditLogger?->record( $entry );
+			$this->audit_logger?->record( $entry );
 
 			return [
 				'jsonrpc' => '2.0',
@@ -202,27 +206,27 @@ class Server {
 					'content' => [
 						[
 							'type' => 'text',
-							'text' => json_encode( $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ),
+							'text' => Json::encode( $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ),
 						],
 					],
 				],
 			];
 		} catch ( \Throwable $e ) {
 			$entry?->complete( 'exception', 'tool_exception', $e->getMessage() );
-			$this->auditLogger?->record( $entry );
-			return $this->buildError( McpError::fromThrowable( $e ), $id );
+			$this->audit_logger?->record( $entry );
+			return $this->build_error( McpError::from_throwable( $e ), $id );
 		}
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	private function handleResourcesList( mixed $id ): array {
+	private function handle_resources_list( mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
 			'result'  => [
-				'resources' => $this->resourceProvider->getDefinitions(),
+				'resources' => $this->resource_provider->get_definitions(),
 			],
 		];
 	}
@@ -231,13 +235,13 @@ class Server {
 	* @param array<string, mixed> $params
 	* @return array<string, mixed>
 	*/
-	private function handleResourcesRead( mixed $id, array $params ): array {
+	private function handle_resources_read( mixed $id, array $params ): array {
 		$uri = $params['uri'] ?? '';
 
-		$result = $this->resourceProvider->resolve( $uri );
+		$result = $this->resource_provider->resolve( $uri );
 
 		if ( ! $result ) {
-			return $this->buildError( McpError::notFound( 'resource', $uri ), $id );
+			return $this->build_error( McpError::not_found( 'resource', $uri ), $id );
 		}
 
 		return [
@@ -250,12 +254,12 @@ class Server {
 	/**
 	* @return array<string, mixed>
 	*/
-	private function handlePromptsList( mixed $id ): array {
+	private function handle_prompts_list( mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'id'      => $id,
 			'result'  => [
-				'prompts' => $this->promptProvider->list(),
+				'prompts' => $this->prompt_provider->list(),
 			],
 		];
 	}
@@ -264,14 +268,14 @@ class Server {
 	* @param array<string, mixed> $params
 	* @return array<string, mixed>
 	*/
-	private function handlePromptsGet( mixed $id, array $params ): array {
+	private function handle_prompts_get( mixed $id, array $params ): array {
 		$name      = $params['name'] ?? '';
 		$arguments = $params['arguments'] ?? [];
 
-		$result = $this->promptProvider->get( $name, $arguments );
+		$result = $this->prompt_provider->get( $name, $arguments );
 
 		if ( ! $result ) {
-			return $this->buildError( McpError::notFound( 'prompt', $name ), $id );
+			return $this->build_error( McpError::not_found( 'prompt', $name ), $id );
 		}
 
 		return [
@@ -284,13 +288,12 @@ class Server {
 	/**
 	* @return array<string, mixed>
 	*/
-	private function buildError( McpError $error, mixed $id ): array {
+	private function build_error( McpError $error, mixed $id ): array {
 		return [
 			'jsonrpc' => '2.0',
 			'isError' => true,
-			'error'   => $error->toArray(),
+			'error'   => $error->to_array(),
 			'id'      => $id,
 		];
 	}
-
 }
