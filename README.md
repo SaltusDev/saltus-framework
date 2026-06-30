@@ -7,7 +7,7 @@ Visit saltus.dev for more information.
 
 ## Version
 
-### Current version [1.3.5] - 2026-06-20
+### Current version [2.0.0] - 2026-06-30
 
 See [change log file](CHANGELOG.md) for full details.
 

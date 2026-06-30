@@ -1,6 +1,12 @@
 # Changelog
 
 
+## [Unreleased]
+
+### Fixed
+	- Cleared the remaining PHPStan Level 7 issues in `Modeler`, REST route registration, and MCP taxonomy REST-base handling.
+	- Added an explicit model name accessor contract so `Modeler` no longer depends on concrete model properties.
+
 ## [2.0.0] - 2026-06-30
 
 ### Added

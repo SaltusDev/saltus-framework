@@ -4,8 +4,9 @@
 - Version: 2.0.0 (released 2026-06-30)
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
 - WordPress-native MCP/Abilities surface with 16 tools (9 Phase 1 + 7 Phase 2)
-- Phase 2 REST API complete: 8 routes registered in `saltus-framework/v1/`
+- Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes
+- PHPStan Level 7 clean across the configured analysis set as of 2026-06-30
 - **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
@@ -157,7 +158,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 ## Framework Core Roadmap
 
 ### Short-term Goals
-- Address codebase technical debt.
+- Address codebase technical debt; PHPStan Level 7 is now clean, with PHPCS cleanup still pending.
 - Ensure automated testing suites are stable and passing.
 - Ship MCP Phase 1 and Phase 2.
 

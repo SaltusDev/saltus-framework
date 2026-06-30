@@ -1,15 +1,19 @@
 # Current: Live Working State
 
 ## Working
-- Triage and fix 318 pre-existing PHPStan errors in legacy core code @since 2026-06-30
+- Triage remaining PHPCS warnings/errors and PHPUnit notices after PHPStan cleanup @since 2026-06-30
 
 ## Next
 - Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php)
 - Add unit/integration tests for refactored legacy paths
 
 ## Recent Changes
+- Full `composer phpstan` is clean at PHPStan Level 7 across the configured analysis set
+- Added `Model::get_name()` and `BaseModel::get_name()` so `Modeler` keys models through the model contract instead of concrete public properties
+- Tightened `Modeler::add()` parameter and return types and removed redundant nullable fallback from `get_models()`
+- Updated REST controllers to register routes with non-empty namespace constants for PHPStan-safe WordPress route registration
+- Removed redundant taxonomy slug type narrowing in `ListPosts`
 - v2.0.0 released 2026-06-30 — merged feature/mcp-v0 to main, tagged v2.0.0
-- Current Working: triage PHPStan errors in legacy core code
 - Added strict phpunit.xml config with random execution order, failOn* and beStrictAbout* flags
 - Added phpunit.xml.dist as distribution configuration
 - Created tests/TestCase.php base class for all framework tests
@@ -55,7 +59,8 @@
 - Code review: Unused getDefaultMessage() removed (#49 — low)
 
 ## Known Issues
-- Reference `phpstan_errors.txt` for current static analysis warnings/errors (Level 7 clean for MCP + Rest, 318 pre-existing errors in legacy core code).
+- `composer phpcs` still fails on pre-existing MCP style, naming, and complexity issues; touched REST/model files have no PHPCS errors, except an existing `ModelsController` complexity warning.
+- `composer test` passes, but PHPUnit reports 8 deprecations and 49 notices under PHP 8.5.4/PHPUnit 12.5.30.
 - Code review flagged RateLimitResultTest.php as added (3 new tests, 559 assertions).
 - Code review 4/4 findings resolved.
 
@@ -64,4 +69,4 @@
 - Metadata discovery is implemented through `saltus/list-meta-fields` and `saltus/get-meta-fields`.
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
-- Current verification: full `composer test` passes; touched-file PHPStan passes; full `composer phpstan` still reports 10 pre-existing errors outside the metadata changes.
+- Current verification: full `composer phpstan` passes; full `composer test` passes with existing PHPUnit deprecations/notices; project-wide `composer phpcs` still fails on pre-existing style/complexity findings.
