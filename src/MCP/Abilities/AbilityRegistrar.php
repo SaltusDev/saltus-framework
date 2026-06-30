@@ -6,19 +6,19 @@ use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 
 class AbilityRegistrar {
 
-	private ToolProvider $toolProvider;
-	private AbilityDefinitionFactory $definitionFactory;
+	private ToolProvider $tool_provider;
+	private AbilityDefinitionFactory $definition_factory;
 
-	public function __construct( ?ToolProvider $toolProvider = null, ?AbilityDefinitionFactory $definitionFactory = null ) {
-		$this->toolProvider      = $toolProvider ?? ToolFactory::createDefaultProvider();
-		$this->definitionFactory = $definitionFactory ?? new AbilityDefinitionFactory();
+	public function __construct( ?ToolProvider $tool_provider = null, ?AbilityDefinitionFactory $definition_factory = null ) {
+		$this->tool_provider      = $tool_provider ?? ToolFactory::create_default_provider();
+		$this->definition_factory = $definition_factory ?? new AbilityDefinitionFactory();
 	}
 
-	public function hasNativeApi(): bool {
+	public function has_native_api(): bool {
 		return function_exists( 'wp_register_ability' );
 	}
 
-	public function registerCategory(): void {
+	public function register_category(): void {
 		if ( ! function_exists( 'wp_register_ability_category' ) ) {
 			return;
 		}
@@ -36,12 +36,12 @@ class AbilityRegistrar {
 	 * @return list<string>
 	 */
 	public function register(): array {
-		if ( ! $this->hasNativeApi() ) {
+		if ( ! $this->has_native_api() ) {
 			return [];
 		}
 
 		$registered = [];
-		foreach ( $this->definitionFactory->fromToolProvider( $this->toolProvider ) as $definition ) {
+		foreach ( $this->definition_factory->from_tool_provider( $this->tool_provider ) as $definition ) {
 			$name = (string) $definition['name'];
 			$args = $definition;
 			unset( $args['name'] );
