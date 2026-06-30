@@ -10,11 +10,11 @@ class AbilityDefinitionFactory {
 	/**
 	 * @return list<array{name: lowercase-string&non-falsy-string, label: string, description: string, category: string, input_schema: array<string, mixed>, inputSchema: array<string, mixed>, execute_callback: callable, permission_callback: callable, callback: callable, meta: array<string, mixed>}>
 	 */
-	public function fromToolProvider( ToolProvider $provider ): array {
+	public function from_tool_provider( ToolProvider $provider ): array {
 		$definitions = [];
 
 		foreach ( $provider->all() as $tool ) {
-			$definitions[] = $this->fromTool( $tool );
+			$definitions[] = $this->from_tool( $tool );
 		}
 
 		return $definitions;
@@ -23,58 +23,58 @@ class AbilityDefinitionFactory {
 	/**
 	 * @return array{name: lowercase-string&non-falsy-string, label: string, description: string, category: string, input_schema: array<string, mixed>, inputSchema: array<string, mixed>, execute_callback: callable, permission_callback: callable, callback: callable, meta: array<string, mixed>}
 	 */
-	public function fromTool( ToolInterface $tool ): array {
-		$schema = $tool->getParameters();
+	public function from_tool( ToolInterface $tool ): array {
+		$schema = $tool->get_parameters();
 
 		return [
-			'name'                => $this->abilityName( $tool->getName() ),
-			'label'               => $this->labelFromToolName( $tool->getName() ),
-			'description'         => $tool->getDescription(),
+			'name'                => $this->ability_name( $tool->get_name() ),
+			'label'               => $this->label_from_tool_name( $tool->get_name() ),
+			'description'         => $tool->get_description(),
 			'category'            => 'saltus-framework',
 			'input_schema'        => $schema,
 			'inputSchema'         => $schema,
 			'execute_callback'    => function ( array $args = [] ) use ( $tool ) {
-				return $this->dispatchToolToRest( $tool, $args );
+				return $this->dispatch_tool_to_rest( $tool, $args );
 			},
-			'permission_callback' => [ $this, 'canUseSaltusAbilities' ],
+			'permission_callback' => [ $this, 'can_use_saltus_abilities' ],
 			'callback'            => function ( array $args = [] ) use ( $tool ) {
-				return $this->dispatchToolToRest( $tool, $args );
+				return $this->dispatch_tool_to_rest( $tool, $args );
 			},
 			'meta'                => [
-				'mcp_tool'  => $tool->getName(),
-				'namespace' => 'saltus-framework/v1',
-				'transport' => 'wordpress-rest',
+				'mcp_tool'     => $tool->get_name(),
+				'namespace'    => 'saltus-framework/v1',
+				'transport'    => 'wordpress-rest',
 				'show_in_rest' => true,
 			],
 		];
 	}
 
-	public function canUseSaltusAbilities(): bool {
+	public function can_use_saltus_abilities(): bool {
 		return function_exists( 'current_user_can' ) && current_user_can( 'edit_posts' );
 	}
 
 	/**
 	 * @return lowercase-string&non-falsy-string
 	 */
-	private function abilityName( string $toolName ): string {
-		return strtolower( 'saltus/' . str_replace( '_', '-', $toolName ) );
+	private function ability_name( string $tool_name ): string {
+		return strtolower( 'saltus/' . str_replace( '_', '-', $tool_name ) );
 	}
 
-	private function labelFromToolName( string $toolName ): string {
-		return ucwords( str_replace( '_', ' ', $toolName ) );
+	private function label_from_tool_name( string $tool_name ): string {
+		return ucwords( str_replace( '_', ' ', $tool_name ) );
 	}
 
 	/**
 	 * @param array<string, mixed> $args
 	 * @return array<string, mixed>|\WP_Error
 	 */
-	private function dispatchToolToRest( ToolInterface $tool, array $args ): array|\WP_Error {
-		$valid = Validator::validate( $args, $tool->getParameters() );
+	private function dispatch_tool_to_rest( ToolInterface $tool, array $args ): array|\WP_Error {
+		$valid = Validator::validate( $args, $tool->get_parameters() );
 		if ( ! $valid['valid'] ) {
 			return $this->error( 'invalid_params', implode( '; ', $valid['errors'] ), 400 );
 		}
 
-		$request = $this->buildRestRequest( $tool->getName(), $args );
+		$request = $this->build_rest_request( $tool->get_name(), $args );
 		if ( $request === null ) {
 			return $this->error( 'unsupported_ability', 'This Saltus ability is registered for discovery only until a native dispatcher is available.', 501 );
 		}
@@ -92,7 +92,8 @@ class AbilityDefinitionFactory {
 	/**
 	 * @param array<string, mixed> $args
 	 */
-	private function buildRestRequest( string $toolName, array $args ): ?\WP_REST_Request {
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded -- Tool-to-REST routing is intentionally centralized.
+	private function build_rest_request( string $tool_name, array $args ): ?\WP_REST_Request {
 		if ( ! class_exists( '\WP_REST_Request' ) ) {
 			return null;
 		}
@@ -102,7 +103,7 @@ class AbilityDefinitionFactory {
 		$body   = [];
 		$query  = [];
 
-		switch ( $toolName ) {
+		switch ( $tool_name ) {
 			case 'list_models':
 				$route = '/saltus-framework/v1/models';
 				$query = $args;
@@ -111,37 +112,37 @@ class AbilityDefinitionFactory {
 				$route = '/saltus-framework/v1/models/' . rawurlencode( (string) ( $args['slug'] ?? '' ) );
 				break;
 			case 'list_posts':
-				$route = '/wp/v2/' . rawurlencode( $this->postTypeRestBase( (string) ( $args['post_type'] ?? 'posts' ) ) );
-				$query = $this->onlyArgs( $args, [ 'status', 'search', 'per_page', 'page', 'orderby', 'order' ] );
-				$query = $this->appendTermFilters( $query, $args['terms'] ?? [] );
+				$route = '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) );
+				$query = $this->only_args( $args, [ 'status', 'search', 'per_page', 'page', 'orderby', 'order' ] );
+				$query = $this->append_term_filters( $query, $args['terms'] ?? [] );
 				break;
 			case 'get_post':
-				$route = '/wp/v2/' . rawurlencode( $this->postTypeRestBase( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 );
+				$route = '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 );
 				break;
 			case 'create_post':
 				$method = 'POST';
-				$route  = '/wp/v2/' . rawurlencode( $this->postTypeRestBase( (string) ( $args['post_type'] ?? 'posts' ) ) );
-				$body   = $this->onlyArgs( $args, [ 'title', 'content', 'excerpt', 'slug', 'status', 'meta' ] );
-				$body   = $this->appendTermFilters( $body, $args['terms'] ?? [] );
+				$route  = '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) );
+				$body   = $this->only_args( $args, [ 'title', 'content', 'excerpt', 'slug', 'status', 'meta' ] );
+				$body   = $this->append_term_filters( $body, $args['terms'] ?? [] );
 				break;
 			case 'update_post':
 				$method = 'PUT';
-				$route  = '/wp/v2/' . rawurlencode( $this->postTypeRestBase( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 );
-				$body   = $this->onlyArgs( $args, [ 'title', 'content', 'excerpt', 'slug', 'status', 'meta' ] );
+				$route  = '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 );
+				$body   = $this->only_args( $args, [ 'title', 'content', 'excerpt', 'slug', 'status', 'meta' ] );
 				break;
 			case 'delete_post':
 				$method = 'DELETE';
-				$route  = '/wp/v2/' . rawurlencode( $this->postTypeRestBase( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 );
+				$route  = '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 );
 				$query  = [ 'force' => ! empty( $args['force'] ) ];
 				break;
 			case 'list_terms':
-				$route = '/wp/v2/' . rawurlencode( $this->taxonomyRestBase( (string) ( $args['taxonomy'] ?? 'categories' ) ) );
-				$query = $this->onlyArgs( $args, [ 'per_page', 'search', 'hide_empty' ] );
+				$route = '/wp/v2/' . rawurlencode( $this->taxonomy_rest_base( (string) ( $args['taxonomy'] ?? 'categories' ) ) );
+				$query = $this->only_args( $args, [ 'per_page', 'search', 'hide_empty' ] );
 				break;
 			case 'create_term':
 				$method = 'POST';
-				$route  = '/wp/v2/' . rawurlencode( $this->taxonomyRestBase( (string) ( $args['taxonomy'] ?? '' ) ) );
-				$body   = $this->onlyArgs( $args, [ 'name', 'slug', 'description', 'parent' ] );
+				$route  = '/wp/v2/' . rawurlencode( $this->taxonomy_rest_base( (string) ( $args['taxonomy'] ?? '' ) ) );
+				$body   = $this->only_args( $args, [ 'name', 'slug', 'description', 'parent' ] );
 				break;
 			case 'duplicate_post':
 				$method = 'POST';
@@ -187,7 +188,7 @@ class AbilityDefinitionFactory {
 	 * @param list<string> $keys
 	 * @return array<string, mixed>
 	 */
-	private function onlyArgs( array $args, array $keys ): array {
+	private function only_args( array $args, array $keys ): array {
 		$filtered = [];
 		foreach ( $keys as $key ) {
 			if ( array_key_exists( $key, $args ) ) {
@@ -203,63 +204,63 @@ class AbilityDefinitionFactory {
 	 * @param mixed $terms
 	 * @return array<string, mixed>
 	 */
-	private function appendTermFilters( array $data, mixed $terms ): array {
+	private function append_term_filters( array $data, mixed $terms ): array {
 		if ( ! is_array( $terms ) ) {
 			return $data;
 		}
 
-		foreach ( $terms as $taxonomy => $termIds ) {
-			if ( ! is_string( $taxonomy ) || ! is_array( $termIds ) ) {
+		foreach ( $terms as $taxonomy => $term_ids ) {
+			if ( ! is_string( $taxonomy ) || ! is_array( $term_ids ) ) {
 				continue;
 			}
 
-			$ids = array_values( array_filter( array_map( 'intval', $termIds ) ) );
+			$ids = array_values( array_filter( array_map( 'intval', $term_ids ) ) );
 			if ( $ids === [] ) {
 				continue;
 			}
 
-			$data[ $this->taxonomyRestBase( $taxonomy ) ] = $ids;
+			$data[ $this->taxonomy_rest_base( $taxonomy ) ] = $ids;
 		}
 
 		return $data;
 	}
 
-	private function postTypeRestBase( string $postType ): string {
-		if ( in_array( $postType, [ 'posts', 'pages', 'media', 'users' ], true ) ) {
-			return $postType;
+	private function post_type_rest_base( string $post_type ): string {
+		if ( in_array( $post_type, [ 'posts', 'pages', 'media', 'users' ], true ) ) {
+			return $post_type;
 		}
 
 		if ( function_exists( 'get_post_type_object' ) ) {
-			$object = get_post_type_object( $postType );
-			$restBase = $this->objectRestBase( $object );
-			if ( $restBase !== null ) {
-				return $restBase;
+			$rest_object = get_post_type_object( $post_type );
+			$rest_base   = $this->object_rest_base( $rest_object );
+			if ( $rest_base !== null ) {
+				return $rest_base;
 			}
 		}
 
-		return $postType;
+		return $post_type;
 	}
 
-	private function taxonomyRestBase( string $taxonomy ): string {
+	private function taxonomy_rest_base( string $taxonomy ): string {
 		if ( function_exists( 'get_taxonomy' ) ) {
-			$object = get_taxonomy( $taxonomy );
-			$restBase = $this->objectRestBase( $object );
-			if ( $restBase !== null ) {
-				return $restBase;
+			$rest_object = get_taxonomy( $taxonomy );
+			$rest_base   = $this->object_rest_base( $rest_object );
+			if ( $rest_base !== null ) {
+				return $rest_base;
 			}
 		}
 
 		return $taxonomy;
 	}
 
-	private function objectRestBase( mixed $object ): ?string {
-		if ( ! is_object( $object ) || ! property_exists( $object, 'rest_base' ) ) {
+	private function object_rest_base( mixed $rest_object ): ?string {
+		if ( ! is_object( $rest_object ) || ! property_exists( $rest_object, 'rest_base' ) ) {
 			return null;
 		}
 
-		$restBase = $object->rest_base;
+		$rest_base = $rest_object->rest_base;
 
-		return is_string( $restBase ) && $restBase !== '' ? $restBase : null;
+		return is_string( $rest_base ) && $rest_base !== '' ? $rest_base : null;
 	}
 
 	private function error( string $code, string $message, int $status ): \WP_Error {
