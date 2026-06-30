@@ -34,6 +34,13 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 - **Decision:** Includes native support for `afragen/github-updater`.
 - **Impact:** Allows plugins built with this framework to receive seamless updates directly from the WordPress admin dashboard, bypassing the need to host plugins on the official WordPress.org repository.
 
+### 5. WordPress-Native MCP/Abilities
+- **Purpose:** Expose Saltus model, content, settings, and metadata operations to AI clients through WordPress-native MCP/Abilities.
+- **Decision:** WordPress 7.0 Abilities is the supported MCP path. Local stdio MCP server, SSE transport, and standalone server distribution are skipped.
+- **Metadata:** `list_meta_fields` exposes all registered CPT meta configs through `GET /saltus-framework/v1/meta`; `get_meta_fields` exposes one CPT through `GET /saltus-framework/v1/meta/{post_type}`.
+- **Current Shape:** Metadata responses preserve the raw Saltus/Codestar config in `meta` and add `normalized.fields` plus `normalized.rest_meta_keys` for client write guidance.
+- **Normalized Metadata:** Nested Codestar fields are flattened into paths such as `points_info.coordinates.latitude`, with label, source meta key, serialized status, REST writability, and JSON-schema-like type data.
+
 ## Naming & Standards
 - **Quality Assurance:** PHP CodeSniffer (PHPCS) ensures adherence to WordPress coding standards, while PHPStan handles static analysis to catch type errors and logical bugs early.
 - **Testing:** Automated tests are powered by PHPUnit, ensuring framework stability across different WordPress and PHP versions.

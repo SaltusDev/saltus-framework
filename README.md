@@ -183,29 +183,19 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 * Clone [github-updater](https://github.com/afragen/github-updater) to your sites plugins/ folder
 * Activate via WordPress
 
-## MCP Server
+## WordPress-Native MCP/Abilities
 
-Saltus Framework includes a **Model Context Protocol (MCP) server** that lets AI assistants (Claude, Copilot, etc.) interact with your WordPress site via the REST API.
+Saltus Framework exposes its AI-facing tool surface through the WordPress-native MCP/Abilities API. Native WordPress MCP clients can discover and call the `saltus/*` abilities directly from the active plugin.
 
 ### Quick Start
 
-```bash
-# Configure the standalone stdio MCP server
-export SALTUS_WP_URL="https://example.com"
-export SALTUS_WP_USERNAME="admin"
-export SALTUS_WP_PASSWORD="xxxx xxxx xxxx xxxx xxxx xxxx"
+Install and activate the plugin that uses Saltus Framework on a WordPress version with the Abilities API. Saltus registers its abilities during `wp_abilities_api_init`; clients that understand WordPress-native MCP/Abilities can discover the `saltus/*` tools from WordPress.
 
-# Start the MCP server for standalone AI assistant use
-php bin/mcp-server
-```
+The standalone local stdio MCP server path has been skipped. Saltus MCP development targets WordPress-native abilities instead.
 
-Use the standalone server for MCP clients that connect over stdio. It talks to WordPress through the REST API and does not write config files.
+### Capability Dispatch
 
-### WordPress-Native MCP/Abilities
-
-On WordPress versions that provide the Abilities API, Saltus registers its MCP tool surface through WordPress during `wp_abilities_api_init`. Native WordPress MCP clients can discover and call the `saltus/*` abilities directly from the active plugin.
-
-The abilities use the same tool definitions as `bin/mcp-server` and dispatch through WordPress REST requests, so existing REST permission callbacks and `current_user_can()` checks remain authoritative. Older WordPress versions simply skip native ability registration; the stdio MCP server remains the compatibility path.
+Abilities dispatch through WordPress REST requests, so existing REST permission callbacks and `current_user_can()` checks remain authoritative. WordPress versions without the Abilities API simply skip Saltus ability registration.
 
 ### Available Tools
 
@@ -225,19 +215,29 @@ The abilities use the same tool definitions as `bin/mcp-server` and dispatch thr
 | `get_settings` | Get Saltus settings for a post type |
 | `update_settings` | Update Saltus settings for a post type |
 | `reorder_posts` | Batch update post menu order |
+| `list_meta_fields` | Discover Saltus meta field definitions across all registered CPTs |
 | `get_meta_fields` | Get Saltus meta field definitions for a post type |
+
+Meta field discovery preserves the raw Saltus/Codestar configuration in `meta` and includes normalized MCP-friendly metadata in `normalized.fields` and `normalized.rest_meta_keys`. Nested fields are exposed as paths such as `points_info.coordinates.latitude`, with JSON-schema-like types and REST writability information.
+
+### Available Resources
+
+| Resource | Description |
+|----------|-------------|
+| `saltus://models` | List all registered Saltus models |
+| `saltus://meta-fields` | Legacy MCP resource for model-defined meta fields; WP7 clients should use `list_meta_fields` |
+| `saltus://features` | List framework features |
+| `saltus://status` | Framework and MCP/Abilities status |
 
 ### Requirements
 
-- WordPress 5.6+ (Application Passwords API)
-- Application Password generated from Users → Profile in WP Admin
+- WordPress 7.0+ or a WordPress build that provides the Abilities API
+- A WordPress-native MCP/Abilities client
 - The plugin using Saltus Framework must be active
 
 ### Configuration
 
-```bash
-php bin/mcp-server --help          # Full usage guide
-```
+No local MCP server configuration is required for the WordPress-native path.
 
 ## Building
 

@@ -10,8 +10,9 @@ Run `composer install` to install dependencies.
 ## Running Tests and Linting
 The project defines several Composer scripts for quality assurance:
 
-- **Tests:** `./vendor/bin/phpunit -c phpunit.xml`
-  Run via `composer test`
+- **Tests:** `composer test`
+- **Unit tests:** `composer test:unit`
+- **Integration tests:** `composer test:integration`
 - **Static Analysis (PHPStan):** `./vendor/bin/phpstan analyse --memory-limit=2G`
   Run via `composer phpstan`
 - **Linting (PHPCS):** `./vendor/bin/phpcs --standard=phpcs.xml`
