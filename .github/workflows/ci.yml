@@ -60,6 +60,27 @@ jobs:
       - name: Run Composer audit
         run: composer audit
 
+  php-tests:
+    name: PHPUnit tests
+    runs-on: ubuntu-latest
+    needs: composer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup PHP with Composer cache
+        uses: ./.github/actions/php-setup
+        with:
+          cache-key: ${{ runner.os }}-phpunit-php8.3-composer-${{ hashFiles('composer.json', 'composer.lock') }}
+          cache-restore-keys: ${{ runner.os }}-phpunit-php8.3-composer-
+
+      - name: Install dependencies
+        run: composer install --no-ansi --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHPUnit
+        run: composer test
+
   coding-standards:
     name: Coding standards and PHP compatibility
     runs-on: ubuntu-latest
