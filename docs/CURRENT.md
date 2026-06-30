@@ -1,13 +1,20 @@
 # Current: Live Working State
 
 ## Working
-- Triage remaining PHPCS warnings/errors and PHPUnit notices after PHPStan cleanup @since 2026-06-30
+- Address remaining PHPStan errors in ResourceProvider (2 pre-existing) @since 2026-06-30
 
 ## Next
 - Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php)
 - Add unit/integration tests for refactored legacy paths
 
 ## Recent Changes
+- Added unit tests for `BaseModel::get_name()` and `Modeler` add/get_models (5 test methods, 248 total)
+- Added `tests/Integration/.gitkeep` to preserve the integration test directory
+- `composer phpcs` is clean — all MCP module renamed to snake_case (14 commits)
+- WordPress naming conventions enforced across MCP module: methods, properties, variables renamed from camelCase to snake_case
+- Added `Json` helper class for safe JSON encoding (wp_json_encode with json_encode fallback)
+- Removed phpcs.xml exclusion rules for MCP and REST paths
+- Fixed ReflectionClass::getName() regression from rename
 - Full `composer phpstan` is clean at PHPStan Level 7 across the configured analysis set
 - Added `Model::get_name()` and `BaseModel::get_name()` so `Modeler` keys models through the model contract instead of concrete public properties
 - Tightened `Modeler::add()` parameter and return types and removed redundant nullable fallback from `get_models()`
@@ -59,10 +66,9 @@
 - Code review: Unused getDefaultMessage() removed (#49 — low)
 
 ## Known Issues
-- `composer phpcs` still fails on pre-existing MCP style, naming, and complexity issues; touched REST/model files have no PHPCS errors, except an existing `ModelsController` complexity warning.
+- `composer phpcs` passes — MCP module renamed to snake_case, exclusions removed.
 - `composer test` passes, but PHPUnit reports 8 deprecations and 49 notices under PHP 8.5.4/PHPUnit 12.5.30.
-- Code review flagged RateLimitResultTest.php as added (3 new tests, 559 assertions).
-- Code review 4/4 findings resolved.
+- PHPStan: 2 pre-existing errors in ResourceProvider.php ($context docblock mismatch).
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server, SSE transport, and standalone packaging are skipped.

@@ -50,7 +50,7 @@ class ResourceProvider {
 	/**
 	 * Resolve a resource URI to its content.
 	 *
-	 * @param array<string, mixed> $context
+	 * @param array<string, mixed> $_context
 	 * @return array{contents: list<array{uri: string, mimeType: string, text: string}>}|null
 	 */
 	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Resource URI dispatch is intentionally explicit.

@@ -158,9 +158,9 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 ## Framework Core Roadmap
 
 ### Short-term Goals
-- Address codebase technical debt; PHPStan Level 7 is now clean, with PHPCS cleanup still pending.
-- Ensure automated testing suites are stable and passing.
-- Ship MCP Phase 1 and Phase 2.
+- Address remaining PHPStan errors (2 pre-existing in ResourceProvider).
+- Continue maintaining automated testing suites.
+- WordPress-native MCP/Abilities integration shipped in v2.0.0.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
