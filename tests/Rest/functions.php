@@ -265,6 +265,12 @@ if ( ! function_exists( 'has_filter' ) ) {
 	}
 }
 
+if ( ! function_exists( 'is_admin' ) ) {
+	function is_admin(): bool {
+		return false;
+	}
+}
+
 if ( ! function_exists( 'get_option' ) ) {
 	function get_option( string $option, mixed $default = false ): mixed {
 		global $wp_options;
