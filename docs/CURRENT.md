@@ -8,6 +8,8 @@
 - Add unit/integration tests for refactored legacy paths
 
 ## Recent Changes
+- v2.0.0 released 2026-06-30 — merged feature/mcp-v0 to main, tagged v2.0.0
+- Current Working: triage PHPStan errors in legacy core code
 - Added strict phpunit.xml config with random execution order, failOn* and beStrictAbout* flags
 - Added phpunit.xml.dist as distribution configuration
 - Created tests/TestCase.php base class for all framework tests
