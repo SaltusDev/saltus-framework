@@ -170,7 +170,7 @@ class ListPosts implements ToolInterface
 		$restBases = [];
 
 		foreach ($taxonomies as $slug => $taxonomy) {
-			if (!is_string($slug) || !is_array($taxonomy)) {
+			if (!is_array($taxonomy)) {
 				continue;
 			}
 
