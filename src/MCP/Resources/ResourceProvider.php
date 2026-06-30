@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\MCP\Resources;
 
 use Saltus\WP\Framework\MCP\Client\WordPressClient;
+use Saltus\WP\Framework\MCP\Support\Json;
 
 class ResourceProvider {
 	private WordPressClient $client;
@@ -17,7 +18,7 @@ class ResourceProvider {
 	 *
 	 * @return list<array{uri: string, name: string, description: string, mimeType: string}>
 	 */
-	public function getDefinitions(): array {
+	public function get_definitions(): array {
 		return [
 			[
 				'uri'         => 'saltus://models',
@@ -52,7 +53,10 @@ class ResourceProvider {
 	 * @param array<string, mixed> $context
 	 * @return array{contents: list<array{uri: string, mimeType: string, text: string}>}|null
 	 */
-	public function resolve( string $uri, array $context = [] ): ?array {
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Resource URI dispatch is intentionally explicit.
+	public function resolve( string $uri, array $_context = [] ): ?array {
+		unset( $_context );
+
 		switch ( $uri ) {
 			case 'saltus://models':
 				$models = $this->client->get( 'saltus-framework/v1/models' );
@@ -61,7 +65,7 @@ class ResourceProvider {
 						[
 							'uri'      => $uri,
 							'mimeType' => 'application/json',
-							'text'     => json_encode(
+							'text'     => Json::encode(
 								isset( $models['code'] )
 									? [ 'error' => $models['message'] ?? 'Failed to fetch models' ]
 									: $models,
@@ -77,7 +81,7 @@ class ResourceProvider {
 						[
 							'uri'      => $uri,
 							'mimeType' => 'application/json',
-							'text'     => json_encode( $this->resolveMetaFields(), JSON_PRETTY_PRINT ) ?: '{}',
+							'text'     => Json::encode( $this->resolve_meta_fields(), JSON_PRETTY_PRINT ) ?: '{}',
 						],
 					],
 				];
@@ -88,7 +92,7 @@ class ResourceProvider {
 						[
 							'uri'      => $uri,
 							'mimeType' => 'application/json',
-							'text'     => json_encode(
+							'text'     => Json::encode(
 								[
 									'available_features' => [
 										'admin_cols'    => 'Custom admin list table columns',
@@ -115,12 +119,12 @@ class ResourceProvider {
 						[
 							'uri'      => $uri,
 							'mimeType' => 'application/json',
-							'text'     => json_encode(
+							'text'     => Json::encode(
 								[
-									'framework'  => 'Saltus Framework',
-									'version'    => '2.0.0',
+									'framework'     => 'Saltus Framework',
+									'version'       => '2.0.0',
 									'mcp_abilities' => 'wordpress-native',
-									'status'     => 'connected',
+									'status'        => 'connected',
 								],
 								JSON_PRETTY_PRINT
 							) ?: '',
@@ -138,7 +142,7 @@ class ResourceProvider {
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function resolveMetaFields(): array {
+	private function resolve_meta_fields(): array {
 		$meta = $this->client->get( 'saltus-framework/v1/meta' );
 
 		if ( isset( $meta['code'] ) ) {

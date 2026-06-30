@@ -19,13 +19,13 @@ class ResourceProviderTest extends TestCase
 
     public function testGetDefinitionsReturnsFour(): void
     {
-        $definitions = $this->provider->getDefinitions();
+        $definitions = $this->provider->get_definitions();
         $this->assertCount(4, $definitions);
     }
 
     public function testGetDefinitionsContainExpectedUris(): void
     {
-        $definitions = $this->provider->getDefinitions();
+        $definitions = $this->provider->get_definitions();
         $uris = array_map(fn ($d) => $d['uri'], $definitions);
         $this->assertContains('saltus://models', $uris);
         $this->assertContains('saltus://meta-fields', $uris);
@@ -35,7 +35,7 @@ class ResourceProviderTest extends TestCase
 
     public function testGetDefinitionsHaveRequiredFields(): void
     {
-        foreach ($this->provider->getDefinitions() as $def) {
+        foreach ($this->provider->get_definitions() as $def) {
             $this->assertArrayHasKey('uri', $def);
             $this->assertArrayHasKey('name', $def);
             $this->assertArrayHasKey('description', $def);
