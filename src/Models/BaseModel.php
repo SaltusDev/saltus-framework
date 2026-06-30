@@ -108,6 +108,13 @@ abstract class BaseModel {
 	}
 
 	/**
+	 * Get the registration name for the model.
+	 */
+	public function get_name(): string {
+		return $this->name;
+	}
+
+	/**
 	 * Set labels to override in ui
 	 *
 	 * Based on labels.overrides.ui values
