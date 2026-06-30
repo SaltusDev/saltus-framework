@@ -12,21 +12,21 @@ class Validator {
 		$errors = [];
 
 		foreach ( $schema as $field => $rules ) {
-			$hasValue = array_key_exists( $field, $args );
-			$value    = $args[ $field ] ?? null;
+			$has_value = array_key_exists( $field, $args );
+			$value     = $args[ $field ] ?? null;
 
-			if ( ! empty( $rules['required'] ) && ! $hasValue ) {
+			if ( ! empty( $rules['required'] ) && ! $has_value ) {
 				$errors[] = "'{$field}' is required";
 				continue;
 			}
 
-			if ( ! $hasValue ) {
+			if ( ! $has_value ) {
 				continue;
 			}
 
 			$type = $rules['type'] ?? null;
 			if ( $type !== null ) {
-				$valid = self::checkType( $value, $type );
+				$valid = self::check_type( $value, $type );
 				if ( ! $valid ) {
 					$errors[] = "'{$field}' must be of type {$type}, got " . gettype( $value );
 					continue;
@@ -38,13 +38,16 @@ class Validator {
 			}
 		}
 
-		return [ 'valid' => empty( $errors ), 'errors' => $errors ];
+		return [
+			'valid'  => empty( $errors ),
+			'errors' => $errors,
+		];
 	}
 
 	/**
 	* @param mixed $value
 	*/
-	private static function checkType( $value, string $type ): bool {
+	private static function check_type( $value, string $type ): bool {
 		switch ( $type ) {
 			case 'string':
 				return is_string( $value );
