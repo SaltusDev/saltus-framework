@@ -57,7 +57,7 @@ class UpdateSettingsTest extends TestCase
 
     public function testHandleMissingPostTypeReturnsError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $result = $this->tool->handle(['settings' => ['key' => 'val']], $client);
 
         $this->assertArrayHasKey('code', $result);
@@ -66,7 +66,7 @@ class UpdateSettingsTest extends TestCase
 
     public function testHandleEmptySettingsReturnsError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $result = $this->tool->handle(['post_type' => 'book', 'settings' => []], $client);
 
         $this->assertArrayHasKey('code', $result);
@@ -75,7 +75,7 @@ class UpdateSettingsTest extends TestCase
 
     public function testHandlePassesThroughApiError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('put')->willReturn([
             'code' => 'rest_forbidden',
             'message' => 'You do not have permission.',

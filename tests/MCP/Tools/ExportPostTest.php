@@ -54,7 +54,7 @@ class ExportPostTest extends TestCase
 
     public function testHandleMissingPostIdReturnsError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $result = $this->tool->handle([], $client);
 
         $this->assertArrayHasKey('code', $result);
@@ -63,7 +63,7 @@ class ExportPostTest extends TestCase
 
     public function testHandlePassesThroughApiError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('get')->willReturn([
             'code' => 'post_not_found',
             'message' => 'Post not found.',

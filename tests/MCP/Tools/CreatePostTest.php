@@ -111,7 +111,7 @@ class CreatePostTest extends TestCase
 
     public function testHandlePassesThroughApiError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('post')->willReturn([
             'code' => 'rest_invalid_param',
             'message' => 'Invalid parameter(s): title',

@@ -59,7 +59,7 @@ class ReorderPostsTest extends TestCase
 
     public function testHandleMissingItemsReturnsError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $result = $this->tool->handle([], $client);
 
         $this->assertArrayHasKey('code', $result);
@@ -68,7 +68,7 @@ class ReorderPostsTest extends TestCase
 
     public function testHandleEmptyItemsReturnsError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $result = $this->tool->handle(['items' => []], $client);
 
         $this->assertArrayHasKey('code', $result);
@@ -77,7 +77,7 @@ class ReorderPostsTest extends TestCase
 
     public function testHandlePassesThroughApiError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('post')->willReturn([
             'code' => 'rest_empty_data',
             'message' => 'No items provided.',

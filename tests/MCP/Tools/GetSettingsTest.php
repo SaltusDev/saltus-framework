@@ -51,7 +51,7 @@ class GetSettingsTest extends TestCase
 
     public function testHandleMissingPostTypeReturnsError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $result = $this->tool->handle([], $client);
 
         $this->assertArrayHasKey('code', $result);
@@ -60,7 +60,7 @@ class GetSettingsTest extends TestCase
 
     public function testHandlePassesThroughApiError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('get')->willReturn([
             'code' => 'rest_forbidden',
             'message' => 'You do not have permission.',

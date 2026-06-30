@@ -89,7 +89,7 @@ class ListModelsTest extends TestCase
 
     public function testHandleSkipsNonArrayEntries(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('get')->willReturnCallback(function (string $endpoint) {
             return match ($endpoint) {
                 'wp/v2/types' => [

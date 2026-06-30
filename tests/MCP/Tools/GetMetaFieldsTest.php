@@ -72,7 +72,7 @@ class GetMetaFieldsTest extends TestCase
 
     public function testHandleMissingPostTypeReturnsError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $result = $this->tool->handle([], $client);
 
         $this->assertArrayHasKey('code', $result);
@@ -81,7 +81,7 @@ class GetMetaFieldsTest extends TestCase
 
     public function testHandlePassesThroughApiError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('get')->willReturn([
             'code' => 'model_not_found',
             'message' => 'Model not found.',

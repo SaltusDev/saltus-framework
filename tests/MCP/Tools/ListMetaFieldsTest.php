@@ -51,7 +51,7 @@ class ListMetaFieldsTest extends TestCase {
 	}
 
 	public function testHandlePassesThroughApiError(): void {
-		$client = $this->createMock( WordPressClient::class );
+		$client = $this->createStub( WordPressClient::class );
 		$client->method( 'get' )->willReturn(
 			[
 				'code'    => 'rest_forbidden',

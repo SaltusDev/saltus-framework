@@ -29,7 +29,7 @@ class GetPostTest extends TestCase
 
     public function testHandleReturnsErrorWhenPostIdMissing(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
 
         $result = $this->tool->handle(['post_type' => 'posts'], $client);
 
@@ -69,7 +69,7 @@ class GetPostTest extends TestCase
 
     public function testHandlePassesThroughApiError(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('get')->willReturn([
             'code' => 'rest_post_invalid_id',
             'message' => 'Invalid post ID.',
@@ -83,7 +83,7 @@ class GetPostTest extends TestCase
 
     public function testHandleIncludesMetaWhenPresent(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('get')->willReturn([
             'id' => 1,
             'title' => ['rendered' => 'Test'],
@@ -98,7 +98,7 @@ class GetPostTest extends TestCase
 
     public function testHandleIncludesTermsWhenEmbedded(): void
     {
-        $client = $this->createMock(WordPressClient::class);
+        $client = $this->createStub(WordPressClient::class);
         $client->method('get')->willReturn([
             'id' => 1,
             'title' => ['rendered' => 'Test'],
