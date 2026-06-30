@@ -1,12 +1,19 @@
 # Current: Live Working State
 
 ## Working
-- Polish MCP meta field depth discovery and normalized REST metadata output @since 2026-06-29
+- Prepare v1.0 release tag @since 2026-06-30
 
 ## Next
-- Tag v1.0 release
 
 ## Recent Changes
+- Added strict phpunit.xml config with random execution order, failOn* and beStrictAbout* flags
+- Added phpunit.xml.dist as distribution configuration
+- Created tests/TestCase.php base class for all framework tests
+- Added Unit test suite: Container, Asset, Model config tests (5 test files)
+- Added Integration test suite: FrameworkBootTest for service container verification
+- Added is_admin() stub in test functions for environment compatibility
+- Added PHPUnit test job to GitHub Actions CI workflow
+- Bumped version to 1.4.0
 - WordPress 7.0 MCP/Abilities connector: `AbilityRegistrar` registers 16 Saltus tool definitions when `wp_register_ability()` exists
 - Shared `ToolFactory` keeps MCP tool definitions aligned with WordPress-native abilities
 - Native ability callbacks dispatch through `rest_do_request()` so existing REST permission callbacks remain authoritative
@@ -35,7 +42,7 @@
 - Rate limiting: Sliding-window RateLimiter throttles tool calls (default 60/60s)
 - Audit trail: AuditLogger writes JSON tool call records to STDERR and optional file
 - Config: 9 new env vars for cache, rate limit, and audit configuration
-- 103 new PHPUnit tests (208 total, 551 assertions) covering all 4 Phase 3 features
+- 38 new PHPUnit tests (243 total, 696 assertions) covering all 4 Phase 3 features
 - PHPStan Level 7 clean across all new MCP code
 - PHP 8.3+ required for `str_starts_with()` in McpError
 - Code review: Config constructor refactored to array bag pattern (#49 — medium)
