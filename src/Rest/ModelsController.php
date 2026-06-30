@@ -12,17 +12,19 @@ use Saltus\WP\Framework\Models\Taxonomy;
 
 class ModelsController extends WP_REST_Controller {
 
+	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
+
 	protected Modeler $modeler;
 
 	public function __construct( Modeler $modeler ) {
 		$this->modeler   = $modeler;
-		$this->namespace = 'saltus-framework/v1';
+		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'models';
 	}
 
 	public function register_routes(): void {
 		register_rest_route(
-			$this->namespace,
+			self::ROUTE_NAMESPACE,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -32,7 +34,7 @@ class ModelsController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			$this->namespace,
+			self::ROUTE_NAMESPACE,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,

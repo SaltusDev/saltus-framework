@@ -10,14 +10,16 @@ use WP_Error;
 
 class ReorderController extends WP_REST_Controller {
 
+	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
+
 	public function __construct() {
-		$this->namespace = 'saltus-framework/v1';
+		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'reorder';
 	}
 
 	public function register_routes(): void {
 		register_rest_route(
-			$this->namespace,
+			self::ROUTE_NAMESPACE,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::CREATABLE,
