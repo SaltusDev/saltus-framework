@@ -1,10 +1,9 @@
 # Current: Live Working State
 
 ## Working
-- Cut v2.0.0 release @since 2026-06-30
+- Triage and fix 318 pre-existing PHPStan errors in legacy core code @since 2026-06-30
 
 ## Next
-- Fix 318 pre-existing PHPStan errors in legacy core code
 - Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php)
 - Add unit/integration tests for refactored legacy paths
 
