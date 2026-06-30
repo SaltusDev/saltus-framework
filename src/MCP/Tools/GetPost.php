@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class GetPost implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'get_post';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Get a single post by ID with all fields and meta data';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'post_id'   => [
 				'type'        => 'number',
@@ -35,18 +35,19 @@ class GetPost implements ToolInterface {
 	* @param array<string, mixed> $args
 	* @return array<string, mixed>
 	*/
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded -- Response formatting mirrors WordPress REST post shape.
 	public function handle( array $args, WordPressClient $client ): array {
-		$postId   = $args['post_id'] ?? 0;
-		$postType = $args['post_type'] ?? 'posts';
+		$post_id   = $args['post_id'] ?? 0;
+		$post_type = $args['post_type'] ?? 'posts';
 
-		if ( ! $postId ) {
+		if ( ! $post_id ) {
 			return [
 				'code'    => 'invalid_params',
 				'message' => 'post_id is required',
 			];
 		}
 
-		$endpoint = "wp/v2/{$postType}/{$postId}";
+		$endpoint = "wp/v2/{$post_type}/{$post_id}";
 
 		$post = $client->get( $endpoint );
 
@@ -80,8 +81,8 @@ class GetPost implements ToolInterface {
 
 		if ( ! empty( $post['_embedded']['wp:term'] ) ) {
 			$terms = [];
-			foreach ( $post['_embedded']['wp:term'] as $termGroup ) {
-				foreach ( $termGroup as $term ) {
+			foreach ( $post['_embedded']['wp:term'] as $term_group ) {
+				foreach ( $term_group as $term ) {
 					$terms[] = [
 						'id'       => $term['id'],
 						'name'     => $term['name'],

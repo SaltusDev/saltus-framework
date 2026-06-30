@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class ListModels implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'list_models';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'List all registered Custom Post Types and Taxonomies on the WordPress site';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'type' => [
 				'type'        => 'string',
@@ -36,13 +36,13 @@ class ListModels implements ToolInterface {
 		$result = [];
 
 		if ( $type === 'all' || $type === 'post_types' ) {
-			$postTypes            = $client->get( 'wp/v2/types' );
-			$result['post_types'] = $this->formatPostTypes( $postTypes );
+			$post_types           = $client->get( 'wp/v2/types' );
+			$result['post_types'] = $this->format_post_types( $post_types );
 		}
 
 		if ( $type === 'all' || $type === 'taxonomies' ) {
 			$taxonomies           = $client->get( 'wp/v2/taxonomies' );
-			$result['taxonomies'] = $this->formatTaxonomies( $taxonomies );
+			$result['taxonomies'] = $this->format_taxonomies( $taxonomies );
 		}
 
 		return $result;
@@ -52,7 +52,7 @@ class ListModels implements ToolInterface {
 	* @param array<string, mixed> $data
 	 * @return list<array<string, mixed>>
 	 */
-	private function formatPostTypes( array $data ): array {
+	private function format_post_types( array $data ): array {
 		$types = [];
 		foreach ( $data as $slug => $type ) {
 			if ( ! is_array( $type ) ) {
@@ -75,7 +75,7 @@ class ListModels implements ToolInterface {
 	* @param array<string, mixed> $data
 	 * @return list<array<string, mixed>>
 	 */
-	private function formatTaxonomies( array $data ): array {
+	private function format_taxonomies( array $data ): array {
 		$taxonomies = [];
 		foreach ( $data as $slug => $tax ) {
 			if ( ! is_array( $tax ) ) {

@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class GetModel implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'get_model';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Get details of a specific Custom Post Type or Taxonomy by slug';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'slug' => [
 				'type'        => 'string',
@@ -40,12 +40,12 @@ class GetModel implements ToolInterface {
 			];
 		}
 
-		$postType = $client->get( "wp/v2/types/{$slug}" );
+		$post_type = $client->get( "wp/v2/types/{$slug}" );
 
-		if ( ! empty( $postType ) && ! isset( $postType['code'] ) ) {
+		if ( ! empty( $post_type ) && ! isset( $post_type['code'] ) ) {
 			return [
 				'type' => 'post_type',
-				'data' => $postType,
+				'data' => $post_type,
 			];
 		}
 

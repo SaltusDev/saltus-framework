@@ -5,18 +5,18 @@ use Saltus\WP\Framework\MCP\Client\WordPressClient;
 
 class GetSettings implements ToolInterface {
 
-	public function getName(): string {
+	public function get_name(): string {
 		return 'get_settings';
 	}
 
-	public function getDescription(): string {
+	public function get_description(): string {
 		return 'Get the Saltus Framework settings for a specific post type';
 	}
 
 	/**
 	* @return array<string, mixed>
 	*/
-	public function getParameters(): array {
+	public function get_parameters(): array {
 		return [
 			'post_type' => [
 				'type'        => 'string',
@@ -31,23 +31,23 @@ class GetSettings implements ToolInterface {
 	* @return array<string, mixed>
 	*/
 	public function handle( array $args, WordPressClient $client ): array {
-		$postType = $args['post_type'] ?? '';
+		$post_type = $args['post_type'] ?? '';
 
-		if ( ! $postType ) {
+		if ( ! $post_type ) {
 			return [
 				'code'    => 'invalid_params',
 				'message' => 'post_type is required',
 			];
 		}
 
-		$result = $client->get( "saltus-framework/v1/settings/{$postType}" );
+		$result = $client->get( "saltus-framework/v1/settings/{$post_type}" );
 
 		if ( isset( $result['code'] ) ) {
 			return $result;
 		}
 
 		return [
-			'post_type' => $result['post_type'] ?? $postType,
+			'post_type' => $result['post_type'] ?? $post_type,
 			'settings'  => $result['settings'] ?? [],
 		];
 	}
