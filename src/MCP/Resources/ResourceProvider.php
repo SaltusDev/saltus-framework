@@ -118,7 +118,7 @@ class ResourceProvider {
 							'text'     => json_encode(
 								[
 									'framework'  => 'Saltus Framework',
-									'version'    => '1.3.4',
+									'version'    => '2.0.0',
 									'mcp_abilities' => 'wordpress-native',
 									'status'     => 'connected',
 								],
