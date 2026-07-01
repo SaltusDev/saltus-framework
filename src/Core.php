@@ -31,28 +31,32 @@ use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
 use Saltus\WP\Framework\Rest\RestServer;
 
 
 class Core implements Plugin {
 
 	/**
-	Main filters to control the flow of the plugin from outside code.
-	@var non-empty-string
-	*/
-	const SERVICES_FILTER = 'services';
+	 * Main filters to control the flow of the plugin from outside code.
+	 * @var non-empty-string
+	 */
+	private const SERVICES_FILTER = 'services';
 
 	/**
-	Prefixes to use.
-	@var non-empty-string
-	*/
-	const HOOK_PREFIX    = 'saltus/framework/';
-	const SERVICE_PREFIX = '';
+	 * Prefixes to use.
+	 * @var non-empty-string
+	 */
+	private const HOOK_PREFIX    = 'saltus/framework/';
+	private const SERVICE_PREFIX = '';
 
 
 	/**
 	 * If services can be filtered out
-	 * @var bool */
+	 * @var bool
+	 */
 	protected bool $enable_filters = true;
 
 	/**
@@ -92,7 +96,6 @@ class Core implements Plugin {
 	 * @return void
 	 */
 	public function register(): void {
-		// Todo validate key:
 		\register_activation_hook(
 			__FILE__,
 			function () {
@@ -133,10 +136,28 @@ class Core implements Plugin {
 		// TODO
 
 		// 5- Register REST API routes
-		$rest_server = new RestServer( $this->modeler );
+		$rest_policy = new ModelRestPolicy( $this->modeler );
+		$rest_server = new RestServer( $rest_policy, $this->get_rest_routes( $rest_policy ) );
 		add_action( 'rest_api_init', [ $rest_server, 'register_routes' ] );
 
 		// 6- MCP is registered through the default feature list.
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	private function get_rest_routes( ModelRestPolicy $policy ): array {
+		$routes = $this->modeler->get_rest_routes( $this->modeler, $policy );
+
+		foreach ( $this->service_container as $service ) {
+			if ( ! $service instanceof RestRouteProvider ) {
+				continue;
+			}
+
+			$routes = array_merge( $routes, $service->get_rest_routes( $this->modeler, $policy ) );
+		}
+
+		return $routes;
 	}
 
 	/**
@@ -211,7 +232,10 @@ class Core implements Plugin {
 			);
 		}
 
-		$dependencies = [ $this->project ];
+		$dependencies = [
+			'project' => $this->project,
+			'modeler' => $this->modeler,
+		];
 		foreach ( $services as $id => $class ) {
 			$this->service_container->register( $id, $class, $dependencies );
 		}

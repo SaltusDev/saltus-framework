@@ -11,8 +11,12 @@ use Noodlehaus\Config;
 use Saltus\WP\Framework\Models\Config\NoFile;
 use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\ModelFactory;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\ModelsController;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
 
-class Modeler {
+class Modeler implements RestRouteProvider {
 
 	protected ModelFactory $model_factory;
 
@@ -156,5 +160,17 @@ class Modeler {
 	 */
 	public function get_models(): array {
 		return $this->model_list;
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	public function get_rest_routes( Modeler $modeler, ModelRestPolicy $policy ): array {
+		return [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_MODELS,
+				new ModelsController( $this, $policy )
+			),
+		];
 	}
 }
