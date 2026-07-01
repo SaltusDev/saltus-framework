@@ -6,13 +6,18 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Service,
 	Conditional
 };
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
+use Saltus\WP\Framework\Rest\SettingsController;
 
 /**
  * Class Settings
  *
  * Enable an option to create Settings page
  */
-final class Settings implements Service, Conditional, Assembly {
+final class Settings implements Service, Conditional, Assembly, RestRouteProvider {
 
 	/**
 	 * Instantiate this Service object.
@@ -30,7 +35,7 @@ final class Settings implements Service, Conditional, Assembly {
 		/*
 		 * Only load this sample service on the admin backend.
 		 */
-		return \is_admin();
+		return \is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST );
 	}
 
 	/**
@@ -44,5 +49,18 @@ final class Settings implements Service, Conditional, Assembly {
 	 */
 	public static function make( string $name, array $project, array $args ): object {
 		return new CodestarSettings( $name, $args );
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	public function get_rest_routes( Modeler $modeler, ModelRestPolicy $policy ): array {
+		return [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_SETTINGS,
+				new SettingsController( $policy ),
+				'post_type'
+			),
+		];
 	}
 }

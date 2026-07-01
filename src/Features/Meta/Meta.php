@@ -6,13 +6,18 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Service,
 	Conditional
 };
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Rest\MetaController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
 
 /**
  * Class Meta
  *
  * Enable an option to manage meta fields
  */
-final class Meta implements Service, Conditional, Assembly {
+final class Meta implements Service, Conditional, Assembly, RestRouteProvider {
 
 	/**
 	 * Instantiate this Service object.
@@ -43,5 +48,18 @@ final class Meta implements Service, Conditional, Assembly {
 	 */
 	public static function make( string $name, array $project, array $args ): object {
 		return new CodestarMeta( $name, $args );
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	public function get_rest_routes( Modeler $modeler, ModelRestPolicy $policy ): array {
+		return [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_META,
+				new MetaController( $modeler, $policy ),
+				'post_type'
+			),
+		];
 	}
 }
