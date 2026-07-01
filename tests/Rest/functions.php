@@ -167,6 +167,47 @@ $wp_rest_request_log       = [];
 $wp_current_user_can       = true;
 $wp_posts                  = [];
 $wp_options                = [];
+$wp_transients             = [];
+$wpdb                      = new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
+	public string $prefix = 'wp_';
+	/** @var list<array<string, mixed>> */
+	public array $inserts = [];
+	/** @var list<string> */
+	public array $queries = [];
+
+	public function prefix(): string {
+		return $this->prefix;
+	}
+
+	/**
+	 * @param array<string, mixed> $data
+	 * @param list<string> $format
+	 */
+	public function insert( string $table, array $data, array $format = [] ): bool {
+		$this->inserts[] = compact( 'table', 'data', 'format' );
+		return true;
+	}
+
+	public function query( string $query ): bool {
+		$this->queries[] = $query;
+		return true;
+	}
+
+	public function prepare( string $query, mixed ...$args ): string {
+		foreach ( $args as $arg ) {
+			$query = preg_replace( '/%[dsf]/', (string) $arg, $query, 1 );
+		}
+		return $query;
+	}
+
+	public function get_results( string $query, mixed $output = null ): array {
+		return array_reverse( array_map( fn( array $insert ) => $insert['data'], $this->inserts ) );
+	}
+
+	public function get_charset_collate(): string {
+		return '';
+	}
+};
 
 if ( ! function_exists( 'register_rest_route' ) ) {
 	function register_rest_route( string $namespace, string $route, array $args = [], bool $override = false ): void {
@@ -283,6 +324,60 @@ if ( ! function_exists( 'update_option' ) ) {
 		global $wp_options;
 		$wp_options[ $option ] = $value;
 		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_option' ) ) {
+	function delete_option( string $option ): bool {
+		global $wp_options;
+		unset( $wp_options[ $option ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( string $transient ): mixed {
+		global $wp_transients;
+		$value = $wp_transients[ $transient ] ?? null;
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+		if ( $value['expires'] !== 0 && microtime( true ) >= $value['expires'] ) {
+			unset( $wp_transients[ $transient ] );
+			return false;
+		}
+		return $value['value'];
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	function set_transient( string $transient, mixed $value, int $expiration = 0 ): bool {
+		global $wp_transients;
+		$wp_transients[ $transient ] = [
+			'value'   => $value,
+			'expires' => $expiration > 0 ? microtime( true ) + $expiration : 0,
+		];
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( string $transient ): bool {
+		global $wp_transients;
+		unset( $wp_transients[ $transient ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_json_encode' ) ) {
+	function wp_json_encode( mixed $value, int $flags = 0, int $depth = 512 ): string|false {
+		return json_encode( $value, $flags, $depth );
+	}
+}
+
+if ( ! function_exists( 'get_locale' ) ) {
+	function get_locale(): string {
+		return 'en_US';
 	}
 }
 
