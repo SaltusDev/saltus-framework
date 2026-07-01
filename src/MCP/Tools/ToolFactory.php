@@ -1,9 +1,14 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+/**
+ * Factory that provides the default set of MCP tool classes and creates a ToolProvider.
+ */
 class ToolFactory {
 
 	/**
+	 * Get the list of default tool class names.
+	 *
 	 * @return list<class-string<ToolInterface>>
 	 */
 	public static function default_tool_classes(): array {
@@ -27,6 +32,11 @@ class ToolFactory {
 		];
 	}
 
+	/**
+	 * Create a ToolProvider pre-populated with all default tool classes.
+	 *
+	 * @return ToolProvider  Provider with all default tools registered.
+	 */
 	public static function create_default_provider(): ToolProvider {
 		$provider = new ToolProvider();
 
