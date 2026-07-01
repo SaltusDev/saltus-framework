@@ -5,6 +5,17 @@ class AuditLogger {
 
 	private const TABLE_SUFFIX = 'saltus_mcp_audit';
 
+	/** @var list<string> */
+	private const VALID_STATUSES = [
+		'started',
+		'success',
+		'error',
+		'cache_hit',
+		'validation_error',
+		'rate_limited',
+		'exception',
+	];
+
 	public function record( AuditEntry $entry ): void {
 		if ( ! $this->enabled() ) {
 			return;
@@ -23,13 +34,13 @@ class AuditLogger {
 			[
 				'created_at'    => $data['timestamp'],
 				'user_id'       => function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0,
-				'identifier'    => $data['identifier'],
-				'ability'       => $data['tool'],
+				'identifier'    => $data['identifier'] !== null ? $this->sanitize( $data['identifier'], 191 ) : null,
+				'ability'       => $this->sanitize( $data['tool'], 191 ),
 				'arguments'     => $this->encode( is_array( $data['arguments'] ) ? $data['arguments'] : [] ),
-				'status'        => $data['status'],
+				'status'        => $this->validate_status( $data['status'] ),
 				'duration_ms'   => $data['duration_ms'],
-				'error_code'    => $data['error_code'],
-				'error_message' => $data['error_message'],
+				'error_code'    => $data['error_code'] !== null ? $this->sanitize( $data['error_code'], 191 ) : null,
+				'error_message' => $data['error_message'] !== null ? $this->sanitize( $data['error_message'], 65535 ) : null,
 			],
 			[ '%s', '%d', '%s', '%s', '%s', '%s', '%f', '%s', '%s' ]
 		);
@@ -123,6 +134,33 @@ class AuditLogger {
 		}
 
 		return null;
+	}
+
+	/**
+	 * @param positive-int $max_length
+	 */
+	private function sanitize( string $value, int $max_length ): string {
+		$value = str_replace( "\0", '', $value );
+
+		if ( function_exists( 'sanitize_text_field' ) ) {
+			$value = sanitize_text_field( $value );
+		}
+
+		if ( mb_strlen( $value ) > $max_length ) {
+			$value = mb_substr( $value, 0, $max_length );
+		}
+
+		return $value;
+	}
+
+	private function validate_status( string $status ): string {
+		$status = $this->sanitize( $status, 32 );
+
+		if ( ! in_array( $status, self::VALID_STATUSES, true ) ) {
+			return 'error';
+		}
+
+		return $status;
 	}
 
 	/**

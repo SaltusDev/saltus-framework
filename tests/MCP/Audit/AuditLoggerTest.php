@@ -63,6 +63,67 @@ class AuditLoggerTest extends TestCase
         $this->assertSame('tool_4', $recent[0]['ability']);
     }
 
+    public function testInvalidStatusFallsBackToError(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
+        $entry = new AuditEntry('test_tool', []);
+        $entry->complete('bogus_status');
+        $logger->record($entry);
+
+        $this->assertSame('error', $wpdb->inserts[0]['data']['status']);
+    }
+
+    public function testSanitizesLongAbility(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
+        $entry = new AuditEntry(str_repeat('a', 250), []);
+        $entry->complete('success');
+        $logger->record($entry);
+
+        $this->assertSame(191, strlen($wpdb->inserts[0]['data']['ability']));
+    }
+
+    public function testSanitizesLongIdentifier(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
+
+        $entry = new AuditEntry('test', [], str_repeat('x', 250));
+        $entry->complete('success');
+        $logger->record($entry);
+
+        $this->assertSame(191, strlen($wpdb->inserts[0]['data']['identifier']));
+    }
+
+    public function testSanitizesLongErrorCode(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
+        $entry = new AuditEntry('test', []);
+        $entry->complete('error', str_repeat('e', 250));
+        $logger->record($entry);
+
+        $this->assertSame(191, strlen($wpdb->inserts[0]['data']['error_code']));
+    }
+
+    public function testStripsNullBytes(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
+        $entry = new AuditEntry("bad\x00tool", []);
+        $entry->complete('success');
+        $logger->record($entry);
+
+        $this->assertSame('badtool', $wpdb->inserts[0]['data']['ability']);
+    }
+
     private function fakeWpdb(): object
     {
         return new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
