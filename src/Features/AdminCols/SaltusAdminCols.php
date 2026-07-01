@@ -718,9 +718,9 @@ final class SaltusAdminCols implements Processable {
 	/**
 	 * Applies a single normalized column to the columns array.
 	 *
-	 * @param array<string,string> $new_cols
-	 * @param array<string,mixed>  $col
-	 * @param array<string,string> $cols
+	 * @param array<string,string> $new_cols  The accumulated column definitions.
+	 * @param array<string,mixed>  $col  The column configuration array.
+	 * @param array<string,string> $cols  The registered column definitions.
 	 * @return array<string,string>
 	 */
 	private function resolve_column( array $new_cols, string $id, array $col, array $cols ): array {

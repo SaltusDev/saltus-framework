@@ -7,6 +7,10 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\MCP\Tools\GetMetaFields;
+use Saltus\WP\Framework\MCP\Tools\ListMetaFields;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Rest\MetaController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
@@ -17,7 +21,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  *
  * Enable an option to manage meta fields
  */
-final class Meta implements Service, Conditional, Assembly, RestRouteProvider {
+final class Meta implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
 	/**
 	 * Instantiate this Service object.
@@ -60,6 +64,16 @@ final class Meta implements Service, Conditional, Assembly, RestRouteProvider {
 				new MetaController( $modeler, $policy ),
 				'post_type'
 			),
+		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [
+			new ListMetaFields(),
+			new GetMetaFields(),
 		];
 	}
 }

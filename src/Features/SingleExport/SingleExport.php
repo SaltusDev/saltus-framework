@@ -7,6 +7,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\MCP\Tools\ExportPost;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Rest\ExportController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
@@ -17,7 +20,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  *
  * Enable an option to export single entry
  */
-class SingleExport implements Service, Conditional, Assembly, RestRouteProvider {
+class SingleExport implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
 	/**
 	 * Instantiate this Service object.
@@ -62,5 +65,12 @@ class SingleExport implements Service, Conditional, Assembly, RestRouteProvider 
 				'post_type'
 			),
 		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [ new ExportPost() ];
 	}
 }

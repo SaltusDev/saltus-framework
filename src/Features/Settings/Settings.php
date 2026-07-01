@@ -7,6 +7,10 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\MCP\Tools\GetSettings;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
+use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
 use Saltus\WP\Framework\Rest\RestRouteProvider;
@@ -17,7 +21,7 @@ use Saltus\WP\Framework\Rest\SettingsController;
  *
  * Enable an option to create Settings page
  */
-final class Settings implements Service, Conditional, Assembly, RestRouteProvider {
+final class Settings implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
 	/**
 	 * Instantiate this Service object.
@@ -61,6 +65,16 @@ final class Settings implements Service, Conditional, Assembly, RestRouteProvide
 				new SettingsController( $policy ),
 				'post_type'
 			),
+		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [
+			new GetSettings(),
+			new UpdateSettings(),
 		];
 	}
 }

@@ -8,6 +8,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Conditional
 };
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\MCP\Tools\ReorderPosts;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\ReorderController;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
@@ -19,7 +22,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  *
  * Enable an option to manage drag and drop functionality in the admin area.
  */
-class DragAndDrop implements Service, Conditional, Actionable, Assembly, RestRouteProvider {
+class DragAndDrop implements Service, Conditional, Actionable, Assembly, RestRouteProvider, ToolContributor {
 
 	/**
 	 * Instantiate this Service object.
@@ -65,5 +68,12 @@ class DragAndDrop implements Service, Conditional, Actionable, Assembly, RestRou
 				'post_type'
 			),
 		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [ new ReorderPosts() ];
 	}
 }
