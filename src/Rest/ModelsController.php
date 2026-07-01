@@ -109,16 +109,15 @@ class ModelsController extends WP_REST_Controller {
 	 * @param \Saltus\WP\Framework\Models\Model $model
 	 * @return array<string, mixed>
 	 */
-	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Response shape handles both model API and legacy properties.
 	private function prepare_model_for_response( $model, WP_REST_Request $request ): array {
 		$options = method_exists( $model, 'get_options' ) ? $model->get_options() : ( $model->options ?? [] );
 
 		$data = [
-			'name'           => method_exists( $model, 'get_registration_name' ) ? $model->get_registration_name() : ( $model->name ?? '' ),
+			'name'           => $this->check_method( $model, 'get_registration_name', 'name', '' ),
 			'type'           => $model->get_type(),
-			'label_singular' => method_exists( $model, 'get_label_singular' ) ? $model->get_label_singular() : ( $model->one ?? '' ),
-			'label_plural'   => method_exists( $model, 'get_label_plural' ) ? $model->get_label_plural() : ( $model->many ?? '' ),
-			'featured_image' => method_exists( $model, 'get_featured_image_label' ) ? $model->get_featured_image_label() : ( $model->featured_image ?? '' ),
+			'label_singular' => $this->check_method( $model, 'get_label_singular', 'one', '' ),
+			'label_plural'   => $this->check_method( $model, 'get_label_plural', 'many', '' ),
+			'featured_image' => $this->check_method( $model, 'get_featured_image_label', 'featured_image', '' ),
 			'description'    => $model->description ?? '',
 			'is_public'      => $options['public'] ?? true,
 			'show_in_rest'   => $options['show_in_rest'] ?? true,
@@ -131,5 +130,22 @@ class ModelsController extends WP_REST_Controller {
 		}
 
 		return $data;
+	}
+	/**
+	 *
+	 * Check method or prop in class, then default in case none found.
+	 *
+	 * @param object $target
+	 * @param string $method
+	 * @param string $default_prop
+	 * @param string $default_val
+	 * @return mixed
+	 */
+	private function check_method( object $target, string $method, string $default_prop, string $default_val ) {
+		if ( method_exists( $target, $method ) ) {
+			return $target->{$method}();
+		}
+
+		return property_exists( $target, $default_prop ) ? $target->{$default_prop} : $default_val;
 	}
 }

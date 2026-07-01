@@ -4,7 +4,6 @@ namespace Saltus\WP\Framework\Rest;
 
 use WP_REST_Controller;
 use WP_REST_Server;
-use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 
@@ -18,7 +17,7 @@ class ExportController extends WP_REST_Controller {
 	}
 
 	public function register_routes(): void {
-		register_rest_route(
+		\register_rest_route(
 			self::ROUTE_NAMESPACE,
 			'/' . $this->rest_base . '/(?P<post_id>\d+)',
 			[
@@ -36,8 +35,8 @@ class ExportController extends WP_REST_Controller {
 		);
 	}
 
-	public function get_item_permissions_check( $request ): WP_Error|true {
-		if ( ! current_user_can( 'export' ) ) {
+	public function get_item_permissions_check( $request ): WP_Error|bool {
+		if ( ! \current_user_can( 'export' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to export posts.', 'saltus-framework' ),
@@ -49,7 +48,7 @@ class ExportController extends WP_REST_Controller {
 
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$post_id = (int) $request->get_param( 'post_id' );
-		$post    = get_post( $post_id );
+		$post    = \get_post( $post_id );
 
 		if ( ! $post ) {
 			return new WP_Error(
@@ -59,13 +58,13 @@ class ExportController extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! defined( 'WXR_VERSION' ) ) {
+		if ( ! \defined( 'WXR_VERSION' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/export.php';
 		}
 
 		$wxr = $this->generate_wxr( $post );
 
-		return rest_ensure_response(
+		return \rest_ensure_response(
 			[
 				'post_id'    => $post_id,
 				'post_type'  => $post->post_type,
@@ -76,8 +75,8 @@ class ExportController extends WP_REST_Controller {
 	}
 
 	private function generate_wxr( \WP_Post $post ): string {
-		ob_start();
-		export_wp(
+		\ob_start();
+		\export_wp(
 			[
 				'content'    => $post->post_type,
 				'author'     => '',
@@ -87,7 +86,7 @@ class ExportController extends WP_REST_Controller {
 				'status'     => 'any',
 			]
 		);
-		$wxr = ob_get_clean();
+		$wxr = \ob_get_clean();
 		return $wxr !== false ? $wxr : '';
 	}
 }

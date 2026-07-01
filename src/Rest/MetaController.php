@@ -54,7 +54,7 @@ class MetaController extends WP_REST_Controller {
 		);
 	}
 
-	public function get_items_permissions_check( $request ): WP_Error|true {
+	public function get_items_permissions_check( $request ): WP_Error|bool {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
@@ -124,7 +124,7 @@ class MetaController extends WP_REST_Controller {
 		return rest_ensure_response(
 			[
 				'post_type'  => $post_type,
-				'meta'       => $model->args['meta'],
+				'meta'       => $model->args['meta'], // TODO by pcarvalho: check this property exists
 				'normalized' => $this->normalize_meta_fields( $model->args['meta'] ),
 			]
 		);
@@ -141,7 +141,7 @@ class MetaController extends WP_REST_Controller {
 		$rest_meta_keys = [];
 
 		foreach ( $meta as $box_id => $box ) {
-			if ( ! is_array( $box ) ) {
+			if ( ! \is_array( $box ) ) {
 				continue;
 			}
 
@@ -153,7 +153,7 @@ class MetaController extends WP_REST_Controller {
 			if ( $is_serialized && ! empty( $field_groups ) ) {
 				$serialized_fields = [];
 				foreach ( $field_groups as $group ) {
-					$serialized_fields = array_merge( $serialized_fields, $group['fields'] );
+					$serialized_fields = \array_merge( $serialized_fields, $group['fields'] );
 				}
 
 				$rest_meta_keys[] = $this->build_rest_meta_key(
@@ -332,7 +332,7 @@ class MetaController extends WP_REST_Controller {
 			return true;
 		}
 
-		return is_string( $field_key ) && $field_key !== '';
+		return \is_string( $field_key ) && $field_key !== '';
 	}
 
 	/**
