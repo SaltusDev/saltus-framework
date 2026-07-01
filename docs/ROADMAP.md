@@ -11,14 +11,14 @@
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
 
-**Theme:** Make Saltus MCP tools discoverable and usable through WordPress-native MCP/Abilities infrastructure in WordPress 7.0. The standalone local stdio MCP server path is skipped.
+**Theme:** Make Saltus MCP tools discoverable and usable through WordPress-native MCP/Abilities infrastructure in WordPress 7.0. The standalone local stdio MCP server path has been removed.
 
 | Item | Status |
 |------|--------|
 | Track WordPress 7.0 MCP/Abilities API shape and naming as it stabilizes | ✓ Done |
 | Map each existing Saltus MCP tool to a WordPress-native ability definition | ✓ Done |
 | Register Saltus abilities from WordPress when the native API is present | ✓ Done |
-| Standalone local stdio MCP fallback | Skipped |
+| Standalone local stdio MCP fallback | Removed |
 | Reuse existing REST permission checks so abilities honor `current_user_can()` gates | ✓ Done |
 | Add compatibility tests for native abilities and REST-backed dispatch | ✓ Done |
 | Document WordPress-native MCP client discovery | ✓ Done |
@@ -43,15 +43,15 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | MCP core protocol (initialize, tools, resources) | ✓ Done |
 | 9 Phase 1 CRUD tools (models, posts, terms) | ✓ Done |
 | Interactive setup wizard | ✓ Removed |
-| Environment-variable-only config (`SALTUS_WP_URL`, `SALTUS_WP_USERNAME`, `SALTUS_WP_PASSWORD`) | ✓ Done |
-| `Config::fromEnv()` — no file I/O, no home dir writes | ✓ Done |
-| PHPUnit tests for every tool class (mock WP REST API via Guzzle mock handler) | ✓ Done |
+| WordPress-native MCP runtime configuration filters | ✓ Done |
+| WP7 ability audit, cache, and rate-limit runtime | ✓ Done |
+| PHPUnit tests for ability registration and runtime behavior | ✓ Done |
 | PHPStan Level 7 compliance for all `src/MCP/` code | ✓ Done |
-| MCP Prompts support (`prompts/list`, `prompts/get`) — 3 prompt templates | ✓ Done |
+| MCP Prompts support (`prompts/list`, `prompts/get`) — 3 prompt templates | Removed with stdio server |
 | Input validation — JSON Schema validation on tool args before REST API call | ✓ Done |
-| Retry logic with exponential backoff in `WordPressClient` | ✓ Done |
-| `--help` flag with complete usage reference | ✓ Done |
-| Update `README.md` with MCP usage and client configuration examples | ✓ Done |
+| WordPress transient caching and invalidation for WP7 abilities | ✓ Done |
+| `--help` flag with complete usage reference | Removed with stdio server |
+| Update `README.md` with WP7 MCP usage and runtime filters | ✓ Done |
 
 **Exit criteria:** Full test suite green, PHPStan level 7, prompts working, zero file I/O, no wizard.
 
@@ -119,7 +119,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | Feature | Description | Status |
 |---------|-------------|--------|
 | **WordPress 7.0 MCP/Abilities integration** | Register Saltus MCP tools as WordPress-native abilities when available | ✓ |
-| **Local stdio MCP server** | Run Saltus as a standalone local MCP server process | Skipped |
+| **Local stdio MCP server** | Run Saltus as a standalone local MCP server process | Removed |
 | **SSE transport** | Serve MCP over HTTP for remote connections | Skipped |
 | **Multi-site management** | Named site profiles, switchable at runtime | Skipped |
 | **Role-based access** | Map MCP tool access to WP user roles | Skipped |
@@ -145,7 +145,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | **Docker image** | Skipped with standalone server path |
 | **GitHub Action** | Skipped with standalone server path |
 | **VS Code extension** | Future WordPress-native MCP client integration |
-| **Documentation site** | `docs.saltus.io/mcp` |
+| **Documentation site** | `docs.saltus.dev/mcp` |
 | **MCP Registry listing** | Reassess for WordPress-native abilities |
 | **Support & SLA model** | Paid support contracts, custom tool development |
 
@@ -158,7 +158,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 ## Framework Core Roadmap
 
 ### Short-term Goals
-- Address remaining PHPStan errors (2 pre-existing in ResourceProvider).
+- ✓ Address remaining PHPStan errors (2 pre-existing in ResourceProvider) — resolved 2026-07-01.
 - Continue maintaining automated testing suites.
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 

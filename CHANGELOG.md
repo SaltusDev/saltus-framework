@@ -7,6 +7,10 @@
 	- Cleared the remaining PHPStan Level 7 issues in `Modeler`, REST route registration, and MCP taxonomy REST-base handling.
 	- Added an explicit model name accessor contract so `Modeler` no longer depends on concrete model properties.
 
+### Changed
+	- Removed the standalone stdio MCP server path; WP7 MCP/Abilities is now the only supported MCP transport.
+	- Migrated MCP audit logging, rate limiting, and caching to WordPress-native storage around WP7 ability execution.
+
 ## [2.0.0] - 2026-06-30
 
 ### Added

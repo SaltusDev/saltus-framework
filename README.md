@@ -191,11 +191,13 @@ Saltus Framework exposes its AI-facing tool surface through the WordPress-native
 
 Install and activate the plugin that uses Saltus Framework on a WordPress version with the Abilities API. Saltus registers its abilities during `wp_abilities_api_init`; clients that understand WordPress-native MCP/Abilities can discover the `saltus/*` tools from WordPress.
 
-The standalone local stdio MCP server path has been skipped. Saltus MCP development targets WordPress-native abilities instead.
+The standalone local stdio MCP server has been removed. Saltus MCP development targets WordPress-native abilities instead.
 
 ### Capability Dispatch
 
 Abilities dispatch through WordPress REST requests, so existing REST permission callbacks and `current_user_can()` checks remain authoritative. WordPress versions without the Abilities API simply skip Saltus ability registration.
+
+Saltus wraps ability execution with WordPress-native audit logging, rate limiting, and transient caching. Read-only abilities can be cached in transients, mutating abilities clear the MCP cache, rate limits are keyed by the current user or request identifier, and audit records are written to the Saltus MCP audit table.
 
 ### Available Tools
 
@@ -220,15 +222,6 @@ Abilities dispatch through WordPress REST requests, so existing REST permission 
 
 Meta field discovery preserves the raw Saltus/Codestar configuration in `meta` and includes normalized MCP-friendly metadata in `normalized.fields` and `normalized.rest_meta_keys`. Nested fields are exposed as paths such as `points_info.coordinates.latitude`, with JSON-schema-like types and REST writability information.
 
-### Available Resources
-
-| Resource | Description |
-|----------|-------------|
-| `saltus://models` | List all registered Saltus models |
-| `saltus://meta-fields` | Legacy MCP resource for model-defined meta fields; WP7 clients should use `list_meta_fields` |
-| `saltus://features` | List framework features |
-| `saltus://status` | Framework and MCP/Abilities status |
-
 ### Requirements
 
 - WordPress 7.0+ or a WordPress build that provides the Abilities API
@@ -237,7 +230,19 @@ Meta field discovery preserves the raw Saltus/Codestar configuration in `meta` a
 
 ### Configuration
 
-No local MCP server configuration is required for the WordPress-native path.
+No local MCP server configuration is required for the WordPress-native path. Runtime behavior can be tuned with WordPress filters:
+
+| Filter | Purpose |
+|--------|---------|
+| `saltus/framework/mcp/audit/enabled` | Enable or disable audit writes |
+| `saltus/framework/mcp/audit/retention_days` | Set audit retention before cleanup |
+| `saltus/framework/mcp/rate_limit/enabled` | Enable or disable rate limiting |
+| `saltus/framework/mcp/rate_limit/max_requests` | Set max ability calls per window |
+| `saltus/framework/mcp/rate_limit/window_seconds` | Set the rate-limit window |
+| `saltus/framework/mcp/rate_limit/identifier` | Override the rate-limit identifier |
+| `saltus/framework/mcp/cache/enabled` | Enable or disable transient caching |
+| `saltus/framework/mcp/cache/ttl` | Set cache TTL per tool |
+| `saltus/framework/mcp/cache/cacheable` | Override whether a tool is cacheable |
 
 ## Building
 

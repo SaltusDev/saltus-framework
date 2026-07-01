@@ -2,7 +2,7 @@
 name: Saltus Framework 1
 description: Saltus Framework helps you develop WordPress plugins that are based on Custom Post Types.
 type: project
-homepage: https://saltus.io/
+homepage: https://saltus.dev/
 repository: https://github.com/SaltusDev/saltus-framework
 ---
 
@@ -15,7 +15,7 @@ Saltus Framework is designed to make things easier and faster for developers wit
 - **Package Name:** `saltus/framework`
 - **Requires:** PHP >= 7.4
 - **License:** GPL-3.0-only
-- **Authors:** Saltus Plugin Framework (web@saltus.io)
+- **Authors:** Saltus Plugin Framework (web@saltus.dev)
 
 ## Core Capabilities & Features
 - **Rapid Custom Post Type (CPT) Creation**: Define robust CPTs via simple array or YAML configurations.
