@@ -11,12 +11,23 @@ use Noodlehaus\Config;
 use Saltus\WP\Framework\Models\Config\NoFile;
 use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\ModelFactory;
+use Saltus\WP\Framework\MCP\Tools\CreatePost;
+use Saltus\WP\Framework\MCP\Tools\CreateTerm;
+use Saltus\WP\Framework\MCP\Tools\DeletePost;
+use Saltus\WP\Framework\MCP\Tools\GetModel;
+use Saltus\WP\Framework\MCP\Tools\GetPost;
+use Saltus\WP\Framework\MCP\Tools\ListModels;
+use Saltus\WP\Framework\MCP\Tools\ListPosts;
+use Saltus\WP\Framework\MCP\Tools\ListTerms;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
+use Saltus\WP\Framework\MCP\Tools\UpdatePost;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\ModelsController;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
 use Saltus\WP\Framework\Rest\RestRouteProvider;
 
-class Modeler implements RestRouteProvider {
+class Modeler implements RestRouteProvider, ToolContributor {
 
 	protected ModelFactory $model_factory;
 
@@ -171,6 +182,23 @@ class Modeler implements RestRouteProvider {
 				ModelRestPolicy::CAPABILITY_MODELS,
 				new ModelsController( $this, $policy )
 			),
+		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [
+			new ListModels(),
+			new GetModel(),
+			new ListPosts(),
+			new GetPost(),
+			new CreatePost(),
+			new UpdatePost(),
+			new DeletePost(),
+			new ListTerms(),
+			new CreateTerm(),
 		];
 	}
 }
