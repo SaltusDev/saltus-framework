@@ -233,8 +233,12 @@ class Core implements Plugin {
 		}
 
 		$dependencies = [
-			'project' => $this->project,
-			'modeler' => $this->modeler,
+			'project'          => $this->project,
+			'modeler'          => $this->modeler,
+			'modeler_resolver' => function (): ?Modeler {
+				return $this->modeler;
+			},
+			'services'         => $this->service_container,
 		];
 		foreach ( $services as $id => $class ) {
 			$this->service_container->register( $id, $class, $dependencies );
