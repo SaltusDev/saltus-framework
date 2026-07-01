@@ -4,12 +4,18 @@ namespace Saltus\WP\Framework\Tests\Features;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Core;
+use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
+use Saltus\WP\Framework\Features\Duplicate\Duplicate;
 use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\Features\Meta\Meta;
+use Saltus\WP\Framework\Features\Settings\Settings;
+use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
 use Saltus\WP\Framework\MCP\Tools\RestTool;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\ModelFactory;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
@@ -56,7 +62,13 @@ class MCPFeatureTest extends TestCase {
 	public function testNativeRegistrationUsesToolContributorsFromDependencies(): void {
 		global $wp_actions_registered, $wp_abilities_registered;
 
-		$modeler = new Modeler( $this->createStub( ModelFactory::class ) );
+		$modeler = new ModelerWithModels(
+			$this->createStub( ModelFactory::class ),
+			[
+				'book'  => $this->createModelMock( 'post_type' ),
+				'genre' => $this->createModelMock( 'taxonomy' ),
+			]
+		);
 		$feature = new MCP(
 			[
 				'modeler_resolver' => function () use ( $modeler ): Modeler {
@@ -71,6 +83,95 @@ class MCPFeatureTest extends TestCase {
 
 		$this->assertArrayHasKey( 'saltus/contributed-tool', $wp_abilities_registered );
 		$this->assertSame( 'contributed_tool', $wp_abilities_registered['saltus/contributed-tool']['meta']['mcp_tool'] );
+	}
+
+	public function testNativeRegistrationUsesDefaultFeatureToolContributors(): void {
+		global $wp_actions_registered, $wp_abilities_registered;
+
+		$modeler = new ModelerWithModels(
+			$this->createStub( ModelFactory::class ),
+			[
+				'book'  => $this->createModelMock( 'post_type' ),
+				'genre' => $this->createModelMock( 'taxonomy' ),
+			]
+		);
+		$feature = new MCP(
+			[
+				'modeler_resolver' => function () use ( $modeler ): Modeler {
+					return $modeler;
+				},
+				'services'         => new \ArrayObject(
+					[
+						new Duplicate(),
+						new SingleExport(),
+						new Settings(),
+						new Meta(),
+						new DragAndDrop(),
+					]
+				),
+			]
+		);
+
+		$feature->register();
+		$wp_actions_registered[1]['callback']();
+
+		$this->assertCount( 16, $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/list-models', $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/duplicate-post', $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/export-post', $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/update-settings', $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/get-meta-fields', $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/reorder-posts', $wp_abilities_registered );
+	}
+
+	private function createModelMock( string $type ): Model {
+		return new class( $type ) implements Model {
+			private string $type;
+
+			public function __construct( string $type ) {
+				$this->type = $type;
+			}
+
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return $this->type;
+			}
+
+			public function get_type(): string {
+				return $this->type;
+			}
+
+			/**
+			 * @return array<string, mixed>
+			 */
+			public function get_options(): array {
+				return [
+					'show_in_rest' => true,
+					'saltus_rest'  => true,
+				];
+			}
+		};
+	}
+}
+
+class ModelerWithModels extends Modeler {
+	/** @var array<string, Model> */
+	private array $models;
+
+	/**
+	 * @param array<string, Model> $models
+	 */
+	public function __construct( ModelFactory $model_factory, array $models ) {
+		parent::__construct( $model_factory );
+		$this->models = $models;
+	}
+
+	/**
+	 * @return array<string, Model>
+	 */
+	public function get_models(): array {
+		return $this->models;
 	}
 }
 

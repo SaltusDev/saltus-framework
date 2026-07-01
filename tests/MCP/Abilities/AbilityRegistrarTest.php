@@ -3,12 +3,20 @@
 namespace Saltus\WP\Framework\Tests\MCP\Abilities;
 
 use PHPUnit\Framework\TestCase;
+use Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop;
+use Saltus\WP\Framework\Features\Duplicate\Duplicate;
+use Saltus\WP\Framework\Features\Meta\Meta;
+use Saltus\WP\Framework\Features\Settings\Settings;
+use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRuntime;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Model;
+use Saltus\WP\Framework\Models\ModelFactory;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
@@ -19,7 +27,7 @@ require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 class AbilityRegistrarTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wpdb, $wp_abilities_registered, $wp_options, $wp_rest_request_log, $wp_transients, $wp_current_user_can, $wp_taxonomy_objects;
+		global $wpdb, $wp_abilities_registered, $wp_options, $wp_rest_request_log, $wp_transients, $wp_current_user_can, $wp_taxonomy_objects, $wp_post_type_objects;
 
 		$wp_abilities_registered = [];
 		$wp_options              = [];
@@ -27,6 +35,7 @@ class AbilityRegistrarTest extends TestCase {
 		$wp_transients           = [];
 		$wp_current_user_can     = true;
 		$wp_taxonomy_objects     = [];
+		$wp_post_type_objects    = [];
 		if ( ! is_object( $wpdb ) ) {
 			$wpdb = $this->fakeWpdb();
 		}
@@ -37,7 +46,7 @@ class AbilityRegistrarTest extends TestCase {
 	public function testRegisterMapsAllMcpToolsToNativeAbilities(): void {
 		global $wp_abilities_registered;
 
-		$registered = ( new AbilityRegistrar() )->register();
+		$registered = ( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
 		$this->assertCount( 16, $registered );
 		$this->assertArrayHasKey( 'saltus/list-models', $wp_abilities_registered );
@@ -69,7 +78,7 @@ class AbilityRegistrarTest extends TestCase {
 			]
 		);
 
-		$registered = ( new AbilityRegistrar( null, null, new ModelRestPolicy( $modeler ) ) )->register();
+		$registered = ( new AbilityRegistrar( $this->defaultToolProvider( $modeler ), null, new ModelRestPolicy( $modeler ) ) )->register();
 
 		$this->assertContains( 'saltus/list-models', $registered );
 		$this->assertContains( 'saltus/list-meta-fields', $registered );
@@ -81,7 +90,7 @@ class AbilityRegistrarTest extends TestCase {
 	public function testPermissionCallbackReusesWordPressCapabilityGate(): void {
 		global $wp_abilities_registered, $wp_current_user_can;
 
-		( new AbilityRegistrar() )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 		$permissionCallback = $wp_abilities_registered['saltus/list-models']['permission_callback'];
 
 		$wp_current_user_can = true;
@@ -91,11 +100,70 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertFalse( $permissionCallback() );
 	}
 
+	public function testPermissionCallbackAllowsCustomPostTypeCreateCapability(): void {
+		global $wp_abilities_registered, $wp_current_user_can, $wp_post_type_objects;
+
+		$cap               = new \stdClass();
+		$cap->create_posts = 'create_books';
+		$wp_post_type_objects['book'] = (object) [
+			'name' => 'book',
+			'cap'  => $cap,
+		];
+		$wp_current_user_can = [
+			'read'         => true,
+			'edit_posts'   => false,
+			'create_books' => true,
+		];
+
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
+		$permissionCallback = $wp_abilities_registered['saltus/create-post']['permission_callback'];
+
+		$this->assertTrue( $permissionCallback( [ 'post_type' => 'book' ] ) );
+	}
+
+	public function testPermissionCallbackRejectsMissingCustomPostTypeCreateCapability(): void {
+		global $wp_abilities_registered, $wp_current_user_can, $wp_post_type_objects;
+
+		$cap               = new \stdClass();
+		$cap->create_posts = 'create_books';
+		$wp_post_type_objects['book'] = (object) [
+			'name' => 'book',
+			'cap'  => $cap,
+		];
+		$wp_current_user_can = [
+			'read'         => true,
+			'edit_posts'   => false,
+			'create_books' => false,
+		];
+
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
+		$permissionCallback = $wp_abilities_registered['saltus/create-post']['permission_callback'];
+
+		$this->assertFalse( $permissionCallback( [ 'post_type' => 'book' ] ) );
+	}
+
+	public function testPermissionCallbackUsesPostSpecificCapability(): void {
+		global $wp_abilities_registered, $wp_current_user_can;
+
+		$wp_current_user_can = [
+			'read'          => true,
+			'edit_posts'    => false,
+			'edit_post:123' => true,
+			'edit_post:456' => false,
+		];
+
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
+		$permissionCallback = $wp_abilities_registered['saltus/update-post']['permission_callback'];
+
+		$this->assertTrue( $permissionCallback( [ 'post_id' => 123 ] ) );
+		$this->assertFalse( $permissionCallback( [ 'post_id' => 456 ] ) );
+	}
+
 	public function testCallbackDispatchesThroughRestRequest(): void {
 		global $wp_abilities_registered, $wp_rest_request_log;
 
 		$runtime = new AbilityRuntime( null, new RateLimiter( 1, 60 ) );
-		( new AbilityRegistrar( null, new AbilityDefinitionFactory( $runtime ) ) )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider(), new AbilityDefinitionFactory( $runtime ) ) )->register();
 
 		$callback = $wp_abilities_registered['saltus/update-settings']['execute_callback'];
 		$result   = $callback(
@@ -119,7 +187,7 @@ class AbilityRegistrarTest extends TestCase {
 			'rest_base' => 'genres',
 		];
 
-		( new AbilityRegistrar() )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
 		$callback = $wp_abilities_registered['saltus/list-posts']['execute_callback'];
 		$result   = $callback(
@@ -144,7 +212,7 @@ class AbilityRegistrarTest extends TestCase {
 	public function testListMetaFieldsCallbackDispatchesThroughRestRequest(): void {
 		global $wp_abilities_registered, $wp_rest_request_log;
 
-		( new AbilityRegistrar() )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
 		$callback = $wp_abilities_registered['saltus/list-meta-fields']['execute_callback'];
 		$result   = $callback();
@@ -157,7 +225,7 @@ class AbilityRegistrarTest extends TestCase {
 	public function testReadCallbacksUseTransientCache(): void {
 		global $wp_abilities_registered, $wp_rest_request_log;
 
-		( new AbilityRegistrar() )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
 		$callback = $wp_abilities_registered['saltus/list-meta-fields']['execute_callback'];
 
@@ -170,7 +238,7 @@ class AbilityRegistrarTest extends TestCase {
 	public function testMutatingCallbacksClearTransientCache(): void {
 		global $wp_abilities_registered, $wp_options, $wp_rest_request_log;
 
-		( new AbilityRegistrar() )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
 		$wp_abilities_registered['saltus/list-meta-fields']['execute_callback']();
 		$this->assertNotEmpty( $wp_options['saltus_mcp_cache_keys'] ?? [] );
@@ -189,7 +257,7 @@ class AbilityRegistrarTest extends TestCase {
 	public function testCallbacksWriteAuditRecords(): void {
 		global $wpdb, $wp_abilities_registered;
 
-		( new AbilityRegistrar() )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
 		$wp_abilities_registered['saltus/list-meta-fields']['execute_callback']();
 
@@ -203,7 +271,7 @@ class AbilityRegistrarTest extends TestCase {
 		global $wp_abilities_registered;
 
 		$runtime = new AbilityRuntime( null, new RateLimiter( 1, 60 ) );
-		( new AbilityRegistrar( null, new AbilityDefinitionFactory( $runtime ) ) )->register();
+		( new AbilityRegistrar( $this->defaultToolProvider(), new AbilityDefinitionFactory( $runtime ) ) )->register();
 
 		$callback = $wp_abilities_registered['saltus/update-settings']['execute_callback'];
 		$args     = [
@@ -215,6 +283,40 @@ class AbilityRegistrarTest extends TestCase {
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 		$this->assertSame( 'rate_limited', $result->get_error_code() );
+	}
+
+	public function testRegistrarWithoutInjectedProviderRegistersNoTools(): void {
+		global $wp_abilities_registered;
+
+		$registered = ( new AbilityRegistrar() )->register();
+
+		$this->assertSame( [], $registered );
+		$this->assertSame( [], $wp_abilities_registered );
+	}
+
+	private function defaultToolProvider( ?Modeler $modeler = null ): ToolProvider {
+		$tool_modeler = new Modeler( $this->createStub( ModelFactory::class ) );
+		$modeler ??= $tool_modeler;
+		$provider = new ToolProvider();
+
+		/** @var list<ToolContributor> $contributors */
+		$contributors = [
+			$tool_modeler,
+			new Duplicate(),
+			new SingleExport(),
+			new Settings(),
+			new Meta(),
+			new DragAndDrop(),
+		];
+		$policy = new ModelRestPolicy( $modeler );
+
+		foreach ( $contributors as $contributor ) {
+			foreach ( $contributor->get_mcp_tools( $modeler, $policy ) as $tool ) {
+				$provider->register( $tool );
+			}
+		}
+
+		return $provider;
 	}
 
 	private function fakeWpdb(): object {
