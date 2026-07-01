@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-use Saltus\WP\Framework\MCP\Client\WordPressClient;
-
 class CreateTerm implements ToolInterface {
 
 	public function get_name(): string {
@@ -40,59 +38,6 @@ class CreateTerm implements ToolInterface {
 				'type'        => 'number',
 				'description' => 'Parent term ID (for hierarchical taxonomies)',
 			],
-		];
-	}
-
-	/**
-	* @param array<string, mixed> $args
-	* @return array<string, mixed>
-	*/
-	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Optional term fields map directly to the REST payload.
-	public function handle( array $args, WordPressClient $client ): array {
-		$taxonomy = $args['taxonomy'] ?? '';
-		$name     = $args['name'] ?? '';
-
-		if ( ! $taxonomy ) {
-			return [
-				'code'    => 'invalid_params',
-				'message' => 'taxonomy is required',
-			];
-		}
-
-		if ( ! $name ) {
-			return [
-				'code'    => 'invalid_params',
-				'message' => 'name is required',
-			];
-		}
-
-		$data = [
-			'name' => $name,
-		];
-
-		if ( ! empty( $args['slug'] ) ) {
-			$data['slug'] = $args['slug'];
-		}
-
-		if ( ! empty( $args['description'] ) ) {
-			$data['description'] = $args['description'];
-		}
-
-		if ( ! empty( $args['parent'] ) ) {
-			$data['parent'] = $args['parent'];
-		}
-
-		$result = $client->post( "wp/v2/{$taxonomy}", $data );
-
-		if ( isset( $result['code'] ) ) {
-			return $result;
-		}
-
-		return [
-			'id'       => $result['id'] ?? 0,
-			'name'     => $result['name'] ?? '',
-			'slug'     => $result['slug'] ?? '',
-			'taxonomy' => $result['taxonomy'] ?? '',
 		];
 	}
 }

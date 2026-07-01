@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-use Saltus\WP\Framework\MCP\Client\WordPressClient;
-
 class CreatePost implements ToolInterface {
 
 	public function get_name(): string {
@@ -59,55 +57,6 @@ class CreatePost implements ToolInterface {
 					'items' => [ 'type' => 'number' ],
 				],
 			],
-		];
-	}
-
-	/**
-	* @param array<string, mixed> $args
-	* @return array<string, mixed>
-	*/
-	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Optional post fields map directly to the REST payload.
-	public function handle( array $args, WordPressClient $client ): array {
-		$post_type = $args['post_type'] ?? 'posts';
-
-		$data = [
-			'title'  => $args['title'] ?? '',
-			'status' => $args['status'] ?? 'draft',
-		];
-
-		if ( ! empty( $args['content'] ) ) {
-			$data['content'] = $args['content'];
-		}
-
-		if ( ! empty( $args['excerpt'] ) ) {
-			$data['excerpt'] = $args['excerpt'];
-		}
-
-		if ( ! empty( $args['slug'] ) ) {
-			$data['slug'] = $args['slug'];
-		}
-
-		if ( ! empty( $args['meta'] ) ) {
-			$data['meta'] = $args['meta'];
-		}
-
-		if ( ! empty( $args['terms'] ) ) {
-			foreach ( $args['terms'] as $taxonomy => $term_ids ) {
-				$data[ $taxonomy ] = $term_ids;
-			}
-		}
-
-		$result = $client->post( "wp/v2/{$post_type}", $data );
-
-		if ( isset( $result['code'] ) ) {
-			return $result;
-		}
-
-		return [
-			'id'     => $result['id'] ?? 0,
-			'title'  => $result['title']['rendered'] ?? '',
-			'link'   => $result['link'] ?? '',
-			'status' => $result['status'] ?? '',
 		];
 	}
 }

@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Features\MCP;
 use Saltus\WP\Framework\Infrastructure\Plugin\Registerable;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
+use Saltus\WP\Framework\MCP\Cache\TransientCache;
 
 /**
  * Enables Saltus MCP support.
@@ -41,6 +42,14 @@ class MCP implements Service, Registerable {
 				$this->ability_registrar->register();
 			}
 		);
+		foreach ( [ 'save_post', 'deleted_post', 'created_term', 'edited_term', 'delete_term', 'updated_option' ] as $hook ) {
+			add_action(
+				$hook,
+				function (): void {
+					( new TransientCache() )->clear();
+				}
+			);
+		}
 	}
 
 	public function transport(): string {

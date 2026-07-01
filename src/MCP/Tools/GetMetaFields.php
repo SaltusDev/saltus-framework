@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-use Saltus\WP\Framework\MCP\Client\WordPressClient;
-
 class GetMetaFields implements ToolInterface {
 
 	public function get_name(): string {
@@ -22,36 +20,6 @@ class GetMetaFields implements ToolInterface {
 				'type'        => 'string',
 				'description' => 'The post type slug to get meta fields for',
 				'required'    => true,
-			],
-		];
-	}
-
-	/**
-	* @param array<string, mixed> $args
-	* @return array<string, mixed>
-	*/
-	public function handle( array $args, WordPressClient $client ): array {
-		$post_type = $args['post_type'] ?? '';
-
-		if ( ! $post_type ) {
-			return [
-				'code'    => 'invalid_params',
-				'message' => 'post_type is required',
-			];
-		}
-
-		$result = $client->get( "saltus-framework/v1/meta/{$post_type}" );
-
-		if ( isset( $result['code'] ) ) {
-			return $result;
-		}
-
-		return [
-			'post_type'  => $result['post_type'] ?? $post_type,
-			'meta'       => $result['meta'] ?? [],
-			'normalized' => $result['normalized'] ?? [
-				'fields'         => [],
-				'rest_meta_keys' => [],
 			],
 		];
 	}
