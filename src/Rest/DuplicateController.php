@@ -9,17 +9,26 @@ use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\Duplicate\SaltusDuplicate;
 
+/**
+ * REST controller for duplicating posts.
+ */
 class DuplicateController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 
+	/**
+	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 */
 	public function __construct( ?ModelRestPolicy $policy = null ) {
 		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'duplicate';
 	}
 
+	/**
+	 * Register the REST route for post duplication.
+	 */
 	public function register_routes(): void {
 		register_rest_route(
 			self::ROUTE_NAMESPACE,
@@ -39,6 +48,12 @@ class DuplicateController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Check whether the current user can duplicate posts.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return WP_Error|true
+	 */
 	public function create_item_permissions_check( $request ): WP_Error|true {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
@@ -50,6 +65,12 @@ class DuplicateController extends WP_REST_Controller {
 		return true;
 	}
 
+	/**
+	 * Duplicate a post by ID.
+	 *
+	 * @param mixed $request  The REST request containing the post_id parameter.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function create_item( $request ): WP_REST_Response|WP_Error {
 		$post_id = (int) $request->get_param( 'post_id' );
 		$post    = get_post( $post_id );

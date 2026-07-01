@@ -9,6 +9,9 @@ use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Modeler;
 
+/**
+ * REST controller exposing meta field configuration per post type.
+ */
 class MetaController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
@@ -16,6 +19,10 @@ class MetaController extends WP_REST_Controller {
 	protected Modeler $modeler;
 	private ?ModelRestPolicy $policy;
 
+	/**
+	 * @param Modeler $modeler  The model registry.
+	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 */
 	public function __construct( Modeler $modeler, ?ModelRestPolicy $policy = null ) {
 		$this->modeler   = $modeler;
 		$this->policy    = $policy;
@@ -23,6 +30,9 @@ class MetaController extends WP_REST_Controller {
 		$this->rest_base = 'meta';
 	}
 
+	/**
+	 * Register the REST routes for listing and reading meta fields.
+	 */
 	public function register_routes(): void {
 		if ( $this->namespace === '' ) {
 			return;
@@ -56,6 +66,12 @@ class MetaController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Check whether the current user can view meta fields.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return WP_Error|bool
+	 */
 	public function get_items_permissions_check( $request ): WP_Error|bool {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
@@ -67,6 +83,12 @@ class MetaController extends WP_REST_Controller {
 		return true;
 	}
 
+	/**
+	 * Get meta field definitions for all post types.
+	 *
+	 * @param WP_REST_Request $request  The REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function get_all_items( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post_types = [];
 
@@ -97,6 +119,12 @@ class MetaController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Get meta field definitions for a specific post type.
+	 *
+	 * @param mixed $request  The REST request containing the post_type parameter.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$post_type = $request->get_param( 'post_type' );
 		$models    = $this->policy
@@ -142,7 +170,9 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
-	 * @param \Saltus\WP\Framework\Models\Model $model
+	 * Get the args array for a given model.
+	 *
+	 * @param \Saltus\WP\Framework\Models\Model $model  The model to retrieve args for.
 	 * @return array<string, mixed>
 	 */
 	private function get_model_args( $model ): array {
@@ -254,6 +284,8 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
+	 * Extract field groups from a metabox configuration array.
+	 *
 	 * @param array<string|int, mixed> $box
 	 * @return list<array{fields: array<string|int, mixed>, section_id: string, section_title: string}>
 	 */
@@ -287,8 +319,18 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
-	 * @param list<array<string, mixed>> $normalized
-	 * @param array<string|int, mixed>   $fields
+	 * Append normalized field definitions to the list.
+	 *
+	 * @param list<array<string, mixed>> $normalized  Accumulated normalized fields (passed by reference).
+	 * @param array<string|int, mixed>   $fields  Fields to normalize.
+	 * @param string $path_prefix  Dot-separated path prefix for nested fields.
+	 * @param string $meta_key  The meta key these fields belong to.
+	 * @param bool $serialized  Whether the fields are serialized under a single meta key.
+	 * @param bool $rest_writable  Whether the fields are writable via REST API.
+	 * @param string $metabox_id  The metabox identifier.
+	 * @param string $section_id  The section identifier.
+	 * @param string $section_title  The section title.
+	 * @param int $depth  Current nesting depth.
 	 */
 	private function append_normalized_fields(
 		array &$normalized,
@@ -348,8 +390,11 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
-	 * @param array<string|int, mixed> $field
-	 * @param string|int $field_key
+	 * Check whether a field entry is a data field (has a type and identifier).
+	 *
+	 * @param array<string|int, mixed> $field  The field configuration.
+	 * @param string|int $field_key  The field key.
+	 * @return bool
 	 */
 	private function is_data_field( array $field, $field_key ): bool {
 		if ( empty( $field['type'] ) ) {
@@ -364,16 +409,25 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
-	 * @param array<string|int, mixed> $field
-	 * @param string|int $field_key
+	 * Resolve a field identifier from a field config or its key.
+	 *
+	 * @param array<string|int, mixed> $field  The field configuration.
+	 * @param string|int $field_key  The field key.
+	 * @return string
 	 */
 	private function get_field_id( array $field, $field_key ): string {
 		return (string) ( $field['id'] ?? $field_key );
 	}
 
 	/**
-	 * @param array<string|int, mixed> $box
-	 * @param array<string|int, mixed> $fields
+	 * Build a REST meta key definition from a metabox and fields.
+	 *
+	 * @param string $path  The field path.
+	 * @param string $meta_key  The meta key name.
+	 * @param bool $serialized  Whether the field is serialized.
+	 * @param bool $rest_writable  Whether the field is writable via REST API.
+	 * @param array<string|int, mixed> $box  The metabox configuration.
+	 * @param array<string|int, mixed> $fields  The field definitions.
 	 * @return array<string, mixed>
 	 */
 	private function build_rest_meta_key(
@@ -403,6 +457,8 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
+	 * Build JSON Schema properties from an array of field definitions.
+	 *
 	 * @param array<string|int, mixed> $fields
 	 * @return array<string, mixed>
 	 */
@@ -429,7 +485,10 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
-	 * @param array<string|int, mixed> $field
+	 * Build a JSON Schema snippet from a Codestar field and a schema type string.
+	 *
+	 * @param array<string|int, mixed> $field  The field configuration.
+	 * @param string $schema_type  The resolved JSON Schema type.
 	 * @return array<string, mixed>
 	 */
 	private function build_field_schema( array $field, string $schema_type ): array {
@@ -450,6 +509,12 @@ class MetaController extends WP_REST_Controller {
 		return $schema;
 	}
 
+	/**
+	 * Map a Codestar field type to a JSON Schema type.
+	 *
+	 * @param string $codestar_type  The Codestar field type identifier.
+	 * @return string
+	 */
 	private function get_schema_type( string $codestar_type ): string {
 		$field_type_map = [
 			'number'      => 'number',
@@ -467,6 +532,8 @@ class MetaController extends WP_REST_Controller {
 	}
 
 	/**
+	 * Deduplicate REST meta key definitions by meta_key.
+	 *
 	 * @param list<array<string, mixed>> $rest_meta_keys
 	 * @return list<array<string, mixed>>
 	 */

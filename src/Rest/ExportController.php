@@ -7,17 +7,26 @@ use WP_REST_Server;
 use WP_REST_Response;
 use WP_Error;
 
+/**
+ * REST controller for exporting posts as WXR.
+ */
 class ExportController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 
+	/**
+	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 */
 	public function __construct( ?ModelRestPolicy $policy = null ) {
 		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'export';
 	}
 
+	/**
+	 * Register the REST route for post export.
+	 */
 	public function register_routes(): void {
 		\register_rest_route(
 			self::ROUTE_NAMESPACE,
@@ -37,6 +46,12 @@ class ExportController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Check whether the current user can export posts.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return WP_Error|bool
+	 */
 	public function get_item_permissions_check( $request ): WP_Error|bool {
 		if ( ! \current_user_can( 'export' ) ) {
 			return new WP_Error(
@@ -48,6 +63,12 @@ class ExportController extends WP_REST_Controller {
 		return true;
 	}
 
+	/**
+	 * Export a single post as WXR.
+	 *
+	 * @param mixed $request  The REST request containing the post_id parameter.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$post_id = (int) $request->get_param( 'post_id' );
 		$post    = \get_post( $post_id );
@@ -84,6 +105,12 @@ class ExportController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Generate WXR export XML for a single post.
+	 *
+	 * @param \WP_Post $post  The post to export.
+	 * @return string
+	 */
 	private function generate_wxr( \WP_Post $post ): string {
 		\ob_start();
 		\export_wp(

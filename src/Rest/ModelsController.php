@@ -10,6 +10,9 @@ use WP_Error;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Taxonomy;
 
+/**
+ * REST controller exposing registered Saltus models and their metadata.
+ */
 class ModelsController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
@@ -17,6 +20,10 @@ class ModelsController extends WP_REST_Controller {
 	protected Modeler $modeler;
 	private ?ModelRestPolicy $policy;
 
+	/**
+	 * @param Modeler $modeler  The model registry.
+	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 */
 	public function __construct( Modeler $modeler, ?ModelRestPolicy $policy = null ) {
 		$this->modeler   = $modeler;
 		$this->policy    = $policy;
@@ -24,6 +31,9 @@ class ModelsController extends WP_REST_Controller {
 		$this->rest_base = 'models';
 	}
 
+	/**
+	 * Register the REST routes for listing and reading models.
+	 */
 	public function register_routes(): void {
 		register_rest_route(
 			self::ROUTE_NAMESPACE,
@@ -53,6 +63,12 @@ class ModelsController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Check whether the current user can list models.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return true|WP_Error
+	 */
 	public function get_items_permissions_check( $request ): true|WP_Error {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
@@ -64,6 +80,12 @@ class ModelsController extends WP_REST_Controller {
 		return true;
 	}
 
+	/**
+	 * Check whether the current user can view a single model.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return true|WP_Error
+	 */
 	public function get_item_permissions_check( $request ): true|WP_Error {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
@@ -75,6 +97,12 @@ class ModelsController extends WP_REST_Controller {
 		return true;
 	}
 
+	/**
+	 * List all enabled models.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$models = $this->policy
 			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
@@ -92,6 +120,12 @@ class ModelsController extends WP_REST_Controller {
 		return rest_ensure_response( $data );
 	}
 
+	/**
+	 * Get a single model by post type slug.
+	 *
+	 * @param mixed $request  The REST request containing the post_type parameter.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$models = $this->policy
 			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
@@ -112,7 +146,10 @@ class ModelsController extends WP_REST_Controller {
 	}
 
 	/**
-	 * @param \Saltus\WP\Framework\Models\Model $model
+	 * Prepare a model object for REST response serialization.
+	 *
+	 * @param \Saltus\WP\Framework\Models\Model $model  The model to prepare.
+	 * @param WP_REST_Request $request  The REST request.
 	 * @return array<string, mixed>
 	 */
 	private function prepare_model_for_response( $model, WP_REST_Request $request ): array {
@@ -138,13 +175,12 @@ class ModelsController extends WP_REST_Controller {
 		return $data;
 	}
 	/**
+	 * Safely call a method or access a property on an object, falling back to a default.
 	 *
-	 * Check method or prop in class, then default in case none found.
-	 *
-	 * @param object $target
-	 * @param string $method
-	 * @param string $default_prop
-	 * @param string $default_val
+	 * @param object $target  The target object.
+	 * @param string $method  Method name to try first.
+	 * @param string $default_prop  Property name if method does not exist.
+	 * @param string $default_val  Fallback value if neither method nor property exists.
 	 * @return mixed
 	 */
 	private function check_method( object $target, string $method, string $default_prop, string $default_val ) {

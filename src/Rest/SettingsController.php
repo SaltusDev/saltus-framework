@@ -8,17 +8,26 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 
+/**
+ * REST controller for reading and updating per-post-type settings.
+ */
 class SettingsController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 
+	/**
+	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 */
 	public function __construct( ?ModelRestPolicy $policy = null ) {
 		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'settings';
 	}
 
+	/**
+	 * Register the REST routes for reading and updating settings.
+	 */
 	public function register_routes(): void {
 		register_rest_route(
 			self::ROUTE_NAMESPACE,
@@ -41,10 +50,22 @@ class SettingsController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Build the option name for a given post type.
+	 *
+	 * @param string $post_type  The post type slug.
+	 * @return string
+	 */
 	protected function get_option_name( string $post_type ): string {
 		return sprintf( 'saltus_framework_settings_%s', $post_type );
 	}
 
+	/**
+	 * Check whether the current user can view settings.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return true|WP_Error
+	 */
 	public function get_item_permissions_check( $request ): true|WP_Error {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
@@ -56,6 +77,12 @@ class SettingsController extends WP_REST_Controller {
 		return true;
 	}
 
+	/**
+	 * Check whether the current user can update settings.
+	 *
+	 * @param mixed $request  The REST request.
+	 * @return true|WP_Error
+	 */
 	public function update_item_permissions_check( $request ): true|WP_Error {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
@@ -67,6 +94,12 @@ class SettingsController extends WP_REST_Controller {
 		return true;
 	}
 
+	/**
+	 * Retrieve settings for a post type.
+	 *
+	 * @param mixed $request  The REST request containing the post_type parameter.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$post_type = $request->get_param( 'post_type' );
 		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
@@ -88,6 +121,12 @@ class SettingsController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * Update settings for a post type.
+	 *
+	 * @param mixed $request  The REST request containing the post_type parameter and JSON body.
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public function update_item( $request ): WP_REST_Response|WP_Error {
 		$post_type = $request->get_param( 'post_type' );
 		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
@@ -145,6 +184,8 @@ class SettingsController extends WP_REST_Controller {
 	}
 
 	/**
+	 * Get the JSON Schema for the settings resource.
+	 *
 	 * @return array{'$schema': string, title: string, type: string, properties: array<string, array<string, mixed>>}
 	 */
 	public function get_item_schema(): array {
