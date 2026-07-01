@@ -2,22 +2,28 @@
 
 namespace Saltus\WP\Framework\Rest;
 
-use Saltus\WP\Framework\Modeler;
-
 class RestServer {
 
-	protected Modeler $modeler;
+	private ModelRestPolicy $policy;
 
-	public function __construct( Modeler $modeler ) {
-		$this->modeler = $modeler;
+	/** @var list<RestRouteDefinition> */
+	private array $routes;
+
+	/**
+	 * @param list<RestRouteDefinition> $routes
+	 */
+	public function __construct( ModelRestPolicy $policy, array $routes ) {
+		$this->policy = $policy;
+		$this->routes = $routes;
 	}
 
 	public function register_routes(): void {
-		( new ModelsController( $this->modeler ) )->register_routes();
-		( new DuplicateController() )->register_routes();
-		( new ExportController() )->register_routes();
-		( new SettingsController() )->register_routes();
-		( new MetaController( $this->modeler ) )->register_routes();
-		( new ReorderController() )->register_routes();
+		foreach ( $this->routes as $route ) {
+			if ( ! $this->policy->has_capability( $route->get_capability(), $route->get_model_type() ) ) {
+				continue;
+			}
+
+			$route->register_routes();
+		}
 	}
 }

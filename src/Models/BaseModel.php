@@ -531,6 +531,15 @@ abstract class BaseModel {
 		return $this->options;
 	}
 
+	/**
+	 * Return registration args after labels, meta, and model internals are prepared.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_args(): array {
+		return $this->args;
+	}
+
 	public function get_rest_base(): string {
 		return is_string( $this->options['rest_base'] ?? null )
 			? $this->options['rest_base']
