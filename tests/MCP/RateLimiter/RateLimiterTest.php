@@ -6,8 +6,16 @@ use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimitResult;
 
+require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
+
 class RateLimiterTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        global $wp_transients;
+        $wp_transients = [];
+    }
+
     public function testAllowsRequestsUnderLimit(): void
     {
         $limiter = new RateLimiter(5, 60);
@@ -32,10 +40,10 @@ class RateLimiterTest extends TestCase
 
     public function testAllowsAfterWindowExpires(): void
     {
-        $limiter = new RateLimiter(1, 0);
+        $limiter = new RateLimiter(1, 1);
 
         $limiter->check('bob');
-        usleep(1000);
+        sleep(2);
         $result = $limiter->check('bob');
         $this->assertTrue($result->allowed);
     }

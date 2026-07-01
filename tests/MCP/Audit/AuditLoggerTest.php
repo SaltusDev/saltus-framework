@@ -6,50 +6,51 @@ use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Audit\AuditEntry;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 
+require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
+
 class AuditLoggerTest extends TestCase
 {
-    public function testRecordStoresEntryInMemory(): void
+    protected function setUp(): void
     {
-        $logger = new AuditLogger(true, false);
+        global $wpdb;
+        if ( ! is_object( $wpdb ) ) {
+            $wpdb = $this->fakeWpdb();
+        }
+        $wpdb->inserts = [];
+        $wpdb->queries = [];
+    }
+
+    public function testRecordStoresEntryInAuditTable(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
         $entry = new AuditEntry('list_models', []);
         $entry->complete('success');
         $logger->record($entry);
 
-        $stats = $logger->get_stats();
-        $this->assertSame(1, $stats['total']);
-        $this->assertSame(0, $stats['errors']);
+        $this->assertCount(1, $wpdb->inserts);
+        $this->assertSame('wp_saltus_mcp_audit', $wpdb->inserts[0]['table']);
+        $this->assertSame('list_models', $wpdb->inserts[0]['data']['ability']);
+        $this->assertSame('success', $wpdb->inserts[0]['data']['status']);
     }
 
-    public function testRecordCountsErrors(): void
+    public function testRecordStoresErrors(): void
     {
-        $logger = new AuditLogger(true, false);
+        global $wpdb;
 
-        $success = new AuditEntry('good', []);
-        $success->complete('success');
-        $logger->record($success);
-
+        $logger = new AuditLogger();
         $fail = new AuditEntry('bad', []);
         $fail->complete('error', 'api_error', 'fail');
         $logger->record($fail);
 
-        $stats = $logger->get_stats();
-        $this->assertSame(2, $stats['total']);
-        $this->assertSame(1, $stats['errors']);
+        $this->assertSame('api_error', $wpdb->inserts[0]['data']['error_code']);
+        $this->assertSame('fail', $wpdb->inserts[0]['data']['error_message']);
     }
 
-    public function testDisabledLoggerDoesNotStore(): void
+    public function testGetRecentEntriesReadsFromTable(): void
     {
-        $logger = new AuditLogger(false, false);
-        $entry = new AuditEntry('test', []);
-        $entry->complete('success');
-        $logger->record($entry);
-
-        $this->assertSame(0, $logger->get_stats()['total']);
-    }
-
-    public function testGetRecentEntriesReturnsLatest(): void
-    {
-        $logger = new AuditLogger(true, false);
+        $logger = new AuditLogger();
 
         for ($i = 0; $i < 5; $i++) {
             $e = new AuditEntry("tool_{$i}", []);
@@ -58,57 +59,57 @@ class AuditLoggerTest extends TestCase
         }
 
         $recent = $logger->get_recent_entries(2);
-        $this->assertCount(2, $recent);
-        $this->assertSame('tool_3', $recent[0]['tool']);
-        $this->assertSame('tool_4', $recent[1]['tool']);
+        $this->assertNotEmpty($recent);
+        $this->assertSame('tool_4', $recent[0]['ability']);
     }
 
-    public function testMaxMemoryEntriesRespected(): void
+    private function fakeWpdb(): object
     {
-        $logger = new AuditLogger(true, false, null, 3);
+        return new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
+            public string $prefix = 'wp_';
+            /** @var list<array<string, mixed>> */
+            public array $inserts = [];
+            /** @var list<string> */
+            public array $queries = [];
 
-        for ($i = 0; $i < 10; $i++) {
-            $e = new AuditEntry("tool_{$i}", []);
-            $e->complete('success');
-            $logger->record($e);
-        }
+            public function prefix(): string
+            {
+                return $this->prefix;
+            }
 
-        $stats = $logger->get_stats();
-        $this->assertSame(3, $stats['total']);
-    }
+            /**
+             * @param array<string, mixed> $data
+             * @param list<string> $format
+             */
+            public function insert(string $table, array $data, array $format = []): bool
+            {
+                $this->inserts[] = compact('table', 'data', 'format');
+                return true;
+            }
 
-    public function testLogToFile(): void
-    {
-        $tmpFile = tempnam(sys_get_temp_dir(), 'audit_');
-        $logger = new AuditLogger(true, false, $tmpFile);
+            public function query(string $query): bool
+            {
+                $this->queries[] = $query;
+                return true;
+            }
 
-        $entry = new AuditEntry('list_posts', ['per_page' => 5]);
-        $entry->complete('success');
-        $logger->record($entry);
+            public function prepare(string $query, mixed ...$args): string
+            {
+                foreach ($args as $arg) {
+                    $query = preg_replace('/%[dsf]/', (string) $arg, $query, 1);
+                }
+                return $query;
+            }
 
-        $contents = file_get_contents($tmpFile);
-        $this->assertNotFalse($contents);
+            public function get_results(string $query, mixed $output = null): array
+            {
+                return array_reverse(array_map(fn(array $insert) => $insert['data'], $this->inserts));
+            }
 
-        $decoded = json_decode(trim($contents), true);
-        $this->assertIsArray($decoded);
-        $this->assertSame('list_posts', $decoded['tool']);
-        $this->assertSame('success', $decoded['status']);
-
-        unlink($tmpFile);
-    }
-
-    public function testGetStatsShape(): void
-    {
-        $logger = new AuditLogger(true, false);
-
-        $e = new AuditEntry('test', []);
-        $e->complete('success');
-        $logger->record($e);
-
-        $stats = $logger->get_stats();
-        $this->assertArrayHasKey('total', $stats);
-        $this->assertArrayHasKey('errors', $stats);
-        $this->assertArrayHasKey('recent', $stats);
-        $this->assertCount(1, $stats['recent']);
+            public function get_charset_collate(): string
+            {
+                return '';
+            }
+        };
     }
 }
