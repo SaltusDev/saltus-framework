@@ -165,6 +165,7 @@ $wp_rest_routes_registered = [];
 $wp_abilities_registered   = [];
 $wp_rest_request_log       = [];
 $wp_current_user_can       = true;
+$wp_post_type_objects      = [];
 $wp_posts                  = [];
 $wp_options                = [];
 $wp_transients             = [];
@@ -241,6 +242,22 @@ if ( ! function_exists( 'current_user_can' ) ) {
 		global $wp_current_user_can;
 		if ( is_bool( $wp_current_user_can ) ) {
 			return $wp_current_user_can;
+		}
+		if ( is_array( $wp_current_user_can ) ) {
+			$key = $capability;
+			if ( $args !== [] ) {
+				$key .= ':' . implode( ':', array_map( 'strval', $args ) );
+			}
+
+			if ( array_key_exists( $key, $wp_current_user_can ) ) {
+				return (bool) $wp_current_user_can[ $key ];
+			}
+
+			if ( array_key_exists( $capability, $wp_current_user_can ) ) {
+				return (bool) $wp_current_user_can[ $capability ];
+			}
+
+			return false;
 		}
 		return true;
 	}
@@ -484,8 +501,14 @@ if ( ! function_exists( 'get_post_type' ) ) {
 
 if ( ! function_exists( 'get_post_type_object' ) ) {
 	function get_post_type_object( string $post_type ): ?stdClass {
+		global $wp_post_type_objects;
+		if ( isset( $wp_post_type_objects[ $post_type ] ) ) {
+			return $wp_post_type_objects[ $post_type ];
+		}
+
 		$cap = new stdClass();
-		$cap->edit_posts = 'edit_posts';
+		$cap->edit_posts   = 'edit_posts';
+		$cap->create_posts = 'edit_posts';
 		return (object) [
 			'name' => $post_type,
 			'cap'  => $cap,

@@ -63,6 +63,23 @@ class DuplicateControllerTest extends TestCase {
 		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
 	}
 
+	public function testCreateItemPermissionsCheckUsesPostSpecificCapability(): void {
+		global $wp_current_user_can, $wp_posts;
+
+		$wp_posts[42]        = new \WP_Post( [
+			'ID'        => 42,
+			'post_type' => 'book',
+		] );
+		$wp_current_user_can = [
+			'edit_posts'   => false,
+			'edit_post:42' => true,
+		];
+
+		$result = $this->controller->create_item_permissions_check( new WP_REST_Request( [ 'post_id' => 42 ] ) );
+
+		$this->assertTrue( $result );
+	}
+
 	public function testCreateItemReturnsErrorWhenPostNotFound(): void {
 		$request = new WP_REST_Request( [ 'post_id' => 999 ] );
 

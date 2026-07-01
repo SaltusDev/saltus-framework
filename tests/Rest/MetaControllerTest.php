@@ -16,9 +16,10 @@ class MetaControllerTest extends TestCase {
 	private Modeler $modeler;
 
 	protected function setUp(): void {
-		global $wp_rest_routes_registered, $wp_current_user_can;
+		global $wp_rest_routes_registered, $wp_current_user_can, $wp_post_type_objects;
 		$wp_rest_routes_registered = [];
 		$wp_current_user_can       = true;
+		$wp_post_type_objects      = [];
 
 		$this->modeler    = $this->createStub( Modeler::class );
 		$this->controller = new MetaController( $this->modeler );
@@ -55,6 +56,37 @@ class MetaControllerTest extends TestCase {
 		$wp_current_user_can = false;
 
 		$result = $this->controller->get_items_permissions_check( new WP_REST_Request() );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
+	}
+
+	public function testGetItemsPermissionsCheckUsesPostTypeEditCapability(): void {
+		global $wp_current_user_can, $wp_post_type_objects;
+
+		$wp_post_type_objects['book'] = $this->postTypeObject( 'book', 'edit_books' );
+		$wp_current_user_can          = [
+			'read'       => true,
+			'edit_posts' => false,
+			'edit_books' => true,
+		];
+
+		$result = $this->controller->get_items_permissions_check( new WP_REST_Request( [ 'post_type' => 'book' ] ) );
+
+		$this->assertTrue( $result );
+	}
+
+	public function testGetItemsPermissionsCheckRejectsMissingPostTypeEditCapability(): void {
+		global $wp_current_user_can, $wp_post_type_objects;
+
+		$wp_post_type_objects['book'] = $this->postTypeObject( 'book', 'edit_books' );
+		$wp_current_user_can          = [
+			'read'       => true,
+			'edit_posts' => false,
+			'edit_books' => false,
+		];
+
+		$result = $this->controller->get_items_permissions_check( new WP_REST_Request( [ 'post_type' => 'book' ] ) );
+
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
 	}
@@ -125,6 +157,33 @@ class MetaControllerTest extends TestCase {
 			]
 		);
 		$this->controller = new MetaController( $this->modeler, new ModelRestPolicy( $this->modeler ) );
+
+		$result = $this->controller->get_all_items( new WP_REST_Request() );
+		$data   = rest_ensure_response( $result )->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertCount( 1, $data['post_types'] );
+		$this->assertSame( 'book', $data['post_types'][0]['post_type'] );
+	}
+
+	public function testGetAllItemsFiltersPostTypesByEditCapability(): void {
+		global $wp_current_user_can, $wp_post_type_objects;
+
+		$wp_post_type_objects['book']  = $this->postTypeObject( 'book', 'edit_books' );
+		$wp_post_type_objects['movie'] = $this->postTypeObject( 'movie', 'edit_movies' );
+		$wp_current_user_can           = [
+			'read'        => true,
+			'edit_posts'  => false,
+			'edit_books'  => true,
+			'edit_movies' => false,
+		];
+
+		$this->modeler->method( 'get_models' )->willReturn(
+			[
+				'book'  => $this->createModelMock( 'post_type', [ 'isbn' => [ 'type' => 'text' ] ], 'Book', 'Books' ),
+				'movie' => $this->createModelMock( 'post_type', [ 'rating' => [ 'type' => 'text' ] ], 'Movie', 'Movies' ),
+			]
+		);
 
 		$result = $this->controller->get_all_items( new WP_REST_Request() );
 		$data   = rest_ensure_response( $result )->get_data();
@@ -305,6 +364,16 @@ class MetaControllerTest extends TestCase {
 		}
 
 		return $indexed;
+	}
+
+	private function postTypeObject( string $post_type, string $edit_capability ): \stdClass {
+		$cap             = new \stdClass();
+		$cap->edit_posts = $edit_capability;
+
+		return (object) [
+			'name' => $post_type,
+			'cap'  => $cap,
+		];
 	}
 
 	/**

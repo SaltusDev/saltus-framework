@@ -60,6 +60,31 @@ class ReorderControllerTest extends TestCase {
 		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
 	}
 
+	public function testCreateItemPermissionsCheckAllowsAnyEditableRequestedPost(): void {
+		global $wp_current_user_can, $wp_posts;
+
+		$wp_posts[1]         = new \WP_Post( [ 'ID' => 1, 'post_type' => 'book' ] );
+		$wp_posts[2]         = new \WP_Post( [ 'ID' => 2, 'post_type' => 'movie' ] );
+		$wp_current_user_can = [
+			'edit_posts'  => false,
+			'edit_post:1' => false,
+			'edit_post:2' => true,
+		];
+
+		$result = $this->controller->create_item_permissions_check(
+			new WP_REST_Request(
+				[
+					'items' => [
+						[ 'id' => 1, 'menu_order' => 1 ],
+						[ 'id' => 2, 'menu_order' => 2 ],
+					],
+				]
+			)
+		);
+
+		$this->assertTrue( $result );
+	}
+
 	public function testCreateItemReturnsErrorWhenNoItemsProvided(): void {
 		$request = new WP_REST_Request( [] );
 		$result  = $this->controller->create_item( $request );

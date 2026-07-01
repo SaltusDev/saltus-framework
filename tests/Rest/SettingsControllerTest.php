@@ -16,10 +16,11 @@ class SettingsControllerTest extends TestCase {
 	private SettingsController $controller;
 
 	protected function setUp(): void {
-		global $wp_rest_routes_registered, $wp_current_user_can, $wp_options;
+		global $wp_rest_routes_registered, $wp_current_user_can, $wp_options, $wp_post_type_objects;
 		$wp_rest_routes_registered = [];
 		$wp_current_user_can       = true;
 		$wp_options                = [];
+		$wp_post_type_objects      = [];
 
 		$this->controller = new SettingsController();
 	}
@@ -57,6 +58,20 @@ class SettingsControllerTest extends TestCase {
 		$result = $this->controller->get_item_permissions_check( new WP_REST_Request() );
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
+	}
+
+	public function testGetItemPermissionsCheckUsesPostTypeEditCapability(): void {
+		global $wp_current_user_can, $wp_post_type_objects;
+
+		$wp_post_type_objects['book'] = $this->postTypeObject( 'book', 'edit_books' );
+		$wp_current_user_can          = [
+			'edit_posts' => false,
+			'edit_books' => true,
+		];
+
+		$result = $this->controller->get_item_permissions_check( new WP_REST_Request( [ 'post_type' => 'book' ] ) );
+
+		$this->assertTrue( $result );
 	}
 
 	public function testUpdateItemPermissionsCheckReturnsTrueWhenAuthorized(): void {
@@ -205,5 +220,15 @@ class SettingsControllerTest extends TestCase {
 				return 'post_type';
 			}
 		};
+	}
+
+	private function postTypeObject( string $post_type, string $edit_capability ): \stdClass {
+		$cap             = new \stdClass();
+		$cap->edit_posts = $edit_capability;
+
+		return (object) [
+			'name' => $post_type,
+			'cap'  => $cap,
+		];
 	}
 }
