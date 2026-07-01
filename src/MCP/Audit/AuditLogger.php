@@ -1,6 +1,9 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Audit;
 
+/**
+ * Persists MCP audit entries to a custom database table.
+ */
 class AuditLogger {
 
 	private const TABLE_SUFFIX = 'saltus_mcp_audit';
@@ -16,6 +19,11 @@ class AuditLogger {
 		'exception',
 	];
 
+	/**
+	 * Persist an audit entry to the database.
+	 *
+	 * @param AuditEntry $entry  The audit entry to persist.
+	 */
 	public function record( AuditEntry $entry ): void {
 		if ( ! $this->enabled() ) {
 			return;
@@ -49,6 +57,9 @@ class AuditLogger {
 	}
 
 	/**
+	 * Retrieve the most recent audit entries.
+	 *
+	 * @param int $limit  Maximum number of entries to return.
 	 * @return list<array<string, mixed>>
 	 */
 	public function get_recent_entries( int $limit = 100 ): array {
@@ -66,6 +77,9 @@ class AuditLogger {
 		return is_array( $rows ) ? array_values( array_filter( $rows, 'is_array' ) ) : [];
 	}
 
+	/**
+	 * Create the audit log database table if it does not exist.
+	 */
 	private function ensure_table(): void {
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {
@@ -95,6 +109,9 @@ class AuditLogger {
 		$wpdb->query( $sql );
 	}
 
+	/**
+	 * Delete audit entries older than the retention period.
+	 */
 	private function cleanup(): void {
 		$days = (int) $this->filter( 'saltus/framework/mcp/audit/retention_days', 30 );
 		if ( $days <= 0 ) {
@@ -111,10 +128,20 @@ class AuditLogger {
 		$wpdb->query( 'DELETE FROM ' . $this->table_name() . " WHERE created_at < '{$cutoff}'" );
 	}
 
+	/**
+	 * Check whether audit logging is enabled.
+	 *
+	 * @return bool
+	 */
 	private function enabled(): bool {
 		return (bool) $this->filter( 'saltus/framework/mcp/audit/enabled', true );
 	}
 
+	/**
+	 * Get the full audit table name with prefix.
+	 *
+	 * @return string
+	 */
 	private function table_name(): string {
 		$wpdb   = $this->wpdb();
 		$prefix = $wpdb !== null ? $wpdb->prefix() : '';
@@ -122,6 +149,11 @@ class AuditLogger {
 		return $prefix . self::TABLE_SUFFIX;
 	}
 
+	/**
+	 * Get the global wpdb instance wrapped in an AuditDatabase adapter.
+	 *
+	 * @return AuditDatabase|null
+	 */
 	private function wpdb(): ?AuditDatabase {
 		global $wpdb;
 
@@ -137,7 +169,11 @@ class AuditLogger {
 	}
 
 	/**
-	 * @param positive-int $max_length
+	 * Sanitize a string value, truncating to a maximum length.
+	 *
+	 * @param string $value  The value to sanitize.
+	 * @param positive-int $max_length  Maximum allowed string length.
+	 * @return string
 	 */
 	private function sanitize( string $value, int $max_length ): string {
 		$value = str_replace( "\0", '', $value );
@@ -153,6 +189,12 @@ class AuditLogger {
 		return $value;
 	}
 
+	/**
+	 * Validate that a status string is one of the allowed values.
+	 *
+	 * @param string $status  The status to validate.
+	 * @return string
+	 */
 	private function validate_status( string $status ): string {
 		$status = $this->sanitize( $status, 32 );
 
@@ -164,7 +206,10 @@ class AuditLogger {
 	}
 
 	/**
-	 * @param array<string, mixed> $data
+	 * Encode data as JSON for database storage.
+	 *
+	 * @param array<string, mixed> $data  The data to encode.
+	 * @return string
 	 */
 	private function encode( array $data ): string {
 		if ( function_exists( 'wp_json_encode' ) ) {
@@ -178,7 +223,11 @@ class AuditLogger {
 	}
 
 	/**
-	 * @param non-empty-string $hook
+	 * Apply a WordPress filter, falling back to the default value outside WordPress.
+	 *
+	 * @param non-empty-string $hook  The filter hook name.
+	 * @param mixed $value  The value to filter.
+	 * @return mixed
 	 */
 	private function filter( string $hook, mixed $value ): mixed {
 		if ( function_exists( 'apply_filters' ) ) {
