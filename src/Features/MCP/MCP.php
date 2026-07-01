@@ -3,8 +3,10 @@ namespace Saltus\WP\Framework\Features\MCP;
 
 use Saltus\WP\Framework\Infrastructure\Plugin\Registerable;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
+use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
 use Saltus\WP\Framework\MCP\Cache\TransientCache;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 /**
  * Enables Saltus MCP support.
@@ -21,8 +23,9 @@ class MCP implements Service, Registerable {
 	 * @param array<int, mixed> $dependencies Framework dependencies injected by the service container.
 	 */
 	public function __construct( array $dependencies = [], ?AbilityRegistrar $ability_registrar = null ) {
-		$has_dependencies        = $dependencies !== [];
-		$this->ability_registrar = $ability_registrar ?? new AbilityRegistrar();
+		$modeler                 = $dependencies['modeler'] ?? null;
+		$policy                  = $modeler instanceof Modeler ? new ModelRestPolicy( $modeler ) : null;
+		$this->ability_registrar = $ability_registrar ?? new AbilityRegistrar( null, null, $policy );
 	}
 
 	public function register(): void {
