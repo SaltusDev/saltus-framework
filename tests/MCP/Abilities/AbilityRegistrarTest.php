@@ -13,6 +13,9 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
+/**
+ * @phpstan-import-type AbilityDefinition from \Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory
+ */
 class AbilityRegistrarTest extends TestCase {
 
 	protected function setUp(): void {

@@ -5,7 +5,9 @@ namespace Saltus\WP\Framework\Tests\MCP\Abilities;
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRuntime;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
-use Saltus\WP\Framework\MCP\Tools\ToolInterface;
+use Saltus\WP\Framework\MCP\Tools\CreatePost;
+use Saltus\WP\Framework\MCP\Tools\ListModels;
+use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
@@ -27,9 +29,9 @@ class AbilityRuntimeTest extends TestCase {
 		global $wp_rest_request_log;
 
 		$runtime = new AbilityRuntime();
-		$tool    = $this->makeTool( 'list_models', [ 'type' => [ 'type' => 'string' ] ] );
+		$tool    = new ListModels();
 
-		$result = $runtime->execute( $tool, [ 'type' => 'book' ] );
+		$result = $runtime->execute( $tool, [ 'type' => 'post_types' ] );
 
 		$this->assertIsArray( $result );
 		$this->assertCount( 1, $wp_rest_request_log );
@@ -39,12 +41,7 @@ class AbilityRuntimeTest extends TestCase {
 
 	public function testExecuteReturnsValidationError(): void {
 		$runtime = new AbilityRuntime();
-		$tool    = $this->makeTool(
-			'create_post',
-			[
-				'title' => [ 'type' => 'string', 'required' => true ],
-			]
-		);
+		$tool    = new CreatePost();
 
 		$result = $runtime->execute( $tool, [] );
 
@@ -54,7 +51,7 @@ class AbilityRuntimeTest extends TestCase {
 
 	public function testExecuteReturnsRateLimitError(): void {
 		$runtime = new AbilityRuntime( null, new RateLimiter( 1, 60 ) );
-		$tool    = $this->makeTool( 'list_models', [] );
+		$tool    = new ListModels();
 
 		$runtime->execute( $tool, [] );
 		$result = $runtime->execute( $tool, [] );
@@ -67,7 +64,7 @@ class AbilityRuntimeTest extends TestCase {
 		global $wpdb;
 
 		$runtime = new AbilityRuntime();
-		$tool    = $this->makeTool( 'list_models', [] );
+		$tool    = new ListModels();
 
 		$runtime->execute( $tool, [] );
 
@@ -79,7 +76,7 @@ class AbilityRuntimeTest extends TestCase {
 		global $wpdb;
 
 		$runtime = new AbilityRuntime();
-		$tool    = $this->makeTool( 'create_post', [ 'title' => [ 'type' => 'string', 'required' => true ] ] );
+		$tool    = new CreatePost();
 
 		$runtime->execute( $tool, [] );
 
@@ -91,7 +88,7 @@ class AbilityRuntimeTest extends TestCase {
 		global $wp_rest_request_log, $wp_transients;
 
 		$runtime    = new AbilityRuntime();
-		$tool       = $this->makeTool( 'list_models', [] );
+		$tool       = new ListModels();
 		$cache_key  = 'saltus_mcp_' . hash( 'sha256', '{"tool":"list_models","args":[],"user":1,"locale":"en_US"}' );
 
 		$wp_transients = [
@@ -109,45 +106,19 @@ class AbilityRuntimeTest extends TestCase {
 
 	public function testMutatingToolClearsCache(): void {
 		$runtime    = new AbilityRuntime();
-		$read_tool  = $this->makeTool( 'list_models', [] );
-		$write_tool = $this->makeTool( 'update_settings', [ 'post_type' => [ 'type' => 'string' ] ] );
+		$read_tool  = new ListModels();
+		$write_tool = new UpdateSettings();
 
 		$runtime->execute( $read_tool, [] );
-		$this->assertNotEmpty( $runtime->execute( $write_tool, [ 'post_type' => 'book' ] ) );
-	}
-
-	/**
-	 * @param array<string, mixed> $params
-	 */
-	private function makeTool( string $name, array $params ): ToolInterface {
-		return new class( $name, $params ) implements ToolInterface {
-			private string $name;
-			/** @var array<string, mixed> */
-			private array $params;
-
-			/**
-			 * @param array<string, mixed> $params
-			 */
-			public function __construct( string $name, array $params ) {
-				$this->name   = $name;
-				$this->params = $params;
-			}
-
-			public function get_name(): string {
-				return $this->name;
-			}
-
-			public function get_description(): string {
-				return 'Test tool: ' . $this->name;
-			}
-
-			/**
-			 * @return array<string, mixed>
-			 */
-			public function get_parameters(): array {
-				return $this->params;
-			}
-		};
+		$this->assertNotEmpty(
+			$runtime->execute(
+				$write_tool,
+				[
+					'post_type' => 'book',
+					'settings'  => [],
+				]
+			)
+		);
 	}
 
 	private function fakeWpdb(): object {
