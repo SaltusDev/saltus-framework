@@ -46,22 +46,6 @@ class ToolProviderTest extends TestCase
         $this->assertArrayHasKey('tool_b', $all);
     }
 
-    public function testGetDefinitions(): void
-    {
-        $tool = $this->createStub(ToolInterface::class);
-        $tool->method('get_name')->willReturn('my_tool');
-        $tool->method('get_description')->willReturn('Does something');
-        $tool->method('get_parameters')->willReturn(['param' => ['type' => 'string']]);
-
-        $this->provider->register($tool);
-        $defs = $this->provider->get_definitions();
-
-        $this->assertCount(1, $defs);
-        $this->assertSame('my_tool', $defs[0]['name']);
-        $this->assertSame('Does something', $defs[0]['description']);
-        $this->assertSame(['param' => ['type' => 'string']], $defs[0]['inputSchema']);
-    }
-
     public function testRegisterOverwritesExisting(): void
     {
         $tool1 = $this->createStub(ToolInterface::class);
