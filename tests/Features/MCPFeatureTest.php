@@ -23,9 +23,10 @@ class MCPFeatureTest extends TestCase {
 		$feature->register();
 
 		$this->assertSame( 'native', $feature->transport() );
-		$this->assertCount( 2, $wp_actions_registered );
+		$this->assertCount( 8, $wp_actions_registered );
 		$this->assertSame( 'wp_abilities_api_categories_init', $wp_actions_registered[0]['hook_name'] );
 		$this->assertSame( 'wp_abilities_api_init', $wp_actions_registered[1]['hook_name'] );
+		$this->assertSame( 'save_post', $wp_actions_registered[2]['hook_name'] );
 	}
 
 	public function testLegacyTransportDoesNotRegisterNativeAbilityHooks(): void {

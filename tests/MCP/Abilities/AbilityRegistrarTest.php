@@ -3,19 +3,29 @@
 namespace Saltus\WP\Framework\Tests\MCP\Abilities;
 
 use PHPUnit\Framework\TestCase;
+use Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
+use Saltus\WP\Framework\MCP\Abilities\AbilityRuntime;
+use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
 class AbilityRegistrarTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_abilities_registered, $wp_rest_request_log, $wp_current_user_can, $wp_taxonomy_objects;
+		global $wpdb, $wp_abilities_registered, $wp_options, $wp_rest_request_log, $wp_transients, $wp_current_user_can, $wp_taxonomy_objects;
 
 		$wp_abilities_registered = [];
+		$wp_options              = [];
 		$wp_rest_request_log     = [];
+		$wp_transients           = [];
 		$wp_current_user_can     = true;
 		$wp_taxonomy_objects     = [];
+		if ( ! is_object( $wpdb ) ) {
+			$wpdb = $this->fakeWpdb();
+		}
+		$wpdb->inserts = [];
+		$wpdb->queries = [];
 	}
 
 	public function testRegisterMapsAllMcpToolsToNativeAbilities(): void {
@@ -51,7 +61,8 @@ class AbilityRegistrarTest extends TestCase {
 	public function testCallbackDispatchesThroughRestRequest(): void {
 		global $wp_abilities_registered, $wp_rest_request_log;
 
-		( new AbilityRegistrar() )->register();
+		$runtime = new AbilityRuntime( null, new RateLimiter( 1, 60 ) );
+		( new AbilityRegistrar( null, new AbilityDefinitionFactory( $runtime ) ) )->register();
 
 		$callback = $wp_abilities_registered['saltus/update-settings']['execute_callback'];
 		$result   = $callback(
@@ -108,5 +119,111 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertSame( [ 'ok' => true, 'route' => '/saltus-framework/v1/meta' ], $result );
 		$this->assertSame( 'GET', $wp_rest_request_log[0]['method'] );
 		$this->assertSame( '/saltus-framework/v1/meta', $wp_rest_request_log[0]['route'] );
+	}
+
+	public function testReadCallbacksUseTransientCache(): void {
+		global $wp_abilities_registered, $wp_rest_request_log;
+
+		( new AbilityRegistrar() )->register();
+
+		$callback = $wp_abilities_registered['saltus/list-meta-fields']['execute_callback'];
+
+		$this->assertSame( [ 'ok' => true, 'route' => '/saltus-framework/v1/meta' ], $callback() );
+		$this->assertSame( [ 'ok' => true, 'route' => '/saltus-framework/v1/meta' ], $callback() );
+
+		$this->assertCount( 1, $wp_rest_request_log );
+	}
+
+	public function testMutatingCallbacksClearTransientCache(): void {
+		global $wp_abilities_registered, $wp_options, $wp_rest_request_log;
+
+		( new AbilityRegistrar() )->register();
+
+		$wp_abilities_registered['saltus/list-meta-fields']['execute_callback']();
+		$this->assertNotEmpty( $wp_options['saltus_mcp_cache_keys'] ?? [] );
+
+		$wp_abilities_registered['saltus/update-settings']['execute_callback'](
+			[
+				'post_type' => 'book',
+				'settings'  => [ 'featured' => true ],
+			]
+		);
+
+		$this->assertArrayNotHasKey( 'saltus_mcp_cache_keys', $wp_options );
+		$this->assertCount( 2, $wp_rest_request_log );
+	}
+
+	public function testCallbacksWriteAuditRecords(): void {
+		global $wpdb, $wp_abilities_registered;
+
+		( new AbilityRegistrar() )->register();
+
+		$wp_abilities_registered['saltus/list-meta-fields']['execute_callback']();
+
+		$this->assertNotEmpty( $wpdb->inserts );
+		$this->assertSame( 'wp_saltus_mcp_audit', $wpdb->inserts[0]['table'] );
+		$this->assertSame( 'list_meta_fields', $wpdb->inserts[0]['data']['ability'] );
+		$this->assertSame( 'success', $wpdb->inserts[0]['data']['status'] );
+	}
+
+	public function testCallbacksReturnRateLimitError(): void {
+		global $wp_abilities_registered;
+
+		$runtime = new AbilityRuntime( null, new RateLimiter( 1, 60 ) );
+		( new AbilityRegistrar( null, new AbilityDefinitionFactory( $runtime ) ) )->register();
+
+		$callback = $wp_abilities_registered['saltus/update-settings']['execute_callback'];
+		$args     = [
+			'post_type' => 'book',
+			'settings'  => [ 'featured' => true ],
+		];
+		$callback( $args );
+		$result = $callback( $args );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'rate_limited', $result->get_error_code() );
+	}
+
+	private function fakeWpdb(): object {
+		return new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
+			public string $prefix = 'wp_';
+			/** @var list<array<string, mixed>> */
+			public array $inserts = [];
+			/** @var list<string> */
+			public array $queries = [];
+
+			public function prefix(): string {
+				return $this->prefix;
+			}
+
+			/**
+			 * @param array<string, mixed> $data
+			 * @param list<string> $format
+			 */
+			public function insert( string $table, array $data, array $format = [] ): bool {
+				$this->inserts[] = compact( 'table', 'data', 'format' );
+				return true;
+			}
+
+			public function query( string $query ): bool {
+				$this->queries[] = $query;
+				return true;
+			}
+
+			public function prepare( string $query, mixed ...$args ): string {
+				foreach ( $args as $arg ) {
+					$query = preg_replace( '/%[dsf]/', (string) $arg, $query, 1 );
+				}
+				return $query;
+			}
+
+			public function get_results( string $query, mixed $output = null ): array {
+				return array_reverse( array_map( fn( array $insert ) => $insert['data'], $this->inserts ) );
+			}
+
+			public function get_charset_collate(): string {
+				return '';
+			}
+		};
 	}
 }
