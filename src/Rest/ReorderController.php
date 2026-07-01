@@ -11,8 +11,10 @@ use WP_Error;
 class ReorderController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
+	private ?ModelRestPolicy $policy;
 
-	public function __construct() {
+	public function __construct( ?ModelRestPolicy $policy = null ) {
+		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'reorder';
 	}
@@ -83,6 +85,15 @@ class ReorderController extends WP_REST_Controller {
 					'id'     => $post_id,
 					'status' => 'skipped',
 					'reason' => 'Post not found',
+				];
+				continue;
+			}
+
+			if ( $this->policy && ! $this->policy->is_post_enabled( $post_id, ModelRestPolicy::CAPABILITY_REORDER ) ) {
+				$results[] = [
+					'id'     => $post_id,
+					'status' => 'skipped',
+					'reason' => 'Reorder is not enabled for this post type',
 				];
 				continue;
 			}

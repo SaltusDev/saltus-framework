@@ -10,8 +10,10 @@ use WP_Error;
 class ExportController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
+	private ?ModelRestPolicy $policy;
 
-	public function __construct() {
+	public function __construct( ?ModelRestPolicy $policy = null ) {
+		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'export';
 	}
@@ -55,6 +57,14 @@ class ExportController extends WP_REST_Controller {
 				'post_not_found',
 				__( 'Post not found.', 'saltus-framework' ),
 				[ 'status' => 404 ]
+			);
+		}
+
+		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post->post_type, ModelRestPolicy::CAPABILITY_EXPORT ) ) {
+			return new WP_Error(
+				'model_rest_capability_disabled',
+				__( 'Export is not enabled for this post type.', 'saltus-framework' ),
+				[ 'status' => 403 ]
 			);
 		}
 

@@ -15,9 +15,11 @@ class ModelsController extends WP_REST_Controller {
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 
 	protected Modeler $modeler;
+	private ?ModelRestPolicy $policy;
 
-	public function __construct( Modeler $modeler ) {
+	public function __construct( Modeler $modeler, ?ModelRestPolicy $policy = null ) {
 		$this->modeler   = $modeler;
+		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'models';
 	}
@@ -74,7 +76,9 @@ class ModelsController extends WP_REST_Controller {
 	}
 
 	public function get_items( $request ): WP_REST_Response|WP_Error {
-		$models = $this->modeler->get_models();
+		$models = $this->policy
+			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
+			: $this->modeler->get_models();
 
 		if ( empty( $models ) ) {
 			return rest_ensure_response( [] );
@@ -89,7 +93,9 @@ class ModelsController extends WP_REST_Controller {
 	}
 
 	public function get_item( $request ): WP_REST_Response|WP_Error {
-		$models = $this->modeler->get_models();
+		$models = $this->policy
+			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
+			: $this->modeler->get_models();
 		$name   = $request->get_param( 'post_type' );
 
 		if ( ! isset( $models[ $name ] ) ) {

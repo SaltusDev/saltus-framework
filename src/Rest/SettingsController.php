@@ -11,8 +11,10 @@ use WP_Error;
 class SettingsController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
+	private ?ModelRestPolicy $policy;
 
-	public function __construct() {
+	public function __construct( ?ModelRestPolicy $policy = null ) {
+		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'settings';
 	}
@@ -66,7 +68,15 @@ class SettingsController extends WP_REST_Controller {
 	}
 
 	public function get_item( $request ): WP_REST_Response|WP_Error {
-		$post_type   = $request->get_param( 'post_type' );
+		$post_type = $request->get_param( 'post_type' );
+		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
+			return new WP_Error(
+				'model_not_found',
+				__( 'Model not found.', 'saltus-framework' ),
+				[ 'status' => 404 ]
+			);
+		}
+
 		$option_name = $this->get_option_name( $post_type );
 		$settings    = get_option( $option_name, [] );
 
@@ -79,7 +89,15 @@ class SettingsController extends WP_REST_Controller {
 	}
 
 	public function update_item( $request ): WP_REST_Response|WP_Error {
-		$post_type   = $request->get_param( 'post_type' );
+		$post_type = $request->get_param( 'post_type' );
+		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
+			return new WP_Error(
+				'model_not_found',
+				__( 'Model not found.', 'saltus-framework' ),
+				[ 'status' => 404 ]
+			);
+		}
+
 		$option_name = $this->get_option_name( $post_type );
 		$settings    = $request->get_json_params();
 

@@ -14,9 +14,11 @@ class MetaController extends WP_REST_Controller {
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 
 	protected Modeler $modeler;
+	private ?ModelRestPolicy $policy;
 
-	public function __construct( Modeler $modeler ) {
+	public function __construct( Modeler $modeler, ?ModelRestPolicy $policy = null ) {
 		$this->modeler   = $modeler;
+		$this->policy    = $policy;
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'meta';
 	}
@@ -68,17 +70,23 @@ class MetaController extends WP_REST_Controller {
 	public function get_all_items( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post_types = [];
 
-		foreach ( $this->modeler->get_models() as $post_type => $model ) {
+		$models = $this->policy
+			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_META, 'post_type' )
+			: $this->modeler->get_models();
+
+		foreach ( $models as $post_type => $model ) {
 			if ( $model->get_type() !== 'post_type' ) {
 				continue;
 			}
 
+			$args = $this->get_model_args( $model );
+
 			$post_types[] = [
 				'post_type'      => (string) $post_type,
-				'label_singular' => $model->args['label_singular'] ?? '',
-				'label_plural'   => $model->args['label_plural'] ?? '',
-				'meta'           => $model->args['meta'] ?? [],
-				'normalized'     => $this->normalize_meta_fields( $model->args['meta'] ?? [] ),
+				'label_singular' => $args['label_singular'] ?? '',
+				'label_plural'   => $args['label_plural'] ?? '',
+				'meta'           => $args['meta'] ?? [],
+				'normalized'     => $this->normalize_meta_fields( $args['meta'] ?? [] ),
 			];
 		}
 
@@ -91,7 +99,9 @@ class MetaController extends WP_REST_Controller {
 
 	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$post_type = $request->get_param( 'post_type' );
-		$models    = $this->modeler->get_models();
+		$models    = $this->policy
+			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_META, 'post_type' )
+			: $this->modeler->get_models();
 
 		if ( ! isset( $models[ $post_type ] ) ) {
 			return new WP_Error(
@@ -102,6 +112,7 @@ class MetaController extends WP_REST_Controller {
 		}
 
 		$model = $models[ $post_type ];
+		$args  = $this->get_model_args( $model );
 
 		if ( $model->get_type() !== 'post_type' ) {
 			return new WP_Error(
@@ -111,7 +122,7 @@ class MetaController extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! isset( $model->args['meta'] ) || empty( $model->args['meta'] ) ) {
+		if ( ! isset( $args['meta'] ) || empty( $args['meta'] ) ) {
 			return rest_ensure_response(
 				[
 					'post_type'  => $post_type,
@@ -124,10 +135,27 @@ class MetaController extends WP_REST_Controller {
 		return rest_ensure_response(
 			[
 				'post_type'  => $post_type,
-				'meta'       => $model->args['meta'], // TODO by pcarvalho: check this property exists
-				'normalized' => $this->normalize_meta_fields( $model->args['meta'] ),
+				'meta'       => $args['meta'],
+				'normalized' => $this->normalize_meta_fields( $args['meta'] ),
 			]
 		);
+	}
+
+	/**
+	 * @param \Saltus\WP\Framework\Models\Model $model
+	 * @return array<string, mixed>
+	 */
+	private function get_model_args( $model ): array {
+		if ( $this->policy ) {
+			return $this->policy->get_model_args( $model );
+		}
+
+		if ( method_exists( $model, 'get_args' ) ) {
+			$args = $model->get_args();
+			return is_array( $args ) ? $args : [];
+		}
+
+		return property_exists( $model, 'args' ) && is_array( $model->args ) ? $model->args : [];
 	}
 
 	/**
