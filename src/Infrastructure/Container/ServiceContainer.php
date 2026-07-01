@@ -92,9 +92,9 @@ class ServiceContainer
 	 *
 	 * Runs Registerable, Actionable
 	 *
-	 * @param string            $id
-	 * @param string            $service_class
-	 * @param array<int, mixed> $dependencies
+	 * @param string            $id  Service identifier.
+	 * @param string            $service_class  Fully qualified service class name.
+	 * @param array<int, mixed> $dependencies  Constructor dependencies.
 	 */
 	public function register( string $id, string $service_class, array $dependencies ): void {
 

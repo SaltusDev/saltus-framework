@@ -8,7 +8,9 @@ namespace Saltus\WP\Framework\Infrastructure\Container;
 class ContainerAssembler {
 
 	/**
-	 * @param class-string $container
+	 * Create a new instance of the given container class.
+	 *
+	 * @param class-string $container  The fully qualified class name to instantiate.
 	 */
 	public function create( string $container ): object {
 		if ( ! class_exists( $container ) ) {
