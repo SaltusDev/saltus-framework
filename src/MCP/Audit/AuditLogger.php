@@ -1,107 +1,153 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Audit;
 
-use Saltus\WP\Framework\MCP\Support\Json;
-
 class AuditLogger {
 
-	private bool $enabled;
-	private int $max_memory_entries;
-	/** @var list<AuditEntry> */
-	private array $entries = [];
-	private bool $log_to_stderr;
-	private ?string $log_file;
-	/** @var resource|null */
-	private $file_handle;
-
-	public function __construct(
-		bool $enabled = true,
-		bool $log_to_stderr = true,
-		?string $log_file = null,
-		int $max_memory_entries = 1000
-	) {
-		$this->enabled            = $enabled;
-		$this->log_to_stderr      = $log_to_stderr;
-		$this->log_file           = $log_file;
-		$this->max_memory_entries = $max_memory_entries;
-		$this->file_handle        = null;
-	}
-
-	public function __destruct() {
-		if ( $this->file_handle !== null ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- MCP audit logging uses an optional CLI file handle.
-			fclose( $this->file_handle );
-		}
-	}
+	private const TABLE_SUFFIX = 'saltus_mcp_audit';
 
 	public function record( AuditEntry $entry ): void {
-		if ( ! $this->enabled ) {
+		if ( ! $this->enabled() ) {
 			return;
 		}
 
-		$this->entries[] = $entry;
+		$this->ensure_table();
 
-		if ( count( $this->entries ) > $this->max_memory_entries ) {
-			array_shift( $this->entries );
+		$wpdb = $this->wpdb();
+		if ( $wpdb === null ) {
+			return;
 		}
 
-		$line = Json::encode( $entry->to_array(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
+		$data = $entry->to_array();
+		$wpdb->insert(
+			$this->table_name(),
+			[
+				'created_at'    => $data['timestamp'],
+				'user_id'       => function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0,
+				'identifier'    => $data['identifier'],
+				'ability'       => $data['tool'],
+				'arguments'     => $this->encode( is_array( $data['arguments'] ) ? $data['arguments'] : [] ),
+				'status'        => $data['status'],
+				'duration_ms'   => $data['duration_ms'],
+				'error_code'    => $data['error_code'],
+				'error_message' => $data['error_message'],
+			],
+			[ '%s', '%d', '%s', '%s', '%s', '%s', '%f', '%s', '%s' ]
+		);
 
-		if ( $this->log_to_stderr ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- STDERR is the expected MCP CLI diagnostics stream.
-			fwrite( STDERR, $line );
-		}
-
-		if ( $this->log_file !== null ) {
-			$this->write_file( $line );
-		}
+		$this->cleanup();
 	}
 
 	/**
 	 * @return list<array<string, mixed>>
 	 */
 	public function get_recent_entries( int $limit = 100 ): array {
-		$result = [];
-		$count  = count( $this->entries );
-		$start  = max( 0, $count - $limit );
-
-		for ( $i = $start; $i < $count; $i++ ) {
-			$result[] = $this->entries[ $i ]->to_array();
+		$wpdb = $this->wpdb();
+		if ( $wpdb === null ) {
+			return [];
 		}
 
-		return $result;
+		$sql = 'SELECT * FROM ' . $this->table_name() . ' ORDER BY id DESC LIMIT ' . max( 1, $limit );
+
+		$output = defined( 'ARRAY_A' ) ? ARRAY_A : 'ARRAY_A';
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is assembled from an internal table name and integer limit.
+		$rows = $wpdb->get_results( $sql, $output );
+
+		return is_array( $rows ) ? array_values( array_filter( $rows, 'is_array' ) ) : [];
+	}
+
+	private function ensure_table(): void {
+		$wpdb = $this->wpdb();
+		if ( $wpdb === null ) {
+			return;
+		}
+
+		$table           = $this->table_name();
+		$charset_collate = $wpdb->get_charset_collate();
+		$sql             = "CREATE TABLE IF NOT EXISTS {$table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			created_at varchar(32) NOT NULL,
+			user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			identifier varchar(191) NULL,
+			ability varchar(191) NOT NULL,
+			arguments longtext NULL,
+			status varchar(32) NOT NULL,
+			duration_ms double NULL,
+			error_code varchar(191) NULL,
+			error_message text NULL,
+			PRIMARY KEY  (id),
+			KEY ability (ability),
+			KEY user_id (user_id),
+			KEY created_at (created_at)
+		) {$charset_collate}";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- DDL uses the internal audit table name.
+		$wpdb->query( $sql );
+	}
+
+	private function cleanup(): void {
+		$days = (int) $this->filter( 'saltus/framework/mcp/audit/retention_days', 30 );
+		if ( $days <= 0 ) {
+			return;
+		}
+
+		$wpdb = $this->wpdb();
+		if ( $wpdb === null ) {
+			return;
+		}
+
+		$cutoff = gmdate( 'Y-m-d\TH:i:s\Z', time() - ( $days * 86400 ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Cutoff is gmdate output and table name is internal.
+		$wpdb->query( 'DELETE FROM ' . $this->table_name() . " WHERE created_at < '{$cutoff}'" );
+	}
+
+	private function enabled(): bool {
+		return (bool) $this->filter( 'saltus/framework/mcp/audit/enabled', true );
+	}
+
+	private function table_name(): string {
+		$wpdb   = $this->wpdb();
+		$prefix = $wpdb !== null ? $wpdb->prefix() : '';
+
+		return $prefix . self::TABLE_SUFFIX;
+	}
+
+	private function wpdb(): ?AuditDatabase {
+		global $wpdb;
+
+		if ( $wpdb instanceof AuditDatabase ) {
+			return $wpdb;
+		}
+
+		if ( $wpdb instanceof \wpdb ) {
+			return new WpdbAuditDatabase( $wpdb );
+		}
+
+		return null;
 	}
 
 	/**
-	 * @return array{total: int, recent: list<array<string, mixed>>}
+	 * @param array<string, mixed> $data
 	 */
-	public function get_stats(): array {
-		$error_count = 0;
-		foreach ( $this->entries as $entry ) {
-			$arr = $entry->to_array();
-			if ( $arr['status'] !== 'success' ) {
-				++$error_count;
-			}
+	private function encode( array $data ): string {
+		if ( function_exists( 'wp_json_encode' ) ) {
+			$encoded = wp_json_encode( $data );
+			return is_string( $encoded ) ? $encoded : '';
 		}
 
-		return [
-			'total'  => count( $this->entries ),
-			'errors' => $error_count,
-			'recent' => $this->get_recent_entries( 10 ),
-		];
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Fallback for non-WordPress contexts.
+		$encoded = json_encode( $data );
+		return is_string( $encoded ) ? $encoded : '';
 	}
 
-	private function write_file( string $line ): void {
-		if ( $this->file_handle === null ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- MCP audit logging may run before WP_Filesystem is available.
-			$handle = fopen( $this->log_file, 'a' );
-			if ( $handle === false ) {
-				return;
-			}
-			$this->file_handle = $handle;
+	/**
+	 * @param non-empty-string $hook
+	 */
+	private function filter( string $hook, mixed $value ): mixed {
+		if ( function_exists( 'apply_filters' ) ) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook names are internal constants passed through this helper.
+			return apply_filters( $hook, $value );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- MCP audit logging uses the opened CLI file handle.
-		fwrite( $this->file_handle, $line );
+		return $value;
 	}
 }

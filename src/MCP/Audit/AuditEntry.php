@@ -11,11 +11,12 @@ class AuditEntry {
 	private string $status;
 	private ?string $error_code;
 	private ?string $error_message;
+	private ?string $identifier;
 
 	/**
 	 * @param array<string, mixed> $arguments
 	 */
-	public function __construct( string $tool_name, array $arguments ) {
+	public function __construct( string $tool_name, array $arguments, ?string $identifier = null ) {
 		$this->tool_name     = $tool_name;
 		$this->arguments     = $arguments;
 		$this->started_at    = microtime( true );
@@ -23,6 +24,7 @@ class AuditEntry {
 		$this->status        = 'started';
 		$this->error_code    = null;
 		$this->error_message = null;
+		$this->identifier    = $identifier;
 	}
 
 	public function complete( string $status, ?string $error_code = null, ?string $error_message = null ): void {
@@ -47,6 +49,7 @@ class AuditEntry {
 			'timestamp'     => gmdate( 'Y-m-d\TH:i:s.v\Z', (int) $this->started_at ),
 			'tool'          => $this->tool_name,
 			'arguments'     => $this->arguments,
+			'identifier'    => $this->identifier,
 			'status'        => $this->status,
 			'duration_ms'   => $this->get_duration(),
 			'error_code'    => $this->error_code,
