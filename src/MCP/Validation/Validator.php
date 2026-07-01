@@ -1,13 +1,18 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Validation;
 
+/**
+ * Static argument validator against JSON Schema-like rule definitions.
+ */
 class Validator {
 
 	/**
-	* @param array<string, mixed> $args
-	* @param array<string, mixed> $schema
-	* @return array{valid: bool, errors: list<string>}
-	*/
+	 * Validate arguments against a JSON Schema-like rule definition.
+	 *
+	 * @param array<string, mixed> $args
+	 * @param array<string, mixed> $schema
+	 * @return array{valid: bool, errors: list<string>}
+	 */
 	public static function validate( array $args, array $schema ): array {
 		$errors = [];
 
@@ -45,8 +50,12 @@ class Validator {
 	}
 
 	/**
-	* @param mixed $value
-	*/
+	 * Check whether a value matches the expected type.
+	 *
+	 * @param mixed $value  The value to check.
+	 * @param string $type  The expected PHP type.
+	 * @return bool
+	 */
 	private static function check_type( $value, string $type ): bool {
 		switch ( $type ) {
 			case 'string':
