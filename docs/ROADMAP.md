@@ -6,7 +6,8 @@
 - WordPress-native MCP/Abilities surface with 16 tools (9 Phase 1 + 7 Phase 2)
 - Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes
-- PHPStan Level 7 clean across the configured analysis set as of 2026-06-30
+- PHPStan Level 7 clean across the configured analysis set as of 2026-07-01
+- MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
 - **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
