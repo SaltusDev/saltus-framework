@@ -1,7 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Abilities;
 
-use Saltus\WP\Framework\MCP\Tools\ToolFactory;
 use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
@@ -19,12 +18,12 @@ class AbilityRegistrar {
 	private ?ModelRestPolicy $policy;
 
 	/**
-	 * @param ToolProvider|null $tool_provider  Optional tool provider (defaults to ToolFactory::create_default_provider()).
+	 * @param ToolProvider|null $tool_provider  Optional injected tool provider.
 	 * @param AbilityDefinitionFactory|null $definition_factory  Optional definition factory.
 	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
 	 */
 	public function __construct( ?ToolProvider $tool_provider = null, ?AbilityDefinitionFactory $definition_factory = null, ?ModelRestPolicy $policy = null ) {
-		$this->tool_provider      = $tool_provider ?? ToolFactory::create_default_provider();
+		$this->tool_provider      = $tool_provider ?? new ToolProvider();
 		$this->definition_factory = $definition_factory ?? new AbilityDefinitionFactory();
 		$this->policy             = $policy;
 	}
