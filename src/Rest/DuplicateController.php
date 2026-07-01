@@ -55,7 +55,14 @@ class DuplicateController extends WP_REST_Controller {
 	 * @return WP_Error|true
 	 */
 	public function create_item_permissions_check( $request ): WP_Error|true {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		$post_id = is_object( $request ) && method_exists( $request, 'get_param' ) ? (int) $request->get_param( 'post_id' ) : 0;
+		if ( $post_id > 0 && ! get_post( $post_id ) ) {
+			return true;
+		}
+
+		$allowed = $post_id > 0 ? current_user_can( 'edit_post', $post_id ) : current_user_can( 'edit_posts' );
+
+		if ( ! $allowed ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to duplicate posts.', 'saltus-framework' ),

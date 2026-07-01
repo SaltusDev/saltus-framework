@@ -67,7 +67,12 @@ class SettingsController extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ): true|WP_Error {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		$post_type  = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
+		$capability = is_string( $post_type ) && $post_type !== ''
+			? $this->post_type_edit_capability( $post_type )
+			: 'edit_posts';
+
+		if ( ! current_user_can( $capability ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to view settings.', 'saltus-framework' ),
@@ -75,6 +80,25 @@ class SettingsController extends WP_REST_Controller {
 			);
 		}
 		return true;
+	}
+
+	/**
+	 * Resolve the edit capability for a post type.
+	 *
+	 * @param string $post_type  Post type slug.
+	 * @return string
+	 */
+	private function post_type_edit_capability( string $post_type ): string {
+		if ( ! function_exists( 'get_post_type_object' ) ) {
+			return 'edit_posts';
+		}
+
+		$post_type_object = get_post_type_object( $post_type );
+		if ( is_object( $post_type_object ) && isset( $post_type_object->cap->edit_posts ) && is_string( $post_type_object->cap->edit_posts ) ) {
+			return $post_type_object->cap->edit_posts;
+		}
+
+		return 'edit_posts';
 	}
 
 	/**

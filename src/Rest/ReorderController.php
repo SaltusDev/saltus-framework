@@ -68,7 +68,12 @@ class ReorderController extends WP_REST_Controller {
 	 * @return WP_Error|true
 	 */
 	public function create_item_permissions_check( $request ): WP_Error|true {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		$items   = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'items' ) : null;
+		$allowed = is_array( $items ) && $items !== []
+			? $this->can_edit_any_requested_post( $items )
+			: current_user_can( 'edit_posts' );
+
+		if ( ! $allowed ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to reorder posts.', 'saltus-framework' ),
@@ -76,6 +81,27 @@ class ReorderController extends WP_REST_Controller {
 			);
 		}
 		return true;
+	}
+
+	/**
+	 * Check whether the current user can edit at least one post in the request.
+	 *
+	 * @param array<int, mixed> $items  Requested reorder items.
+	 * @return bool
+	 */
+	private function can_edit_any_requested_post( array $items ): bool {
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || ! isset( $item['id'] ) ) {
+				continue;
+			}
+
+			$post_id = (int) $item['id'];
+			if ( $post_id > 0 && get_post( $post_id ) && current_user_can( 'edit_post', $post_id ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

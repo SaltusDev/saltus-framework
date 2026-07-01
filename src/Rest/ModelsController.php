@@ -8,6 +8,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\Taxonomy;
 
 /**
@@ -70,7 +71,7 @@ class ModelsController extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ): true|WP_Error {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! $this->can_view_any_model() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to view models.', 'saltus-framework' ),
@@ -87,7 +88,12 @@ class ModelsController extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ): true|WP_Error {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		$model_name = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
+		$allowed    = is_string( $model_name ) && $model_name !== ''
+			? $this->can_view_model( $model_name )
+			: $this->can_view_any_model();
+
+		if ( ! $allowed ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to view models.', 'saltus-framework' ),
@@ -114,6 +120,10 @@ class ModelsController extends WP_REST_Controller {
 
 		$data = [];
 		foreach ( $models as $name => $model ) {
+			if ( ! $this->can_view_model( (string) $name ) ) {
+				continue;
+			}
+
 			$data[] = $this->prepare_model_for_response( $model, $request );
 		}
 
@@ -143,6 +153,104 @@ class ModelsController extends WP_REST_Controller {
 		return rest_ensure_response(
 			$this->prepare_model_for_response( $models[ $name ], $request )
 		);
+	}
+
+	/**
+	 * Check whether the current user can view any registered model.
+	 *
+	 * @return bool
+	 */
+	private function can_view_any_model(): bool {
+		if ( function_exists( 'current_user_can' ) && current_user_can( 'edit_posts' ) ) {
+			return true;
+		}
+
+		$models = $this->policy
+			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
+			: $this->modeler->get_models();
+
+		foreach ( $models as $name => $model ) {
+			if ( $this->can_view_model( (string) $name ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check whether the current user can view a registered model.
+	 *
+	 * @param string $model_name  Model slug.
+	 * @return bool
+	 */
+	private function can_view_model( string $model_name ): bool {
+		if ( ! function_exists( 'current_user_can' ) ) {
+			return false;
+		}
+
+		$model = $this->model( $model_name );
+		if ( $model === null ) {
+			return current_user_can( 'edit_posts' );
+		}
+
+		if ( $model->get_type() === 'taxonomy' ) {
+			return current_user_can( $this->taxonomy_edit_capability( $model_name ) );
+		}
+
+		return current_user_can( $this->post_type_edit_capability( $model_name ) );
+	}
+
+	/**
+	 * Get a model by slug from the active model set.
+	 *
+	 * @param string $model_name  Model slug.
+	 * @return Model|null
+	 */
+	private function model( string $model_name ): ?Model {
+		$models = $this->policy
+			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
+			: $this->modeler->get_models();
+
+		return $models[ $model_name ] ?? null;
+	}
+
+	/**
+	 * Resolve the edit capability for a post type.
+	 *
+	 * @param string $post_type  Post type slug.
+	 * @return string
+	 */
+	private function post_type_edit_capability( string $post_type ): string {
+		if ( ! function_exists( 'get_post_type_object' ) ) {
+			return 'edit_posts';
+		}
+
+		$post_type_object = get_post_type_object( $post_type );
+		if ( is_object( $post_type_object ) && isset( $post_type_object->cap->edit_posts ) && is_string( $post_type_object->cap->edit_posts ) ) {
+			return $post_type_object->cap->edit_posts;
+		}
+
+		return 'edit_posts';
+	}
+
+	/**
+	 * Resolve the edit capability for a taxonomy.
+	 *
+	 * @param string $taxonomy  Taxonomy slug.
+	 * @return string
+	 */
+	private function taxonomy_edit_capability( string $taxonomy ): string {
+		if ( ! function_exists( 'get_taxonomy' ) ) {
+			return 'manage_categories';
+		}
+
+		$taxonomy_object = get_taxonomy( $taxonomy );
+		if ( is_object( $taxonomy_object ) && isset( $taxonomy_object->cap->manage_terms ) && is_string( $taxonomy_object->cap->manage_terms ) ) {
+			return $taxonomy_object->cap->manage_terms;
+		}
+
+		return 'manage_categories';
 	}
 
 	/**
