@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-use Saltus\WP\Framework\MCP\Client\WordPressClient;
-
 class ListMetaFields implements ToolInterface {
 
 	public function get_name(): string {
@@ -18,21 +16,5 @@ class ListMetaFields implements ToolInterface {
 	*/
 	public function get_parameters(): array {
 		return [];
-	}
-
-	/**
-	* @param array<string, mixed> $args
-	* @return array<string, mixed>
-	*/
-	public function handle( array $args, WordPressClient $client ): array {
-		$result = $client->get( 'saltus-framework/v1/meta' );
-
-		if ( isset( $result['code'] ) ) {
-			return $result;
-		}
-
-		return [
-			'post_types' => $result['post_types'] ?? [],
-		];
 	}
 }

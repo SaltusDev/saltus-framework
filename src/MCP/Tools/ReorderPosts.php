@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-use Saltus\WP\Framework\MCP\Client\WordPressClient;
-
 class ReorderPosts implements ToolInterface {
 
 	public function get_name(): string {
@@ -36,33 +34,6 @@ class ReorderPosts implements ToolInterface {
 					],
 				],
 			],
-		];
-	}
-
-	/**
-	* @param array<string, mixed> $args
-	* @return array<string, mixed>
-	*/
-	public function handle( array $args, WordPressClient $client ): array {
-		$items = $args['items'] ?? [];
-
-		if ( empty( $items ) || ! is_array( $items ) ) {
-			return [
-				'code'    => 'invalid_params',
-				'message' => 'items must be a non-empty array of {id, menu_order} objects',
-			];
-		}
-
-		$result = $client->post( 'saltus-framework/v1/reorder', [ 'items' => $items ] );
-
-		if ( isset( $result['code'] ) ) {
-			return $result;
-		}
-
-		return [
-			'results' => $result['results'] ?? [],
-			'total'   => $result['total'] ?? 0,
-			'updated' => $result['updated'] ?? 0,
 		];
 	}
 }

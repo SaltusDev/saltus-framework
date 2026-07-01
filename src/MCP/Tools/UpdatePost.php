@@ -1,8 +1,6 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-use Saltus\WP\Framework\MCP\Client\WordPressClient;
-
 class UpdatePost implements ToolInterface {
 
 	public function get_name(): string {
@@ -54,54 +52,6 @@ class UpdatePost implements ToolInterface {
 				'description'          => 'Meta fields to update as key-value pairs',
 				'additionalProperties' => true,
 			],
-		];
-	}
-
-	/**
-	* @param array<string, mixed> $args
-	* @return array<string, mixed>
-	*/
-	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Optional post fields map directly to the REST payload.
-	public function handle( array $args, WordPressClient $client ): array {
-		$post_id   = $args['post_id'] ?? 0;
-		$post_type = $args['post_type'] ?? 'posts';
-
-		if ( ! $post_id ) {
-			return [
-				'code'    => 'invalid_params',
-				'message' => 'post_id is required',
-			];
-		}
-
-		$data = [];
-		foreach ( [ 'title', 'content', 'excerpt', 'slug', 'status' ] as $field ) {
-			if ( isset( $args[ $field ] ) ) {
-				$data[ $field ] = $args[ $field ];
-			}
-		}
-
-		if ( ! empty( $args['meta'] ) ) {
-			$data['meta'] = $args['meta'];
-		}
-
-		if ( empty( $data ) ) {
-			return [
-				'code'    => 'invalid_params',
-				'message' => 'No fields to update',
-			];
-		}
-
-		$result = $client->put( "wp/v2/{$post_type}/{$post_id}", $data );
-
-		if ( isset( $result['code'] ) ) {
-			return $result;
-		}
-
-		return [
-			'id'     => $result['id'] ?? 0,
-			'title'  => $result['title']['rendered'] ?? '',
-			'link'   => $result['link'] ?? '',
-			'status' => $result['status'] ?? '',
 		];
 	}
 }
