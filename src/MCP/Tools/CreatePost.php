@@ -1,19 +1,34 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-class CreatePost implements ToolInterface {
+/**
+ * MCP tool to create a new post in any registered Custom Post Type.
+ */
+class CreatePost extends RestTool {
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name(): string {
 		return 'create_post';
 	}
 
+	/**
+	 * Get the tool description for the AI.
+	 *
+	 * @return string
+	 */
 	public function get_description(): string {
 		return 'Create a new post in any registered Custom Post Type';
 	}
 
 	/**
-	* @return array<string, mixed>
-	*/
+	 * Get the JSON Schema for tool parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
 	public function get_parameters(): array {
 		return [
 			'post_type' => [
@@ -58,5 +73,18 @@ class CreatePost implements ToolInterface {
 				],
 			],
 		];
+	}
+
+	/**
+	 * Build the WP_REST_Request for creating a post.
+	 *
+	 * @param array<string, mixed> $args
+	 * @return \WP_REST_Request|null
+	 */
+	public function build_rest_request( array $args ): ?\WP_REST_Request {
+		$body = $this->only_args( $args, [ 'title', 'content', 'excerpt', 'slug', 'status', 'meta' ] );
+		$body = $this->append_term_filters( $body, $args['terms'] ?? [] );
+
+		return $this->request( 'POST', '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ), [], $body );
 	}
 }

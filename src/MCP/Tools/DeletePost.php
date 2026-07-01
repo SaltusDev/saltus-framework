@@ -1,19 +1,34 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-class DeletePost implements ToolInterface {
+/**
+ * MCP tool to delete (trash or force delete) a post by ID.
+ */
+class DeletePost extends RestTool {
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name(): string {
 		return 'delete_post';
 	}
 
+	/**
+	 * Get the tool description for the AI.
+	 *
+	 * @return string
+	 */
 	public function get_description(): string {
 		return 'Delete (trash or force delete) a post by ID';
 	}
 
 	/**
-	* @return array<string, mixed>
-	*/
+	 * Get the JSON Schema for tool parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
 	public function get_parameters(): array {
 		return [
 			'post_id'   => [
@@ -32,5 +47,19 @@ class DeletePost implements ToolInterface {
 				'default'     => false,
 			],
 		];
+	}
+
+	/**
+	 * Build the WP_REST_Request for deleting a post.
+	 *
+	 * @param array<string, mixed> $args
+	 * @return \WP_REST_Request|null
+	 */
+	public function build_rest_request( array $args ): ?\WP_REST_Request {
+		return $this->request(
+			'DELETE',
+			'/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 ),
+			[ 'force' => ! empty( $args['force'] ) ]
+		);
 	}
 }
