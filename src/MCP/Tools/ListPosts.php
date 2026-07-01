@@ -1,16 +1,32 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-class ListPosts implements ToolInterface {
+/**
+ * MCP tool to query posts from a Custom Post Type with optional filters.
+ */
+class ListPosts extends RestTool {
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name(): string {
 		return 'list_posts';
 	}
 
+	/**
+	 * Get the tool description for the AI.
+	 *
+	 * @return string
+	 */
 	public function get_description(): string {
 		return 'Query posts from a Custom Post Type with optional filters';
 	}
 
 	/**
+	 * Get the JSON Schema for tool parameters.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function get_parameters(): array {
@@ -59,5 +75,27 @@ class ListPosts implements ToolInterface {
 				],
 			],
 		];
+	}
+
+	/**
+	 * Build the WP_REST_Request for querying posts.
+	 *
+	 * @param array<string, mixed> $args
+	 * @return \WP_REST_Request|null
+	 */
+	public function build_rest_request( array $args ): ?\WP_REST_Request {
+		$query = $this->only_args( $args, [ 'status', 'search', 'per_page', 'page', 'orderby', 'order' ] );
+		$query = $this->append_term_filters( $query, $args['terms'] ?? [] );
+
+		return $this->request( 'GET', '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ), $query );
+	}
+
+	/**
+	 * Whether responses from this tool can be cached.
+	 *
+	 * @return bool
+	 */
+	public function is_cacheable(): bool {
+		return true;
 	}
 }

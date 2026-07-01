@@ -1,16 +1,32 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-class ListTerms implements ToolInterface {
+/**
+ * MCP tool to list terms from a taxonomy.
+ */
+class ListTerms extends RestTool {
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name(): string {
 		return 'list_terms';
 	}
 
+	/**
+	 * Get the tool description for the AI.
+	 *
+	 * @return string
+	 */
 	public function get_description(): string {
 		return 'List terms from a taxonomy (categories, tags, or custom taxonomies)';
 	}
 
 	/**
+	 * Get the JSON Schema for tool parameters.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function get_parameters(): array {
@@ -35,5 +51,26 @@ class ListTerms implements ToolInterface {
 				'default'     => false,
 			],
 		];
+	}
+
+	/**
+	 * Build the WP_REST_Request for listing terms.
+	 *
+	 * @param array<string, mixed> $args
+	 * @return \WP_REST_Request|null
+	 */
+	public function build_rest_request( array $args ): ?\WP_REST_Request {
+		$query = $this->only_args( $args, [ 'per_page', 'search', 'hide_empty' ] );
+
+		return $this->request( 'GET', '/wp/v2/' . rawurlencode( $this->taxonomy_rest_base( (string) ( $args['taxonomy'] ?? 'categories' ) ) ), $query );
+	}
+
+	/**
+	 * Whether responses from this tool can be cached.
+	 *
+	 * @return bool
+	 */
+	public function is_cacheable(): bool {
+		return true;
 	}
 }

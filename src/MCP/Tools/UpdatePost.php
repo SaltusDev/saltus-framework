@@ -1,19 +1,34 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
-class UpdatePost implements ToolInterface {
+/**
+ * MCP tool to update an existing post's fields and meta data.
+ */
+class UpdatePost extends RestTool {
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
 	public function get_name(): string {
 		return 'update_post';
 	}
 
+	/**
+	 * Get the tool description for the AI.
+	 *
+	 * @return string
+	 */
 	public function get_description(): string {
 		return 'Update an existing post\'s fields and meta data';
 	}
 
 	/**
-	* @return array<string, mixed>
-	*/
+	 * Get the JSON Schema for tool parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
 	public function get_parameters(): array {
 		return [
 			'post_id'   => [
@@ -53,5 +68,22 @@ class UpdatePost implements ToolInterface {
 				'additionalProperties' => true,
 			],
 		];
+	}
+
+	/**
+	 * Build the WP_REST_Request for updating a post.
+	 *
+	 * @param array<string, mixed> $args
+	 * @return \WP_REST_Request|null
+	 */
+	public function build_rest_request( array $args ): ?\WP_REST_Request {
+		$body = $this->only_args( $args, [ 'title', 'content', 'excerpt', 'slug', 'status', 'meta' ] );
+
+		return $this->request(
+			'PUT',
+			'/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ) . '/' . (int) ( $args['post_id'] ?? 0 ),
+			[],
+			$body
+		);
 	}
 }
