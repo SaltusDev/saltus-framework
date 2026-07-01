@@ -1,7 +1,8 @@
 # Current: Live Working State
 
 ## Working
-- Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php) @since 2026-07-01
+- Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php) @since 2026-07-02
+- MCP v1 dispatch refactoring: RestBackedToolInterface, per-tool build_rest_request, ToolContributor integration @since 2026-07-02
 
 ## Next
 - Add unit/integration tests for refactored legacy paths
@@ -10,6 +11,7 @@
 - None
 
 ## Recent Changes
+- MCP v1 refactoring: 14 commits — RestBackedToolInterface, RestCapabilityRequirement, RestTool, ToolContributor introduced; per-tool build_rest_request dispatch replaces monolithic AbilityRuntime switch; AbilityRegistrar gating via RestBackedToolInterface capability requirements; @phpstan-type AbilityDefinition added; all 16 tools migrated to RestBackedToolInterface; REST controllers updated for MCP v1 dispatch; ToolContributor wired into Modeler and all feature services @since 2026-07-02
 - Capability-gated REST routes: ModelRestPolicy, RestRouteDefinition, and RestRouteProvider infrastructure — per-model opt-in via `saltus_rest` config key; all 9 REST controllers enforce policy at request time; MCP abilities respect same policy gates @since 2026-07-01
 - Audit trail: insert validation and sanitization — null-byte stripping, column-length truncation, status whitelist, and WordPress sanitize_text_field applied to all string fields before persistence @since 2026-07-01
 - Fixed 2 pre-existing PHPStan errors in ResourceProvider — docblock param name mismatch (@param $context → $_context) @since 2026-07-01
@@ -34,8 +36,8 @@
 - Added is_admin() stub in test functions for environment compatibility
 - Added PHPUnit test job to GitHub Actions CI workflow
 - Bumped version to 1.4.0
-- WordPress 7.0 MCP/Abilities connector: `AbilityRegistrar` registers 16 Saltus tool definitions when `wp_register_ability()` exists
-- Shared `ToolFactory` keeps MCP tool definitions aligned with WordPress-native abilities
+- WordPress 7.0 MCP/Abilities connector: `MCP` injects feature-contributed tools into `AbilityRegistrar` when `wp_register_ability()` exists
+- Feature-owned `ToolContributor` services keep MCP tools aligned with their REST routes and capabilities
 - Native ability callbacks dispatch through `rest_do_request()` so existing REST permission callbacks remain authoritative
 - Added compatibility tests covering native ability registration, capability gating, and REST-backed dispatch
 - README documents WordPress-native MCP/Abilities as the selected path
