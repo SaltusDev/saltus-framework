@@ -6,7 +6,12 @@
 ## Next
 - Add unit/integration tests for refactored legacy paths
 
+## Blocked
+- None
+
 ## Recent Changes
+- Capability-gated REST routes: ModelRestPolicy, RestRouteDefinition, and RestRouteProvider infrastructure — per-model opt-in via `saltus_rest` config key; all 9 REST controllers enforce policy at request time; MCP abilities respect same policy gates @since 2026-07-01
+- Audit trail: insert validation and sanitization — null-byte stripping, column-length truncation, status whitelist, and WordPress sanitize_text_field applied to all string fields before persistence @since 2026-07-01
 - Fixed 2 pre-existing PHPStan errors in ResourceProvider — docblock param name mismatch (@param $context → $_context) @since 2026-07-01
 - Added unit tests for `BaseModel::get_name()` and `Modeler` add/get_models (5 test methods, 248 total)
 - Added `tests/Integration/.gitkeep` to preserve the integration test directory

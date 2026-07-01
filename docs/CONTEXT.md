@@ -41,6 +41,11 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 - **Current Shape:** Metadata responses preserve the raw Saltus/Codestar config in `meta` and add `normalized.fields` plus `normalized.rest_meta_keys` for client write guidance.
 - **Normalized Metadata:** Nested Codestar fields are flattened into paths such as `points_info.coordinates.latitude`, with label, source meta key, serialized status, REST writability, and JSON-schema-like type data.
 
+### 6. Legacy Refactoring Track
+- **Purpose:** Stabilize high-traffic legacy framework paths such as `Modeler.php`, `src/Features/`, and `Saltus*.php`.
+- **Decision:** Refactoring these paths is debt reduction around runtime-critical behavior, not cosmetic cleanup. The goal is to reduce regression risk, improve standards compliance, and prepare the code for focused unit and integration tests.
+- **Compatibility:** Existing Saltus plugins should continue working while internals become safer to maintain, easier to type-check, and easier to test.
+
 ## Naming & Standards
 - **Quality Assurance:** PHP CodeSniffer (PHPCS) ensures adherence to WordPress coding standards, while PHPStan handles static analysis to catch type errors and logical bugs early.
 - **Testing:** Automated tests are powered by PHPUnit, ensuring framework stability across different WordPress and PHP versions.
