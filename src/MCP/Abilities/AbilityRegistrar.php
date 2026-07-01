@@ -2,31 +2,51 @@
 namespace Saltus\WP\Framework\MCP\Abilities;
 
 use Saltus\WP\Framework\MCP\Tools\ToolFactory;
+use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
+/**
+ * Registers MCP abilities with the WordPress native wp_register_ability API.
+ *
+ * @phpstan-import-type AbilityDefinition from \Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory
+ */
 class AbilityRegistrar {
 
 	private ToolProvider $tool_provider;
 	private AbilityDefinitionFactory $definition_factory;
 	private ?ModelRestPolicy $policy;
 
+	/**
+	 * @param ToolProvider|null $tool_provider  Optional tool provider (defaults to ToolFactory::create_default_provider()).
+	 * @param AbilityDefinitionFactory|null $definition_factory  Optional definition factory.
+	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 */
 	public function __construct( ?ToolProvider $tool_provider = null, ?AbilityDefinitionFactory $definition_factory = null, ?ModelRestPolicy $policy = null ) {
 		$this->tool_provider      = $tool_provider ?? ToolFactory::create_default_provider();
 		$this->definition_factory = $definition_factory ?? new AbilityDefinitionFactory();
 		$this->policy             = $policy;
 	}
 
+	/**
+	 * Check whether the WordPress native wp_register_ability API is available.
+	 *
+	 * @return bool  True if the API function exists.
+	 */
 	public function has_native_api(): bool {
 		return function_exists( 'wp_register_ability' );
 	}
 
+	/**
+	 * Register the saltus-framework ability category.
+	 */
 	public function register_category(): void {
 		if ( ! function_exists( 'wp_register_ability_category' ) ) {
 			return;
 		}
 
-		wp_register_ability_category(
+		\wp_register_ability_category(
 			'saltus-framework',
 			[
 				'label'       => 'Saltus Framework',
@@ -36,7 +56,9 @@ class AbilityRegistrar {
 	}
 
 	/**
-	 * @return list<string>
+	 * Register all enabled tools with the WordPress ability API.
+	 *
+	 * @return list<string>  Names of the registered abilities.
 	 */
 	public function register(): array {
 		if ( ! $this->has_native_api() ) {
@@ -44,13 +66,14 @@ class AbilityRegistrar {
 		}
 
 		$registered = [];
-		foreach ( $this->definition_factory->from_tool_provider( $this->tool_provider ) as $definition ) {
-			if ( ! $this->is_enabled_definition( $definition ) ) {
+		foreach ( $this->tool_provider->all() as $tool ) {
+			if ( ! $this->is_enabled_tool( $tool ) ) {
 				continue;
 			}
 
-			$name = (string) $definition['name'];
-			$args = $definition;
+			$definition = $this->definition_factory->from_tool( $tool );
+			$name       = (string) $definition['name'];
+			$args       = $definition;
 			unset( $args['name'] );
 
 			wp_register_ability( $name, $args );
@@ -62,32 +85,25 @@ class AbilityRegistrar {
 	}
 
 	/**
-	 * @param array<string, mixed> $definition
+	 * Check whether a tool is enabled based on the model REST policy.
+	 *
+	 * @param ToolInterface $tool  The tool to check.
+	 * @return bool
 	 */
-	private function is_enabled_definition( array $definition ): bool {
+	private function is_enabled_tool( ToolInterface $tool ): bool {
 		if ( ! $this->policy ) {
 			return true;
 		}
 
-		$tool_name = (string) ( $definition['meta']['mcp_tool'] ?? '' );
-		$map       = [
-			'list_models'      => [ ModelRestPolicy::CAPABILITY_MODELS, null ],
-			'get_model'        => [ ModelRestPolicy::CAPABILITY_MODELS, null ],
-			'duplicate_post'   => [ ModelRestPolicy::CAPABILITY_DUPLICATE, 'post_type' ],
-			'export_post'      => [ ModelRestPolicy::CAPABILITY_EXPORT, 'post_type' ],
-			'get_settings'     => [ ModelRestPolicy::CAPABILITY_SETTINGS, 'post_type' ],
-			'update_settings'  => [ ModelRestPolicy::CAPABILITY_SETTINGS, 'post_type' ],
-			'reorder_posts'    => [ ModelRestPolicy::CAPABILITY_REORDER, 'post_type' ],
-			'list_meta_fields' => [ ModelRestPolicy::CAPABILITY_META, 'post_type' ],
-			'get_meta_fields'  => [ ModelRestPolicy::CAPABILITY_META, 'post_type' ],
-		];
-
-		if ( ! isset( $map[ $tool_name ] ) ) {
+		if ( ! $tool instanceof RestBackedToolInterface ) {
 			return true;
 		}
 
-		[ $capability, $model_type ] = $map[ $tool_name ];
+		$requirement = $tool->get_rest_capability();
+		if ( $requirement === null ) {
+			return true;
+		}
 
-		return $this->policy->has_capability( $capability, $model_type );
+		return $this->policy->has_capability( $requirement->get_capability(), $requirement->get_model_type() );
 	}
 }
