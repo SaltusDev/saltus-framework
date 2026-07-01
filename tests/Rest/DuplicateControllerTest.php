@@ -4,6 +4,9 @@ namespace Saltus\WP\Framework\Tests\Rest;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Rest\DuplicateController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Model;
 use WP_REST_Request;
 use WP_Error;
 
@@ -69,6 +72,33 @@ class DuplicateControllerTest extends TestCase {
 		$this->assertSame( 'post_not_found', $result->get_error_code() );
 	}
 
+	public function testCreateItemReturnsErrorWhenModelDoesNotEnableDuplicate(): void {
+		global $wp_posts;
+		$wp_posts[42] = new \WP_Post( [
+			'ID'         => 42,
+			'post_type'  => 'book',
+			'post_title' => 'Original',
+		] );
+
+		$modeler = $this->createStub( Modeler::class );
+		$modeler->method( 'get_models' )->willReturn(
+			[
+				'book' => $this->createModelMock(
+					[
+						'show_in_rest' => true,
+						'saltus_rest'  => [ 'duplicate' => false ],
+					]
+				),
+			]
+		);
+		$this->controller = new DuplicateController( new ModelRestPolicy( $modeler ) );
+
+		$result = $this->controller->create_item( new WP_REST_Request( [ 'post_id' => 42 ] ) );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'model_rest_capability_disabled', $result->get_error_code() );
+	}
+
 	public function testCreateItemReturnsErrorWhenCannotEditPost(): void {
 		global $wp_posts, $wp_current_user_can;
 		$wp_current_user_can       = true;
@@ -112,5 +142,33 @@ class DuplicateControllerTest extends TestCase {
 			$this->assertArrayHasKey( 'edit_link', $data );
 			$this->assertSame( 'post', $data['post_type'] );
 		}
+	}
+
+	/**
+	 * @param array<string, mixed> $options
+	 * @return Model&object{options: array<string, mixed>}
+	 */
+	private function createModelMock( array $options ) {
+		return new class( $options ) implements Model {
+			/** @var array<string, mixed> */
+			public array $options;
+
+			/**
+			 * @param array<string, mixed> $options
+			 */
+			public function __construct( array $options ) {
+				$this->options = $options;
+			}
+
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return 'book';
+			}
+
+			public function get_type(): string {
+				return 'post_type';
+			}
+		};
 	}
 }

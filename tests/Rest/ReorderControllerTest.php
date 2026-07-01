@@ -4,6 +4,9 @@ namespace Saltus\WP\Framework\Tests\Rest;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Rest\ReorderController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Model;
 use WP_REST_Request;
 use WP_Error;
 
@@ -99,6 +102,42 @@ class ReorderControllerTest extends TestCase {
 		}
 	}
 
+	public function testCreateItemSkipsPostsWhoseModelDoesNotEnableReorder(): void {
+		global $wp_posts;
+		$wp_posts[1] = new \WP_Post( [ 'ID' => 1, 'post_type' => 'book', 'menu_order' => 0 ] );
+
+		$modeler = $this->createStub( Modeler::class );
+		$modeler->method( 'get_models' )->willReturn(
+			[
+				'book' => $this->createModelMock(
+					[
+						'show_in_rest' => true,
+						'saltus_rest'  => [ 'reorder' => false ],
+					]
+				),
+			]
+		);
+		$this->controller = new ReorderController( new ModelRestPolicy( $modeler ) );
+
+		$result = $this->controller->create_item(
+			new WP_REST_Request(
+				[
+					'items' => [
+						[ 'id' => 1, 'menu_order' => 2 ],
+					],
+				]
+			)
+		);
+
+		$data = rest_ensure_response( $result )->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( 0, $data['updated'] );
+		$this->assertSame( 'skipped', $data['results'][0]['status'] );
+		$this->assertSame( 'Reorder is not enabled for this post type', $data['results'][0]['reason'] );
+		$this->assertSame( 0, $wp_posts[1]->menu_order );
+	}
+
 	public function testCreateItemUpdatesMenuOrder(): void {
 		global $wp_posts;
 		$wp_posts[1] = new \WP_Post( [ 'ID' => 1, 'menu_order' => 0 ] );
@@ -126,5 +165,33 @@ class ReorderControllerTest extends TestCase {
 		$this->assertSame( 1, $wp_posts[1]->menu_order );
 		$this->assertSame( 2, $wp_posts[2]->menu_order );
 		$this->assertSame( 3, $wp_posts[3]->menu_order );
+	}
+
+	/**
+	 * @param array<string, mixed> $options
+	 * @return Model&object{options: array<string, mixed>}
+	 */
+	private function createModelMock( array $options ) {
+		return new class( $options ) implements Model {
+			/** @var array<string, mixed> */
+			public array $options;
+
+			/**
+			 * @param array<string, mixed> $options
+			 */
+			public function __construct( array $options ) {
+				$this->options = $options;
+			}
+
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return 'book';
+			}
+
+			public function get_type(): string {
+				return 'post_type';
+			}
+		};
 	}
 }

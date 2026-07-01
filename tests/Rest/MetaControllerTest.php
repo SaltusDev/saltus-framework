@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Tests\Rest;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Rest\MetaController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Modeler;
 use WP_REST_Request;
 use WP_Error;
@@ -84,6 +85,53 @@ class MetaControllerTest extends TestCase {
 			$this->assertSame( 'movie', $data['post_types'][1]['post_type'] );
 			$this->assertSame( [], $data['post_types'][1]['meta'] );
 		}
+	}
+
+	public function testGetAllItemsFiltersModelsWhenPolicyIsInjected(): void {
+		$book_meta = [ 'isbn' => [ 'type' => 'text' ] ];
+
+		$this->modeler->method( 'get_models' )->willReturn(
+			[
+				'book'   => $this->createModelMock(
+					'post_type',
+					$book_meta,
+					'Book',
+					'Books',
+					[
+						'show_in_rest' => true,
+						'saltus_rest'  => [ 'meta' => true ],
+					]
+				),
+				'movie'  => $this->createModelMock(
+					'post_type',
+					[],
+					'Movie',
+					'Movies',
+					[
+						'show_in_rest' => true,
+						'saltus_rest'  => [ 'meta' => false ],
+					]
+				),
+				'hidden' => $this->createModelMock(
+					'post_type',
+					[],
+					'Hidden',
+					'Hidden',
+					[
+						'show_in_rest' => false,
+						'saltus_rest'  => true,
+					]
+				),
+			]
+		);
+		$this->controller = new MetaController( $this->modeler, new ModelRestPolicy( $this->modeler ) );
+
+		$result = $this->controller->get_all_items( new WP_REST_Request() );
+		$data   = rest_ensure_response( $result )->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertCount( 1, $data['post_types'] );
+		$this->assertSame( 'book', $data['post_types'][0]['post_type'] );
 	}
 
 	public function testGetItemsReturnsErrorWhenModelNotFound(): void {
@@ -262,7 +310,7 @@ class MetaControllerTest extends TestCase {
 	/**
 	 * @return \Saltus\WP\Framework\Models\Model&object{args: array<string, mixed>}
 	 */
-	private function createModelMock( string $type, ?array $meta = null, string $label_singular = '', string $label_plural = '' ) {
+	private function createModelMock( string $type, ?array $meta = null, string $label_singular = '', string $label_plural = '', array $options = [] ) {
 		$args = [];
 
 		if ( $meta !== null ) {
@@ -275,17 +323,21 @@ class MetaControllerTest extends TestCase {
 			$args['label_plural'] = $label_plural;
 		}
 
-		return new class( $type, $args ) implements \Saltus\WP\Framework\Models\Model {
+		return new class( $type, $args, $options ) implements \Saltus\WP\Framework\Models\Model {
 			/** @var array<string, mixed> */
 			public array $args;
+			/** @var array<string, mixed> */
+			public array $options;
 			private string $type;
 
 			/**
 			 * @param array<string, mixed> $args
+			 * @param array<string, mixed> $options
 			 */
-			public function __construct( string $type, array $args ) {
-				$this->type = $type;
-				$this->args = $args;
+			public function __construct( string $type, array $args, array $options ) {
+				$this->type    = $type;
+				$this->args    = $args;
+				$this->options = $options;
 			}
 
 			public function setup(): void {}

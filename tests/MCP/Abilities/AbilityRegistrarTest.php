@@ -7,6 +7,9 @@ use Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRuntime;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Model;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
@@ -43,6 +46,33 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertArrayHasKey( 'callback', $wp_abilities_registered['saltus/list-models'] );
 		$this->assertArrayHasKey( 'execute_callback', $wp_abilities_registered['saltus/list-models'] );
 		$this->assertArrayHasKey( 'permission_callback', $wp_abilities_registered['saltus/list-models'] );
+	}
+
+	public function testRegisterFiltersRestBackedAbilitiesWhenPolicyIsInjected(): void {
+		global $wp_abilities_registered;
+
+		$modeler = $this->createStub( Modeler::class );
+		$modeler->method( 'get_models' )->willReturn(
+			[
+				'book' => $this->createModelMock(
+					[
+						'show_in_rest' => true,
+						'saltus_rest'  => [
+							'models' => true,
+							'meta'   => true,
+						],
+					]
+				),
+			]
+		);
+
+		$registered = ( new AbilityRegistrar( null, null, new ModelRestPolicy( $modeler ) ) )->register();
+
+		$this->assertContains( 'saltus/list-models', $registered );
+		$this->assertContains( 'saltus/list-meta-fields', $registered );
+		$this->assertArrayHasKey( 'saltus/list-posts', $wp_abilities_registered );
+		$this->assertArrayNotHasKey( 'saltus/update-settings', $wp_abilities_registered );
+		$this->assertArrayNotHasKey( 'saltus/duplicate-post', $wp_abilities_registered );
 	}
 
 	public function testPermissionCallbackReusesWordPressCapabilityGate(): void {
@@ -223,6 +253,34 @@ class AbilityRegistrarTest extends TestCase {
 
 			public function get_charset_collate(): string {
 				return '';
+			}
+		};
+	}
+
+	/**
+	 * @param array<string, mixed> $options
+	 * @return Model&object{options: array<string, mixed>}
+	 */
+	private function createModelMock( array $options ) {
+		return new class( $options ) implements Model {
+			/** @var array<string, mixed> */
+			public array $options;
+
+			/**
+			 * @param array<string, mixed> $options
+			 */
+			public function __construct( array $options ) {
+				$this->options = $options;
+			}
+
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return 'book';
+			}
+
+			public function get_type(): string {
+				return 'post_type';
 			}
 		};
 	}

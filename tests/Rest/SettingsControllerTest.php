@@ -4,6 +4,9 @@ namespace Saltus\WP\Framework\Tests\Rest;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Rest\SettingsController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Model;
 use WP_REST_Request;
 use WP_Error;
 
@@ -86,6 +89,26 @@ class SettingsControllerTest extends TestCase {
 		}
 	}
 
+	public function testGetItemReturnsNotFoundWhenModelDoesNotEnableSettings(): void {
+		$modeler = $this->createStub( Modeler::class );
+		$modeler->method( 'get_models' )->willReturn(
+			[
+				'book' => $this->createModelMock(
+					[
+						'show_in_rest' => true,
+						'saltus_rest'  => [ 'settings' => false ],
+					]
+				),
+			]
+		);
+		$this->controller = new SettingsController( new ModelRestPolicy( $modeler ) );
+
+		$result = $this->controller->get_item( new WP_REST_Request( [ 'post_type' => 'book' ] ) );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'model_not_found', $result->get_error_code() );
+	}
+
 	public function testGetItemReturnsSavedSettings(): void {
 		global $wp_options;
 		$saved = [ 'display_title' => 'yes', 'show_excerpt' => 'no' ];
@@ -154,5 +177,33 @@ class SettingsControllerTest extends TestCase {
 		$this->assertArrayHasKey( 'post_type', $schema['properties'] );
 		$this->assertArrayHasKey( 'settings', $schema['properties'] );
 		$this->assertTrue( $schema['properties']['post_type']['readonly'] );
+	}
+
+	/**
+	 * @param array<string, mixed> $options
+	 * @return Model&object{options: array<string, mixed>}
+	 */
+	private function createModelMock( array $options ) {
+		return new class( $options ) implements Model {
+			/** @var array<string, mixed> */
+			public array $options;
+
+			/**
+			 * @param array<string, mixed> $options
+			 */
+			public function __construct( array $options ) {
+				$this->options = $options;
+			}
+
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return 'book';
+			}
+
+			public function get_type(): string {
+				return 'post_type';
+			}
+		};
 	}
 }

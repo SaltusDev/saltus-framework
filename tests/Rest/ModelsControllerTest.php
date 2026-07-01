@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Tests\Rest;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Rest\ModelsController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Config\NoFile;
 use Saltus\WP\Framework\Models\Model;
@@ -100,6 +101,61 @@ class ModelsControllerTest extends TestCase {
 		$data = rest_ensure_response( $result )->get_data();
 		$this->assertIsArray( $data );
 		$this->assertCount( 2, $data );
+	}
+
+	public function testGetItemsFiltersModelsWhenPolicyIsInjected(): void {
+		$model1 = $this->createModelMock(
+			'post_type',
+			'Books',
+			'Books',
+			'book',
+			'post_type',
+			[
+				'public'       => true,
+				'show_in_rest' => true,
+				'saltus_rest'  => [ 'models' => true ],
+			]
+		);
+		$model2 = $this->createModelMock(
+			'post_type',
+			'Movies',
+			'Movies',
+			'movie',
+			'post_type',
+			[
+				'public'       => true,
+				'show_in_rest' => true,
+				'saltus_rest'  => [ 'models' => false ],
+			]
+		);
+		$model3 = $this->createModelMock(
+			'post_type',
+			'Hidden',
+			'Hidden',
+			'hidden',
+			'post_type',
+			[
+				'public'       => true,
+				'show_in_rest' => false,
+				'saltus_rest'  => true,
+			]
+		);
+
+		$this->modeler->method( 'get_models' )->willReturn(
+			[
+				'book'   => $model1,
+				'movie'  => $model2,
+				'hidden' => $model3,
+			]
+		);
+		$this->controller = new ModelsController( $this->modeler, new ModelRestPolicy( $this->modeler ) );
+
+		$result = $this->controller->get_items( new WP_REST_Request() );
+		$data   = rest_ensure_response( $result )->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertCount( 1, $data );
+		$this->assertSame( 'book', $data[0]['name'] );
 	}
 
 	public function testGetItemReturnsErrorWhenModelNotFound(): void {
