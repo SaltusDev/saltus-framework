@@ -49,8 +49,7 @@ class Core implements Plugin {
 	 * Prefixes to use.
 	 * @var non-empty-string
 	 */
-	private const HOOK_PREFIX    = 'saltus/framework/';
-	private const SERVICE_PREFIX = '';
+	private const HOOK_PREFIX = 'saltus/framework/';
 
 
 	/**
@@ -122,7 +121,7 @@ class Core implements Plugin {
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
-		$priority = (int) apply_filters( static::HOOK_PREFIX . 'modeler/priority', 1 );
+		$priority = (int) apply_filters( self::HOOK_PREFIX . 'modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
@@ -224,7 +223,7 @@ class Core implements Plugin {
 			 *                                classes need to implement the
 			 *                                Service interface.
 			 */
-			$hook_name = static::HOOK_PREFIX . static::SERVICES_FILTER;
+			$hook_name = self::HOOK_PREFIX . self::SERVICES_FILTER;
 			$services  = \apply_filters(
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 				$hook_name,
