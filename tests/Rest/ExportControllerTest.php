@@ -73,6 +73,13 @@ class ExportControllerTest extends TestCase {
 			'ID'         => 42,
 			'post_type'  => 'post',
 			'post_title' => 'Exportable Post',
+			'post_content' => 'Selected content',
+		] );
+		$wp_posts[43] = new \WP_Post( [
+			'ID'         => 43,
+			'post_type'  => 'post',
+			'post_title' => 'Other Post',
+			'post_content' => 'Other content',
 		] );
 
 		$request = new WP_REST_Request( [ 'post_id' => 42 ] );
@@ -92,6 +99,10 @@ class ExportControllerTest extends TestCase {
 			$this->assertSame( 'post', $data['post_type'] );
 			$this->assertSame( 'Exportable Post', $data['post_title'] );
 			$this->assertStringContainsString( 'WXR', $data['wxr'] );
+			$this->assertStringContainsString( '<wp:post_id>42</wp:post_id>', $data['wxr'] );
+			$this->assertStringContainsString( 'Selected content', $data['wxr'] );
+			$this->assertStringNotContainsString( 'Other Post', $data['wxr'] );
+			$this->assertStringNotContainsString( 'Other content', $data['wxr'] );
 		}
 	}
 }

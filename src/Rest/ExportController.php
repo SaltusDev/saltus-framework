@@ -112,18 +112,51 @@ class ExportController extends WP_REST_Controller {
 	 * @return string
 	 */
 	private function generate_wxr( \WP_Post $post ): string {
-		\ob_start();
-		\export_wp(
-			[
-				'content'    => $post->post_type,
-				'author'     => '',
-				'category'   => '',
-				'start_date' => '',
-				'end_date'   => '',
-				'status'     => 'any',
-			]
+		$version = \defined( 'WXR_VERSION' ) ? WXR_VERSION : '1.2';
+
+		return sprintf(
+			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" .
+			"<!-- WXR export -->\n" .
+			"<rss version=\"2.0\" xmlns:excerpt=\"http://wordpress.org/export/%1\$s/excerpt/\" xmlns:content=\"http://purl.org/rss/1.0/modules/content/\" xmlns:wp=\"http://wordpress.org/export/%1\$s/\">\n" .
+			"<channel>\n" .
+			"<wp:wxr_version>%1\$s</wp:wxr_version>\n" .
+			"<item>\n" .
+			"<title>%2\$s</title>\n" .
+			"<content:encoded><![CDATA[%3\$s]]></content:encoded>\n" .
+			"<excerpt:encoded><![CDATA[%4\$s]]></excerpt:encoded>\n" .
+			"<wp:post_id>%5\$d</wp:post_id>\n" .
+			"<wp:post_type>%6\$s</wp:post_type>\n" .
+			"<wp:status>%7\$s</wp:status>\n" .
+			"</item>\n" .
+			"</channel>\n" .
+			"</rss>\n",
+			$this->xml( (string) $version ),
+			$this->xml( (string) $post->post_title ),
+			$this->cdata( (string) $post->post_content ),
+			$this->cdata( (string) $post->post_excerpt ),
+			(int) $post->ID,
+			$this->xml( (string) $post->post_type ),
+			$this->xml( (string) $post->post_status )
 		);
-		$wxr = \ob_get_clean();
-		return $wxr !== false ? $wxr : '';
+	}
+
+	/**
+	 * Escape text for XML element content.
+	 *
+	 * @param string $value  Raw value.
+	 * @return string
+	 */
+	private function xml( string $value ): string {
+		return \htmlspecialchars( $value, ENT_XML1 | ENT_COMPAT, 'UTF-8' );
+	}
+
+	/**
+	 * Make arbitrary text safe inside a CDATA node.
+	 *
+	 * @param string $value  Raw value.
+	 * @return string
+	 */
+	private function cdata( string $value ): string {
+		return str_replace( ']]>', ']]]]><![CDATA[>', $value );
 	}
 }
