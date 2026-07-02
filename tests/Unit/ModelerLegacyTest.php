@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Tests\Unit;
 
 use Noodlehaus\AbstractConfig;
 use Saltus\WP\Framework\MCP\Tools\CreatePost;
+use Saltus\WP\Framework\MCP\Tools\GetHealth;
 use Saltus\WP\Framework\MCP\Tools\ListModels;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Model;
@@ -119,8 +120,10 @@ class ModelerLegacyTest extends TestCase {
 		$this->assertNull( $routes[0]->get_model_type() );
 		$this->assertStringContainsString( ModelsController::class, $this->describeRouteController( $routes[0] ) );
 		$this->assertContainsOnlyInstancesOf( \Saltus\WP\Framework\MCP\Tools\ToolInterface::class, $tools );
-		$this->assertInstanceOf( ListModels::class, $tools[0] );
-		$this->assertInstanceOf( CreatePost::class, $tools[4] );
+		$tool_classes = array_map( static fn( object $tool ): string => $tool::class, $tools );
+		$this->assertContains( GetHealth::class, $tool_classes );
+		$this->assertContains( ListModels::class, $tool_classes );
+		$this->assertContains( CreatePost::class, $tool_classes );
 	}
 
 	/**
