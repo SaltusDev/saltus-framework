@@ -182,6 +182,45 @@ class SettingsControllerTest extends TestCase {
 		}
 	}
 
+	public function testUpdateItemPreservesStructuredSettings(): void {
+		$request = new WP_REST_Request( [ 'post_type' => 'book' ] );
+		$request->set_json_params(
+			[
+				'enabled' => true,
+				'count'   => 3,
+				'group'   => [
+					'Display Title' => '  yes  ',
+					'items'         => [
+						[
+							'label' => ' First ',
+						],
+					],
+				],
+			]
+		);
+
+		$result   = $this->controller->update_item( $request );
+		$response = rest_ensure_response( $result );
+		$data     = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame(
+			[
+				'enabled' => true,
+				'count'   => 3,
+				'group'   => [
+					'displaytitle' => 'yes',
+					'items'        => [
+						[
+							'label' => 'First',
+						],
+					],
+				],
+			],
+			$data['settings']
+		);
+	}
+
 	public function testGetItemSchema(): void {
 		$schema = $this->controller->get_item_schema();
 

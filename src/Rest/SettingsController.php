@@ -174,7 +174,7 @@ class SettingsController extends WP_REST_Controller {
 
 		$sanitized = [];
 		foreach ( $settings as $key => $value ) {
-			$sanitized[ sanitize_key( $key ) ] = sanitize_text_field( wp_unslash( $value ) );
+			$sanitized[ sanitize_key( (string) $key ) ] = $this->sanitize_setting_value( $value );
 		}
 
 		$updated = update_option( $option_name, $sanitized );
@@ -234,5 +234,34 @@ class SettingsController extends WP_REST_Controller {
 				],
 			],
 		];
+	}
+
+	/**
+	 * Sanitize a setting value while preserving structured data.
+	 *
+	 * @param mixed $value  Raw setting value.
+	 * @return mixed
+	 */
+	private function sanitize_setting_value( mixed $value ): mixed {
+		$value = wp_unslash( $value );
+
+		if ( is_array( $value ) ) {
+			$sanitized = [];
+			foreach ( $value as $key => $child ) {
+				$sanitized_key               = is_int( $key ) ? $key : sanitize_key( (string) $key );
+				$sanitized[ $sanitized_key ] = $this->sanitize_setting_value( $child );
+			}
+			return $sanitized;
+		}
+
+		if ( is_string( $value ) ) {
+			return sanitize_text_field( $value );
+		}
+
+		if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || $value === null ) {
+			return $value;
+		}
+
+		return sanitize_text_field( (string) $value );
 	}
 }
