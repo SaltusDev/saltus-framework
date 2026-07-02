@@ -60,7 +60,8 @@
 		"test:unit": "./vendor/bin/phpunit -c phpunit.xml --testsuite Unit",
 		"test:integration": "./vendor/bin/phpunit -c phpunit.xml --testsuite Integration",
 		"phpstan": "./vendor/bin/phpstan analyse --memory-limit=2G",
-		"phpcs": "./vendor/bin/phpcs --standard=phpcs.xml"
+		"phpcs": "./vendor/bin/phpcs --standard=phpcs.xml",
+		"docs:mcp": "php bin/generate-mcp-docs.php"
 	},
 	"minimum-stability": "dev",
 	"prefer-stable": true,
