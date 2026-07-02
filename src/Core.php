@@ -2,7 +2,7 @@
 /**
  * Saltus Framework
  *
- * @version 1.3.1
+ * @version 2.0.0
  */
 namespace Saltus\WP\Framework;
 
@@ -30,27 +30,35 @@ use Saltus\WP\Framework\Features\QuickEdit\QuickEdit;
 use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
+use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\Rest\HealthController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
+use Saltus\WP\Framework\Rest\RestServer;
 
 
 class Core implements Plugin {
 
-	/**
-	Main filters to control the flow of the plugin from outside code.
-	@var non-empty-string
-	*/
-	const SERVICES_FILTER = 'services';
+	public const VERSION = '2.0.0';
 
 	/**
-	Prefixes to use.
-	@var non-empty-string
-	*/
-	const HOOK_PREFIX    = 'saltus/framework/';
-	const SERVICE_PREFIX = '';
+	 * Main filters to control the flow of the plugin from outside code.
+	 * @var non-empty-string
+	 */
+	private const SERVICES_FILTER = 'services';
+
+	/**
+	 * Prefixes to use.
+	 * @var non-empty-string
+	 */
+	private const HOOK_PREFIX = 'saltus/framework/';
 
 
 	/**
 	 * If services can be filtered out
-	 * @var bool */
+	 * @var bool
+	 */
 	protected bool $enable_filters = true;
 
 	/**
@@ -70,10 +78,11 @@ class Core implements Plugin {
 	 */
 	protected ?object $instantiator = null;
 
-	public function __construct( string $project_path ) {
+	public function __construct( string $project_path, ?string $plugin_file = null ) {
 
 		//TODO by pcarvalho: move to project class
-		$this->project['path'] = $project_path;
+		$this->project['path']        = $project_path;
+		$this->project['plugin_file'] = $plugin_file ?? $project_path;
 
 		// the framework root path
 		$this->project['root_path'] = dirname( __DIR__ );
@@ -90,16 +99,15 @@ class Core implements Plugin {
 	 * @return void
 	 */
 	public function register(): void {
-		// Todo validate key:
 		\register_activation_hook(
-			__FILE__,
+			(string) $this->project['plugin_file'],
 			function () {
 				$this->activate();
 			}
 		);
 
 		\register_deactivation_hook(
-			__FILE__,
+			(string) $this->project['plugin_file'],
 			function () {
 				$this->deactivate();
 			}
@@ -117,7 +125,7 @@ class Core implements Plugin {
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
-		$priority = (int) apply_filters( static::HOOK_PREFIX . 'modeler/priority', 1 );
+		$priority = (int) apply_filters( self::HOOK_PREFIX . 'modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
@@ -129,6 +137,37 @@ class Core implements Plugin {
 		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
 		// and stores the result in either list (cpt or tax list )
 		// TODO
+
+		// 5- Register REST API routes
+		$rest_policy = new ModelRestPolicy( $this->modeler );
+		$rest_server = new RestServer( $rest_policy, $this->get_rest_routes( $rest_policy ) );
+		add_action( 'rest_api_init', [ $rest_server, 'register_routes' ] );
+
+		// 6- MCP is registered through the default feature list.
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	private function get_rest_routes( ModelRestPolicy $policy ): array {
+		$routes = [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_HEALTH,
+				new HealthController( self::VERSION )
+			),
+		];
+
+		$routes = array_merge( $routes, $this->modeler->get_rest_routes( $this->modeler, $policy ) );
+
+		foreach ( $this->service_container as $service ) {
+			if ( ! $service instanceof RestRouteProvider ) {
+				continue;
+			}
+
+			$routes = array_merge( $routes, $service->get_rest_routes( $this->modeler, $policy ) );
+		}
+
+		return $routes;
 	}
 
 	/**
@@ -195,7 +234,7 @@ class Core implements Plugin {
 			 *                                classes need to implement the
 			 *                                Service interface.
 			 */
-			$hook_name = static::HOOK_PREFIX . static::SERVICES_FILTER;
+			$hook_name = self::HOOK_PREFIX . self::SERVICES_FILTER;
 			$services  = \apply_filters(
 				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 				$hook_name,
@@ -203,7 +242,14 @@ class Core implements Plugin {
 			);
 		}
 
-		$dependencies = [ $this->project ];
+		$dependencies = [
+			'project'          => $this->project,
+			'modeler'          => $this->modeler,
+			'modeler_resolver' => function (): ?Modeler {
+				return $this->modeler;
+			},
+			'services'         => $this->service_container,
+		];
 		foreach ( $services as $id => $class ) {
 			$this->service_container->register( $id, $class, $dependencies );
 		}
@@ -222,6 +268,7 @@ class Core implements Plugin {
 			'draganddrop'   => DragAndDrop::class,
 			'duplicate'     => Duplicate::class,
 			'meta'          => Meta::class,
+			'mcp'           => MCP::class,
 			'quick_edit'    => QuickEdit::class,
 			'remember_tabs' => RememberTabs::class,
 			'settings'      => Settings::class,

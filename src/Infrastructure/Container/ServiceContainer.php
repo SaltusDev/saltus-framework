@@ -92,9 +92,9 @@ class ServiceContainer
 	 *
 	 * Runs Registerable, Actionable
 	 *
-	 * @param string            $id
-	 * @param string            $service_class
-	 * @param array<int, mixed> $dependencies
+	 * @param string       $id  Service identifier.
+	 * @param class-string $service_class  Fully qualified service class name.
+	 * @param array<mixed> $dependencies  Constructor dependencies.
 	 */
 	public function register( string $id, string $service_class, array $dependencies ): void {
 
@@ -144,8 +144,8 @@ class ServiceContainer
 	/**
 	 * Instantiate a single service.
 	 *
-	 * @param class-string      $service_class Service class to instantiate.
-	 * @param array<int, mixed> $dependencies  Constructor dependencies.
+	 * @param class-string $service_class Service class to instantiate.
+	 * @param array<mixed> $dependencies  Constructor dependencies.
 	 *
 	 * @throws Invalid If the service could not be properly instantiated.
 	 *
@@ -166,11 +166,11 @@ class ServiceContainer
 	/**
 	 * Make an object instance out of an interface or class.
 	 *
-	 * @param class-string      $interface_or_class Interface or class to make an object
-	 *                                              instance out of.
-	 * @param array<int, mixed> $dependencies        Optional. Additional arguments to pass
-	 *                                              to the constructor. Defaults to an
-	 *                                              empty array.
+	 * @param class-string $interface_or_class Interface or class to make an object
+	 *                                         instance out of.
+	 * @param array<mixed> $dependencies        Optional. Additional arguments to pass
+	 *                                         to the constructor. Defaults to an
+	 *                                         empty array.
 	 * @return object Instantiated object.
 	 */
 	private function make( string $interface_or_class, array $dependencies = [] ): object {
@@ -218,8 +218,8 @@ class ServiceContainer
 			/**
 			 * Make an object instance out of an interface or class.
 			 *
-				 * @param class-string      $service_class Class to make an object instance out of.
-				 * @param array<int, mixed> $dependencies  Optional. Dependencies of the class.
+				 * @param class-string $service_class Class to make an object instance out of.
+				 * @param array<mixed> $dependencies  Optional. Dependencies of the class.
 				 * @return object Instantiated object.
 				 */
 			public function instantiate( string $service_class, array $dependencies = [] ): object {

@@ -6,13 +6,21 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Service,
 	Conditional
 };
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\MCP\Tools\ExportPost;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
+use Saltus\WP\Framework\Rest\ExportController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
 
 /**
  * Class SingleExport
  *
  * Enable an option to export single entry
  */
-class SingleExport implements Service, Conditional, Assembly {
+class SingleExport implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
 	/**
 	 * Instantiate this Service object.
@@ -30,7 +38,7 @@ class SingleExport implements Service, Conditional, Assembly {
 		/*
 		 * This service loads only in the admin edit screen
 		 */
-		return is_admin();
+		return is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST );
 	}
 
 	/**
@@ -44,5 +52,25 @@ class SingleExport implements Service, Conditional, Assembly {
 	 */
 	public static function make( string $name, array $project, array $args ): object {
 		return new SaltusSingleExport( $name, $args );
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	public function get_rest_routes( Modeler $modeler, ModelRestPolicy $policy ): array {
+		return [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_EXPORT,
+				new ExportController( $policy ),
+				'post_type'
+			),
+		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [ new ExportPost() ];
 	}
 }

@@ -327,7 +327,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig $filter
+	 * Resolve the filter type from a filter configuration array.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function resolve_filter_type( array $filter ): ?string {
 		if ( isset( $filter['taxonomy'] ) ) {
@@ -401,7 +403,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig $filter
+	 * Dispatch a filter to the appropriate render method based on its type.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function dispatch_filter(
 		string $type,
@@ -438,7 +442,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig $filter
+	 * Render a taxonomy filter dropdown.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function render_taxonomy_filter(
 		array $filter,
@@ -501,7 +507,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig $filter
+	 * Render a meta key filter dropdown.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function render_meta_key_filter(
 		array $filter,
@@ -530,7 +538,9 @@ final class SaltusAdminFilters implements Processable {
 		);
 	}
 	/**
-	 * @param FilterConfig $filter
+	 * Normalize a meta filter configuration, adding default labels and keys.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 * @return FilterConfig|null
 	 */
 	private function normalize_meta_filter( array $filter, string $id ): ?array {
@@ -545,7 +555,9 @@ final class SaltusAdminFilters implements Processable {
 		return $filter;
 	}
 	/**
-	 * @param FilterConfig $filter
+	 * Resolve options for a meta key filter from configuration or database.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 * @return array<string|int, mixed>
 	 */
 	private function resolve_meta_filter_options( array $filter, \wpdb $wpdb ): array {
@@ -582,8 +594,10 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig            $filter
-	 * @param array<string|int, mixed> $options
+	 * Resolve the selected value and key mode for a meta filter.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
+	 * @param array<string|int, mixed> $options  The available filter options.
 	 * @return array{0: mixed, 1: bool}
 	 */
 	private function resolve_meta_filter_state( array $filter, array $options ): array {
@@ -605,9 +619,11 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig             $filter
-	 * @param array<string|int, mixed> $options
-	 * @param mixed                    $selected
+	 * Render a meta filter as a select dropdown.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
+	 * @param array<string|int, mixed> $options  The filter options.
+	 * @param mixed $selected  The currently selected value.
 	 */
 	private function render_meta_filter_select(
 		array $filter,
@@ -652,7 +668,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig $filter
+	 * Render a meta search key text input filter.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function render_meta_search_key_filter(
 		array $filter,
@@ -681,7 +699,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig $filter
+	 * Render a meta exists filter (checkbox or select).
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function render_meta_exists_filter(
 		array $filter,
@@ -706,7 +726,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig $filter
+	 * Normalize a meta exists filter configuration.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 * @return FilterConfig|null
 	 */
 	private function normalize_meta_exists_filter(
@@ -743,9 +765,11 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig             $filter
-	 * @param array<string|int, mixed> $fields
-	 * @param mixed                    $selected
+	 * Render a meta exists filter as checkboxes.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
+	 * @param array<string|int, mixed> $fields  The meta field definitions.
+	 * @param mixed $selected  The currently selected value.
 	 */
 	private function render_meta_exists_checkbox(
 		array $filter,
@@ -781,9 +805,11 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * @param FilterConfig             $filter
-	 * @param array<string|int, mixed> $fields
-	 * @param mixed                    $selected
+	 * Render a meta exists filter as a select dropdown.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
+	 * @param array<string|int, mixed> $fields  The meta field definitions.
+	 * @param mixed $selected  The currently selected value.
 	 */
 	private function render_meta_exists_select(
 		array $filter,
@@ -831,7 +857,9 @@ final class SaltusAdminFilters implements Processable {
 
 
 	/**
-	 * @param FilterConfig $filter
+	 * Render a post date filter input.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function render_post_date_filter(
 		array $filter,
@@ -863,10 +891,9 @@ final class SaltusAdminFilters implements Processable {
 	}
 
 	/**
-	 * Render a post author filter.
-	 */
-	/**
-	 * @param FilterConfig $filter
+	 * Render a post author filter dropdown.
+	 *
+	 * @param FilterConfig $filter  The filter configuration.
 	 */
 	private function render_post_author_filter(
 		array $filter,

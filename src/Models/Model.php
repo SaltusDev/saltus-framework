@@ -11,6 +11,13 @@ interface Model {
 	public function setup(): void;
 
 	/**
+	 * Get the registration name for the model.
+	 *
+	 * @return string The post type or taxonomy slug.
+	 */
+	public function get_name(): string;
+
+	/**
 	 * Get the type of the model
 	 *
 	 * @return string The type of Model

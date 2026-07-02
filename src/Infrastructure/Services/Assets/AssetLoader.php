@@ -19,7 +19,7 @@ trait AssetLoader {
 	/**
 	 * List of assets to load.
 	 *
-	 * @var array|null
+	 * @var iterable<Asset>|null
 	 */
 	private $assets_list = null;
 
@@ -33,9 +33,9 @@ trait AssetLoader {
 	/**
 	 * register the assets list
 	 *
-	 * @param array $assets_list List of assets to load.
+	 * @return void
 	 */
-	public function register_assets() {
+	public function register_assets(): void {
 
 		try {
 			$factory = $this->services->get( ServiceFactory::class );
@@ -43,8 +43,17 @@ trait AssetLoader {
 			if ( ! $factory instanceof Factory ) {
 				throw new \RuntimeException( ServiceFactory::class . ' must implement Factory' );
 			}
+			if ( ! $assets instanceof AssetManager ) {
+				throw new \RuntimeException( AssetManager::class . ' service is not available' );
+			}
+			if ( $this->assets_list === null ) {
+				return;
+			}
 
 			$this->assets_container = $factory->create( AssetsContainer::class );
+			if ( ! $this->assets_container instanceof AssetsContainer ) {
+				throw new \RuntimeException( AssetsContainer::class . ' could not be created' );
+			}
 		} catch ( \Throwable $exception ) {
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG === true ) {
@@ -60,17 +69,14 @@ trait AssetLoader {
 	/**
 	 * Register assets
 	 */
-	public function enqueue_assets() {
+	public function enqueue_assets(): void {
 		try {
 			$assets = $this->services->get( AssetManager::class );
-			$assets->enqueue_assets( $this->assets_container );
-			if ( ! is_array( $this->data ) ) {
+			if ( ! $assets instanceof AssetManager || ! $this->assets_container instanceof AssetsContainer ) {
 				return;
 			}
+			$assets->enqueue_assets( $this->assets_container );
 			foreach ( $this->data as $data ) {
-				if ( ! $data instanceof AssetData ) {
-					continue;
-				}
 				$assets->add_data(
 					$data->get_source(),
 					$data->get_identifier(),

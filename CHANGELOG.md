@@ -2,9 +2,55 @@
 
 
 ## [Unreleased]
-	- Fix: Bring the source tree back to a clean PHPStan level 7 run.
-	- Improvement: Tighten service, model, asset, admin column, admin filter, and meta feature typing.
-	- Docs: Document local static-analysis and coding-standard checks.
+
+### Fixed
+	- Fixed single-post REST export so `/saltus-framework/v1/export/{post_id}` returns WXR for only the requested post instead of the entire post type.
+	- Fixed framework lifecycle hook registration by allowing `Core` to receive the consuming plugin bootstrap file for activation/deactivation hooks.
+	- Tightened WordPress-native MCP/Abilities permission callbacks so mutating post and term tools fail closed when required target arguments are missing.
+	- Fixed structured settings updates so nested arrays, booleans, numbers, and null values are preserved while string values and keys are sanitized recursively.
+	- Fixed the non-WordPress JSON encoding fallback in `AbilityRuntime`.
+	- Cleared the remaining PHPStan Level 7 issues in `Modeler`, REST route registration, and MCP taxonomy REST-base handling.
+	- Added an explicit model name accessor contract so `Modeler` no longer depends on concrete model properties.
+
+### Changed
+	- Added regression coverage for export isolation, plugin-file lifecycle hook registration, fail-closed MCP ability permissions, and structured settings payloads.
+	- Brought `AssetLoader` back under PHPStan analysis with a typed `AssetLoadingService` base class.
+	- Removed the standalone stdio MCP server path; WP7 MCP/Abilities is now the only supported MCP transport.
+	- Migrated MCP audit logging, rate limiting, and caching to WordPress-native storage around WP7 ability execution.
+
+## [2.0.0] - 2026-06-30
+
+### Added
+	- MCP/Abilities integration: WordPress 7.0 native ability definitions through AbilityRegistrar
+	- MCP protocol server with stdio transport: initialize, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get
+	- REST API namespace `saltus-framework/v1/` with 9 routes: models, duplicate, export, settings (GET/PUT), meta (aggregate + per-CPT), reorder
+	- 16 MCP tools (9 Phase 1 CRUD + 7 Phase 2): models, posts, terms, duplicate, export, settings, reorder, meta fields
+	- 3 MCP prompt templates for post/content generation workflows
+	- Meta field normalization: nested Codestar fields flattened to explicit paths with JSON-schema-like types
+	- ToolFactory for shared tool definitions between MCP and WordPress-native abilities
+	- Caching layer (CacheInterface + InMemoryCache) for WordPressClient GET requests
+	- Sliding-window rate limiter (default 60 req/60s) for tool calls
+	- Audit trail logger with JSON records to STDERR and optional file
+	- Structured error codes (ErrorCode constants + McpError value object with resolution hints)
+	- Config::fromEnv for environment-variable-based configuration (15 env vars)
+	- 243 PHPUnit tests across MCP, REST, and framework core
+
+### Fixed
+	- Rate limiter race condition in concurrent test scenarios
+	- ModelFactory static make method call operator
+	- WalkerTaxonomyDropdown incompatible void return type
+	- WordPress key length validation in get_registration_name()
+	- Admin columns non-string return from get_edit_term_link
+	- Various type safety issues across services, models, assets, admin columns, meta, drag-drop, and container
+
+### Changed
+	- Version bumped to 2.0.0
+	- Type safety improvements across the entire codebase
+	- MCP Server uses ToolFactory for unified tool definitions
+	- Config constructor refactored to array bag pattern
+	- PHP 8.3+ required (str_starts_with in McpError)
+	- PHPStan Level 7 compliance for all src/MCP/ and src/Rest/ code
+	- PHPUnit configuration with strict flags, random execution order, and failOn* rules
 
 ## [1.3.5] - 2026-06-20
 	- Chore: Package it for packagist

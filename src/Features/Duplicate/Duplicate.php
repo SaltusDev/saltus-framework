@@ -6,11 +6,19 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 	Service,
 	Conditional
 };
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\MCP\Tools\DuplicatePost;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
+use Saltus\WP\Framework\Rest\DuplicateController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
 
 
 /**
  */
-class Duplicate implements Service, Conditional, Assembly {
+class Duplicate implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
 	/**
 	 * Instantiate this Service object.
@@ -40,6 +48,26 @@ class Duplicate implements Service, Conditional, Assembly {
 		 * - ajax:  while updating menu order
 		 * - front: during pre_get_posts, etc
 		 */
-		return is_admin();
+		return is_admin() || ( defined( 'REST_REQUEST' ) && REST_REQUEST );
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	public function get_rest_routes( Modeler $modeler, ModelRestPolicy $policy ): array {
+		return [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_DUPLICATE,
+				new DuplicateController( $policy ),
+				'post_type'
+			),
+		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [ new DuplicatePost() ];
 	}
 }
