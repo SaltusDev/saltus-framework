@@ -3,9 +3,9 @@
 ## Current Status
 - Version: 2.0.0 (released 2026-06-30)
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
-- WordPress-native MCP/Abilities surface with 16 tools (9 Phase 1 + 7 Phase 2)
+- WordPress-native MCP/Abilities surface with 17 tools (9 Phase 1 + 7 Phase 2 + health)
 - Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
-- Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes
+- Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
 - PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
 - **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
@@ -129,10 +129,10 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | **Caching layer** | Cache `list_models`, `list_posts` with TTL | ✓ |
 | **Structured error codes** | Machine-readable error codes + resolution hints | ✓ |
 | **Security hardening review** | Export isolation, fail-closed ability permissions, structured settings sanitization, lifecycle hook registration | ✓ |
-| **Health monitoring** | Endpoint with version, error rate, latency stats | Skipped |
+| **Health monitoring** | Endpoint with version, error rate, latency stats | ✓ |
 | **Configuration profiles** | `--profile=high-volume`, `--profile=strict` | Skipped |
 
-**Exit criteria:** Caching reduces REST calls by 60%+, audit log operational, v2.0 release ✓. SSE, multi-site, role mapping, health monitoring, and configuration profiles are skipped for this track.
+**Exit criteria:** Caching reduces REST calls by 60%+, audit log operational, health endpoint available, v2.0 release ✓. SSE, multi-site, role mapping, and configuration profiles are skipped for this track.
 
 ---
 
@@ -147,7 +147,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | **Docker image** | Skipped with standalone server path |
 | **GitHub Action** | Skipped with standalone server path |
 | **VS Code extension** | Future WordPress-native MCP client integration |
-| **Documentation site** | `docs.saltus.dev/mcp` |
+| **Documentation site** | Source pages added at `docs/MCP.md`, `docs/MCP-CLIENTS.md`, and generated `docs/MCP-ABILITIES.md` for future `docs.saltus.dev/mcp` |
 | **MCP Registry listing** | Reassess for WordPress-native abilities |
 | **Support & SLA model** | Paid support contracts, custom tool development |
 

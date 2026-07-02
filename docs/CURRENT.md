@@ -1,7 +1,7 @@
 # Current: Live Working State
 
 ## Working
-- Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php) @since 2026-07-02
+- Refactor high-traffic legacy Features/ and Saltus*.php paths @since 2026-07-02
 - Add unit/integration tests for refactored legacy paths @since 2026-07-02
 
 ## Next
@@ -11,10 +11,16 @@
 - None
 
 ## Recent Changes
+- Added MCP client integration guide at `docs/MCP-CLIENTS.md`, covering recommended call flow, health-first checks, model and metadata discovery, safe reads/writes, permission and rate-limit handling, editor integration notes, prompt guidance, and anti-patterns @since 2026-07-03
+- Added `composer docs:mcp` and `bin/generate-mcp-docs.php` to generate MCP ability documentation from `src/MCP/Tools`; generated output now refreshes `docs/MCP-ABILITIES.md` and the embedded ability table in `docs/MCP.md` @since 2026-07-03
+- Added long-form WordPress-native MCP/Abilities documentation at `docs/MCP.md` as the source page for future Saltus site docs, covering setup, discovery, permissions, all 17 abilities, metadata discovery, health monitoring, runtime filters, audit/cache/rate-limit behavior, compatibility, and troubleshooting @since 2026-07-03
+- MCP health ability added as `get_health`, backed by `GET /saltus-framework/v1/health`, cacheable for 60 seconds, and registered as `saltus/get-health`; WordPress-native MCP/Abilities surface now exposes 17 tools @since 2026-07-03
+- Health monitoring REST endpoint added at `GET /saltus-framework/v1/health`; reports framework version, native ability availability, audit sample/error rate/status counts, latency average/p95/max, and cache/rate-limit enabled flags. Route is registered independently of model-level `saltus_rest` opt-in and is covered by HealthController and RestServer tests; verification is green with `composer test`, `composer phpstan`, `composer phpcs`, and `git diff --check` @since 2026-07-03
+- Modeler ternary dispatch refactored into centralized `process_config()` method; WP test stubs enhanced with add_filter, apply_filters callback execution, post_meta, nonce, enqueue, esc*, WP_Query, and WP_Term stubs; LegacyFeatureTest and ModelerLegacyTest added covering deprecated filter paths, file-order processing, and multi-model configs — 4 files, 812 insertions @since 2026-07-02
 - Code review hardening pass: single-post REST export now emits WXR only for the requested post; `Core` can register activation/deactivation hooks against the consuming plugin file; MCP mutating permission callbacks fail closed on missing target args; settings updates recursively preserve structured values; `AbilityRuntime` JSON fallback works outside WordPress; `AssetLoader` is covered by PHPStan via `AssetLoadingService` @since 2026-07-02
 - Regression coverage added for export isolation, plugin-file lifecycle hook registration, fail-closed ability permissions, and nested settings payloads; verification is green with `composer test` (166 tests, 416 assertions), `composer phpstan`, `composer phpcs`, and `git diff --check` @since 2026-07-02
 - Permission granularity: REST controllers and MCP abilities now delegate to per-post-type and per-post WordPress capabilities instead of coarse edit_posts gate — 8 commits covering DuplicateController, MetaController, ModelsController, ReorderController, SettingsController, and AbilityDefinitionFactory; ToolFactory removed in favor of ToolContributor-driven provider injection @since 2026-07-02
-- MCP v1 refactoring: 14 commits — RestBackedToolInterface, RestCapabilityRequirement, RestTool, ToolContributor introduced; per-tool build_rest_request dispatch replaces monolithic AbilityRuntime switch; AbilityRegistrar gating via RestBackedToolInterface capability requirements; @phpstan-type AbilityDefinition added; all 16 tools migrated to RestBackedToolInterface; REST controllers updated for MCP v1 dispatch; ToolContributor wired into Modeler and all feature services @since 2026-07-02
+- MCP v1 refactoring: 14 commits — RestBackedToolInterface, RestCapabilityRequirement, RestTool, ToolContributor introduced; per-tool build_rest_request dispatch replaces monolithic AbilityRuntime switch; AbilityRegistrar gating via RestBackedToolInterface capability requirements; @phpstan-type AbilityDefinition added; all REST-backed tools migrated to RestBackedToolInterface; REST controllers updated for MCP v1 dispatch; ToolContributor wired into Modeler and all feature services @since 2026-07-02
 - Capability-gated REST routes: ModelRestPolicy, RestRouteDefinition, and RestRouteProvider infrastructure — per-model opt-in via `saltus_rest` config key; all 9 REST controllers enforce policy at request time; MCP abilities respect same policy gates @since 2026-07-01
 - Audit trail: insert validation and sanitization — null-byte stripping, column-length truncation, status whitelist, and WordPress sanitize_text_field applied to all string fields before persistence @since 2026-07-01
 - Fixed 2 pre-existing PHPStan errors in ResourceProvider — docblock param name mismatch (@param $context → $_context) @since 2026-07-01
@@ -60,7 +66,7 @@
 - Skipped SSE transport: Serve MCP over HTTP for remote connections
 - Skipped Multi-site management: Named site profiles, switchable at runtime
 - Skipped Role-based access: Map MCP tool access to WP user roles
-- Skipped Health monitoring: Endpoint with version, error rate, latency stats
+- Health monitoring: Endpoint with version, error rate, latency stats
 - Skipped Configuration profiles: `--profile=high-volume`, `--profile=strict`
 - WP7 ability errors now return `WP_Error` directly from the WordPress-native runtime
 - Caching layer: CacheInterface + TransientCache integrated into WP7 ability execution
