@@ -115,7 +115,8 @@ class MCPFeatureTest extends TestCase {
 		$feature->register();
 		$wp_actions_registered[1]['callback']();
 
-		$this->assertCount( 16, $wp_abilities_registered );
+		$this->assertCount( 17, $wp_abilities_registered );
+		$this->assertArrayHasKey( 'saltus/get-health', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/list-models', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/duplicate-post', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/export-post', $wp_abilities_registered );

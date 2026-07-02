@@ -48,7 +48,8 @@ class AbilityRegistrarTest extends TestCase {
 
 		$registered = ( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
-		$this->assertCount( 16, $registered );
+		$this->assertCount( 17, $registered );
+		$this->assertArrayHasKey( 'saltus/get-health', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/list-models', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/list-meta-fields', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/get-meta-fields', $wp_abilities_registered );
@@ -80,6 +81,7 @@ class AbilityRegistrarTest extends TestCase {
 
 		$registered = ( new AbilityRegistrar( $this->defaultToolProvider( $modeler ), null, new ModelRestPolicy( $modeler ) ) )->register();
 
+		$this->assertContains( 'saltus/get-health', $registered );
 		$this->assertContains( 'saltus/list-models', $registered );
 		$this->assertContains( 'saltus/list-meta-fields', $registered );
 		$this->assertArrayHasKey( 'saltus/list-posts', $wp_abilities_registered );
@@ -234,6 +236,19 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertSame( [ 'ok' => true, 'route' => '/saltus-framework/v1/meta' ], $result );
 		$this->assertSame( 'GET', $wp_rest_request_log[0]['method'] );
 		$this->assertSame( '/saltus-framework/v1/meta', $wp_rest_request_log[0]['route'] );
+	}
+
+	public function testGetHealthCallbackDispatchesThroughRestRequest(): void {
+		global $wp_abilities_registered, $wp_rest_request_log;
+
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
+
+		$callback = $wp_abilities_registered['saltus/get-health']['execute_callback'];
+		$result   = $callback();
+
+		$this->assertSame( [ 'ok' => true, 'route' => '/saltus-framework/v1/health' ], $result );
+		$this->assertSame( 'GET', $wp_rest_request_log[0]['method'] );
+		$this->assertSame( '/saltus-framework/v1/health', $wp_rest_request_log[0]['route'] );
 	}
 
 	public function testReadCallbacksUseTransientCache(): void {
