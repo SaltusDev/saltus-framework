@@ -159,6 +159,20 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertFalse( $permissionCallback( [ 'post_id' => 456 ] ) );
 	}
 
+	public function testPermissionCallbackRejectsMutatingPostToolWithoutPostId(): void {
+		global $wp_abilities_registered, $wp_current_user_can;
+
+		$wp_current_user_can = [
+			'read'       => true,
+			'edit_posts' => false,
+		];
+
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
+		$permissionCallback = $wp_abilities_registered['saltus/update-post']['permission_callback'];
+
+		$this->assertFalse( $permissionCallback( [] ) );
+	}
+
 	public function testCallbackDispatchesThroughRestRequest(): void {
 		global $wp_abilities_registered, $wp_rest_request_log;
 

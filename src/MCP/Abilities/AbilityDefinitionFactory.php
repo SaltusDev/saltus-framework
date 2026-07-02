@@ -94,7 +94,7 @@ class AbilityDefinitionFactory {
 		}
 
 		$args = $this->normalize_args( $args );
-		if ( $tool === null || $args === [] ) {
+		if ( $tool === null ) {
 			return current_user_can( 'read' );
 		}
 
@@ -160,7 +160,7 @@ class AbilityDefinitionFactory {
 	private function can_post( string $capability, array $args ): bool {
 		$post_id = (int) ( $args['post_id'] ?? 0 );
 		if ( $post_id <= 0 ) {
-			return current_user_can( 'read' );
+			return false;
 		}
 
 		return current_user_can( $capability, $post_id );
@@ -175,7 +175,7 @@ class AbilityDefinitionFactory {
 	private function can_create_term( array $args ): bool {
 		$taxonomy = (string) ( $args['taxonomy'] ?? '' );
 		if ( $taxonomy === '' || ! function_exists( 'get_taxonomy' ) ) {
-			return current_user_can( 'read' );
+			return false;
 		}
 
 		$taxonomy_object = get_taxonomy( $taxonomy );

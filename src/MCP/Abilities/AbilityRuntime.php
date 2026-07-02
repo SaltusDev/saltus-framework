@@ -207,7 +207,8 @@ class AbilityRuntime {
 			return \is_string( $encoded ) ? $encoded : '';
 		}
 
-		$encoded = \wp_json_encode( $payload );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Fallback for non-WordPress contexts.
+		$encoded = \json_encode( $payload );
 		return \is_string( $encoded ) ? $encoded : '';
 	}
 
