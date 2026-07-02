@@ -187,6 +187,8 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 
 Saltus Framework exposes its AI-facing tool surface through the WordPress-native MCP/Abilities API. Native WordPress MCP clients can discover and call the `saltus/*` abilities directly from the active plugin.
 
+For full documentation, see [docs/MCP.md](docs/MCP.md). For client integration guidance, see [docs/MCP-CLIENTS.md](docs/MCP-CLIENTS.md). These pages are source material for the future Saltus MCP documentation site.
+
 ### Quick Start
 
 Install and activate the plugin that uses Saltus Framework on a WordPress version with the Abilities API. Saltus registers its abilities during `wp_abilities_api_init`; clients that understand WordPress-native MCP/Abilities can discover the `saltus/*` tools from WordPress.
@@ -203,6 +205,7 @@ Saltus wraps ability execution with WordPress-native audit logging, rate limitin
 
 | Tool | Description |
 |------|-------------|
+| `get_health` | Get Saltus Framework health, version, error rate, latency, cache, and rate-limit status |
 | `list_models` | List all registered CPTs and taxonomies |
 | `get_model` | Get details of a specific post type or taxonomy |
 | `list_posts` | Query posts with filters (status, search, pagination) |
@@ -243,6 +246,16 @@ No local MCP server configuration is required for the WordPress-native path. Run
 | `saltus/framework/mcp/cache/enabled` | Enable or disable transient caching |
 | `saltus/framework/mcp/cache/ttl` | Set cache TTL per tool |
 | `saltus/framework/mcp/cache/cacheable` | Override whether a tool is cacheable |
+
+### Generated MCP documentation
+
+The detailed MCP ability reference is generated from the `src/MCP/Tools` source classes:
+
+```bash
+composer docs:mcp
+```
+
+This refreshes `docs/MCP-ABILITIES.md` and the generated ability table in `docs/MCP.md`.
 
 ## Building
 

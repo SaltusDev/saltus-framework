@@ -37,7 +37,9 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 ### 5. WordPress-Native MCP/Abilities
 - **Purpose:** Expose Saltus model, content, settings, and metadata operations to AI clients through WordPress-native MCP/Abilities.
 - **Decision:** WordPress 7.0 Abilities is the supported MCP path. The local stdio MCP server was removed; SSE transport and standalone server distribution remain out of scope.
+- **Documentation:** `docs/MCP.md` is the canonical long-form source for the future Saltus MCP documentation site.
 - **Metadata:** `list_meta_fields` exposes all registered CPT meta configs through `GET /saltus-framework/v1/meta`; `get_meta_fields` exposes one CPT through `GET /saltus-framework/v1/meta/{post_type}`.
+- **Health:** `get_health` exposes `GET /saltus-framework/v1/health` through `saltus/get-health`, including version, error rate, latency, cache, and rate-limit status.
 - **Current Shape:** Metadata responses preserve the raw Saltus/Codestar config in `meta` and add `normalized.fields` plus `normalized.rest_meta_keys` for client write guidance.
 - **Normalized Metadata:** Nested Codestar fields are flattened into paths such as `points_info.coordinates.latitude`, with label, source meta key, serialized status, REST writability, and JSON-schema-like type data.
 
