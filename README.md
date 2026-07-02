@@ -59,7 +59,7 @@ Once the framework is installed and Composer's autoloader is loaded by your plug
       * The path to the plugin root directory is mandatory,
       * so it loads the models from a subdirectory.
       */
-      $framework = new \Saltus\WP\Framework\Core( dirname( __FILE__ ) );
+      $framework = new \Saltus\WP\Framework\Core( dirname( __FILE__ ), __FILE__ );
       $framework->register();
 
       /**

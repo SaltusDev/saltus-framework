@@ -4,10 +4,17 @@
 ## [Unreleased]
 
 ### Fixed
+	- Fixed single-post REST export so `/saltus-framework/v1/export/{post_id}` returns WXR for only the requested post instead of the entire post type.
+	- Fixed framework lifecycle hook registration by allowing `Core` to receive the consuming plugin bootstrap file for activation/deactivation hooks.
+	- Tightened WordPress-native MCP/Abilities permission callbacks so mutating post and term tools fail closed when required target arguments are missing.
+	- Fixed structured settings updates so nested arrays, booleans, numbers, and null values are preserved while string values and keys are sanitized recursively.
+	- Fixed the non-WordPress JSON encoding fallback in `AbilityRuntime`.
 	- Cleared the remaining PHPStan Level 7 issues in `Modeler`, REST route registration, and MCP taxonomy REST-base handling.
 	- Added an explicit model name accessor contract so `Modeler` no longer depends on concrete model properties.
 
 ### Changed
+	- Added regression coverage for export isolation, plugin-file lifecycle hook registration, fail-closed MCP ability permissions, and structured settings payloads.
+	- Brought `AssetLoader` back under PHPStan analysis with a typed `AssetLoadingService` base class.
 	- Removed the standalone stdio MCP server path; WP7 MCP/Abilities is now the only supported MCP transport.
 	- Migrated MCP audit logging, rate limiting, and caching to WordPress-native storage around WP7 ability execution.
 

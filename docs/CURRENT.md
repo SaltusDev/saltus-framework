@@ -2,15 +2,18 @@
 
 ## Working
 - Refactor high-traffic legacy files (Modeler.php, Features/, Saltus*.php) @since 2026-07-02
-- MCP v1 dispatch refactoring: RestBackedToolInterface, per-tool build_rest_request, ToolContributor integration @since 2026-07-02
+- Add unit/integration tests for refactored legacy paths @since 2026-07-02
 
 ## Next
-- Add unit/integration tests for refactored legacy paths
+- None
 
 ## Blocked
 - None
 
 ## Recent Changes
+- Code review hardening pass: single-post REST export now emits WXR only for the requested post; `Core` can register activation/deactivation hooks against the consuming plugin file; MCP mutating permission callbacks fail closed on missing target args; settings updates recursively preserve structured values; `AbilityRuntime` JSON fallback works outside WordPress; `AssetLoader` is covered by PHPStan via `AssetLoadingService` @since 2026-07-02
+- Regression coverage added for export isolation, plugin-file lifecycle hook registration, fail-closed ability permissions, and nested settings payloads; verification is green with `composer test` (166 tests, 416 assertions), `composer phpstan`, `composer phpcs`, and `git diff --check` @since 2026-07-02
+- Permission granularity: REST controllers and MCP abilities now delegate to per-post-type and per-post WordPress capabilities instead of coarse edit_posts gate — 8 commits covering DuplicateController, MetaController, ModelsController, ReorderController, SettingsController, and AbilityDefinitionFactory; ToolFactory removed in favor of ToolContributor-driven provider injection @since 2026-07-02
 - MCP v1 refactoring: 14 commits — RestBackedToolInterface, RestCapabilityRequirement, RestTool, ToolContributor introduced; per-tool build_rest_request dispatch replaces monolithic AbilityRuntime switch; AbilityRegistrar gating via RestBackedToolInterface capability requirements; @phpstan-type AbilityDefinition added; all 16 tools migrated to RestBackedToolInterface; REST controllers updated for MCP v1 dispatch; ToolContributor wired into Modeler and all feature services @since 2026-07-02
 - Capability-gated REST routes: ModelRestPolicy, RestRouteDefinition, and RestRouteProvider infrastructure — per-model opt-in via `saltus_rest` config key; all 9 REST controllers enforce policy at request time; MCP abilities respect same policy gates @since 2026-07-01
 - Audit trail: insert validation and sanitization — null-byte stripping, column-length truncation, status whitelist, and WordPress sanitize_text_field applied to all string fields before persistence @since 2026-07-01
@@ -73,9 +76,9 @@
 - Code review: Unused getDefaultMessage() removed (#49 — low)
 
 ## Known Issues
-- `composer phpcs` passes — MCP module renamed to snake_case, exclusions removed.
-- `composer test` passes, but PHPUnit reports 8 deprecations and 49 notices under PHP 8.5.4/PHPUnit 12.5.30.
-- PHPStan: Level 7 clean — ResourceProvider docblock mismatch resolved.
+- `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
+- `composer phpcs` passes.
+- PHPStan: Level 7 clean across 103 analyzed source files.
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
@@ -83,4 +86,4 @@
 - Metadata discovery is implemented through `saltus/list-meta-fields` and `saltus/get-meta-fields`.
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
-- Current verification: full `composer phpstan` passes; full `composer test` passes with existing PHPUnit deprecations/notices; project-wide `composer phpcs` still fails on pre-existing style/complexity findings.
+- Current verification: full `composer test`, `composer phpstan`, `composer phpcs`, and `git diff --check` pass after the code-review hardening pass.

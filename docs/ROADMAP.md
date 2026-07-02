@@ -6,7 +6,7 @@
 - WordPress-native MCP/Abilities surface with 16 tools (9 Phase 1 + 7 Phase 2)
 - Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes
-- PHPStan Level 7 clean across the configured analysis set as of 2026-07-01
+- PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
 - **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
 
@@ -71,7 +71,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | `/models` | GET | `ModelsController` | ✓ Done | `Modeler` — list loaded models with full config |
 | `/models/{post_type}` | GET | `ModelsController` | ✓ Done | Model config, features, meta, settings |
 | `/duplicate/{post_id}` | POST | `DuplicateController` | ✓ Done | `SaltusDuplicate::perform_duplication()` |
-| `/export/{post_id}` | GET | `ExportController` | ✓ Done | WXR export via `export_wp()` |
+| `/export/{post_id}` | GET | `ExportController` | ✓ Done | Single-post WXR export scoped to the requested post |
 | `/settings/{post_type}` | GET | `SettingsController` | ✓ Done | `get_option($settings_id)` |
 | `/settings/{post_type}` | PUT | `SettingsController` | ✓ Done | `update_option($settings_id, $data)` |
 | `/meta` | GET | `MetaController` | ✓ Done | Aggregate meta field definitions for all post type models |
@@ -128,6 +128,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | **Rate limiting** | Throttle requests per client | ✓ |
 | **Caching layer** | Cache `list_models`, `list_posts` with TTL | ✓ |
 | **Structured error codes** | Machine-readable error codes + resolution hints | ✓ |
+| **Security hardening review** | Export isolation, fail-closed ability permissions, structured settings sanitization, lifecycle hook registration | ✓ |
 | **Health monitoring** | Endpoint with version, error rate, latency stats | Skipped |
 | **Configuration profiles** | `--profile=high-volume`, `--profile=strict` | Skipped |
 
@@ -160,6 +161,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 
 ### Short-term Goals
 - ✓ Address remaining PHPStan errors (2 pre-existing in ResourceProvider) — resolved 2026-07-01.
+- ✓ Code-review hardening pass — export isolation, lifecycle hook file registration, fail-closed MCP permissions, structured settings sanitization, JSON fallback, and AssetLoader PHPStan coverage resolved 2026-07-02.
 - Continue maintaining automated testing suites.
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 
