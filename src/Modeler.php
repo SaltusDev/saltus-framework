@@ -93,10 +93,7 @@ class Modeler implements RestRouteProvider, ToolContributor {
 
 			foreach ( $files as $file ) { // Iterate over sorted files
 				$config = new Config( $file );
-				( $this->is_multiple( $config ) ?
-					$this->iterate_multiple( $config ) :
-					$this->create( $config )
-				);
+				$this->process_config( $config );
 			}
 		}
 
@@ -104,10 +101,7 @@ class Modeler implements RestRouteProvider, ToolContributor {
 		if ( has_filter( 'saltus_models' ) ) {
 			/** @deprecated 1.2.0 */
 			$model = apply_filters( 'saltus_models', [] );
-			( ! empty( $model ) && count( $model ) > 0 ?
-					$this->iterate_multiple( $model ) :
-					$this->create( $model )
-				);
+			$this->process_config( $model );
 		}
 		// check for models added with filters
 		if ( has_filter( 'saltus/framework/models/extra_models' ) ) {
@@ -119,11 +113,33 @@ class Modeler implements RestRouteProvider, ToolContributor {
 			 */
 			$empty_list = [];
 			$model      = apply_filters( 'saltus/framework/models/extra_models', $empty_list );
-			( ! empty( $model ) && count( $model ) > 0 ?
-					$this->iterate_multiple( $model ) :
-					$this->create( $model )
-				);
+			$this->process_config( $model );
 		}
+	}
+
+	/**
+	 * Process a single model config or a list of model configs.
+	 *
+	 * @param AbstractConfig|array<string|int, mixed> $config Model config data.
+	 */
+	protected function process_config( $config ): void {
+		if ( $config instanceof AbstractConfig ) {
+			( $this->is_multiple( $config ) ?
+				$this->iterate_multiple( $config ) :
+				$this->create( $config )
+			);
+			return;
+		}
+
+		if ( $config === [] ) {
+			return;
+		}
+
+		$wrapped_config = new NoFile( $config );
+		( $this->is_multiple( $wrapped_config ) ?
+			$this->iterate_multiple( $wrapped_config ) :
+			$this->create( $wrapped_config )
+		);
 	}
 
 	/**
