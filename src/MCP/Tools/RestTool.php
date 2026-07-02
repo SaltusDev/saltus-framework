@@ -82,7 +82,7 @@ abstract class RestTool implements RestBackedToolInterface {
 	 * @param mixed $terms  Taxonomy term data keyed by taxonomy.
 	 * @return array<string, mixed>
 	 */
-	protected function append_term_filters( array $data, mixed $terms ): array {
+	protected function append_term_filters( array $data, $terms ): array {
 		if ( ! is_array( $terms ) ) {
 			return $data;
 		}
@@ -149,7 +149,7 @@ abstract class RestTool implements RestBackedToolInterface {
 	 * @param mixed $rest_object  Post type or taxonomy object.
 	 * @return string|null  REST base, or null if unavailable.
 	 */
-	private function object_rest_base( mixed $rest_object ): ?string {
+	private function object_rest_base( $rest_object ): ?string {
 		if ( ! is_object( $rest_object ) || ! property_exists( $rest_object, 'rest_base' ) ) {
 			return null;
 		}

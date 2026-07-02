@@ -41,7 +41,7 @@ class AbilityRuntime {
 	 * @return array<string, mixed>|\WP_Error  Tool result or error.
 	 */
 	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Runtime coordinates validation, rate limiting, dispatch, cache, and audit.
-	public function execute( ToolInterface $tool, array $args ): array|\WP_Error {
+	public function execute( ToolInterface $tool, array $args ) {
 		$entry = new AuditEntry( $tool->get_name(), $args, $this->identifier() );
 
 		$valid = Validator::validate( $args, $tool->get_parameters() );
@@ -220,7 +220,7 @@ class AbilityRuntime {
 	 * @param mixed ...$args  Additional arguments passed to the filter.
 	 * @return mixed
 	 */
-	private function filter( string $hook, mixed $value, mixed ...$args ): mixed {
+	private function filter( string $hook, $value, ...$args ) {
 		if ( function_exists( 'apply_filters' ) ) {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook names are internal constants passed through this helper.
 			return apply_filters( $hook, $value, ...$args );

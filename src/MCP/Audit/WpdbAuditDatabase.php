@@ -31,7 +31,7 @@ class WpdbAuditDatabase implements AuditDatabase {
 	 * @param list<string> $format  Format strings for the data columns.
 	 * @return bool|int
 	 */
-	public function insert( string $table, array $data, array $format = [] ): bool|int {
+	public function insert( string $table, array $data, array $format = [] ) {
 		return $this->wpdb->insert( $table, $data, $format );
 	}
 
@@ -41,7 +41,7 @@ class WpdbAuditDatabase implements AuditDatabase {
 	 * @param string $query  The SQL query to execute.
 	 * @return bool|int
 	 */
-	public function query( string $query ): bool|int {
+	public function query( string $query ) {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Queries are assembled internally by AuditLogger with controlled values.
 		return $this->wpdb->query( $query );
 	}
@@ -62,7 +62,7 @@ class WpdbAuditDatabase implements AuditDatabase {
 	 * @param mixed $output  The output format constant (e.g. ARRAY_A, OBJECT).
 	 * @return list<array<string, mixed>>|object|null
 	 */
-	public function get_results( string $query, mixed $output = null ): array|object|null {
+	public function get_results( string $query, $output = null ) {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is assembled internally by AuditLogger with an integer limit.
 		$rows = $this->wpdb->get_results( $query, $output );
 		if ( ! is_array( $rows ) ) {

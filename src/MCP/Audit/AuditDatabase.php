@@ -18,7 +18,7 @@ interface AuditDatabase {
 	 * @param list<string> $format  Format strings for the data columns.
 	 * @return bool|int
 	 */
-	public function insert( string $table, array $data, array $format = [] ): bool|int;
+	public function insert( string $table, array $data, array $format = [] );
 
 	/**
 	 * Execute a raw SQL query.
@@ -26,7 +26,7 @@ interface AuditDatabase {
 	 * @param string $query  The SQL query to execute.
 	 * @return bool|int
 	 */
-	public function query( string $query ): bool|int;
+	public function query( string $query );
 
 	/**
 	 * Get the database charset collation string.
@@ -42,5 +42,5 @@ interface AuditDatabase {
 	 * @param mixed $output  The output format constant (e.g. ARRAY_A, OBJECT).
 	 * @return list<array<string, mixed>>|object|null
 	 */
-	public function get_results( string $query, mixed $output = null ): array|object|null;
+	public function get_results( string $query, $output = null );
 }

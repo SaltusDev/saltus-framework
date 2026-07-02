@@ -123,7 +123,7 @@ class TransientCache implements CacheInterface {
 	 * @param mixed $value  The value to filter.
 	 * @return mixed
 	 */
-	private function filter( string $hook, mixed $value ): mixed {
+	private function filter( string $hook, $value ) {
 		if ( function_exists( 'apply_filters' ) ) {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook names are internal constants passed through this helper.
 			return apply_filters( $hook, $value );

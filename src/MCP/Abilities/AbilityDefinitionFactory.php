@@ -66,7 +66,7 @@ class AbilityDefinitionFactory {
 			'execute_callback'    => function ( array $args = [] ) use ( $tool ) {
 				return $this->runtime->execute( $tool, $args );
 			},
-			'permission_callback' => function ( mixed $args = [] ) use ( $tool ): bool {
+			'permission_callback' => function ( $args = [] ) use ( $tool ): bool {
 				return $this->can_use_saltus_abilities( $tool, $args );
 			},
 			'callback'            => function ( array $args = [] ) use ( $tool ) {
@@ -88,7 +88,7 @@ class AbilityDefinitionFactory {
 	 * @param mixed $args  Ability arguments, when supplied by the native API.
 	 * @return bool
 	 */
-	public function can_use_saltus_abilities( ?ToolInterface $tool = null, mixed $args = [] ): bool {
+	public function can_use_saltus_abilities( ?ToolInterface $tool = null, $args = [] ): bool {
 		if ( ! function_exists( 'current_user_can' ) ) {
 			return false;
 		}
@@ -129,7 +129,7 @@ class AbilityDefinitionFactory {
 	 * @param mixed $args  Ability arguments.
 	 * @return array<string, mixed>
 	 */
-	private function normalize_args( mixed $args ): array {
+	private function normalize_args( $args ): array {
 		if ( $args instanceof \WP_REST_Request ) {
 			$args = $args->get_params();
 		}
