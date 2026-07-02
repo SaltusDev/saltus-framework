@@ -14,6 +14,7 @@ use Saltus\WP\Framework\Models\ModelFactory;
 use Saltus\WP\Framework\MCP\Tools\CreatePost;
 use Saltus\WP\Framework\MCP\Tools\CreateTerm;
 use Saltus\WP\Framework\MCP\Tools\DeletePost;
+use Saltus\WP\Framework\MCP\Tools\GetHealth;
 use Saltus\WP\Framework\MCP\Tools\GetModel;
 use Saltus\WP\Framework\MCP\Tools\GetPost;
 use Saltus\WP\Framework\MCP\Tools\ListModels;
@@ -206,6 +207,7 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	 */
 	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
 		return [
+			new GetHealth(),
 			new ListModels(),
 			new GetModel(),
 			new ListPosts(),

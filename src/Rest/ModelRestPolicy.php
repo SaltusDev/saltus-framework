@@ -13,6 +13,7 @@ class ModelRestPolicy {
 	public const CAPABILITY_DUPLICATE = 'duplicate';
 	public const CAPABILITY_EXPORT    = 'export';
 	public const CAPABILITY_REORDER   = 'reorder';
+	public const CAPABILITY_HEALTH    = 'health';
 
 	private Modeler $modeler;
 
@@ -21,6 +22,10 @@ class ModelRestPolicy {
 	}
 
 	public function has_capability( string $capability, ?string $model_type = null ): bool {
+		if ( $capability === self::CAPABILITY_HEALTH ) {
+			return true;
+		}
+
 		foreach ( $this->modeler->get_models() as $model ) {
 			if ( $model_type !== null && $model->get_type() !== $model_type ) {
 				continue;

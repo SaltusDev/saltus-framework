@@ -31,6 +31,7 @@ use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
 use Saltus\WP\Framework\Rest\RestRouteProvider;
@@ -38,6 +39,8 @@ use Saltus\WP\Framework\Rest\RestServer;
 
 
 class Core implements Plugin {
+
+	public const VERSION = '2.0.0';
 
 	/**
 	 * Main filters to control the flow of the plugin from outside code.
@@ -147,7 +150,14 @@ class Core implements Plugin {
 	 * @return list<RestRouteDefinition>
 	 */
 	private function get_rest_routes( ModelRestPolicy $policy ): array {
-		$routes = $this->modeler->get_rest_routes( $this->modeler, $policy );
+		$routes = [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_HEALTH,
+				new HealthController( self::VERSION )
+			),
+		];
+
+		$routes = array_merge( $routes, $this->modeler->get_rest_routes( $this->modeler, $policy ) );
 
 		foreach ( $this->service_container as $service ) {
 			if ( ! $service instanceof RestRouteProvider ) {
