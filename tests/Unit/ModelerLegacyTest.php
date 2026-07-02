@@ -120,7 +120,7 @@ class ModelerLegacyTest extends TestCase {
 		$this->assertNull( $routes[0]->get_model_type() );
 		$this->assertStringContainsString( ModelsController::class, $this->describeRouteController( $routes[0] ) );
 		$this->assertContainsOnlyInstancesOf( \Saltus\WP\Framework\MCP\Tools\ToolInterface::class, $tools );
-		$tool_classes = array_map( static fn( object $tool ): string => $tool::class, $tools );
+		$tool_classes = array_map( static fn( object $tool ): string => get_class( $tool ), $tools );
 		$this->assertContains( GetHealth::class, $tool_classes );
 		$this->assertContains( ListModels::class, $tool_classes );
 		$this->assertContains( CreatePost::class, $tool_classes );
