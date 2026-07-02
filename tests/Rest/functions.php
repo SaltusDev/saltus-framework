@@ -169,6 +169,8 @@ $wp_post_type_objects      = [];
 $wp_posts                  = [];
 $wp_options                = [];
 $wp_transients             = [];
+$wp_activation_hooks       = [];
+$wp_deactivation_hooks     = [];
 $wpdb                      = new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
 	public string $prefix = 'wp_';
 	/** @var list<array<string, mixed>> */
@@ -215,6 +217,24 @@ if ( ! function_exists( 'register_rest_route' ) ) {
 		global $wp_rest_routes_registered;
 		$wp_rest_routes_registered[] = compact( 'namespace', 'route', 'args', 'override' );
 	}
+}
+
+if ( ! function_exists( 'register_activation_hook' ) ) {
+	function register_activation_hook( string $file, callable $callback ): void {
+		global $wp_activation_hooks;
+		$wp_activation_hooks[] = compact( 'file', 'callback' );
+	}
+}
+
+if ( ! function_exists( 'register_deactivation_hook' ) ) {
+	function register_deactivation_hook( string $file, callable $callback ): void {
+		global $wp_deactivation_hooks;
+		$wp_deactivation_hooks[] = compact( 'file', 'callback' );
+	}
+}
+
+if ( ! function_exists( 'flush_rewrite_rules' ) ) {
+	function flush_rewrite_rules( bool $hard = true ): void {}
 }
 
 if ( ! function_exists( 'wp_register_ability' ) ) {

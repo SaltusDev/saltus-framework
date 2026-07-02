@@ -75,10 +75,11 @@ class Core implements Plugin {
 	 */
 	protected ?object $instantiator = null;
 
-	public function __construct( string $project_path ) {
+	public function __construct( string $project_path, ?string $plugin_file = null ) {
 
 		//TODO by pcarvalho: move to project class
-		$this->project['path'] = $project_path;
+		$this->project['path']        = $project_path;
+		$this->project['plugin_file'] = $plugin_file ?? $project_path;
 
 		// the framework root path
 		$this->project['root_path'] = dirname( __DIR__ );
@@ -96,14 +97,14 @@ class Core implements Plugin {
 	 */
 	public function register(): void {
 		\register_activation_hook(
-			__FILE__,
+			(string) $this->project['plugin_file'],
 			function () {
 				$this->activate();
 			}
 		);
 
 		\register_deactivation_hook(
-			__FILE__,
+			(string) $this->project['plugin_file'],
 			function () {
 				$this->deactivate();
 			}

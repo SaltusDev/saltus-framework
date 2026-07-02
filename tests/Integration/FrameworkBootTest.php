@@ -20,4 +20,17 @@ class FrameworkBootTest extends TestCase {
 		$this->assertInstanceOf( MCP::class, $container->get( 'mcp' ) );
 		$this->assertGreaterThan( 1, count( $container ) );
 	}
+
+	public function testCoreRegistersLifecycleHooksAgainstPluginFile(): void {
+		global $wp_activation_hooks, $wp_deactivation_hooks;
+		$wp_activation_hooks   = [];
+		$wp_deactivation_hooks = [];
+		$plugin_file           = __DIR__ . '/saltus-plugin.php';
+
+		$core = new Core( __DIR__, $plugin_file );
+		$core->register();
+
+		$this->assertSame( $plugin_file, $wp_activation_hooks[0]['file'] );
+		$this->assertSame( $plugin_file, $wp_deactivation_hooks[0]['file'] );
+	}
 }
