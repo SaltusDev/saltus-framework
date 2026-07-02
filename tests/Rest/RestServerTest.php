@@ -5,6 +5,7 @@ namespace Saltus\WP\Framework\Tests\Rest;
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Rest\DuplicateController;
 use Saltus\WP\Framework\Rest\ExportController;
+use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\MetaController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\ModelsController;
@@ -49,7 +50,7 @@ class RestServerTest extends TestCase {
 			$wp_rest_routes_registered
 		);
 
-		$expectedPatterns = [ 'models', 'duplicate', 'export', 'settings', 'meta', 'reorder' ];
+		$expectedPatterns = [ 'health', 'models', 'duplicate', 'export', 'settings', 'meta', 'reorder' ];
 
 		foreach ( $expectedPatterns as $pattern ) {
 			$found = false;
@@ -86,7 +87,7 @@ class RestServerTest extends TestCase {
 		$this->assertGreaterThan( 1, count( $wp_rest_routes_registered ) );
 	}
 
-	public function testRegisterRoutesRegistersNoRoutesWithoutOptIn(): void {
+	public function testRegisterRoutesRegistersOnlyHealthWithoutOptIn(): void {
 		global $wp_rest_routes_registered;
 
 		$this->modeler->method( 'get_models' )->willReturn(
@@ -97,7 +98,8 @@ class RestServerTest extends TestCase {
 
 		$this->createServer()->register_routes();
 
-		$this->assertSame( [], $wp_rest_routes_registered );
+		$this->assertCount( 1, $wp_rest_routes_registered );
+		$this->assertSame( '/health', $wp_rest_routes_registered[0]['route'] );
 	}
 
 	public function testRegisterRoutesRespectsShowInRestFalse(): void {
@@ -117,7 +119,8 @@ class RestServerTest extends TestCase {
 
 		$this->createServer()->register_routes();
 
-		$this->assertSame( [], $wp_rest_routes_registered );
+		$this->assertCount( 1, $wp_rest_routes_registered );
+		$this->assertSame( '/health', $wp_rest_routes_registered[0]['route'] );
 	}
 
 	/**
@@ -155,6 +158,10 @@ class RestServerTest extends TestCase {
 		return new RestServer(
 			$policy,
 			[
+				new RestRouteDefinition(
+					ModelRestPolicy::CAPABILITY_HEALTH,
+					new HealthController( '2.0.0' )
+				),
 				new RestRouteDefinition(
 					ModelRestPolicy::CAPABILITY_MODELS,
 					new ModelsController( $this->modeler, $policy )
