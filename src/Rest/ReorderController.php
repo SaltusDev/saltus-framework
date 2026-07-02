@@ -67,7 +67,7 @@ class ReorderController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request.
 	 * @return WP_Error|true
 	 */
-	public function create_item_permissions_check( $request ): WP_Error|true {
+	public function create_item_permissions_check( $request ) {
 		$items   = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'items' ) : null;
 		$allowed = is_array( $items ) && $items !== []
 			? $this->can_edit_any_requested_post( $items )
@@ -110,7 +110,7 @@ class ReorderController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request containing the items parameter.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function create_item( $request ): WP_REST_Response|WP_Error {
+	public function create_item( $request ) {
 		$items = $request->get_param( 'items' );
 
 		if ( ! is_array( $items ) || empty( $items ) ) {

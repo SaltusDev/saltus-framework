@@ -54,7 +54,7 @@ class DuplicateController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request.
 	 * @return WP_Error|true
 	 */
-	public function create_item_permissions_check( $request ): WP_Error|true {
+	public function create_item_permissions_check( $request ) {
 		$post_id = is_object( $request ) && method_exists( $request, 'get_param' ) ? (int) $request->get_param( 'post_id' ) : 0;
 		if ( $post_id > 0 && ! get_post( $post_id ) ) {
 			return true;
@@ -78,7 +78,7 @@ class DuplicateController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request containing the post_id parameter.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function create_item( $request ): WP_REST_Response|WP_Error {
+	public function create_item( $request ) {
 		$post_id = (int) $request->get_param( 'post_id' );
 		$post    = get_post( $post_id );
 

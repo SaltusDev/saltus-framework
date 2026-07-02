@@ -72,7 +72,7 @@ class MetaController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request.
 	 * @return WP_Error|bool
 	 */
-	public function get_items_permissions_check( $request ): WP_Error|bool {
+	public function get_items_permissions_check( $request ) {
 		$post_type = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
 		$allowed   = is_string( $post_type ) && $post_type !== ''
 			? $this->can_view_post_type_meta( $post_type )
@@ -94,7 +94,7 @@ class MetaController extends WP_REST_Controller {
 	 * @param WP_REST_Request $request  The REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_all_items( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+	public function get_all_items( WP_REST_Request $request ) {
 		$post_types = [];
 
 		$models = $this->policy
@@ -134,7 +134,7 @@ class MetaController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request containing the post_type parameter.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_items( $request ): WP_REST_Response|WP_Error {
+	public function get_items( $request ) {
 		$post_type = $request->get_param( 'post_type' );
 		$models    = $this->policy
 			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_META, 'post_type' )

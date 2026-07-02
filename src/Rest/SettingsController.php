@@ -64,9 +64,9 @@ class SettingsController extends WP_REST_Controller {
 	 * Check whether the current user can view settings.
 	 *
 	 * @param mixed $request  The REST request.
-	 * @return true|WP_Error
+	 * @return bool|WP_Error
 	 */
-	public function get_item_permissions_check( $request ): true|WP_Error {
+	public function get_item_permissions_check( $request ) {
 		$post_type  = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
 		$capability = is_string( $post_type ) && $post_type !== ''
 			? $this->post_type_edit_capability( $post_type )
@@ -105,9 +105,9 @@ class SettingsController extends WP_REST_Controller {
 	 * Check whether the current user can update settings.
 	 *
 	 * @param mixed $request  The REST request.
-	 * @return true|WP_Error
+	 * @return bool|WP_Error
 	 */
-	public function update_item_permissions_check( $request ): true|WP_Error {
+	public function update_item_permissions_check( $request ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
@@ -124,7 +124,7 @@ class SettingsController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request containing the post_type parameter.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_item( $request ): WP_REST_Response|WP_Error {
+	public function get_item( $request ) {
 		$post_type = $request->get_param( 'post_type' );
 		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
 			return new WP_Error(
@@ -151,7 +151,7 @@ class SettingsController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request containing the post_type parameter and JSON body.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function update_item( $request ): WP_REST_Response|WP_Error {
+	public function update_item( $request ) {
 		$post_type = $request->get_param( 'post_type' );
 		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
 			return new WP_Error(
@@ -242,7 +242,7 @@ class SettingsController extends WP_REST_Controller {
 	 * @param mixed $value  Raw setting value.
 	 * @return mixed
 	 */
-	private function sanitize_setting_value( mixed $value ): mixed {
+	private function sanitize_setting_value( $value ) {
 		$value = wp_unslash( $value );
 
 		if ( is_array( $value ) ) {

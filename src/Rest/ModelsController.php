@@ -68,9 +68,9 @@ class ModelsController extends WP_REST_Controller {
 	 * Check whether the current user can list models.
 	 *
 	 * @param mixed $request  The REST request.
-	 * @return true|WP_Error
+	 * @return bool|WP_Error
 	 */
-	public function get_items_permissions_check( $request ): true|WP_Error {
+	public function get_items_permissions_check( $request ) {
 		if ( ! $this->can_view_any_model() ) {
 			return new WP_Error(
 				'rest_forbidden',
@@ -85,9 +85,9 @@ class ModelsController extends WP_REST_Controller {
 	 * Check whether the current user can view a single model.
 	 *
 	 * @param mixed $request  The REST request.
-	 * @return true|WP_Error
+	 * @return bool|WP_Error
 	 */
-	public function get_item_permissions_check( $request ): true|WP_Error {
+	public function get_item_permissions_check( $request ) {
 		$model_name = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
 		$allowed    = is_string( $model_name ) && $model_name !== ''
 			? $this->can_view_model( $model_name )
@@ -109,7 +109,7 @@ class ModelsController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_items( $request ): WP_REST_Response|WP_Error {
+	public function get_items( $request ) {
 		$models = $this->policy
 			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
 			: $this->modeler->get_models();
@@ -136,7 +136,7 @@ class ModelsController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request containing the post_type parameter.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_item( $request ): WP_REST_Response|WP_Error {
+	public function get_item( $request ) {
 		$models = $this->policy
 			? $this->policy->get_enabled_models( ModelRestPolicy::CAPABILITY_MODELS )
 			: $this->modeler->get_models();

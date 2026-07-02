@@ -52,7 +52,7 @@ class ExportController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request.
 	 * @return WP_Error|bool
 	 */
-	public function get_item_permissions_check( $request ): WP_Error|bool {
+	public function get_item_permissions_check( $request ) {
 		if ( ! \current_user_can( 'export' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
@@ -69,7 +69,7 @@ class ExportController extends WP_REST_Controller {
 	 * @param mixed $request  The REST request containing the post_id parameter.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_item( $request ): WP_REST_Response|WP_Error {
+	public function get_item( $request ) {
 		$post_id = (int) $request->get_param( 'post_id' );
 		$post    = \get_post( $post_id );
 

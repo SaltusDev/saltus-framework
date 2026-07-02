@@ -44,9 +44,9 @@ class HealthController extends WP_REST_Controller {
 	 * Check whether the current user can view framework health.
 	 *
 	 * @param mixed $request  The REST request.
-	 * @return true|WP_Error
+	 * @return bool|WP_Error
 	 */
-	public function get_item_permissions_check( $request ): true|WP_Error {
+	public function get_item_permissions_check( $request ) {
 		if ( function_exists( 'current_user_can' ) && current_user_can( 'edit_posts' ) ) {
 			return true;
 		}
@@ -189,7 +189,7 @@ class HealthController extends WP_REST_Controller {
 	 * @param mixed $value  Default value.
 	 * @return mixed
 	 */
-	private function filter( string $hook, mixed $value ): mixed {
+	private function filter( string $hook, $value ) {
 		if ( function_exists( 'apply_filters' ) ) {
 			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Health filter names are internal.
 			return apply_filters( $hook, $value );
