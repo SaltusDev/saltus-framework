@@ -1,10 +1,13 @@
 <?php
 namespace Saltus\WP\Framework\Features\MCP;
 
+use Saltus\WP\Framework\Infrastructure\Plugin\Activateable;
+use Saltus\WP\Framework\Infrastructure\Plugin\Deactivateable;
 use Saltus\WP\Framework\Infrastructure\Plugin\Registerable;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
+use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\Cache\TransientCache;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
@@ -17,7 +20,9 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
  * exposes the Abilities API. Older WordPress versions skip native ability
  * registration.
  */
-class MCP implements Service, Registerable {
+class MCP implements Service, Registerable, Activateable, Deactivateable {
+
+	private const AUDIT_CLEANUP_HOOK = 'saltus_framework_mcp_audit_cleanup';
 
 	/** @var array<string, mixed> */
 	private array $dependencies;
@@ -44,6 +49,13 @@ class MCP implements Service, Registerable {
 			return;
 		}
 
+		$this->schedule_audit_cleanup();
+		add_action(
+			self::AUDIT_CLEANUP_HOOK,
+			function (): void {
+				( new AuditLogger() )->cleanup_expired_entries();
+			}
+		);
 		add_action(
 			'wp_abilities_api_categories_init',
 			function (): void {
@@ -66,6 +78,25 @@ class MCP implements Service, Registerable {
 		}
 	}
 
+	public function activate() {
+		if ( $this->transport() !== 'native' ) {
+			return;
+		}
+
+		$this->schedule_audit_cleanup();
+	}
+
+	public function deactivate() {
+		if ( ! function_exists( 'wp_next_scheduled' ) || ! function_exists( 'wp_unschedule_event' ) ) {
+			return;
+		}
+
+		$timestamp = wp_next_scheduled( self::AUDIT_CLEANUP_HOOK );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, self::AUDIT_CLEANUP_HOOK );
+		}
+	}
+
 	public function transport(): string {
 		if ( $this->ability_registrar instanceof AbilityRegistrar ) {
 			return $this->ability_registrar->has_native_api() ? 'native' : 'legacy';
@@ -82,6 +113,18 @@ class MCP implements Service, Registerable {
 		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), null, $this->policy() );
 
 		return $this->ability_registrar;
+	}
+
+	private function schedule_audit_cleanup(): void {
+		if ( ! function_exists( 'wp_next_scheduled' ) || ! function_exists( 'wp_schedule_event' ) ) {
+			return;
+		}
+
+		if ( wp_next_scheduled( self::AUDIT_CLEANUP_HOOK ) ) {
+			return;
+		}
+
+		wp_schedule_event( time(), 'daily', self::AUDIT_CLEANUP_HOOK );
 	}
 
 	private function tool_provider(): ToolProvider {

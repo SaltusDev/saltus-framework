@@ -188,6 +188,7 @@ $wp_options                = [];
 $wp_transients             = [];
 $wp_activation_hooks       = [];
 $wp_deactivation_hooks     = [];
+$wp_scheduled_events       = [];
 $wpdb                      = new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
 	public string $prefix = 'wp_';
 	public string $posts = 'wp_posts';
@@ -248,6 +249,31 @@ if ( ! function_exists( 'register_deactivation_hook' ) ) {
 	function register_deactivation_hook( string $file, callable $callback ): void {
 		global $wp_deactivation_hooks;
 		$wp_deactivation_hooks[] = compact( 'file', 'callback' );
+	}
+}
+
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+	function wp_next_scheduled( string $hook ) {
+		global $wp_scheduled_events;
+		return $wp_scheduled_events[ $hook ]['timestamp'] ?? false;
+	}
+}
+
+if ( ! function_exists( 'wp_schedule_event' ) ) {
+	function wp_schedule_event( int $timestamp, string $recurrence, string $hook ): bool {
+		global $wp_scheduled_events;
+		$wp_scheduled_events[ $hook ] = compact( 'timestamp', 'recurrence', 'hook' );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_unschedule_event' ) ) {
+	function wp_unschedule_event( int $timestamp, string $hook ): bool {
+		global $wp_scheduled_events;
+		if ( isset( $wp_scheduled_events[ $hook ] ) && $wp_scheduled_events[ $hook ]['timestamp'] === $timestamp ) {
+			unset( $wp_scheduled_events[ $hook ] );
+		}
+		return true;
 	}
 }
 
@@ -518,6 +544,12 @@ if ( ! function_exists( 'export_wp' ) ) {
 	function export_wp( array $args = [] ): void {
 		$wpdb    = $GLOBALS['wpdb'];
 		$wp_posts = $GLOBALS['wp_posts'] ?? [];
+
+		if ( ! headers_sent() ) {
+			header( 'Content-Description: File Transfer' );
+			header( 'Content-Disposition: attachment; filename=saltus-export.xml' );
+			header( 'Content-Type: text/xml; charset=UTF-8' );
+		}
 
 		$args = apply_filters( 'export_args', $args );
 

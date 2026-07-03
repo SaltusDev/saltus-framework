@@ -24,22 +24,44 @@ require_once dirname( __DIR__ ) . '/Rest/functions.php';
 class MCPFeatureTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_actions_registered, $wp_abilities_registered;
+		global $wp_actions_registered, $wp_abilities_registered, $wp_scheduled_events;
 		$wp_actions_registered   = [];
 		$wp_abilities_registered = [];
+		$wp_scheduled_events     = [];
 	}
 
 	public function testNativeTransportRegistersWordPressAbilityHooks(): void {
-		global $wp_actions_registered;
+		global $wp_actions_registered, $wp_scheduled_events;
 
 		$feature = new MCP( [], new NativeAbilityRegistrar() );
 		$feature->register();
 
 		$this->assertSame( 'native', $feature->transport() );
-		$this->assertCount( 8, $wp_actions_registered );
-		$this->assertSame( 'wp_abilities_api_categories_init', $wp_actions_registered[0]['hook_name'] );
-		$this->assertSame( 'wp_abilities_api_init', $wp_actions_registered[1]['hook_name'] );
-		$this->assertSame( 'save_post', $wp_actions_registered[2]['hook_name'] );
+		$this->assertCount( 9, $wp_actions_registered );
+		$this->assertArrayHasKey( 'saltus_framework_mcp_audit_cleanup', $wp_scheduled_events );
+		$this->assertSame( 'daily', $wp_scheduled_events['saltus_framework_mcp_audit_cleanup']['recurrence'] );
+		$this->assertSame( 'saltus_framework_mcp_audit_cleanup', $wp_actions_registered[0]['hook_name'] );
+		$this->assertSame( 'wp_abilities_api_categories_init', $wp_actions_registered[1]['hook_name'] );
+		$this->assertSame( 'wp_abilities_api_init', $wp_actions_registered[2]['hook_name'] );
+		$this->assertSame( 'save_post', $wp_actions_registered[3]['hook_name'] );
+	}
+
+	public function testAuditCleanupCronIsScheduledIdempotentlyAndUnscheduledOnDeactivate(): void {
+		global $wp_scheduled_events;
+
+		$feature = new MCP( [], new NativeAbilityRegistrar() );
+
+		$feature->activate();
+		$first_timestamp = $wp_scheduled_events['saltus_framework_mcp_audit_cleanup']['timestamp'] ?? null;
+		$feature->activate();
+
+		$this->assertNotNull( $first_timestamp );
+		$this->assertCount( 1, $wp_scheduled_events );
+		$this->assertSame( $first_timestamp, $wp_scheduled_events['saltus_framework_mcp_audit_cleanup']['timestamp'] );
+
+		$feature->deactivate();
+
+		$this->assertSame( [], $wp_scheduled_events );
 	}
 
 	public function testLegacyTransportDoesNotRegisterNativeAbilityHooks(): void {
@@ -79,7 +101,7 @@ class MCPFeatureTest extends TestCase {
 		);
 
 		$feature->register();
-		$wp_actions_registered[1]['callback']();
+		$wp_actions_registered[2]['callback']();
 
 		$this->assertArrayHasKey( 'saltus/contributed-tool', $wp_abilities_registered );
 		$this->assertSame( 'contributed_tool', $wp_abilities_registered['saltus/contributed-tool']['meta']['mcp_tool'] );
@@ -113,7 +135,7 @@ class MCPFeatureTest extends TestCase {
 		);
 
 		$feature->register();
-		$wp_actions_registered[1]['callback']();
+		$wp_actions_registered[2]['callback']();
 
 		$this->assertCount( 17, $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/get-health', $wp_abilities_registered );
