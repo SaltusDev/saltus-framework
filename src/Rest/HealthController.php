@@ -101,7 +101,7 @@ class HealthController extends WP_REST_Controller {
 
 		foreach ( $entries as $entry ) {
 			$status = isset( $entry['status'] ) ? (string) $entry['status'] : '';
-			if ( in_array( $status, [ 'error', 'validation_error', 'rate_limited', 'exception' ], true ) ) {
+			if ( in_array( $status, [ 'error', 'exception' ], true ) ) {
 				++$error_count;
 			}
 

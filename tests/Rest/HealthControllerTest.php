@@ -34,6 +34,14 @@ class HealthControllerTest extends TestCase {
 					'status'      => 'error',
 					'duration_ms' => 30.0,
 				],
+				[
+					'status'      => 'validation_error',
+					'duration_ms' => 2.0,
+				],
+				[
+					'status'      => 'rate_limited',
+					'duration_ms' => 1.0,
+				],
 			]
 		);
 
@@ -72,16 +80,44 @@ class HealthControllerTest extends TestCase {
 		$this->assertSame( 'degraded', $data['status'] );
 		$this->assertSame( '2.0.0', $data['version'] );
 		$this->assertTrue( $data['abilities']['native_api_available'] );
-		$this->assertSame( 3, $data['audit']['sample_size'] );
+		$this->assertSame( 5, $data['audit']['sample_size'] );
 		$this->assertSame( 1, $data['audit']['error_count'] );
-		$this->assertSame( 1 / 3, $data['audit']['error_rate'] );
-		$this->assertSame( 14.666666666666666, $data['audit']['latency_ms']['average'] );
+		$this->assertSame( 1 / 5, $data['audit']['error_rate'] );
+		$this->assertSame( 9.4, $data['audit']['latency_ms']['average'] );
 		$this->assertSame( 30.0, $data['audit']['latency_ms']['p95'] );
 		$this->assertSame(
 			[
-				'cache_hit' => 1,
-				'error'     => 1,
-				'success'   => 1,
+				'cache_hit'        => 1,
+				'error'            => 1,
+				'rate_limited'     => 1,
+				'success'          => 1,
+				'validation_error' => 1,
+			],
+			$data['audit']['statuses']
+		);
+	}
+
+	public function testClientFailuresDoNotDegradeHealth(): void {
+		$logger = $this->createMock( AuditLogger::class );
+		$logger->method( 'get_recent_entries' )->willReturn(
+			[
+				[ 'status' => 'success' ],
+				[ 'status' => 'validation_error' ],
+				[ 'status' => 'rate_limited' ],
+			]
+		);
+
+		$controller = new HealthController( '2.0.0', $logger );
+		$data       = $controller->get_item( null )->get_data();
+
+		$this->assertSame( 'ok', $data['status'] );
+		$this->assertSame( 0, $data['audit']['error_count'] );
+		$this->assertEqualsWithDelta( 0.0, $data['audit']['error_rate'], 0.0 );
+		$this->assertSame(
+			[
+				'rate_limited'     => 1,
+				'success'          => 1,
+				'validation_error' => 1,
 			],
 			$data['audit']['statuses']
 		);
