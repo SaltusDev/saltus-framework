@@ -26,7 +26,7 @@ trait AssetLoader {
 	/**
 	 * Data to be localized for assets.
 	 *
-	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData[]
+	 * @var AssetData[]
 	 */
 	private $data = [];
 
@@ -77,6 +77,8 @@ trait AssetLoader {
 			}
 			$assets->enqueue_assets( $this->assets_container );
 			foreach ( $this->data as $data ) {
+				// The data type isnt being inforced on the subclasses
+				// @phpstan-ignore instanceof.alwaysTrue
 				if ( ! $data instanceof AssetData ) {
 					continue;
 				}
