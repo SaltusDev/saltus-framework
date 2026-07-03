@@ -296,6 +296,8 @@ class ModelsController extends WP_REST_Controller {
 			return $target->{$method}();
 		}
 
-		return property_exists( $target, $default_prop ) ? $target->{$default_prop} : $default_val;
+		$public_properties = get_object_vars( $target );
+
+		return array_key_exists( $default_prop, $public_properties ) ? $public_properties[ $default_prop ] : $default_val;
 	}
 }

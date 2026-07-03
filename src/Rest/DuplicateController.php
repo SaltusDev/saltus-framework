@@ -114,6 +114,13 @@ class DuplicateController extends WP_REST_Controller {
 		}
 
 		$new_post = get_post( $new_post_id_or_error );
+		if ( ! $new_post instanceof \WP_Post ) {
+			return new WP_Error(
+				'rest_duplicate_failed',
+				__( 'Failed to retrieve the duplicated post.', 'saltus-framework' ),
+				[ 'status' => 500 ]
+			);
+		}
 
 		return rest_ensure_response(
 			[

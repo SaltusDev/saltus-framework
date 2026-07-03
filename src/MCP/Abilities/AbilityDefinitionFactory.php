@@ -179,8 +179,12 @@ class AbilityDefinitionFactory {
 		}
 
 		$taxonomy_object = get_taxonomy( $taxonomy );
-		$capability      = 'manage_categories';
-		if ( is_object( $taxonomy_object ) && isset( $taxonomy_object->cap->edit_terms ) && is_string( $taxonomy_object->cap->edit_terms ) ) {
+		if ( ! is_object( $taxonomy_object ) ) {
+			return false;
+		}
+
+		$capability = 'manage_categories';
+		if ( isset( $taxonomy_object->cap->edit_terms ) && is_string( $taxonomy_object->cap->edit_terms ) ) {
 			$capability = $taxonomy_object->cap->edit_terms;
 		}
 
