@@ -130,12 +130,7 @@ final class SaltusSingleExport implements Processable {
 			return $args;
 		}
 
-		// use our fake date so the query is easy to find (because we don't have a good hook to use)
-		$args['content']    = 'post';
-		$args['start_date'] = self::FAKE_DATE;
-		$args['end_date']   = self::FAKE_DATE;
-
-		return $args;
+		return $this->single_export_args( $args );
 	}
 
 	/**
@@ -157,11 +152,87 @@ final class SaltusSingleExport implements Processable {
 			return $query;
 		}
 
+		return $this->single_export_query( $query, intval( $_GET['export_single'] ) );
+	}
+
+	/**
+	 * Export a single post as WXR.
+	 *
+	 * @param int $post_id The post ID to export.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function export_post( int $post_id ) {
+		$post = \get_post( $post_id );
+
+		if ( ! $post ) {
+			return new \WP_Error(
+				'post_not_found',
+				__( 'Post not found.', 'saltus-framework' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		if ( ! \defined( 'WXR_VERSION' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/export.php';
+		}
+
+		$export_args_filter = function ( array $args ): array {
+			return $this->single_export_args( $args );
+		};
+
+		$query_filter = function ( string $query ) use ( $post_id ): string {
+			return $this->single_export_query( $query, $post_id );
+		};
+
+		add_filter( 'export_args', $export_args_filter );
+		add_filter( 'query', $query_filter );
+
+		$buffer_level = ob_get_level();
+		ob_start();
+		try {
+			\export_wp();
+			$wxr = (string) ob_get_clean();
+		} finally {
+			if ( ob_get_level() > $buffer_level ) {
+				ob_end_clean();
+			}
+			remove_filter( 'export_args', $export_args_filter );
+			remove_filter( 'query', $query_filter );
+		}
+
+		return [
+			'post_id'    => $post_id,
+			'post_type'  => $post->post_type,
+			'post_title' => $post->post_title,
+			'wxr'        => $wxr,
+		];
+	}
+
+	/**
+	 * Build export args that force WordPress through the identifiable single-export query.
+	 *
+	 * @param array<string, mixed> $args Query arguments for determining what should be exported.
+	 * @return array<string, mixed>
+	 */
+	public function single_export_args( array $args ): array {
+		$args['content']    = 'post';
+		$args['start_date'] = self::FAKE_DATE;
+		$args['end_date']   = self::FAKE_DATE;
+
+		return $args;
+	}
+
+	/**
+	 * Rewrite WordPress' generated export query to target a single post.
+	 *
+	 * @param string $query The original SQL query.
+	 * @param int    $post_id The post ID to export.
+	 * @return string
+	 */
+	public function single_export_query( string $query, int $post_id ): string {
 		global $wpdb;
 
-		// This is the query WP will build (given our arg filtering above)
-		// Since the current_filter isn't narrow, we'll check each query
-		// to see if it matches, then if it is we replace it
+		// This is the query WP will build (given our arg filtering above).
 		$test = $wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.post_type = 'post' AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= %s AND {$wpdb->posts}.post_date < %s",
 			// phpcs:ignore: WordPress.DateTime.RestrictedFunctions.date_date
@@ -174,13 +245,9 @@ final class SaltusSingleExport implements Processable {
 			return $query;
 		}
 
-		// divide query
-		$split = explode( 'WHERE', $query );
-		// replace WHERE clause
-		$split[1] = $wpdb->prepare( " {$wpdb->posts}.ID = %d", intval( $_GET['export_single'] ) );
-		// put query back together
-		$query = implode( 'WHERE', $split );
+		$split    = explode( 'WHERE', $query );
+		$split[1] = $wpdb->prepare( " {$wpdb->posts}.ID = %d", $post_id );
 
-		return $query;
+		return implode( 'WHERE', $split );
 	}
 }

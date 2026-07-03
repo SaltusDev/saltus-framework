@@ -23,11 +23,16 @@ use Saltus\WP\Framework\Rest\SettingsController;
  */
 final class Settings implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
+	private SettingsManager $settings_manager;
+
 	/**
 	 * Instantiate this Service object.
 	 *
+	 * @param mixed $settings_manager Optional shared settings manager; ignored when the service container passes args.
 	 */
-	public function __construct() {}
+	public function __construct( $settings_manager = null ) {
+		$this->settings_manager = $settings_manager instanceof SettingsManager ? $settings_manager : new SettingsManager();
+	}
 
 	/**
 	 * Check whether the conditional service is currently needed.
@@ -62,7 +67,7 @@ final class Settings implements Service, Conditional, Assembly, RestRouteProvide
 		return [
 			new RestRouteDefinition(
 				ModelRestPolicy::CAPABILITY_SETTINGS,
-				new SettingsController( $policy ),
+				new SettingsController( $policy, $this->settings_manager ),
 				'post_type'
 			),
 		];
@@ -73,8 +78,8 @@ final class Settings implements Service, Conditional, Assembly, RestRouteProvide
 	 */
 	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
 		return [
-			new GetSettings(),
-			new UpdateSettings(),
+			new GetSettings( $this->settings_manager ),
+			new UpdateSettings( $this->settings_manager ),
 		];
 	}
 }

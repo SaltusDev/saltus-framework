@@ -22,11 +22,16 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  */
 class SingleExport implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
+	private SaltusSingleExport $exporter;
+
 	/**
 	 * Instantiate this Service object.
 	 *
+	 * @param mixed $exporter Optional shared export implementation; ignored when the service container passes args.
 	 */
-	public function __construct() {}
+	public function __construct( $exporter = null ) {
+		$this->exporter = $exporter instanceof SaltusSingleExport ? $exporter : new SaltusSingleExport( '', [] );
+	}
 
 	/**
 	 * Check whether the conditional service is currently needed.
@@ -61,7 +66,7 @@ class SingleExport implements Service, Conditional, Assembly, RestRouteProvider,
 		return [
 			new RestRouteDefinition(
 				ModelRestPolicy::CAPABILITY_EXPORT,
-				new ExportController( $policy ),
+				new ExportController( $policy, $this->exporter ),
 				'post_type'
 			),
 		];
@@ -71,6 +76,6 @@ class SingleExport implements Service, Conditional, Assembly, RestRouteProvider,
 	 * @return list<ToolInterface>
 	 */
 	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
-		return [ new ExportPost() ];
+		return [ new ExportPost( $this->exporter ) ];
 	}
 }

@@ -24,11 +24,16 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  */
 class DragAndDrop implements Service, Conditional, Actionable, Assembly, RestRouteProvider, ToolContributor {
 
+	private ReorderPostsService $reorder_service;
+
 	/**
 	 * Instantiate this Service object.
 	 *
+	 * @param mixed $reorder_service Optional shared reorder service; ignored when the service container passes args.
 	 */
-	public function __construct() {}
+	public function __construct( $reorder_service = null ) {
+		$this->reorder_service = $reorder_service instanceof ReorderPostsService ? $reorder_service : new ReorderPostsService();
+	}
 
 	/**
 	 * Check whether the conditional service is currently needed.
@@ -64,7 +69,7 @@ class DragAndDrop implements Service, Conditional, Actionable, Assembly, RestRou
 		return [
 			new RestRouteDefinition(
 				ModelRestPolicy::CAPABILITY_REORDER,
-				new ReorderController( $policy ),
+				new ReorderController( $policy, $this->reorder_service ),
 				'post_type'
 			),
 		];
@@ -74,6 +79,6 @@ class DragAndDrop implements Service, Conditional, Actionable, Assembly, RestRou
 	 * @return list<ToolInterface>
 	 */
 	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
-		return [ new ReorderPosts() ];
+		return [ new ReorderPosts( $this->reorder_service ) ];
 	}
 }

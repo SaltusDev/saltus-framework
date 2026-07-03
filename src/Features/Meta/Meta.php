@@ -23,11 +23,16 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  */
 final class Meta implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
+	private MetaFieldProvider $meta_field_provider;
+
 	/**
 	 * Instantiate this Service object.
 	 *
+	 * @param mixed $meta_field_provider Optional shared meta provider; ignored when the service container passes args.
 	 */
-	public function __construct() {}
+	public function __construct( $meta_field_provider = null ) {
+		$this->meta_field_provider = $meta_field_provider instanceof MetaFieldProvider ? $meta_field_provider : new MetaFieldProvider();
+	}
 
 	/**
 	 * Check whether the conditional service is currently needed.
@@ -61,7 +66,7 @@ final class Meta implements Service, Conditional, Assembly, RestRouteProvider, T
 		return [
 			new RestRouteDefinition(
 				ModelRestPolicy::CAPABILITY_META,
-				new MetaController( $modeler, $policy ),
+				new MetaController( $modeler, $policy, $this->meta_field_provider ),
 				'post_type'
 			),
 		];
@@ -72,8 +77,8 @@ final class Meta implements Service, Conditional, Assembly, RestRouteProvider, T
 	 */
 	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
 		return [
-			new ListMetaFields(),
-			new GetMetaFields(),
+			new ListMetaFields( $this->meta_field_provider ),
+			new GetMetaFields( $this->meta_field_provider ),
 		];
 	}
 }
