@@ -6,6 +6,7 @@ use WP_REST_Controller;
 use WP_REST_Server;
 use WP_REST_Response;
 use WP_Error;
+use Saltus\WP\Framework\Features\SingleExport\SaltusSingleExport;
 
 /**
  * REST controller for exporting posts as WXR.
@@ -14,12 +15,15 @@ class ExportController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
+	private SaltusSingleExport $exporter;
 
 	/**
 	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 * @param SaltusSingleExport|null $exporter  Optional export feature implementation.
 	 */
-	public function __construct( ?ModelRestPolicy $policy = null ) {
+	public function __construct( ?ModelRestPolicy $policy = null, ?SaltusSingleExport $exporter = null ) {
 		$this->policy    = $policy;
+		$this->exporter  = $exporter ?? new SaltusSingleExport( '', [] );
 		$this->namespace = self::ROUTE_NAMESPACE;
 		$this->rest_base = 'export';
 	}
@@ -89,74 +93,6 @@ class ExportController extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! \defined( 'WXR_VERSION' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/export.php';
-		}
-
-		$wxr = $this->generate_wxr( $post );
-
-		return \rest_ensure_response(
-			[
-				'post_id'    => $post_id,
-				'post_type'  => $post->post_type,
-				'post_title' => $post->post_title,
-				'wxr'        => $wxr,
-			]
-		);
-	}
-
-	/**
-	 * Generate WXR export XML for a single post.
-	 *
-	 * @param \WP_Post $post  The post to export.
-	 * @return string
-	 */
-	private function generate_wxr( \WP_Post $post ): string {
-		$version = \defined( 'WXR_VERSION' ) ? WXR_VERSION : '1.2';
-
-		return sprintf(
-			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" .
-			"<!-- WXR export -->\n" .
-			"<rss version=\"2.0\" xmlns:excerpt=\"http://wordpress.org/export/%1\$s/excerpt/\" xmlns:content=\"http://purl.org/rss/1.0/modules/content/\" xmlns:wp=\"http://wordpress.org/export/%1\$s/\">\n" .
-			"<channel>\n" .
-			"<wp:wxr_version>%1\$s</wp:wxr_version>\n" .
-			"<item>\n" .
-			"<title>%2\$s</title>\n" .
-			"<content:encoded><![CDATA[%3\$s]]></content:encoded>\n" .
-			"<excerpt:encoded><![CDATA[%4\$s]]></excerpt:encoded>\n" .
-			"<wp:post_id>%5\$d</wp:post_id>\n" .
-			"<wp:post_type>%6\$s</wp:post_type>\n" .
-			"<wp:status>%7\$s</wp:status>\n" .
-			"</item>\n" .
-			"</channel>\n" .
-			"</rss>\n",
-			$this->xml( (string) $version ),
-			$this->xml( (string) $post->post_title ),
-			$this->cdata( (string) $post->post_content ),
-			$this->cdata( (string) $post->post_excerpt ),
-			(int) $post->ID,
-			$this->xml( (string) $post->post_type ),
-			$this->xml( (string) $post->post_status )
-		);
-	}
-
-	/**
-	 * Escape text for XML element content.
-	 *
-	 * @param string $value  Raw value.
-	 * @return string
-	 */
-	private function xml( string $value ): string {
-		return \htmlspecialchars( $value, ENT_XML1 | ENT_COMPAT, 'UTF-8' );
-	}
-
-	/**
-	 * Make arbitrary text safe inside a CDATA node.
-	 *
-	 * @param string $value  Raw value.
-	 * @return string
-	 */
-	private function cdata( string $value ): string {
-		return str_replace( ']]>', ']]]]><![CDATA[>', $value );
+		return \rest_ensure_response( $this->exporter->export_post( $post_id ) );
 	}
 }

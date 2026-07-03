@@ -7,6 +7,7 @@ use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
+use Saltus\WP\Framework\Features\Settings\SettingsManager;
 
 /**
  * REST controller for reading and updating per-post-type settings.
@@ -15,14 +16,17 @@ class SettingsController extends WP_REST_Controller {
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
+	private SettingsManager $settings_manager;
 
 	/**
 	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 * @param SettingsManager|null $settings_manager Optional settings manager.
 	 */
-	public function __construct( ?ModelRestPolicy $policy = null ) {
-		$this->policy    = $policy;
-		$this->namespace = self::ROUTE_NAMESPACE;
-		$this->rest_base = 'settings';
+	public function __construct( ?ModelRestPolicy $policy = null, ?SettingsManager $settings_manager = null ) {
+		$this->policy           = $policy;
+		$this->settings_manager = $settings_manager ?? new SettingsManager();
+		$this->namespace        = self::ROUTE_NAMESPACE;
+		$this->rest_base        = 'settings';
 	}
 
 	/**
@@ -57,7 +61,7 @@ class SettingsController extends WP_REST_Controller {
 	 * @return string
 	 */
 	protected function get_option_name( string $post_type ): string {
-		return sprintf( 'saltus_framework_settings_%s', $post_type );
+		return $this->settings_manager->option_name( $post_type );
 	}
 
 	/**
@@ -134,15 +138,7 @@ class SettingsController extends WP_REST_Controller {
 			);
 		}
 
-		$option_name = $this->get_option_name( $post_type );
-		$settings    = get_option( $option_name, [] );
-
-		return rest_ensure_response(
-			[
-				'post_type' => $post_type,
-				'settings'  => $settings,
-			]
-		);
+		return rest_ensure_response( $this->settings_manager->get_settings( (string) $post_type ) );
 	}
 
 	/**
@@ -161,50 +157,9 @@ class SettingsController extends WP_REST_Controller {
 			);
 		}
 
-		$option_name = $this->get_option_name( $post_type );
-		$settings    = $request->get_json_params();
+		$settings = $request->get_json_params();
 
-		if ( empty( $settings ) ) {
-			return new WP_Error(
-				'rest_empty_data',
-				__( 'No settings data provided.', 'saltus-framework' ),
-				[ 'status' => 400 ]
-			);
-		}
-
-		$sanitized = [];
-		foreach ( $settings as $key => $value ) {
-			$sanitized[ sanitize_key( (string) $key ) ] = $this->sanitize_setting_value( $value );
-		}
-
-		$updated = update_option( $option_name, $sanitized );
-
-		if ( ! $updated ) {
-			$current = get_option( $option_name, [] );
-			if ( $current === $sanitized ) {
-				return rest_ensure_response(
-					[
-						'post_type' => $post_type,
-						'settings'  => $sanitized,
-						'status'    => 'unchanged',
-					]
-				);
-			}
-
-			return new WP_Error(
-				'rest_update_failed',
-				__( 'Failed to update settings.', 'saltus-framework' ),
-				[ 'status' => 500 ]
-			);
-		}
-
-		return rest_ensure_response(
-			[
-				'post_type' => $post_type,
-				'settings'  => $sanitized,
-				'status'    => 'updated',
-			]
-		);
+		return rest_ensure_response( $this->settings_manager->update_settings( (string) $post_type, $settings ) );
 	}
 
 	/**
@@ -234,34 +189,5 @@ class SettingsController extends WP_REST_Controller {
 				],
 			],
 		];
-	}
-
-	/**
-	 * Sanitize a setting value while preserving structured data.
-	 *
-	 * @param mixed $value  Raw setting value.
-	 * @return mixed
-	 */
-	private function sanitize_setting_value( $value ) {
-		$value = wp_unslash( $value );
-
-		if ( is_array( $value ) ) {
-			$sanitized = [];
-			foreach ( $value as $key => $child ) {
-				$sanitized_key               = is_int( $key ) ? $key : sanitize_key( (string) $key );
-				$sanitized[ $sanitized_key ] = $this->sanitize_setting_value( $child );
-			}
-			return $sanitized;
-		}
-
-		if ( is_string( $value ) ) {
-			return sanitize_text_field( $value );
-		}
-
-		if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || $value === null ) {
-			return $value;
-		}
-
-		return sanitize_text_field( (string) $value );
 	}
 }
