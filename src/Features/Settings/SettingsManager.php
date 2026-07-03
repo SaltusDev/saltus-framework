@@ -103,6 +103,10 @@ class SettingsManager {
 			return $value;
 		}
 
+		if ( is_object( $value ) ) {
+			return '';
+		}
+
 		return sanitize_text_field( (string) $value );
 	}
 }

@@ -221,6 +221,31 @@ class SettingsControllerTest extends TestCase {
 		);
 	}
 
+	public function testUpdateItemSanitizesObjectsWithoutCastingFatal(): void {
+		$request = new WP_REST_Request( [ 'post_type' => 'book' ] );
+		$request->set_json_params(
+			[
+				'group' => [
+					'object_value' => new \stdClass(),
+				],
+			]
+		);
+
+		$result   = $this->controller->update_item( $request );
+		$response = rest_ensure_response( $result );
+		$data     = $response->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame(
+			[
+				'group' => [
+					'object_value' => '',
+				],
+			],
+			$data['settings']
+		);
+	}
+
 	public function testGetItemSchema(): void {
 		$schema = $this->controller->get_item_schema();
 
