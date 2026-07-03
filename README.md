@@ -199,7 +199,7 @@ The standalone local stdio MCP server has been removed. Saltus MCP development t
 
 Abilities dispatch through WordPress REST requests, so existing REST permission callbacks and `current_user_can()` checks remain authoritative. WordPress versions without the Abilities API simply skip Saltus ability registration.
 
-Saltus wraps ability execution with WordPress-native audit logging, rate limiting, and transient caching. Read-only abilities can be cached in transients, mutating abilities clear the MCP cache, rate limits are keyed by the current user or request identifier, and audit records are written to the Saltus MCP audit table.
+Saltus wraps ability execution with WordPress-native audit logging, rate limiting, and transient caching. Read-only abilities can be cached in transients, mutating abilities clear the MCP cache, rate limits are keyed by the current user or request identifier, and audit records are written to the Saltus MCP audit table. Expired audit rows are removed by a daily WP-Cron retention job.
 
 ### Available Tools
 
@@ -238,7 +238,7 @@ No local MCP server configuration is required for the WordPress-native path. Run
 | Filter | Purpose |
 |--------|---------|
 | `saltus/framework/mcp/audit/enabled` | Enable or disable audit writes |
-| `saltus/framework/mcp/audit/retention_days` | Set audit retention before cleanup |
+| `saltus/framework/mcp/audit/retention_days` | Set audit retention before daily WP-Cron cleanup |
 | `saltus/framework/mcp/rate_limit/enabled` | Enable or disable rate limiting |
 | `saltus/framework/mcp/rate_limit/max_requests` | Set max ability calls per window |
 | `saltus/framework/mcp/rate_limit/window_seconds` | Set the rate-limit window |

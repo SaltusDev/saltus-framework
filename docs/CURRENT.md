@@ -11,6 +11,7 @@
 - None
 
 ## Recent Changes
+- Audit/runtime hardening: MCP audit retention cleanup now runs through daily WP-Cron instead of after every audit write; settings updates safely sanitize object payloads; single-post REST export removes WordPress core download headers before returning through REST; health degradation now counts only server-side `error` and `exception` audit statuses while still reporting validation and rate-limit status counts @since 2026-07-04
 - Service extraction: inline REST controller logic moved into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) and wired into both REST controllers and MCP tools; defensive guards added for null post, private property access, taxonomy object, and asset data types — 7 commits covering LegacyFeatureTest, FrameworkBootTest, RuntimeTest, RegistrarTest, and controller tests; 195 tests, 567 assertions @since 2026-07-03
 - Added MCP client integration guide at `docs/MCP-CLIENTS.md`, covering recommended call flow, health-first checks, model and metadata discovery, safe reads/writes, permission and rate-limit handling, editor integration notes, prompt guidance, and anti-patterns @since 2026-07-03
 - Added `composer docs:mcp` and `bin/generate-mcp-docs.php` to generate MCP ability documentation from `src/MCP/Tools`; generated output now refreshes `docs/MCP-ABILITIES.md` and the embedded ability table in `docs/MCP.md` @since 2026-07-03

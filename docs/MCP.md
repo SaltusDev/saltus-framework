@@ -252,6 +252,9 @@ Ability executions are recorded in the Saltus MCP audit table when audit logging
 - error code and message when applicable
 
 The health endpoint uses recent audit rows to calculate error-rate and latency metrics.
+Health degradation is based on server-side audit failures: `error` and `exception`. Client-side outcomes such as `validation_error` and `rate_limited` remain visible in the status breakdown but do not count toward the framework health error rate.
+
+Audit retention cleanup runs through the daily `saltus_framework_mcp_audit_cleanup` WP-Cron event. The cleanup query only deletes expired rows from the internal Saltus MCP audit table and never deletes posts, terms, settings, or other site content. Set `saltus/framework/mcp/audit/retention_days` to `0` or a negative value to disable retention cleanup.
 
 ## Compatibility Matrix
 
