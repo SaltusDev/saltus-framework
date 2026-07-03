@@ -1,8 +1,8 @@
 # Current: Live Working State
 
 ## Working
-- Refactor high-traffic legacy Features/ and Saltus*.php paths @since 2026-07-02
-- Add unit/integration tests for refactored legacy paths @since 2026-07-02
+- Refactor high-traffic legacy Features/ and Saltus*.php paths @since 2026-07-03
+- Add unit/integration tests for refactored legacy paths @since 2026-07-03
 
 ## Next
 - None
@@ -11,6 +11,7 @@
 - None
 
 ## Recent Changes
+- Service extraction: inline REST controller logic moved into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) and wired into both REST controllers and MCP tools; defensive guards added for null post, private property access, taxonomy object, and asset data types — 7 commits covering LegacyFeatureTest, FrameworkBootTest, RuntimeTest, RegistrarTest, and controller tests; 195 tests, 567 assertions @since 2026-07-03
 - Added MCP client integration guide at `docs/MCP-CLIENTS.md`, covering recommended call flow, health-first checks, model and metadata discovery, safe reads/writes, permission and rate-limit handling, editor integration notes, prompt guidance, and anti-patterns @since 2026-07-03
 - Added `composer docs:mcp` and `bin/generate-mcp-docs.php` to generate MCP ability documentation from `src/MCP/Tools`; generated output now refreshes `docs/MCP-ABILITIES.md` and the embedded ability table in `docs/MCP.md` @since 2026-07-03
 - Added long-form WordPress-native MCP/Abilities documentation at `docs/MCP.md` as the source page for future Saltus site docs, covering setup, discovery, permissions, all 17 abilities, metadata discovery, health monitoring, runtime filters, audit/cache/rate-limit behavior, compatibility, and troubleshooting @since 2026-07-03
@@ -84,7 +85,7 @@
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer phpcs` passes.
-- PHPStan: Level 7 clean across 103 analyzed source files.
+- PHPStan: Level 7 clean across the configured analysis set (new service classes ReorderPostsService, MetaFieldProvider, SettingsManager added).
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
@@ -92,4 +93,5 @@
 - Metadata discovery is implemented through `saltus/list-meta-fields` and `saltus/get-meta-fields`.
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
-- Current verification: full `composer test`, `composer phpstan`, `composer phpcs`, and `git diff --check` pass after the code-review hardening pass.
+- Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
+- Current verification: full `composer test` (195 tests, 567 assertions), `composer phpstan`, `composer phpcs`, and `git diff --check` pass after the service extraction pass.
