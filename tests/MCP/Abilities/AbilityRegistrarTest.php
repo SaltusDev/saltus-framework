@@ -144,6 +144,21 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertFalse( $permissionCallback( [ 'post_type' => 'book' ] ) );
 	}
 
+	public function testPermissionCallbackRejectsInvalidTaxonomyForCreateTerm(): void {
+		global $wp_abilities_registered, $wp_current_user_can, $wp_taxonomy_objects;
+
+		$wp_taxonomy_objects['missing_taxonomy'] = null;
+		$wp_current_user_can                     = [
+			'read'              => true,
+			'manage_categories' => true,
+		];
+
+		( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
+		$permissionCallback = $wp_abilities_registered['saltus/create-term']['permission_callback'];
+
+		$this->assertFalse( $permissionCallback( [ 'taxonomy' => 'missing_taxonomy' ] ) );
+	}
+
 	public function testPermissionCallbackUsesPostSpecificCapability(): void {
 		global $wp_abilities_registered, $wp_current_user_can;
 
@@ -351,6 +366,7 @@ class AbilityRegistrarTest extends TestCase {
 	private function fakeWpdb(): object {
 		return new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
 			public string $prefix = 'wp_';
+			public string $posts = 'wp_posts';
 			/** @var list<array<string, mixed>> */
 			public array $inserts = [];
 			/** @var list<string> */

@@ -25,12 +25,24 @@ class FrameworkBootTest extends TestCase {
 		global $wp_activation_hooks, $wp_deactivation_hooks;
 		$wp_activation_hooks   = [];
 		$wp_deactivation_hooks = [];
-		$plugin_file           = __DIR__ . '/saltus-plugin.php';
+		$plugin_file           = __FILE__;
 
 		$core = new Core( __DIR__, $plugin_file );
 		$core->register();
 
 		$this->assertSame( $plugin_file, $wp_activation_hooks[0]['file'] );
 		$this->assertSame( $plugin_file, $wp_deactivation_hooks[0]['file'] );
+	}
+
+	public function testCoreSkipsLifecycleHooksWhenPluginFileIsDirectory(): void {
+		global $wp_activation_hooks, $wp_deactivation_hooks;
+		$wp_activation_hooks   = [];
+		$wp_deactivation_hooks = [];
+
+		$core = new Core( __DIR__ );
+		$core->register();
+
+		$this->assertSame( [], $wp_activation_hooks );
+		$this->assertSame( [], $wp_deactivation_hooks );
 	}
 }

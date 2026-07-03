@@ -14,10 +14,11 @@ require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 class AbilityRuntimeTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wpdb, $wp_transients, $wp_options, $wp_rest_request_log;
-		$wp_transients       = [];
-		$wp_options           = [];
-		$wp_rest_request_log  = [];
+		global $wpdb, $wp_transients, $wp_options, $wp_rest_request_log, $wp_rest_response_override;
+		$wp_transients             = [];
+		$wp_options                 = [];
+		$wp_rest_request_log        = [];
+		$wp_rest_response_override  = null;
 		if ( ! is_object( $wpdb ) ) {
 			$wpdb = $this->fakeWpdb();
 		}
@@ -84,6 +85,26 @@ class AbilityRuntimeTest extends TestCase {
 		$this->assertSame( 'validation_error', $wpdb->inserts[0]['data']['status'] );
 	}
 
+	public function testExecuteReturnsWpErrorWhenRestDispatchReturnsErrorStatus(): void {
+		global $wpdb, $wp_rest_response_override;
+
+		$wp_rest_response_override = new \WP_REST_Response(
+			[
+				'code'    => 'model_not_found',
+				'message' => 'Model not found.',
+			],
+			404
+		);
+
+		$runtime = new AbilityRuntime();
+		$tool    = new ListModels();
+		$result  = $runtime->execute( $tool, [] );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'model_not_found', $result->get_error_code() );
+		$this->assertSame( 'error', $wpdb->inserts[0]['data']['status'] );
+	}
+
 	public function testCacheHitSkipsRestRequest(): void {
 		global $wp_rest_request_log, $wp_transients;
 
@@ -124,6 +145,7 @@ class AbilityRuntimeTest extends TestCase {
 	private function fakeWpdb(): object {
 		return new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
 			public string $prefix = 'wp_';
+			public string $posts = 'wp_posts';
 			/** @var list<array<string, mixed>> */
 			public array $inserts = [];
 			/** @var list<string> */

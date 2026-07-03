@@ -99,6 +99,20 @@ class LegacyFeatureTest extends TestCase {
 		$this->assertRouteAndTool( new DragAndDrop(), $modeler, $policy, ModelRestPolicy::CAPABILITY_REORDER, ReorderController::class, ReorderPosts::class );
 	}
 
+	public function testSingleExportPassesFeatureImplementationToRestAndMcp(): void {
+		$modeler  = new Modeler( $this->createStub( ModelFactory::class ) );
+		$policy   = new ModelRestPolicy( $modeler );
+		$exporter = new SaltusSingleExport( 'book', [] );
+		$feature  = new SingleExport( $exporter );
+
+		$routes     = $feature->get_rest_routes( $modeler, $policy );
+		$tools      = $feature->get_mcp_tools( $modeler, $policy );
+		$controller = $this->routeController( $routes[0] );
+
+		$this->assertSame( $exporter, $this->privateProperty( $controller, 'exporter' ) );
+		$this->assertSame( $exporter, $this->privateProperty( $tools[0], 'exporter' ) );
+	}
+
 	public function testProcessMethodsRegisterExpectedHooks(): void {
 		global $wp_actions_registered, $wp_filters_registered;
 
@@ -333,14 +347,25 @@ class LegacyFeatureTest extends TestCase {
 	}
 
 	private function routeControllerClass( object $route ): string {
+		return get_class( $this->routeController( $route ) );
+	}
+
+	private function routeController( object $route ): object {
 		$reflection = new \ReflectionClass( $route );
 		$property   = $reflection->getProperty( 'controller' );
 
-		return get_class( $property->getValue( $route ) );
+		return $property->getValue( $route );
+	}
+
+	private function privateProperty( object $object, string $property_name ): mixed {
+		$reflection = new \ReflectionClass( $object );
+		$property   = $reflection->getProperty( $property_name );
+
+		return $property->getValue( $object );
 	}
 
 	private function resetWordPressState(): void {
-		global $wp_actions_registered, $wp_filters_registered, $wp_filter_values, $wp_current_user_can, $wp_is_admin, $wp_scripts_enqueued, $wp_styles_enqueued, $wp_scripts_localized, $wp_nonce_valid, $wp_meta_updates, $wp_posts, $wp_post_meta, $wpdb, $post;
+		global $wp_actions_registered, $wp_filters_registered, $wp_filter_values, $wp_current_user_can, $wp_is_admin, $wp_scripts_enqueued, $wp_styles_enqueued, $wp_scripts_localized, $wp_nonce_valid, $wp_meta_updates, $wp_posts, $wp_post_meta, $wp_insert_post_without_storage, $wpdb, $post;
 
 		$wp_actions_registered = [];
 		$wp_filters_registered = [];
@@ -354,6 +379,7 @@ class LegacyFeatureTest extends TestCase {
 		$wp_meta_updates       = [];
 		$wp_posts              = [];
 		$wp_post_meta          = [];
+		$wp_insert_post_without_storage = false;
 		$_GET                  = [];
 		$_POST                 = [];
 		$_SERVER['REQUEST_URI'] = '';

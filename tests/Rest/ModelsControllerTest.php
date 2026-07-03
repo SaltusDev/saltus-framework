@@ -231,6 +231,30 @@ class ModelsControllerTest extends TestCase {
 		$this->assertSame( 'Books', $data['label_plural'] );
 	}
 
+	public function testGetItemDoesNotAccessPrivateFallbackProperties(): void {
+		$model = new class implements Model {
+			private string $name = 'private-book';
+
+			public function setup(): void {}
+
+			public function get_name(): string {
+				return 'book';
+			}
+
+			public function get_type(): string {
+				return 'post_type';
+			}
+		};
+
+		$this->modeler->method( 'get_models' )->willReturn( [ 'book' => $model ] );
+
+		$result = $this->controller->get_item( new WP_REST_Request( [ 'post_type' => 'book' ] ) );
+		$data   = rest_ensure_response( $result )->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertSame( '', $data['name'] );
+	}
+
 	public function testGetItemReturnsTaxonomyMetadata(): void {
 		$taxonomy = new Taxonomy(
 			new NoFile(

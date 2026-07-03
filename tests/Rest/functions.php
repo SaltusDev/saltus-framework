@@ -46,13 +46,19 @@ if ( ! class_exists( 'WP_Error' ) ) {
 if ( ! class_exists( 'WP_REST_Response' ) ) {
 	class WP_REST_Response {
 		private $data;
+		private int $status;
 
 		public function __construct( $data = [], int $status = 200 ) {
-			$this->data = $data;
+			$this->data   = $data;
+			$this->status = $status;
 		}
 
 		public function get_data() {
 			return $this->data;
+		}
+
+		public function get_status(): int {
+			return $this->status;
 		}
 	}
 }
@@ -164,6 +170,7 @@ if ( ! class_exists( 'WP_Post' ) ) {
 $wp_rest_routes_registered = [];
 $wp_abilities_registered   = [];
 $wp_rest_request_log       = [];
+$wp_rest_response_override = null;
 $wp_current_user_can       = true;
 $wp_is_admin               = false;
 $wp_filters_registered     = [];
@@ -176,6 +183,7 @@ $wp_meta_updates           = [];
 $wp_post_type_objects      = [];
 $wp_posts                  = [];
 $wp_post_meta              = [];
+$wp_insert_post_without_storage = false;
 $wp_options                = [];
 $wp_transients             = [];
 $wp_activation_hooks       = [];
@@ -256,13 +264,16 @@ if ( ! function_exists( 'wp_register_ability' ) ) {
 
 if ( ! function_exists( 'rest_do_request' ) ) {
 	function rest_do_request( WP_REST_Request $request ): WP_REST_Response {
-		global $wp_rest_request_log;
+		global $wp_rest_request_log, $wp_rest_response_override;
 		$wp_rest_request_log[] = [
 			'method' => $request->get_method(),
 			'route'  => $request->get_route(),
 			'params' => $request->get_json_params(),
 			'query'  => $request->get_params(),
 		];
+		if ( $wp_rest_response_override instanceof WP_REST_Response ) {
+			return $wp_rest_response_override;
+		}
 		return new WP_REST_Response( [ 'ok' => true, 'route' => $request->get_route() ] );
 	}
 }
@@ -362,6 +373,22 @@ if ( ! function_exists( 'add_filter' ) ) {
 		global $wp_filters_registered;
 		$wp_filters_registered = is_array( $wp_filters_registered ) ? $wp_filters_registered : [];
 		$wp_filters_registered[ $hook_name ][] = compact( 'hook_name', 'callback', 'priority', 'accepted_args' );
+	}
+}
+
+if ( ! function_exists( 'remove_filter' ) ) {
+	function remove_filter( string $hook_name, callable $callback, int $priority = 10 ): bool {
+		global $wp_filters_registered;
+		if ( ! isset( $wp_filters_registered[ $hook_name ] ) ) {
+			return false;
+		}
+		foreach ( $wp_filters_registered[ $hook_name ] as $key => $filter ) {
+			if ( $filter['callback'] === $callback && $filter['priority'] === $priority ) {
+				unset( $wp_filters_registered[ $hook_name ][ $key ] );
+				return true;
+			}
+		}
+		return false;
 	}
 }
 
@@ -489,7 +516,53 @@ if ( ! function_exists( 'wp_update_post' ) ) {
 
 if ( ! function_exists( 'export_wp' ) ) {
 	function export_wp( array $args = [] ): void {
-		echo '<?xml version="1.0" encoding="UTF-8"?><!-- WXR export -->';
+		$wpdb    = $GLOBALS['wpdb'];
+		$wp_posts = $GLOBALS['wp_posts'] ?? [];
+
+		$args = apply_filters( 'export_args', $args );
+
+		$start_date = $args['start_date'] ?? false;
+		$end_date   = $args['end_date'] ?? false;
+
+		if ( $start_date && $end_date ) {
+			$start_date_str = date( 'Y-m-d', strtotime( $start_date ) );
+			$end_date_str   = date( 'Y-m-d', strtotime( '+1 month', strtotime( $start_date ) ) );
+		} else {
+			$start_date_str = '1970-01-01';
+			$end_date_str   = '1971-01-01';
+		}
+
+		$post_type = $args['content'] ?? 'post';
+		if ( $post_type === 'all' ) {
+			$post_type = 'post';
+		}
+
+		$sql = "SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.post_type = '{$post_type}' AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= {$start_date_str} AND {$wpdb->posts}.post_date < {$end_date_str}";
+		$sql = apply_filters( 'query', $sql );
+
+		$post_id = 0;
+		if ( preg_match( '/=\s*(\d+)\s*$/', $sql, $matches ) ) {
+			$post_id = (int) $matches[1];
+		}
+
+		echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+		echo '<!-- WXR export -->' . "\n";
+		echo '<rss version="2.0"><channel>' . "\n";
+		echo '<wp:wxr_version>1.2</wp:wxr_version>' . "\n";
+
+		if ( $post_id && isset( $wp_posts[ $post_id ] ) ) {
+			$post = $wp_posts[ $post_id ];
+			echo '<item>' . "\n";
+			echo '<title>' . esc_html( $post->post_title ) . '</title>' . "\n";
+			echo '<content:encoded><![CDATA[' . $post->post_content . ']]></content:encoded>' . "\n";
+			echo '<excerpt:encoded><![CDATA[' . $post->post_excerpt . ']]></excerpt:encoded>' . "\n";
+			echo '<wp:post_id>' . (int) $post->ID . '</wp:post_id>' . "\n";
+			echo '<wp:post_type>' . esc_html( $post->post_type ) . '</wp:post_type>' . "\n";
+			echo '<wp:status>' . esc_html( $post->post_status ) . '</wp:status>' . "\n";
+			echo '</item>' . "\n";
+		}
+
+		echo '</channel></rss>' . "\n";
 	}
 }
 
@@ -501,10 +574,13 @@ if ( ! function_exists( 'get_current_user_id' ) ) {
 
 if ( ! function_exists( 'wp_insert_post' ) ) {
 	function wp_insert_post( array $args, bool $wp_error = false ) {
-		global $wp_posts;
+		global $wp_posts, $wp_insert_post_without_storage;
 		$new_id      = count( $wp_posts ) + 100;
 		$post        = new WP_Post( $args );
 		$post->ID    = $new_id;
+		if ( $wp_insert_post_without_storage ) {
+			return $new_id;
+		}
 		$wp_posts[ $new_id ] = $post;
 		return $new_id;
 	}
@@ -587,8 +663,8 @@ if ( ! function_exists( 'get_post_type_object' ) ) {
 if ( ! function_exists( 'get_taxonomy' ) ) {
 	function get_taxonomy( string $taxonomy ): ?stdClass {
 		global $wp_taxonomy_objects;
-		if ( isset( $wp_taxonomy_objects[ $taxonomy ] ) ) {
-			return $wp_taxonomy_objects[ $taxonomy ];
+		if ( array_key_exists( $taxonomy, $wp_taxonomy_objects ) ) {
+			return $wp_taxonomy_objects[ $taxonomy ] instanceof stdClass ? $wp_taxonomy_objects[ $taxonomy ] : null;
 		}
 
 		return (object) [

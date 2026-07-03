@@ -16,10 +16,11 @@ class DuplicateControllerTest extends TestCase {
 	private DuplicateController $controller;
 
 	protected function setUp(): void {
-		global $wp_rest_routes_registered, $wp_current_user_can, $wp_posts;
-		$wp_rest_routes_registered = [];
-		$wp_current_user_can       = true;
-		$wp_posts                  = [];
+		global $wp_rest_routes_registered, $wp_current_user_can, $wp_posts, $wp_insert_post_without_storage;
+		$wp_rest_routes_registered       = [];
+		$wp_current_user_can             = true;
+		$wp_posts                        = [];
+		$wp_insert_post_without_storage  = false;
 
 		$this->controller = new DuplicateController();
 	}
@@ -159,6 +160,23 @@ class DuplicateControllerTest extends TestCase {
 			$this->assertArrayHasKey( 'edit_link', $data );
 			$this->assertSame( 'post', $data['post_type'] );
 		}
+	}
+
+	public function testCreateItemReturnsErrorWhenDuplicatedPostCannotBeRetrieved(): void {
+		global $wp_posts, $wp_current_user_can, $wp_insert_post_without_storage;
+		$wp_current_user_can            = true;
+		$wp_insert_post_without_storage = true;
+		$wp_posts[42]                   = new \WP_Post( [
+			'ID'          => 42,
+			'post_type'   => 'post',
+			'post_title'  => 'Original Post',
+			'post_status' => 'publish',
+		] );
+
+		$result = $this->controller->create_item( new WP_REST_Request( [ 'post_id' => 42 ] ) );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'rest_duplicate_failed', $result->get_error_code() );
 	}
 
 	/**

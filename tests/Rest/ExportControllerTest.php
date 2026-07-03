@@ -13,10 +13,50 @@ class ExportControllerTest extends TestCase {
 	private ExportController $controller;
 
 	protected function setUp(): void {
-		global $wp_rest_routes_registered, $wp_current_user_can, $wp_posts;
+		global $wpdb, $wp_rest_routes_registered, $wp_current_user_can, $wp_posts;
 		$wp_rest_routes_registered = [];
 		$wp_current_user_can       = true;
 		$wp_posts                  = [];
+
+		if ( ! isset( $GLOBALS['wpdb'] ) ) {
+			$wpdb = new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
+				public string $prefix = 'wp_';
+				public string $posts = 'wp_posts';
+				/** @var list<array<string, mixed>> */
+				public array $inserts = [];
+				/** @var list<string> */
+				public array $queries = [];
+
+				public function prefix(): string {
+					return $this->prefix;
+				}
+
+				public function insert( string $table, array $data, array $format = [] ): bool {
+					$this->inserts[] = compact( 'table', 'data', 'format' );
+					return true;
+				}
+
+				public function query( string $query ): bool {
+					$this->queries[] = $query;
+					return true;
+				}
+
+				public function prepare( string $query, mixed ...$args ): string {
+					foreach ( $args as $arg ) {
+						$query = preg_replace( '/%[dsf]/', (string) $arg, $query, 1 );
+					}
+					return $query;
+				}
+
+				public function get_results( string $query, mixed $output = null ): array {
+					return array_reverse( array_map( fn( array $insert ) => $insert['data'], $this->inserts ) );
+				}
+
+				public function get_charset_collate(): string {
+					return '';
+				}
+			};
+		}
 
 		$this->controller = new ExportController();
 	}
