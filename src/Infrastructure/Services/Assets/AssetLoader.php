@@ -77,6 +77,9 @@ trait AssetLoader {
 			}
 			$assets->enqueue_assets( $this->assets_container );
 			foreach ( $this->data as $data ) {
+				if ( ! $data instanceof AssetData ) {
+					continue;
+				}
 				$assets->add_data(
 					$data->get_source(),
 					$data->get_identifier(),
