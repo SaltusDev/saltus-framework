@@ -1,12 +1,23 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
+use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 /**
  * MCP tool to retrieve meta field definitions for a post type.
  */
 class GetMetaFields extends RestTool {
+
+	private MetaFieldProvider $meta_field_provider;
+
+	/**
+	 * @param MetaFieldProvider|null $meta_field_provider Shared meta field provider.
+	 */
+	public function __construct( ?MetaFieldProvider $meta_field_provider = null ) {
+		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
+	}
 
 	/**
 	 * Get the tool name.
@@ -58,6 +69,18 @@ class GetMetaFields extends RestTool {
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
 		return $this->request( 'GET', '/saltus-framework/v1/meta/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) );
+	}
+
+	/**
+	 * Retrieve meta fields directly through the shared feature provider.
+	 *
+	 * @param Modeler $modeler The model registry.
+	 * @param ModelRestPolicy|null $policy Optional REST policy.
+	 * @param string $post_type Post type slug.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function get_meta_fields( Modeler $modeler, ?ModelRestPolicy $policy, string $post_type ) {
+		return $this->meta_field_provider->post_type_meta( $modeler, $policy, $post_type );
 	}
 
 	/**

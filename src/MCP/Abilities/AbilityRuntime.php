@@ -98,8 +98,17 @@ class AbilityRuntime {
 
 		try {
 			$response = rest_do_request( $request );
+			$status   = (int) $response->get_status();
 			$data     = $response->get_data();
 			$result   = is_array( $data ) ? $data : [ 'result' => $data ];
+
+			if ( $status >= 400 ) {
+				$error_code = is_array( $data ) ? (string) ( $data['code'] ?? 'rest_error' ) : 'rest_error';
+				$error_msg  = is_array( $data ) ? (string) ( $data['message'] ?? 'REST error' ) : 'REST error';
+				$error      = $this->error( $error_code, $error_msg, $status );
+				$this->record_error( $entry, 'error', $error );
+				return $error;
+			}
 
 			if ( $this->is_cacheable( $tool ) ) {
 				$this->cache->set( $cache_key, $result, $this->cache_ttl( $tool ) );

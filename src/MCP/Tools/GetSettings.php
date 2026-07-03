@@ -1,12 +1,22 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\Features\Settings\SettingsManager;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 /**
  * MCP tool to retrieve Saltus Framework settings for a post type.
  */
 class GetSettings extends RestTool {
+
+	private SettingsManager $settings_manager;
+
+	/**
+	 * @param SettingsManager|null $settings_manager Shared settings manager.
+	 */
+	public function __construct( ?SettingsManager $settings_manager = null ) {
+		$this->settings_manager = $settings_manager ?? new SettingsManager();
+	}
 
 	/**
 	 * Get the tool name.
@@ -58,6 +68,16 @@ class GetSettings extends RestTool {
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
 		return $this->request( 'GET', '/saltus-framework/v1/settings/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) );
+	}
+
+	/**
+	 * Retrieve settings directly through the shared feature manager.
+	 *
+	 * @param string $post_type The post type slug.
+	 * @return array{post_type: string, settings: mixed}
+	 */
+	public function get_settings( string $post_type ): array {
+		return $this->settings_manager->get_settings( $post_type );
 	}
 
 	/**

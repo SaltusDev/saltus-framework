@@ -1,12 +1,22 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\Features\DragAndDrop\ReorderPostsService;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 /**
  * MCP tool to reorder posts by updating their menu_order values.
  */
 class ReorderPosts extends RestTool {
+
+	private ReorderPostsService $reorder_service;
+
+	/**
+	 * @param ReorderPostsService|null $reorder_service Shared reorder service.
+	 */
+	public function __construct( ?ReorderPostsService $reorder_service = null ) {
+		$this->reorder_service = $reorder_service ?? new ReorderPostsService();
+	}
 
 	/**
 	 * Get the tool name.
@@ -71,5 +81,16 @@ class ReorderPosts extends RestTool {
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
 		return $this->request( 'POST', '/saltus-framework/v1/reorder', [], [ 'items' => $args['items'] ?? [] ] );
+	}
+
+	/**
+	 * Reorder posts directly through the shared feature service.
+	 *
+	 * @param array<int, mixed> $items Requested reorder items.
+	 * @param ModelRestPolicy|null $policy Optional REST policy.
+	 * @return array{results: list<array<string, mixed>>, total: int, updated: int}
+	 */
+	public function reorder_posts( array $items, ?ModelRestPolicy $policy = null ): array {
+		return $this->reorder_service->reorder( $items, $policy );
 	}
 }

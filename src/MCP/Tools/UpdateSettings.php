@@ -1,12 +1,22 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\Features\Settings\SettingsManager;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 /**
  * MCP tool to update Saltus Framework settings for a post type.
  */
 class UpdateSettings extends RestTool {
+
+	private SettingsManager $settings_manager;
+
+	/**
+	 * @param SettingsManager|null $settings_manager Shared settings manager.
+	 */
+	public function __construct( ?SettingsManager $settings_manager = null ) {
+		$this->settings_manager = $settings_manager ?? new SettingsManager();
+	}
 
 	/**
 	 * Get the tool name.
@@ -65,5 +75,16 @@ class UpdateSettings extends RestTool {
 		$body = is_array( $args['settings'] ?? null ) ? $args['settings'] : [];
 
 		return $this->request( 'PUT', '/saltus-framework/v1/settings/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ), [], $body );
+	}
+
+	/**
+	 * Update settings directly through the shared feature manager.
+	 *
+	 * @param string $post_type The post type slug.
+	 * @param array<string, mixed> $settings Raw settings payload.
+	 * @return array{post_type: string, settings: array<string, mixed>, status: string}|\WP_Error
+	 */
+	public function update_settings( string $post_type, array $settings ) {
+		return $this->settings_manager->update_settings( $post_type, $settings );
 	}
 }
