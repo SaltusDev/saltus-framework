@@ -99,19 +99,22 @@ class Core implements Plugin {
 	 * @return void
 	 */
 	public function register(): void {
-		\register_activation_hook(
-			(string) $this->project['plugin_file'],
-			function () {
-				$this->activate();
-			}
-		);
+		$plugin_file = (string) $this->project['plugin_file'];
+		if ( is_file( $plugin_file ) ) {
+			\register_activation_hook(
+				$plugin_file,
+				function () {
+					$this->activate();
+				}
+			);
 
-		\register_deactivation_hook(
-			(string) $this->project['plugin_file'],
-			function () {
-				$this->deactivate();
-			}
-		);
+			\register_deactivation_hook(
+				$plugin_file,
+				function () {
+					$this->deactivate();
+				}
+			);
+		}
 
 		// loads models and stores the list
 
