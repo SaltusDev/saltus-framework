@@ -193,6 +193,7 @@ final class SaltusSingleExport implements Processable {
 			\export_wp();
 			$wxr = (string) ob_get_clean();
 		} finally {
+			$this->remove_export_headers();
 			if ( ob_get_level() > $buffer_level ) {
 				ob_end_clean();
 			}
@@ -206,6 +207,19 @@ final class SaltusSingleExport implements Processable {
 			'post_title' => $post->post_title,
 			'wxr'        => $wxr,
 		];
+	}
+
+	/**
+	 * Remove download headers emitted by WordPress core export_wp().
+	 */
+	private function remove_export_headers(): void {
+		if ( headers_sent() ) {
+			return;
+		}
+
+		header_remove( 'Content-Description' );
+		header_remove( 'Content-Disposition' );
+		header_remove( 'Content-Type' );
 	}
 
 	/**

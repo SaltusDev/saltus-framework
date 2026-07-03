@@ -145,4 +145,21 @@ class ExportControllerTest extends TestCase {
 			$this->assertStringNotContainsString( 'Other content', $data['wxr'] );
 		}
 	}
+
+	public function testExportPostRemovesWordPressDownloadHeaders(): void {
+		global $wp_posts;
+		$wp_posts[42] = new \WP_Post( [
+			'ID'           => 42,
+			'post_type'    => 'post',
+			'post_title'   => 'Exportable Post',
+			'post_content' => 'Selected content',
+		] );
+
+		$exporter = new \Saltus\WP\Framework\Features\SingleExport\SaltusSingleExport( 'post' );
+		$result   = $exporter->export_post( 42 );
+
+		$this->assertIsArray( $result );
+		$this->assertStringContainsString( '<wp:post_id>42</wp:post_id>', $result['wxr'] );
+		$this->assertSame( [], array_values( array_filter( headers_list(), static fn( string $header ): bool => preg_match( '/^Content-(Description|Disposition|Type):/i', $header ) === 1 ) ) );
+	}
 }
