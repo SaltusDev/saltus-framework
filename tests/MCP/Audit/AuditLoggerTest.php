@@ -35,6 +35,33 @@ class AuditLoggerTest extends TestCase
         $this->assertSame('success', $wpdb->inserts[0]['data']['status']);
     }
 
+    public function testRecordDoesNotRunRetentionCleanup(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
+        $entry = new AuditEntry('list_models', []);
+        $entry->complete('success');
+        $logger->record($entry);
+
+        $delete_queries = array_values(array_filter($wpdb->queries, static fn(string $query): bool => strpos($query, 'DELETE FROM') === 0));
+
+        $this->assertSame([], $delete_queries);
+    }
+
+    public function testCleanupExpiredEntriesDeletesOnlyOldAuditRows(): void
+    {
+        global $wpdb;
+
+        $logger = new AuditLogger();
+        $logger->cleanup_expired_entries();
+
+        $delete_queries = array_values(array_filter($wpdb->queries, static fn(string $query): bool => strpos($query, 'DELETE FROM') === 0));
+
+        $this->assertCount(1, $delete_queries);
+        $this->assertStringStartsWith("DELETE FROM wp_saltus_mcp_audit WHERE created_at < '", $delete_queries[0]);
+    }
+
     public function testRecordStoresErrors(): void
     {
         global $wpdb;

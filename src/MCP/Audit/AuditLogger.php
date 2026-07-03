@@ -52,8 +52,6 @@ class AuditLogger {
 			],
 			[ '%s', '%d', '%s', '%s', '%s', '%s', '%f', '%s', '%s' ]
 		);
-
-		$this->cleanup();
 	}
 
 	/**
@@ -112,7 +110,7 @@ class AuditLogger {
 	/**
 	 * Delete audit entries older than the retention period.
 	 */
-	private function cleanup(): void {
+	public function cleanup_expired_entries(): void {
 		$days = (int) $this->filter( 'saltus/framework/mcp/audit/retention_days', 30 );
 		if ( $days <= 0 ) {
 			return;
