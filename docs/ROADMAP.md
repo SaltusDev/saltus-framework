@@ -8,6 +8,8 @@
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
 - PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
+- Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
+- 195 PHPUnit tests passing (567 assertions), PHPStan Level 7 clean across the configured analysis set
 - **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
@@ -162,7 +164,8 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 ### Short-term Goals
 - ✓ Address remaining PHPStan errors (2 pre-existing in ResourceProvider) — resolved 2026-07-01.
 - ✓ Code-review hardening pass — export isolation, lifecycle hook file registration, fail-closed MCP permissions, structured settings sanitization, JSON fallback, and AssetLoader PHPStan coverage resolved 2026-07-02.
-- Continue maintaining automated testing suites.
+- ✓ Service extraction — inline REST controller logic (WXR export, meta field normalization, post reorder, settings CRUD) moved into dedicated shared service classes and wired into both REST controllers and MCP tools; defensive guards for null post, private property access, taxonomy object, and asset data types — resolved 2026-07-03.
+- Continue maintaining automated testing suites (195 tests, 567 assertions as of 2026-07-03).
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 
 ### Long-term Vision
@@ -172,4 +175,4 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 
 ## Tracking
 - Check GitHub Issues for active sprint items.
-- Active development on `feature/mcp-v0` branch.
+- Active development on `feature/mcp-v1` branch.
