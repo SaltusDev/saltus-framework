@@ -12,7 +12,7 @@ trait AssetLoader {
 	/**
 	 * The assets container.
 	 *
-	 * @var \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetsContainer|null
+	 * @var AssetsContainer|null
 	 */
 	private $assets_container = null;
 
