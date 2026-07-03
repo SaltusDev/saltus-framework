@@ -40,6 +40,15 @@ class ReorderPostsService {
 		$results = [];
 
 		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || ! isset( $item['id'], $item['menu_order'] ) ) {
+				$results[] = [
+					'id'     => 0,
+					'status' => 'skipped',
+					'reason' => 'Invalid item payload',
+				];
+				continue;
+			}
+
 			$post_id    = (int) $item['id'];
 			$menu_order = (int) $item['menu_order'];
 

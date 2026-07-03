@@ -121,7 +121,7 @@ class AuditLogger {
 			return;
 		}
 
-		$cutoff = gmdate( 'Y-m-d\TH:i:s\Z', time() - ( $days * 86400 ) );
+		$cutoff = gmdate( 'Y-m-d\TH:i:s.000\Z', time() - ( $days * 86400 ) );
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Cutoff is gmdate output and table name is internal.
 		$wpdb->query( 'DELETE FROM ' . $this->table_name() . " WHERE created_at < '{$cutoff}'" );
 	}

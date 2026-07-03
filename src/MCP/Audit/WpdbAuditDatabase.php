@@ -69,6 +69,10 @@ class WpdbAuditDatabase implements AuditDatabase {
 			return $rows;
 		}
 
+		if ( $output !== ARRAY_A ) {
+			return $rows;
+		}
+
 		$result = [];
 		foreach ( $rows as $row ) {
 			if ( is_array( $row ) ) {

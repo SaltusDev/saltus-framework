@@ -98,6 +98,13 @@ class AbilityRuntime {
 
 		try {
 			$response = rest_do_request( $request );
+
+			if ( is_wp_error( $response ) ) {
+				$error = $this->error( 'rest_dispatch_error', $response->get_error_message(), 500 );
+				$this->record_error( $entry, 'error', $error );
+				return $error;
+			}
+
 			$status   = (int) $response->get_status();
 			$data     = $response->get_data();
 			$result   = is_array( $data ) ? $data : [ 'result' => $data ];

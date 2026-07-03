@@ -397,6 +397,10 @@ class MetaFieldProvider {
 			$schema['items'] = [
 				'type' => ( ( $field['type'] ?? '' ) === 'repeater' ) ? 'object' : 'string',
 			];
+
+			if ( ( $field['type'] ?? '' ) === 'repeater' && ! empty( $field['fields'] ) && is_array( $field['fields'] ) ) {
+				$schema['items']['properties'] = $this->build_schema_properties( $field['fields'] );
+			}
 		}
 
 		return $schema;
