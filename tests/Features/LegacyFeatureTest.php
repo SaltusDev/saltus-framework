@@ -300,14 +300,14 @@ class LegacyFeatureTest extends TestCase {
 					return true;
 				}
 
-				public function prepare( string $query, mixed ...$args ): string {
+				public function prepare( string $query, ...$args ): string {
 					foreach ( $args as $arg ) {
 						$query = preg_replace( '/%[dsf]/', (string) $arg, $query, 1 );
 					}
 					return $query;
 				}
 
-				public function get_results( string $query, mixed $output = null ): array {
+				public function get_results( string $query, $output = null ) {
 					return array_reverse( array_map( static fn( array $insert ) => $insert['data'], $this->inserts ) );
 				}
 
@@ -406,14 +406,14 @@ class LegacyFeatureTest extends TestCase {
 					return true;
 				}
 
-				public function prepare( string $query, mixed ...$args ): string {
+				public function prepare( string $query, ...$args ): string {
 					foreach ( $args as $arg ) {
 						$query = preg_replace( '/%[dsf]/', (string) $arg, $query, 1 );
 					}
 					return $query;
 				}
 
-				public function get_results( string $query, mixed $output = null ): array {
+				public function get_results( string $query, $output = null ) {
 					return array_reverse( array_map( static fn( array $insert ) => $insert['data'], $this->inserts ) );
 				}
 
