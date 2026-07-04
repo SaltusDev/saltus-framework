@@ -83,6 +83,8 @@
 - Code review: RateLimitResult split into own file (#49 — low)
 - Code review: Unused getDefaultMessage() removed (#49 — low)
 
+- Defensive code review fix pass: 6 files updated — invalid item payload guard in ReorderPostsService, WP_Error handling after rest_do_request in AbilityRuntime, OBJECT output format support in WpdbAuditDatabase, explicit get_settings/reorder_posts permission checks in AbilityDefinitionFactory, repeater sub-field schema exposure in MetaFieldProvider, and cutoff timestamp millisecond fix in AuditLogger @since 2026-07-04
+
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer phpcs` passes.
