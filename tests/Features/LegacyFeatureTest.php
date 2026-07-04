@@ -330,8 +330,11 @@ class LegacyFeatureTest extends TestCase {
 
 		$this->assertSame( 'post', $args['content'] );
 		$this->assertSame( SaltusSingleExport::FAKE_DATE, $args['start_date'] );
-		$this->assertSame( "SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.ID = 7", $feature->query( $query ) );
+		$this->assertSame( "SELECT ID FROM {$wpdb->posts} WHERE {$wpdb->posts}.ID = 7", $feature->query( $query ) );
 		$this->assertSame( 'SELECT * FROM wp_posts', $feature->query( 'SELECT * FROM wp_posts' ) );
+
+		$this->expectException( \RuntimeException::class );
+		$feature->query( "SELECT * FROM wp_posts WHERE post_date = '" . SaltusSingleExport::FAKE_DATE . "'" );
 	}
 
 	private function assertRouteAndTool( object $feature, Modeler $modeler, ModelRestPolicy $policy, string $capability, string $controller_class, string $tool_class ): void {

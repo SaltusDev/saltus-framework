@@ -239,29 +239,62 @@ final class SaltusSingleExport implements Processable {
 	/**
 	 * Rewrite WordPress' generated export query to target a single post.
 	 *
-	 * @param string $query The original SQL query.
+	 * Only hooked during a single-post export request (see the request-filtering
+	 * step that registers this filter with $post_id bound). Core's exporter has
+	 * no native "single post" scope, so that step forces self::FAKE_DATE into
+	 * the year/month args, and this method recognizes the resulting query shape
+	 * and swaps it for a single-post lookup.
+	 *
+	 * @param string $query   The original SQL query.
 	 * @param int    $post_id The post ID to export.
 	 * @return string
 	 */
 	public function single_export_query( string $query, int $post_id ): string {
 		global $wpdb;
 
-		// This is the query WP will build (given our arg filtering above).
-		$test = $wpdb->prepare(
-			"SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.post_type = 'post' AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= %s AND {$wpdb->posts}.post_date < %s",
-			// phpcs:ignore: WordPress.DateTime.RestrictedFunctions.date_date
-			date( 'Y-m-d', strtotime( self::FAKE_DATE ) ),
-			// phpcs:ignore: WordPress.DateTime.RestrictedFunctions.date_date
-			date( 'Y-m-d', strtotime( '+1 month', strtotime( self::FAKE_DATE ) ) )
-		);
-
-		if ( $test !== $query ) {
+		if ( ! $this->is_fake_date_export_query( $query ) ) {
+			// If the query contains our fake date fingerprint but the overall shape didn't match,
+			// this is a genuine failure to scope the export.
+			if ( strpos( $query, self::FAKE_DATE ) !== false ) {
+				\wp_die(
+					\esc_html__( 'Single export failed: the export query could not be scoped.', 'saltus-framework' ),
+					\esc_html__( 'Export Error', 'saltus-framework' ),
+					[ 'response' => 500 ]
+				);
+			}
 			return $query;
 		}
 
-		$split    = explode( 'WHERE', $query );
-		$split[1] = $wpdb->prepare( " {$wpdb->posts}.ID = %d", $post_id );
+		return $wpdb->prepare(
+			"SELECT ID FROM {$wpdb->posts} WHERE {$wpdb->posts}.ID = %d",
+			$post_id
+		);
+	}
 
-		return implode( 'WHERE', $split );
+	/**
+	 * Detect whether $query is the specific export query our request-filtering
+	 * step produces, matching structurally so whitespace differences or
+	 * date()/timezone mismatches with core's own construction don't break it.
+	 *
+	 * @param string $query The SQL query to check.
+	 * @return bool
+	 */
+	private function is_fake_date_export_query( string $query ): bool {
+		global $wpdb;
+
+		$start = gmdate( 'Y-m-d', strtotime( self::FAKE_DATE ) );
+		$end   = gmdate( 'Y-m-d', strtotime( '+1 month', strtotime( self::FAKE_DATE ) ) );
+
+		$posts_table  = preg_quote( $wpdb->posts, '/' );
+		$start_quoted = preg_quote( $start, '/' );
+		$end_quoted   = preg_quote( $end, '/' );
+
+		$pattern = '/^SELECT\s+ID\s+FROM\s+' . $posts_table
+			. '\s+WHERE\s+' . $posts_table . '\.post_type\s*=\s*\'post\''
+			. '\s+AND\s+' . $posts_table . '\.post_status\s*!=\s*\'auto-draft\''
+			. '\s+AND\s+' . $posts_table . '\.post_date\s*>=\s*\'?' . $start_quoted . '\'?'
+			. '\s+AND\s+' . $posts_table . '\.post_date\s*<\s*\'?' . $end_quoted . '\'?\s*$/i';
+
+		return (bool) preg_match( $pattern, $query );
 	}
 }

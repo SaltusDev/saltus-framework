@@ -827,6 +827,18 @@ if ( ! function_exists( 'esc_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_html__' ) ) {
+	function esc_html__( string $text, string $domain = 'default' ): string {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'wp_die' ) ) {
+	function wp_die( $message = '', $title = '', $args = [] ): void {
+		throw new \RuntimeException( is_scalar( $message ) ? (string) $message : 'wp_die called' );
+	}
+}
+
 if ( ! function_exists( 'wp_enqueue_script' ) ) {
 	function wp_enqueue_script( string $handle, string $src = '', array $deps = [], $ver = false, bool $in_footer = false ): void {
 		global $wp_scripts_enqueued;
