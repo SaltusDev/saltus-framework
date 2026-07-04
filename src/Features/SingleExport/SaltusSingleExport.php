@@ -192,6 +192,8 @@ final class SaltusSingleExport implements Processable {
 		try {
 			\export_wp();
 			$wxr = (string) ob_get_clean();
+		} catch ( \Exception $e ) {
+			return new \WP_Error( 'export_failed', $e->getMessage(), [ 'status' => 500 ] );
 		} finally {
 			$this->remove_export_headers();
 			if ( ob_get_level() > $buffer_level ) {
@@ -253,13 +255,9 @@ final class SaltusSingleExport implements Processable {
 		global $wpdb;
 
 		if ( ! $this->is_fake_date_export_query( $query ) ) {
-			// If the query contains our fake date fingerprint but the overall shape didn't match,
-			// this is a genuine failure to scope the export.
 			if ( strpos( $query, self::FAKE_DATE ) !== false ) {
-				\wp_die(
-					\esc_html__( 'Single export failed: the export query could not be scoped.', 'saltus-framework' ),
-					\esc_html__( 'Export Error', 'saltus-framework' ),
-					[ 'response' => 500 ]
+				throw new \RuntimeException(
+					\esc_html__( 'Single export failed: the export query could not be scoped.', 'saltus-framework' )
 				);
 			}
 			return $query;

@@ -90,7 +90,8 @@ class ModelRestPolicy {
 			return is_array( $args ) ? $args : [];
 		}
 
-		return property_exists( $model, 'args' ) && is_array( $model->args ) ? $model->args : [];
+		$public_vars = get_object_vars( $model );
+		return isset( $public_vars['args'] ) && is_array( $public_vars['args'] ) ? $public_vars['args'] : [];
 	}
 
 	/**
@@ -121,6 +122,7 @@ class ModelRestPolicy {
 			return is_array( $options ) ? $options : [];
 		}
 
-		return property_exists( $model, 'options' ) && is_array( $model->options ) ? $model->options : [];
+		$public_vars = get_object_vars( $model );
+		return isset( $public_vars['options'] ) && is_array( $public_vars['options'] ) ? $public_vars['options'] : [];
 	}
 }
