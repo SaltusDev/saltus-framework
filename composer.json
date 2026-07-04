@@ -66,6 +66,7 @@
 		],
 		"test:phpstan": "./vendor/bin/phpstan analyse --memory-limit=2G",
 		"test:phpcs": "./vendor/bin/phpcs --standard=phpcs.xml",
+		"fix:phpcbf": "./vendor/bin/phpcbf --standard=phpcs.xml",
 		"docs:mcp": "php bin/generate-mcp-docs.php"
 	},
 	"minimum-stability": "dev",
