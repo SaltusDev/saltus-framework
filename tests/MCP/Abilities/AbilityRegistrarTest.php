@@ -27,15 +27,16 @@ require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 class AbilityRegistrarTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wpdb, $wp_abilities_registered, $wp_options, $wp_rest_request_log, $wp_transients, $wp_current_user_can, $wp_taxonomy_objects, $wp_post_type_objects;
+		global $wpdb, $wp_abilities_registered, $wp_options, $wp_rest_request_log, $wp_transients, $wp_current_user_can, $wp_taxonomy_objects, $wp_post_type_objects, $wp_rest_response_override;
 
-		$wp_abilities_registered = [];
-		$wp_options              = [];
-		$wp_rest_request_log     = [];
-		$wp_transients           = [];
-		$wp_current_user_can     = true;
-		$wp_taxonomy_objects     = [];
-		$wp_post_type_objects    = [];
+		$wp_abilities_registered   = [];
+		$wp_options                = [];
+		$wp_rest_request_log       = [];
+		$wp_transients             = [];
+		$wp_current_user_can       = true;
+		$wp_taxonomy_objects       = [];
+		$wp_post_type_objects      = [];
+		$wp_rest_response_override = null;
 		if ( ! is_object( $wpdb ) ) {
 			$wpdb = $this->fakeWpdb();
 		}
