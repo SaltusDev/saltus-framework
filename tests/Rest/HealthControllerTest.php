@@ -137,7 +137,9 @@ class HealthControllerTest extends TestCase {
 		$this->assertNull( $data['audit']['latency_ms']['p95'] );
 	}
 
-	private function getProtectedProperty( object $object, string $property ): mixed {
-		return ( new \ReflectionProperty( $object, $property ) )->getValue( $object );
+	private function getProtectedProperty( object $object, string $property ) {
+		$reflection = new \ReflectionProperty( $object, $property );
+		$reflection->setAccessible( true );
+		return $reflection->getValue( $object );
 	}
 }

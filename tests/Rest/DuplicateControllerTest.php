@@ -30,11 +30,10 @@ class DuplicateControllerTest extends TestCase {
 		$this->assertSame( 'duplicate', $this->getProtectedProperty( $this->controller, 'rest_base' ) );
 	}
 
-	/**
-	 * @return mixed
-	 */
 	private function getProtectedProperty( object $object, string $property ) {
-		return ( new \ReflectionProperty( $object, $property ) )->getValue( $object );
+		$reflection = new \ReflectionProperty( $object, $property );
+		$reflection->setAccessible( true );
+		return $reflection->getValue( $object );
 	}
 
 	public function testRegisterRoutes(): void {

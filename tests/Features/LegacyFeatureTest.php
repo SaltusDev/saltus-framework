@@ -357,9 +357,10 @@ class LegacyFeatureTest extends TestCase {
 		return $property->getValue( $route );
 	}
 
-	private function privateProperty( object $object, string $property_name ): mixed {
+	private function privateProperty( object $object, string $property_name ) {
 		$reflection = new \ReflectionClass( $object );
 		$property   = $reflection->getProperty( $property_name );
+		$property->setAccessible( true );
 
 		return $property->getValue( $object );
 	}

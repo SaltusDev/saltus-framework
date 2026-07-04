@@ -29,8 +29,10 @@ class ReorderControllerTest extends TestCase {
 		$this->assertSame( 'reorder', $this->getProtectedProperty( $this->controller, 'rest_base' ) );
 	}
 
-	private function getProtectedProperty( object $object, string $property ): mixed {
-		return ( new \ReflectionProperty( $object, $property ) )->getValue( $object );
+	private function getProtectedProperty( object $object, string $property ) {
+		$reflection = new \ReflectionProperty( $object, $property );
+		$reflection->setAccessible( true );
+		return $reflection->getValue( $object );
 	}
 
 	public function testRegisterRoutes(): void {
