@@ -87,14 +87,11 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 	}
 
 	public function deactivate() {
-		if ( ! function_exists( 'wp_next_scheduled' ) || ! function_exists( 'wp_unschedule_event' ) ) {
+		if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
 			return;
 		}
 
-		$timestamp = wp_next_scheduled( self::AUDIT_CLEANUP_HOOK );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, self::AUDIT_CLEANUP_HOOK );
-		}
+		wp_clear_scheduled_hook( self::AUDIT_CLEANUP_HOOK );
 	}
 
 	public function transport(): string {

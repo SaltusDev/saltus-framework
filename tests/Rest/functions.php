@@ -277,6 +277,13 @@ if ( ! function_exists( 'wp_unschedule_event' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	function wp_clear_scheduled_hook( string $hook ): void {
+		global $wp_scheduled_events;
+		unset( $wp_scheduled_events[ $hook ] );
+	}
+}
+
 if ( ! function_exists( 'flush_rewrite_rules' ) ) {
 	function flush_rewrite_rules( bool $hard = true ): void {}
 }
