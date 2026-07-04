@@ -110,20 +110,20 @@ class AbilityDefinitionFactory {
 	 */
 	private function can_use_tool( string $tool_name, array $args ): bool {
 		$checks = [
-			'create_post'     => fn(): bool => $this->can_create_post( $args ),
-			'get_post'        => fn(): bool => $this->can_post( 'read_post', $args ),
-			'update_post'     => fn(): bool => $this->can_post( 'edit_post', $args ),
-			'delete_post'     => fn(): bool => $this->can_post( 'delete_post', $args ),
-			'duplicate_post'  => fn(): bool => $this->can_post( 'edit_post', $args ),
-			'export_post'     => fn(): bool => current_user_can( 'export' ),
-			'create_term'     => fn(): bool => $this->can_create_term( $args ),
-			'update_settings' => fn(): bool => current_user_can( 'manage_options' ),
-			'get_settings'    => fn(): bool => current_user_can( 'edit_posts' ),
-			'reorder_posts'   => fn(): bool => current_user_can( 'edit_posts' ),
-			'list_models'     => fn(): bool => current_user_can( 'edit_posts' ),
-			'get_model'       => fn(): bool => current_user_can( 'edit_posts' ),
-			'list_meta_fields'=> fn(): bool => current_user_can( 'edit_posts' ),
-			'get_meta_fields' => fn(): bool => current_user_can( 'edit_posts' ),
+			'create_post'      => fn(): bool => $this->can_create_post( $args ),
+			'get_post'         => fn(): bool => $this->can_post( 'read_post', $args ),
+			'update_post'      => fn(): bool => $this->can_post( 'edit_post', $args ),
+			'delete_post'      => fn(): bool => $this->can_post( 'delete_post', $args ),
+			'duplicate_post'   => fn(): bool => $this->can_post( 'edit_post', $args ),
+			'export_post'      => fn(): bool => current_user_can( 'export' ),
+			'create_term'      => fn(): bool => $this->can_create_term( $args ),
+			'update_settings'  => fn(): bool => current_user_can( 'manage_options' ),
+			'get_settings'     => fn(): bool => current_user_can( 'edit_posts' ),
+			'reorder_posts'    => fn(): bool => current_user_can( 'edit_posts' ),
+			'list_models'      => fn(): bool => current_user_can( 'edit_posts' ),
+			'get_model'        => fn(): bool => current_user_can( 'edit_posts' ),
+			'list_meta_fields' => fn(): bool => current_user_can( 'edit_posts' ),
+			'get_meta_fields'  => fn(): bool => current_user_can( 'edit_posts' ),
 		];
 
 		return isset( $checks[ $tool_name ] ) ? $checks[ $tool_name ]() : current_user_can( 'read' );
