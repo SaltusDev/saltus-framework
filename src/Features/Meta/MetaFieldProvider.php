@@ -202,7 +202,8 @@ class MetaFieldProvider {
 			return is_array( $args ) ? $args : [];
 		}
 
-		return property_exists( $model, 'args' ) && is_array( $model->args ) ? $model->args : [];
+		$public_vars = get_object_vars( $model );
+		return isset( $public_vars['args'] ) && is_array( $public_vars['args'] ) ? $public_vars['args'] : [];
 	}
 
 	/**
