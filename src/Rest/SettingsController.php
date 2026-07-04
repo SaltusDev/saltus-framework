@@ -157,7 +157,7 @@ class SettingsController extends WP_REST_Controller {
 			);
 		}
 
-		$settings = $request->get_json_params();
+		$settings = $request->get_json_params() ?? [];
 
 		return rest_ensure_response( $this->settings_manager->update_settings( (string) $post_type, $settings ) );
 	}
