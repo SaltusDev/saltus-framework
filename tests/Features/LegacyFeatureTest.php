@@ -353,6 +353,7 @@ class LegacyFeatureTest extends TestCase {
 	private function routeController( object $route ): object {
 		$reflection = new \ReflectionClass( $route );
 		$property   = $reflection->getProperty( 'controller' );
+		$property->setAccessible( true );
 
 		return $property->getValue( $route );
 	}

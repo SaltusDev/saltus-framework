@@ -150,6 +150,7 @@ class ModelerLegacyTest extends TestCase {
 	private function describeRouteController( object $route ): string {
 		$reflection = new \ReflectionClass( $route );
 		$property   = $reflection->getProperty( 'controller' );
+		$property->setAccessible( true );
 
 		return get_class( $property->getValue( $route ) );
 	}
