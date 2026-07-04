@@ -142,9 +142,14 @@ class Core implements Plugin {
 		// TODO
 
 		// 5- Register REST API routes
-		$rest_policy = new ModelRestPolicy( $this->modeler );
-		$rest_server = new RestServer( $rest_policy, $this->get_rest_routes( $rest_policy ) );
-		add_action( 'rest_api_init', [ $rest_server, 'register_routes' ] );
+		add_action(
+			'rest_api_init',
+			function () {
+				$rest_policy = new ModelRestPolicy( $this->modeler );
+				$rest_server = new RestServer( $rest_policy, $this->get_rest_routes( $rest_policy ) );
+				$rest_server->register_routes();
+			}
+		);
 
 		// 6- MCP is registered through the default feature list.
 	}
