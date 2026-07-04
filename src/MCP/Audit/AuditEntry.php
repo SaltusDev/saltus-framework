@@ -64,8 +64,10 @@ class AuditEntry {
 	 * @return array<string, mixed>
 	 */
 	public function to_array(): array {
+		$sec  = floor( $this->started_at );
+		$milli = sprintf( '%03d', ( $this->started_at - $sec ) * 1000 );
 		return [
-			'timestamp'     => gmdate( 'Y-m-d\TH:i:s.v\Z', (int) $this->started_at ),
+			'timestamp'     => gmdate( 'Y-m-d\TH:i:s', $sec ) . '.' . $milli . 'Z',
 			'tool'          => $this->tool_name,
 			'arguments'     => $this->arguments,
 			'identifier'    => $this->identifier,
