@@ -91,7 +91,7 @@ class AuditLogger {
 		$charset_collate = $wpdb->get_charset_collate();
 		$sql             = "CREATE TABLE IF NOT EXISTS {$table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			created_at varchar(32) NOT NULL,
+			created_at datetime(3) NOT NULL,
 			user_id bigint(20) unsigned NOT NULL DEFAULT 0,
 			identifier varchar(191) NULL,
 			ability varchar(191) NOT NULL,

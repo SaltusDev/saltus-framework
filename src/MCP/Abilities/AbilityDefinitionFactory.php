@@ -120,6 +120,10 @@ class AbilityDefinitionFactory {
 			'update_settings' => fn(): bool => current_user_can( 'manage_options' ),
 			'get_settings'    => fn(): bool => current_user_can( 'edit_posts' ),
 			'reorder_posts'   => fn(): bool => current_user_can( 'edit_posts' ),
+			'list_models'     => fn(): bool => current_user_can( 'edit_posts' ),
+			'get_model'       => fn(): bool => current_user_can( 'edit_posts' ),
+			'list_meta_fields'=> fn(): bool => current_user_can( 'edit_posts' ),
+			'get_meta_fields' => fn(): bool => current_user_can( 'edit_posts' ),
 		];
 
 		return isset( $checks[ $tool_name ] ) ? $checks[ $tool_name ]() : current_user_can( 'read' );
