@@ -192,7 +192,7 @@ final class SaltusSingleExport implements Processable {
 		try {
 			\export_wp();
 			$wxr = (string) ob_get_clean();
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return new \WP_Error( 'export_failed', $e->getMessage(), [ 'status' => 500 ] );
 		} finally {
 			$this->remove_export_headers();
