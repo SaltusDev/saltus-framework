@@ -19,7 +19,7 @@ class HealthControllerTest extends TestCase {
 		$wp_filter_values          = [];
 		$wp_rest_routes_registered = [];
 
-		$logger = $this->createMock( AuditLogger::class );
+		$logger = $this->createStub( AuditLogger::class );
 		$logger->method( 'get_recent_entries' )->willReturn(
 			[
 				[
@@ -98,7 +98,7 @@ class HealthControllerTest extends TestCase {
 	}
 
 	public function testClientFailuresDoNotDegradeHealth(): void {
-		$logger = $this->createMock( AuditLogger::class );
+		$logger = $this->createStub( AuditLogger::class );
 		$logger->method( 'get_recent_entries' )->willReturn(
 			[
 				[ 'status' => 'success' ],
@@ -124,7 +124,7 @@ class HealthControllerTest extends TestCase {
 	}
 
 	public function testGetItemReportsOkWithoutAuditEntries(): void {
-		$logger = $this->createMock( AuditLogger::class );
+		$logger = $this->createStub( AuditLogger::class );
 		$logger->method( 'get_recent_entries' )->willReturn( [] );
 
 		$controller = new HealthController( '2.0.0', $logger );
@@ -138,10 +138,6 @@ class HealthControllerTest extends TestCase {
 	}
 
 	private function getProtectedProperty( object $object, string $property ): mixed {
-		$reflection = new \ReflectionClass( $object );
-		$property   = $reflection->getProperty( $property );
-		$property->setAccessible( true );
-
-		return $property->getValue( $object );
+		return ( new \ReflectionProperty( $object, $property ) )->getValue( $object );
 	}
 }
