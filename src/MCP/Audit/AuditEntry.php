@@ -64,7 +64,7 @@ class AuditEntry {
 	 * @return array<string, mixed>
 	 */
 	public function to_array(): array {
-		$date_started = new \DateTimeImmutable( '@' . $this->started_at );
+		$date_started = \DateTimeImmutable::createFromFormat( 'U.u', (string) $this->started_at );
 		$timestamp    = $date_started->format( 'Y-m-d\TH:i:s.v\Z' );
 		return [
 			'timestamp'     => $timestamp,
