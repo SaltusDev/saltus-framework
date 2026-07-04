@@ -91,7 +91,7 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 			$this->params = $params;
 		}
 
-		public function get_param( string $key ): mixed {
+		public function get_param( string $key ) {
 			return $this->params[ $key ] ?? null;
 		}
 
@@ -99,7 +99,7 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 			return $this->params;
 		}
 
-		public function set_param( string $key, mixed $value ): void {
+		public function set_param( string $key, $value ): void {
 			$this->params[ $key ] = $value;
 		}
 
@@ -305,7 +305,7 @@ if ( ! function_exists( 'rest_do_request' ) ) {
 }
 
 if ( ! function_exists( 'current_user_can' ) ) {
-	function current_user_can( string $capability, mixed ...$args ): bool {
+	function current_user_can( string $capability, ...$args ): bool {
 		global $wp_current_user_can;
 		if ( is_bool( $wp_current_user_can ) ) {
 			return $wp_current_user_can;
@@ -362,7 +362,7 @@ if ( ! function_exists( '__' ) ) {
 }
 
 if ( ! function_exists( 'is_wp_error' ) ) {
-	function is_wp_error( mixed $thing ): bool {
+	function is_wp_error( $thing ): bool {
 		return $thing instanceof WP_Error;
 	}
 }
@@ -473,7 +473,7 @@ if ( ! function_exists( 'get_transient' ) ) {
 }
 
 if ( ! function_exists( 'set_transient' ) ) {
-	function set_transient( string $transient, mixed $value, int $expiration = 0 ): bool {
+	function set_transient( string $transient, $value, int $expiration = 0 ): bool {
 		global $wp_transients;
 		$wp_transients[ $transient ] = [
 			'value'   => $value,
