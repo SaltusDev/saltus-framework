@@ -29,7 +29,10 @@ class AuditLogger {
 			return;
 		}
 
-		$this->ensure_table();
+		if ( get_option( 'saltus_mcp_audit_db_version' ) !== '1.0.0' ) {
+			$this->ensure_table();
+			update_option( 'saltus_mcp_audit_db_version', '1.0.0' );
+		}
 
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {
