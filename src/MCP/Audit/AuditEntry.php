@@ -17,9 +17,9 @@ class AuditEntry {
 	private ?string $identifier;
 
 	/**
-	 * @param string $tool_name   The name of the tool being executed.
+	 * @param string $tool_name                The name of the tool being executed.
 	 * @param array<string, mixed> $arguments  Arguments passed to the tool.
-	 * @param string|null $identifier  Optional user or session identifier.
+	 * @param string|null $identifier          Optional user or session identifier.
 	 */
 	public function __construct( string $tool_name, array $arguments, ?string $identifier = null ) {
 		$this->tool_name     = $tool_name;
@@ -35,8 +35,8 @@ class AuditEntry {
 	/**
 	 * Mark the entry as completed with a status and optional error details.
 	 *
-	 * @param string $status  Result status (success, error, cache_hit, etc.).
-	 * @param string|null $error_code  Machine-readable error code.
+	 * @param string $status              Result status (success, error, cache_hit, etc.).
+	 * @param string|null $error_code     Machine-readable error code.
 	 * @param string|null $error_message  Human-readable error message.
 	 */
 	public function complete( string $status, ?string $error_code = null, ?string $error_message = null ): void {
@@ -64,10 +64,10 @@ class AuditEntry {
 	 * @return array<string, mixed>
 	 */
 	public function to_array(): array {
-		$sec  = floor( $this->started_at );
-		$milli = sprintf( '%03d', ( $this->started_at - $sec ) * 1000 );
+		$date_started = new \DateTimeImmutable( '@' . $this->started_at );
+		$timestamp    = $date_started->format( 'Y-m-d\TH:i:s.v\Z' );
 		return [
-			'timestamp'     => gmdate( 'Y-m-d\TH:i:s', $sec ) . '.' . $milli . 'Z',
+			'timestamp'     => $timestamp,
 			'tool'          => $this->tool_name,
 			'arguments'     => $this->arguments,
 			'identifier'    => $this->identifier,
