@@ -95,6 +95,7 @@
 - Code review fixes: cache only cleared on non-GET requests in AbilityRuntime; added integer type support in Validator; moved null check before try block in AssetLoader — 3 commits @since 2026-07-05
 - Model interface hardening: added get_options(): array and get_args(): array to Model interface; removed fragile method_exists + get_object_vars fallbacks from ModelRestPolicy, ModelsController, and MetaFieldProvider; updated all anonymous Model implementations in test files — 5 commits, 13 files @since 2026-07-05
 - Replaced hardcoded tester.php with proper PHPUnit container integration tests in tests/Integration/ContainerIntegrationTest.php — 1 commit @since 2026-07-05
+- Code review feedback round 2: removed static clear guard from TransientCache to avoid stale cache in long-running processes; replaced fragile strict array comparison in SettingsManager with database re-read to prevent false-positive rest_update_failed errors; switched export SQL detection from regex to WP_Query var inspection via posts_request filter; set explicit UTC timezone in AuditEntry DateTimeImmutable to fix incorrect timestamps — 5 commits @since 2026-07-06
 
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
