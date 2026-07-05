@@ -64,8 +64,8 @@ class AuditEntry {
 	 * @return array<string, mixed>
 	 */
 	public function to_array(): array {
-		$sec  = (int) $this->started_at;
-		$usec = (int) ( ( $this->started_at - $sec ) * 1000000 );
+		$sec          = (int) $this->started_at;
+		$usec         = (int) ( ( $this->started_at - $sec ) * 1000000 );
 		$date_started = ( new \DateTimeImmutable() )->setTimestamp( $sec );
 		$date_started = $date_started->setTime(
 			(int) $date_started->format( 'G' ),
@@ -73,7 +73,7 @@ class AuditEntry {
 			(int) $date_started->format( 's' ),
 			$usec
 		);
-		$timestamp = $date_started->format( 'Y-m-d\TH:i:s.v\Z' );
+		$timestamp    = $date_started->format( 'Y-m-d\TH:i:s.v\Z' );
 		return [
 			'timestamp'     => $timestamp,
 			'tool'          => $this->tool_name,
