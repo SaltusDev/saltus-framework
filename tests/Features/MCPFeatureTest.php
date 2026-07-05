@@ -174,6 +174,10 @@ class MCPFeatureTest extends TestCase {
 					'saltus_rest'  => true,
 				];
 			}
+
+			public function get_args(): array {
+				return [];
+			}
 		};
 	}
 }
