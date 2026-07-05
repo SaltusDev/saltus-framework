@@ -272,7 +272,7 @@ class ModelsController extends WP_REST_Controller {
 			'description'    => $model->description ?? '',
 			'is_public'      => $options['public'] ?? true,
 			'show_in_rest'   => $options['show_in_rest'] ?? true,
-			'rest_base'      => method_exists( $model, 'get_rest_base' ) ? $model->get_rest_base() : ( $options['rest_base'] ?? ( $model->name ?? '' ) ),
+			'rest_base'      => method_exists( $model, 'get_rest_base' ) ? $model->get_rest_base() : ( $options['rest_base'] ?? $this->check_method( $model, 'get_registration_name', 'name', '' ) ),
 		];
 
 		if ( $model instanceof Taxonomy ) {
