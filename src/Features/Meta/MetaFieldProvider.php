@@ -404,6 +404,7 @@ class MetaFieldProvider {
 	private function get_schema_type( string $codestar_type ): string {
 		$field_type_map = [
 			'number'      => 'number',
+			'switcher'    => 'boolean',
 			'background'  => 'object',
 			'color_group' => 'object',
 			'fieldset'    => 'object',
