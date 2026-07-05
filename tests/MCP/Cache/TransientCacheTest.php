@@ -13,6 +13,7 @@ class TransientCacheTest extends TestCase {
 		global $wp_transients, $wp_options;
 		$wp_transients = [];
 		$wp_options    = [];
+		TransientCache::resetClearGuard();
 	}
 
 	public function testGetReturnsNullForMissingKey(): void {

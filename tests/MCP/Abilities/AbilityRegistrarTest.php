@@ -10,6 +10,7 @@ use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
+use Saltus\WP\Framework\MCP\Cache\TransientCache;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRuntime;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
@@ -37,6 +38,7 @@ class AbilityRegistrarTest extends TestCase {
 		$wp_taxonomy_objects       = [];
 		$wp_post_type_objects      = [];
 		$wp_rest_response_override = null;
+		TransientCache::resetClearGuard();
 		if ( ! is_object( $wpdb ) ) {
 			$wpdb = $this->fakeWpdb();
 		}
