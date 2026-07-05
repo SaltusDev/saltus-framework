@@ -60,6 +60,8 @@ class Validator {
 		switch ( $type ) {
 			case 'string':
 				return is_string( $value );
+			case 'integer':
+				return is_int( $value );
 			case 'number':
 				return is_int( $value ) || is_float( $value );
 			case 'boolean':
