@@ -246,6 +246,14 @@ class ModelsControllerTest extends TestCase {
 			public function get_type(): string {
 				return 'post_type';
 			}
+
+			public function get_options(): array {
+				return [];
+			}
+
+			public function get_args(): array {
+				return [];
+			}
 		};
 
 		$this->modeler->method( 'get_models' )->willReturn( [ 'book' => $model ] );
@@ -340,6 +348,14 @@ class ModelsControllerTest extends TestCase {
 
 			public function get_type(): string {
 				return $this->getType;
+			}
+
+			public function get_options(): array {
+				return $this->options;
+			}
+
+			public function get_args(): array {
+				return [];
 			}
 		};
 	}

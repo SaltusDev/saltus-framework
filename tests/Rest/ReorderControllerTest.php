@@ -219,6 +219,14 @@ class ReorderControllerTest extends TestCase {
 			public function get_type(): string {
 				return 'post_type';
 			}
+
+			public function get_options(): array {
+				return $this->options;
+			}
+
+			public function get_args(): array {
+				return [];
+			}
 		};
 	}
 }
