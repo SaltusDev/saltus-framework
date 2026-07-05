@@ -85,13 +85,7 @@ class ModelRestPolicy {
 	 * @return array<string, mixed>
 	 */
 	public function get_model_args( Model $model ): array {
-		if ( method_exists( $model, 'get_args' ) ) {
-			$args = $model->get_args();
-			return is_array( $args ) ? $args : [];
-		}
-
-		$public_vars = get_object_vars( $model );
-		return isset( $public_vars['args'] ) && is_array( $public_vars['args'] ) ? $public_vars['args'] : [];
+		return $model->get_args();
 	}
 
 	/**
@@ -117,12 +111,6 @@ class ModelRestPolicy {
 	 * @return array<string, mixed>
 	 */
 	private function get_model_options( Model $model ): array {
-		if ( method_exists( $model, 'get_options' ) ) {
-			$options = $model->get_options();
-			return is_array( $options ) ? $options : [];
-		}
-
-		$public_vars = get_object_vars( $model );
-		return isset( $public_vars['options'] ) && is_array( $public_vars['options'] ) ? $public_vars['options'] : [];
+		return $model->get_options();
 	}
 }

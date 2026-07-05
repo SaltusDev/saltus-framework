@@ -261,7 +261,7 @@ class ModelsController extends WP_REST_Controller {
 	 * @return array<string, mixed>
 	 */
 	private function prepare_model_for_response( $model, WP_REST_Request $request ): array {
-		$options = method_exists( $model, 'get_options' ) ? $model->get_options() : ( $model->options ?? [] );
+		$options = $model->get_options();
 
 		$data = [
 			'name'           => $this->check_method( $model, 'get_registration_name', 'name', '' ),
