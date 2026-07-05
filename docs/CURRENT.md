@@ -92,6 +92,9 @@
 - Defensive code review fix pass: 6 files updated — invalid item payload guard in ReorderPostsService, WP_Error handling after rest_do_request in AbilityRuntime, OBJECT output format support in WpdbAuditDatabase, explicit get_settings/reorder_posts permission checks in AbilityDefinitionFactory, repeater sub-field schema exposure in MetaFieldProvider, and cutoff timestamp millisecond fix in AuditLogger @since 2026-07-04
 - Code review follow-up: replaced unsafe property_exists with get_object_vars in MetaFieldProvider::get_model_args to align with ModelRestPolicy pattern; widened catch from \Exception to \Throwable in SaltusSingleExport::export_post for PHP 7+ Error type resilience — 2 commits @since 2026-07-05
 - Phase 5 planned and added to ROADMAP.md — 4 sub-tracks: 5A (Blocks), 5B (WP-CLI), 5C (Frontend), 5D (Docs). Implementation starting with 5A + 5D. @since 2026-07-05
+- Code review fixes: cache only cleared on non-GET requests in AbilityRuntime; added integer type support in Validator; moved null check before try block in AssetLoader — 3 commits @since 2026-07-05
+- Model interface hardening: added get_options(): array and get_args(): array to Model interface; removed fragile method_exists + get_object_vars fallbacks from ModelRestPolicy, ModelsController, and MetaFieldProvider; updated all anonymous Model implementations in test files — 5 commits, 13 files @since 2026-07-05
+- Replaced hardcoded tester.php with proper PHPUnit container integration tests in tests/Integration/ContainerIntegrationTest.php — 1 commit @since 2026-07-05
 
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
@@ -105,4 +108,4 @@
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
 - Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
-- Current verification: full `composer test` (195 tests, 567 assertions), `composer phpstan`, `composer phpcs`, and `git diff --check` pass after the service extraction pass.
+- Current verification: full `composer test` (208 tests, 598 assertions), `composer phpstan`, `composer phpcs`, and `git diff --check` pass after the service extraction pass.
