@@ -58,7 +58,7 @@ class AuditEntryTest extends TestCase
         $arr = $entry->to_array();
 
         $this->assertMatchesRegularExpression(
-            '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/',
+            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/',
             $arr['timestamp']
         );
     }

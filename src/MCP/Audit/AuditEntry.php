@@ -73,7 +73,7 @@ class AuditEntry {
 			(int) $date_started->format( 's' ),
 			$usec
 		);
-		$timestamp    = $date_started->format( 'Y-m-d\TH:i:s.v\Z' );
+		$timestamp    = $date_started->format( 'Y-m-d H:i:s.v' );
 		return [
 			'timestamp'     => $timestamp,
 			'tool'          => $this->tool_name,
