@@ -38,7 +38,6 @@ class AbilityRegistrarTest extends TestCase {
 		$wp_taxonomy_objects       = [];
 		$wp_post_type_objects      = [];
 		$wp_rest_response_override = null;
-		TransientCache::resetClearGuard();
 		if ( ! is_object( $wpdb ) ) {
 			$wpdb = $this->fakeWpdb();
 		}

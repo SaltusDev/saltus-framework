@@ -61,17 +61,10 @@ class TransientCache implements CacheInterface {
 		}
 	}
 
-	private static bool $cleared = false;
-
 	/**
 	 * Clear all cached values tracked by this cache.
 	 */
 	public function clear(): void {
-		if ( self::$cleared ) {
-			return;
-		}
-		self::$cleared = true;
-
 		foreach ( $this->keys() as $key ) {
 			$this->delete( $key );
 		}
@@ -79,13 +72,6 @@ class TransientCache implements CacheInterface {
 		if ( function_exists( 'delete_option' ) ) {
 			delete_option( self::INDEX_OPTION );
 		}
-	}
-
-	/**
-	 * Reset the request-level clear guard. Intended for test use only.
-	 */
-	public static function resetClearGuard(): void {
-		self::$cleared = false;
 	}
 
 	/**
