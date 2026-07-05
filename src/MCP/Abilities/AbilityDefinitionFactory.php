@@ -118,12 +118,12 @@ class AbilityDefinitionFactory {
 			'export_post'      => fn(): bool => current_user_can( 'export' ),
 			'create_term'      => fn(): bool => $this->can_create_term( $args ),
 			'update_settings'  => fn(): bool => current_user_can( 'manage_options' ),
-			'get_settings'     => fn(): bool => current_user_can( 'edit_posts' ),
+			'get_settings'     => fn(): bool => current_user_can( (string) ( $args['post_type'] ?? '' ) !== '' ? $this->post_type_capability( (string) $args['post_type'], 'edit_posts', 'edit_posts' ) : 'edit_posts' ),
 			'reorder_posts'    => fn(): bool => current_user_can( 'edit_posts' ),
 			'list_models'      => fn(): bool => current_user_can( 'edit_posts' ),
-			'get_model'        => fn(): bool => current_user_can( 'edit_posts' ),
+			'get_model'        => fn(): bool => current_user_can( (string) ( $args['slug'] ?? '' ) !== '' ? $this->post_type_capability( (string) $args['slug'], 'edit_posts', 'edit_posts' ) : 'edit_posts' ),
 			'list_meta_fields' => fn(): bool => current_user_can( 'edit_posts' ),
-			'get_meta_fields'  => fn(): bool => current_user_can( 'edit_posts' ),
+			'get_meta_fields'  => fn(): bool => current_user_can( (string) ( $args['post_type'] ?? '' ) !== '' ? $this->post_type_capability( (string) $args['post_type'], 'edit_posts', 'edit_posts' ) : 'edit_posts' ),
 		];
 
 		return isset( $checks[ $tool_name ] ) ? $checks[ $tool_name ]() : current_user_can( 'read' );
