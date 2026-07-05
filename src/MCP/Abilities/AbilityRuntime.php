@@ -120,7 +120,7 @@ class AbilityRuntime {
 
 			if ( $this->is_cacheable( $tool ) ) {
 				$this->cache->set( $cache_key, $result, $this->cache_ttl( $tool ) );
-			} else {
+			} elseif ( $request->get_method() !== 'GET' ) {
 				$this->cache->clear();
 			}
 
