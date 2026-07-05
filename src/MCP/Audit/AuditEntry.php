@@ -64,10 +64,15 @@ class AuditEntry {
 	 * @return array<string, mixed>
 	 */
 	public function to_array(): array {
-		$date_started = \DateTimeImmutable::createFromFormat( 'U.u', sprintf( '%.6F', $this->started_at ) );
-		if ( $date_started === false ) {
-			throw new \RuntimeException( 'Failed to parse start timestamp.' );
-		}
+		$sec  = (int) $this->started_at;
+		$usec = (int) ( ( $this->started_at - $sec ) * 1000000 );
+		$date_started = ( new \DateTimeImmutable() )->setTimestamp( $sec );
+		$date_started = $date_started->setTime(
+			(int) $date_started->format( 'G' ),
+			(int) $date_started->format( 'i' ),
+			(int) $date_started->format( 's' ),
+			$usec
+		);
 		$timestamp = $date_started->format( 'Y-m-d\TH:i:s.v\Z' );
 		return [
 			'timestamp'     => $timestamp,
