@@ -68,7 +68,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 				$this->ability_registrar()->register();
 			}
 		);
-		foreach ( [ 'save_post', 'deleted_post', 'created_term', 'edited_term', 'delete_term', 'updated_option' ] as $hook ) {
+		foreach ( [ 'save_post', 'deleted_post', 'created_term', 'edited_term', 'delete_term', 'added_option', 'updated_option', 'deleted_option' ] as $hook ) {
 			add_action(
 				$hook,
 				function (): void {

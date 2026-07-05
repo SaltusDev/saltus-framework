@@ -37,7 +37,7 @@ class MCPFeatureTest extends TestCase {
 		$feature->register();
 
 		$this->assertSame( 'native', $feature->transport() );
-		$this->assertCount( 9, $wp_actions_registered );
+        $this->assertCount( 11, $wp_actions_registered );
 		$this->assertArrayHasKey( 'saltus_framework_mcp_audit_cleanup', $wp_scheduled_events );
 		$this->assertSame( 'daily', $wp_scheduled_events['saltus_framework_mcp_audit_cleanup']['recurrence'] );
 		$this->assertSame( 'saltus_framework_mcp_audit_cleanup', $wp_actions_registered[0]['hook_name'] );
