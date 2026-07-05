@@ -133,22 +133,21 @@ class Core implements Plugin {
 			'init',
 			function () use ( $project_path ) {
 				$this->modeler->init( $project_path );
+
+				add_action(
+					'rest_api_init',
+					function () {
+						$this->register_rest_routes();
+					}
+				);
+
+				// If rest_api_init has already fired (e.g., modeler priority >= 100),
+				// the hook above will never run, so call routes directly.
+				if ( did_action( 'rest_api_init' ) ) {
+					$this->register_rest_routes();
+				}
 			},
 			$priority
-		);
-
-		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
-		// and stores the result in either list (cpt or tax list )
-		// TODO
-
-		// 5- Register REST API routes
-		add_action(
-			'rest_api_init',
-			function () {
-				$rest_policy = new ModelRestPolicy( $this->modeler );
-				$rest_server = new RestServer( $rest_policy, $this->get_rest_routes( $rest_policy ) );
-				$rest_server->register_routes();
-			}
 		);
 
 		// 6- MCP is registered through the default feature list.
@@ -176,6 +175,12 @@ class Core implements Plugin {
 		}
 
 		return $routes;
+	}
+
+	private function register_rest_routes(): void {
+		$rest_policy = new ModelRestPolicy( $this->modeler );
+		$rest_server = new RestServer( $rest_policy, $this->get_rest_routes( $rest_policy ) );
+		$rest_server->register_routes();
 	}
 
 	/**
