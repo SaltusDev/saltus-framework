@@ -66,7 +66,7 @@ class AuditEntry {
 	public function to_array(): array {
 		$sec          = (int) $this->started_at;
 		$usec         = (int) ( ( $this->started_at - $sec ) * 1000000 );
-		$date_started = ( new \DateTimeImmutable() )->setTimestamp( $sec );
+		$date_started = ( new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) ) )->setTimestamp( $sec );
 		$date_started = $date_started->setTime(
 			(int) $date_started->format( 'G' ),
 			(int) $date_started->format( 'i' ),
