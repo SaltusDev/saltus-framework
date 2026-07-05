@@ -1,11 +1,13 @@
 # Current: Live Working State
 
 ## Working
-- Refactor high-traffic legacy Features/ and Saltus*.php paths @since 2026-07-05
-- Add unit/integration tests for refactored legacy paths @since 2026-07-04
+- Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-05
+- Phase 5D: Documentation — fill README placeholders, add model examples @since 2026-07-05
 
 ## Next
-- None
+- Phase 5B: WP-CLI tools — 7 grouped command classes mapping every MCP tool
+- Phase 5C: Frontend rendering — shortcodes, templates, meta field exposure
+- Phase 5D: New doc files (BLOCKS.md, WPCLI.md, FRONTEND.md, FEATURES.md)
 
 ## Blocked
 - None
@@ -89,6 +91,7 @@
 
 - Defensive code review fix pass: 6 files updated — invalid item payload guard in ReorderPostsService, WP_Error handling after rest_do_request in AbilityRuntime, OBJECT output format support in WpdbAuditDatabase, explicit get_settings/reorder_posts permission checks in AbilityDefinitionFactory, repeater sub-field schema exposure in MetaFieldProvider, and cutoff timestamp millisecond fix in AuditLogger @since 2026-07-04
 - Code review follow-up: replaced unsafe property_exists with get_object_vars in MetaFieldProvider::get_model_args to align with ModelRestPolicy pattern; widened catch from \Exception to \Throwable in SaltusSingleExport::export_post for PHP 7+ Error type resilience — 2 commits @since 2026-07-05
+- Phase 5 planned and added to ROADMAP.md — 4 sub-tracks: 5A (Blocks), 5B (WP-CLI), 5C (Frontend), 5D (Docs). Implementation starting with 5A + 5D. @since 2026-07-05
 
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
