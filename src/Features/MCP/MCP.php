@@ -49,7 +49,6 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 			return;
 		}
 
-		$this->schedule_audit_cleanup();
 		add_action(
 			self::AUDIT_CLEANUP_HOOK,
 			function (): void {
