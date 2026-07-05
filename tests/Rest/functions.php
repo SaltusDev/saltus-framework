@@ -577,7 +577,19 @@ if ( ! function_exists( 'export_wp' ) ) {
 		}
 
 		$sql = "SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.post_type = '{$post_type}' AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= {$start_date_str} AND {$wpdb->posts}.post_date < {$end_date_str}";
-		$sql = apply_filters( 'query', $sql );
+
+		$wp_query = new \WP_Query( [
+			'post_type'   => $post_type,
+			'post_status' => 'any',
+			'date_query'  => [
+				[
+					'after'     => $start_date_str,
+					'before'    => $end_date_str,
+					'inclusive' => true,
+				],
+			],
+		] );
+		$sql = apply_filters( 'posts_request', $sql, $wp_query );
 
 		$post_id = 0;
 		if ( preg_match( '/=\s*(\d+)\s*$/', $sql, $matches ) ) {

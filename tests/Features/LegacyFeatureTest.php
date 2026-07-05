@@ -330,11 +330,24 @@ class LegacyFeatureTest extends TestCase {
 
 		$this->assertSame( 'post', $args['content'] );
 		$this->assertSame( SaltusSingleExport::FAKE_DATE, $args['start_date'] );
-		$this->assertSame( "SELECT ID FROM {$wpdb->posts} WHERE {$wpdb->posts}.ID = 7", $feature->query( $query ) );
-		$this->assertSame( 'SELECT * FROM wp_posts', $feature->query( 'SELECT * FROM wp_posts' ) );
+
+		$export_query = new \WP_Query( [
+			'post_type'   => 'post',
+			'post_status' => 'any',
+			'date_query'  => [
+				[
+					'after'     => SaltusSingleExport::FAKE_DATE,
+					'before'    => gmdate( 'Y-m-d', strtotime( '+1 month', strtotime( SaltusSingleExport::FAKE_DATE ) ) ),
+					'inclusive' => true,
+				],
+			],
+		] );
+
+		$this->assertSame( "SELECT ID FROM {$wpdb->posts} WHERE {$wpdb->posts}.ID = 7", $feature->query( $query, $export_query ) );
+		$this->assertSame( 'SELECT * FROM wp_posts', $feature->query( 'SELECT * FROM wp_posts', new \WP_Query() ) );
 
 		$this->expectException( \RuntimeException::class );
-		$feature->query( "SELECT * FROM wp_posts WHERE post_date = '" . SaltusSingleExport::FAKE_DATE . "'" );
+		$feature->query( "SELECT * FROM wp_posts WHERE post_date = '" . SaltusSingleExport::FAKE_DATE . "'", new \WP_Query() );
 	}
 
 	private function assertRouteAndTool( object $feature, Modeler $modeler, ModelRestPolicy $policy, string $capability, string $controller_class, string $tool_class ): void {

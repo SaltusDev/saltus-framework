@@ -63,7 +63,7 @@ final class SaltusSingleExport implements Processable {
 		}
 
 		add_filter( 'export_args', array( $this, 'export_args' ) );
-		add_filter( 'query', array( $this, 'query' ) );
+		add_filter( 'posts_request', array( $this, 'query' ), 10, 2 );
 		add_action( 'post_submitbox_misc_actions', array( $this, 'post_submitbox_misc_actions' ) );
 	}
 
@@ -138,11 +138,12 @@ final class SaltusSingleExport implements Processable {
 	 *
 	 * Replaces the query to match the single post ID for export.
 	 *
-	 * @param string $query The original SQL query.
+	 * @param string   $query    The original SQL query.
+	 * @param \WP_Query $wp_query The WP_Query instance.
 	 *
 	 * @return string Modified SQL query.
 	 */
-	public function query( string $query ): string {
+	public function query( string $query, \WP_Query $wp_query ): string {
 		if ( ! isset( $_GET['export_single'] ) ) {
 			return $query;
 		}
@@ -152,7 +153,7 @@ final class SaltusSingleExport implements Processable {
 			return $query;
 		}
 
-		return $this->single_export_query( $query, intval( $_GET['export_single'] ) );
+		return $this->single_export_query( $query, $wp_query, intval( $_GET['export_single'] ) );
 	}
 
 	/**
@@ -180,12 +181,12 @@ final class SaltusSingleExport implements Processable {
 			return $this->single_export_args( $args );
 		};
 
-		$query_filter = function ( string $query ) use ( $post_id ): string {
-			return $this->single_export_query( $query, $post_id );
+		$query_filter = function ( string $query, \WP_Query $wp_query ) use ( $post_id ): string {
+			return $this->single_export_query( $query, $wp_query, $post_id );
 		};
 
 		add_filter( 'export_args', $export_args_filter );
-		add_filter( 'query', $query_filter );
+		add_filter( 'posts_request', $query_filter, 10, 2 );
 
 		$buffer_level = ob_get_level();
 		ob_start();
@@ -200,7 +201,7 @@ final class SaltusSingleExport implements Processable {
 				ob_end_clean();
 			}
 			remove_filter( 'export_args', $export_args_filter );
-			remove_filter( 'query', $query_filter );
+			remove_filter( 'posts_request', $query_filter );
 		}
 
 		return [
@@ -247,14 +248,15 @@ final class SaltusSingleExport implements Processable {
 	 * the year/month args, and this method recognizes the resulting query shape
 	 * and swaps it for a single-post lookup.
 	 *
-	 * @param string $query   The original SQL query.
-	 * @param int    $post_id The post ID to export.
+	 * @param string   $query    The original SQL query.
+	 * @param \WP_Query $wp_query The WP_Query instance.
+	 * @param int      $post_id  The post ID to export.
 	 * @return string
 	 */
-	public function single_export_query( string $query, int $post_id ): string {
+	public function single_export_query( string $query, \WP_Query $wp_query, int $post_id ): string {
 		global $wpdb;
 
-		if ( ! $this->is_fake_date_export_query( $query ) ) {
+		if ( ! $this->is_fake_date_export_query( $wp_query ) ) {
 			if ( strpos( $query, self::FAKE_DATE ) !== false ) {
 				throw new \RuntimeException(
 					\esc_html__( 'Single export failed: the export query could not be scoped.', 'saltus-framework' )
@@ -271,28 +273,30 @@ final class SaltusSingleExport implements Processable {
 
 	/**
 	 * Detect whether $query is the specific export query our request-filtering
-	 * step produces, matching structurally so whitespace differences or
-	 * date()/timezone mismatches with core's own construction don't break it.
+	 * step produces by inspecting structured query vars instead of the
+	 * compiled SQL.
 	 *
-	 * @param string $query The SQL query to check.
+	 * @param \WP_Query $query The WP_Query instance to check.
 	 * @return bool
 	 */
-	private function is_fake_date_export_query( string $query ): bool {
-		global $wpdb;
+	private function is_fake_date_export_query( \WP_Query $query ): bool {
+		if ( $query->get( 'post_type' ) !== 'post' ) {
+			return false;
+		}
+
+		if ( $query->get( 'post_status' ) === 'auto-draft' ) {
+			return false;
+		}
+
+		$date_query = $query->get( 'date_query' );
+		if ( empty( $date_query[0]['after'] ) || empty( $date_query[0]['before'] ) ) {
+			return false;
+		}
 
 		$start = gmdate( 'Y-m-d', strtotime( self::FAKE_DATE ) );
 		$end   = gmdate( 'Y-m-d', strtotime( '+1 month', strtotime( self::FAKE_DATE ) ) );
 
-		$posts_table  = preg_quote( $wpdb->posts, '/' );
-		$start_quoted = preg_quote( $start, '/' );
-		$end_quoted   = preg_quote( $end, '/' );
-
-		$pattern = '/^SELECT\s+ID\s+FROM\s+' . $posts_table
-			. '\s+WHERE\s+' . $posts_table . '\.post_type\s*=\s*\'post\''
-			. '\s+AND\s+' . $posts_table . '\.post_status\s*!=\s*\'auto-draft\''
-			. '\s+AND\s+' . $posts_table . '\.post_date\s*>=\s*\'?' . $start_quoted . '\'?'
-			. '\s+AND\s+' . $posts_table . '\.post_date\s*<\s*\'?' . $end_quoted . '\'?\s*$/i';
-
-		return (bool) preg_match( $pattern, $query );
+		return gmdate( 'Y-m-d', strtotime( $date_query[0]['after'] ) ) === $start
+			&& gmdate( 'Y-m-d', strtotime( $date_query[0]['before'] ) ) === $end;
 	}
 }
