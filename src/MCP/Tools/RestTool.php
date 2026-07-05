@@ -150,7 +150,7 @@ abstract class RestTool implements RestBackedToolInterface {
 	 * @return string|null  REST base, or null if unavailable.
 	 */
 	private function object_rest_base( $rest_object ): ?string {
-		if ( ! is_object( $rest_object ) || ! property_exists( $rest_object, 'rest_base' ) ) {
+		if ( ! is_object( $rest_object ) || ! isset( $rest_object->rest_base ) ) {
 			return null;
 		}
 
