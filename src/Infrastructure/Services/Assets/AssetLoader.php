@@ -36,6 +36,9 @@ trait AssetLoader {
 	 * @return void
 	 */
 	public function register_assets(): void {
+		if ( $this->assets_list === null ) {
+			return;
+		}
 
 		try {
 			$factory = $this->services->get( ServiceFactory::class );
@@ -45,9 +48,6 @@ trait AssetLoader {
 			}
 			if ( ! $assets instanceof AssetManager ) {
 				throw new \RuntimeException( AssetManager::class . ' service is not available' );
-			}
-			if ( $this->assets_list === null ) {
-				return;
 			}
 
 			$this->assets_container = $factory->create( AssetsContainer::class );
