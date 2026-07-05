@@ -47,7 +47,7 @@ class SettingsManager {
 
 		$sanitized = [];
 		foreach ( $settings as $key => $value ) {
-			$sanitized[ sanitize_key( (string) $key ) ] = $this->sanitize_setting_value( $value );
+			$sanitized[ preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) $key ) ] = $this->sanitize_setting_value( $value );
 		}
 
 		$option_name = $this->option_name( $post_type );
@@ -80,7 +80,7 @@ class SettingsManager {
 		if ( is_array( $value ) ) {
 			$sanitized = [];
 			foreach ( $value as $key => $child ) {
-				$sanitized_key               = is_int( $key ) ? $key : sanitize_key( (string) $key );
+				$sanitized_key               = is_int( $key ) ? $key : preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) $key );
 				$sanitized[ $sanitized_key ] = $this->sanitize_setting_value( $child );
 			}
 			return $sanitized;

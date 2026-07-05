@@ -180,7 +180,7 @@ class SettingsControllerTest extends TestCase {
 
 		if ( is_array( $data ) ) {
 			$settings = $data['settings'];
-			$this->assertArrayHasKey( 'display-title', $settings );
+            $this->assertArrayHasKey( 'Display-Title', $settings );
 		}
 	}
 
@@ -211,7 +211,7 @@ class SettingsControllerTest extends TestCase {
 				'enabled' => true,
 				'count'   => 3,
 				'group'   => [
-					'displaytitle' => 'yes',
+                    'DisplayTitle' => 'yes',
 					'items'        => [
 						[
 							'label' => 'First',
