@@ -197,13 +197,7 @@ class MetaFieldProvider {
 			return $policy->get_model_args( $model );
 		}
 
-		if ( method_exists( $model, 'get_args' ) ) {
-			$args = $model->get_args();
-			return is_array( $args ) ? $args : [];
-		}
-
-		$public_vars = get_object_vars( $model );
-		return isset( $public_vars['args'] ) && is_array( $public_vars['args'] ) ? $public_vars['args'] : [];
+		return $model->get_args();
 	}
 
 	/**
