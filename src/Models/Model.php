@@ -23,4 +23,18 @@ interface Model {
 	 * @return string The type of Model
 	 */
 	public function get_type(): string;
+
+	/**
+	 * Get the model registration options.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_options(): array;
+
+	/**
+	 * Get the model registration arguments.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_args(): array;
 }
