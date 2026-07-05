@@ -53,16 +53,7 @@ class SettingsManager {
 		$option_name = $this->option_name( $post_type );
 		$updated     = update_option( $option_name, $sanitized );
 
-		if ( ! $updated ) {
-			$current = get_option( $option_name, [] );
-			if ( $current === $sanitized ) {
-				return [
-					'post_type' => $post_type,
-					'settings'  => $sanitized,
-					'status'    => 'unchanged',
-				];
-			}
-
+		if ( ! $updated && get_option( $option_name ) !== $sanitized ) {
 			return new \WP_Error(
 				'rest_update_failed',
 				__( 'Failed to update settings.', 'saltus-framework' ),
@@ -73,7 +64,7 @@ class SettingsManager {
 		return [
 			'post_type' => $post_type,
 			'settings'  => $sanitized,
-			'status'    => 'updated',
+			'status'    => $updated ? 'updated' : 'unchanged',
 		];
 	}
 
