@@ -196,15 +196,15 @@ class Core implements Plugin {
 	 * If the given service class implements RestRouteProvider, instantiate
 	 * it unconditionally and add it to the dedicated registry.
 	 *
-	 * @param class-string   $class        Service class name.
-	 * @param array<mixed>   $dependencies Constructor dependencies.
+	 * @param class-string   $service_class Service class name.
+	 * @param array<mixed>   $dependencies  Constructor dependencies.
 	 */
-	private function maybe_register_route_provider( string $class, array $dependencies ): void {
-		if ( ! is_a( $class, RestRouteProvider::class, true ) ) {
+	private function maybe_register_route_provider( string $service_class, array $dependencies ): void {
+		if ( ! is_a( $service_class, RestRouteProvider::class, true ) ) {
 			return;
 		}
 
-		$instance = $this->service_container->instantiate_unconditionally( $class, $dependencies );
+		$instance = $this->service_container->instantiate_unconditionally( $service_class, $dependencies );
 		if ( $instance instanceof RestRouteProvider ) {
 			$this->rest_route_providers[] = $instance;
 		}
@@ -214,15 +214,15 @@ class Core implements Plugin {
 	 * If the given service class implements ToolContributor, instantiate
 	 * it unconditionally and add it to the dedicated registry.
 	 *
-	 * @param class-string   $class        Service class name.
-	 * @param array<mixed>   $dependencies Constructor dependencies.
+	 * @param class-string   $service_class Service class name.
+	 * @param array<mixed>   $dependencies  Constructor dependencies.
 	 */
-	private function maybe_register_tool_contributor( string $class, array $dependencies ): void {
-		if ( ! is_a( $class, ToolContributor::class, true ) ) {
+	private function maybe_register_tool_contributor( string $service_class, array $dependencies ): void {
+		if ( ! is_a( $service_class, ToolContributor::class, true ) ) {
 			return;
 		}
 
-		$instance = $this->service_container->instantiate_unconditionally( $class, $dependencies );
+		$instance = $this->service_container->instantiate_unconditionally( $service_class, $dependencies );
 		if ( $instance instanceof ToolContributor ) {
 			$this->tool_contributors[] = $instance;
 		}
@@ -307,9 +307,9 @@ class Core implements Plugin {
 		}
 
 		$dependencies = [
-			'project'          => $this->project,
-			'modeler'          => $this->modeler,
-			'modeler_resolver' => function (): ?Modeler {
+			'project'           => $this->project,
+			'modeler'           => $this->modeler,
+			'modeler_resolver'  => function (): ?Modeler {
 				return $this->modeler;
 			},
 			'services'          => $this->service_container,
@@ -322,16 +322,16 @@ class Core implements Plugin {
 		// and ToolContributor unconditionally (bypasses is_needed()).
 		// REST routes and MCP tools must be available even when the
 		// admin-facing gate returns false during plugin boot.
-		foreach ( $services as $class ) {
-			$this->maybe_register_route_provider( $class, $dependencies );
-			$this->maybe_register_tool_contributor( $class, $dependencies );
+		foreach ( $services as $service_class ) {
+			$this->maybe_register_route_provider( $service_class, $dependencies );
+			$this->maybe_register_tool_contributor( $service_class, $dependencies );
 		}
 
 		// Second pass: register services with the is_needed() gate.
 		// This determines whether admin hooks (Registerable, Actionable,
 		// HasAssets) are wired up.
-		foreach ( $services as $id => $class ) {
-			$this->service_container->register( $id, $class, $dependencies );
+		foreach ( $services as $id => $service_class ) {
+			$this->service_container->register( $id, $service_class, $dependencies );
 		}
 	}
 
