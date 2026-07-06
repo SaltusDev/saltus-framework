@@ -67,10 +67,39 @@ class Validator {
 			case 'boolean':
 				return is_bool( $value );
 			case 'object':
+				return is_array( $value ) && ! self::is_list( $value );
 			case 'array':
-				return is_array( $value );
+				return is_array( $value ) && self::is_list( $value );
 			default:
 				return true;
 		}
+	}
+
+	/**
+	 * Check whether an array is a list (sequential integer keys from 0).
+	 *
+	 * Compatible with PHP 7.4 (replaces array_is_list which requires PHP 8.1).
+	 *
+	 * @param mixed $value  The value to check.
+	 * @return bool
+	 */
+	private static function is_list( $value ): bool {
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+
+		if ( $value === [] ) {
+			return true;
+		}
+
+		$expected_key = 0;
+		foreach ( $value as $key => $val ) {
+			if ( $key !== $expected_key ) {
+				return false;
+			}
+			++$expected_key;
+		}
+
+		return true;
 	}
 }
