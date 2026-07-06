@@ -144,7 +144,7 @@ class AuditLogger {
 
 		$day_seconds = defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400;
 		$cutoff      = gmdate( 'Y-m-d H:i:s.000', time() - ( $days * $day_seconds ) );
-		$table  = $this->table_name();
+		$table       = $this->table_name();
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is internal.
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $cutoff ) );
 	}
