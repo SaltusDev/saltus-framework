@@ -8,6 +8,9 @@ use Saltus\WP\Framework\MCP\RateLimiter\RateLimitResult;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\RateLimiter\RateLimiter
+ */
 class RateLimiterTest extends TestCase
 {
     protected function setUp(): void

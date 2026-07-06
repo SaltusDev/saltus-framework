@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Tests\MCP\RateLimiter;
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimitResult;
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\RateLimiter\RateLimitResult
+ */
 class RateLimitResultTest extends TestCase
 {
     public function testConstructorSetsProperties(): void

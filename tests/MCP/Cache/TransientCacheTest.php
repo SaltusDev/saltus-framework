@@ -7,6 +7,9 @@ use Saltus\WP\Framework\MCP\Cache\TransientCache;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\Cache\TransientCache
+ */
 class TransientCacheTest extends TestCase {
 
 	protected function setUp(): void {
