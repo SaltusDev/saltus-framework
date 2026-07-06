@@ -75,6 +75,20 @@ Saltus abilities are REST-backed. A client calls a `saltus/*` ability, Saltus va
 
 The REST controller remains the authoritative execution layer. This keeps behavior consistent between direct REST requests and MCP/Abilities calls.
 
+### Two-Pass Service Registration & the `is_needed()` Gate
+
+To decouple REST and MCP tool availability from the current page loading context, the framework separates tool registration from core runtime initialization:
+
+1. **Unconditional REST/MCP Discovery (Pass 1):** Services implementing `RestRouteProvider` or `ToolContributor` are instantiated unconditionally during boot. This ensures that their REST routes and MCP tools are registered and accessible to AI clients on any request, bypassing the `is_needed()` check. No hooks, actions, or assets are registered in this pass.
+2. **Gated Core Activation (Pass 2):** Core features (admin hooks, action hooks, asset enqueuing) are registered inside the service container, which strictly enforces the `is_needed()` gate:
+   ```php
+   if ( is_a( $service_class, Conditional::class, true ) &&
+        ! $service_class::is_needed() ) {
+       return;
+   }
+   ```
+   If a service is not needed in the current request context (e.g. an admin-only service requested on a frontend page), it is skipped entirely. This prevents unneeded scripts, styles, and action hooks from running amok.
+
 ## Permissions
 
 Permissions are enforced in two layers:

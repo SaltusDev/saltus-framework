@@ -1,7 +1,7 @@
 # Current: Live Working State
 
 ## Working
-- Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-05
+- Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-06
 - Phase 5D: Documentation — fill README placeholders, add model examples @since 2026-07-05
 
 ## Next
@@ -96,6 +96,7 @@
 - Model interface hardening: added get_options(): array and get_args(): array to Model interface; removed fragile method_exists + get_object_vars fallbacks from ModelRestPolicy, ModelsController, and MetaFieldProvider; updated all anonymous Model implementations in test files — 5 commits, 13 files @since 2026-07-05
 - Replaced hardcoded tester.php with proper PHPUnit container integration tests in tests/Integration/ContainerIntegrationTest.php — 1 commit @since 2026-07-05
 - Code review feedback round 2: removed static clear guard from TransientCache to avoid stale cache in long-running processes; replaced fragile strict array comparison in SettingsManager with database re-read to prevent false-positive rest_update_failed errors; switched export SQL detection from regex to WP_Query var inspection via posts_request filter; set explicit UTC timezone in AuditEntry DateTimeImmutable to fix incorrect timestamps — 5 commits @since 2026-07-06
+- Code review gemini-code-assist round 1: replaced direct $model->name access with check_method() helper in ModelsController to avoid fatal errors on private/protected properties; added added_option and deleted_option hooks to MCP cache-clearing list to flush caches on option creation and deletion; replaced sanitize_key() with case-preserving preg_replace() in SettingsManager to avoid breaking camelCase settings keys; replaced ISO 8601 datetime format with MySQL-compatible format in AuditEntry and AuditLogger to prevent "Truncated incorrect datetime value" warnings — 4 commits, 8 files @since 2026-07-06
 
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
