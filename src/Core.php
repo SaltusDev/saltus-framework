@@ -331,7 +331,8 @@ class Core implements Plugin {
 		// This determines whether admin hooks (Registerable, Actionable,
 		// HasAssets) are wired up.
 		foreach ( $services as $id => $service_class ) {
-			$this->service_container->register( $id, $service_class, $dependencies );
+			$service_id = is_string( $id ) ? $id : $service_class;
+			$this->service_container->register( $service_id, $service_class, $dependencies );
 		}
 	}
 
