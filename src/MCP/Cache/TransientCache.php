@@ -5,6 +5,7 @@ namespace Saltus\WP\Framework\MCP\Cache;
  * Transient-backed cache implementing CacheInterface.
  */
 class TransientCache implements CacheInterface {
+	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
 	private const INDEX_OPTION = 'saltus_mcp_cache_keys';
 
@@ -114,21 +115,5 @@ class TransientCache implements CacheInterface {
 		$keys = get_option( self::INDEX_OPTION, [] );
 
 		return is_array( $keys ) ? array_values( array_filter( $keys, 'is_string' ) ) : [];
-	}
-
-	/**
-	 * Apply a WordPress filter, falling back to the default value outside WordPress.
-	 *
-	 * @param non-empty-string $hook  The filter hook name.
-	 * @param mixed $value  The value to filter.
-	 * @return mixed
-	 */
-	private function filter( string $hook, $value ) {
-		if ( function_exists( 'apply_filters' ) ) {
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook names are internal constants passed through this helper.
-			return apply_filters( $hook, $value );
-		}
-
-		return $value;
 	}
 }
