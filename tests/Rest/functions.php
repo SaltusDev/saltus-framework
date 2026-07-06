@@ -217,7 +217,8 @@ $wpdb                      = new class implements \Saltus\WP\Framework\MCP\Audit
 
 	public function prepare( string $query, ...$args ): string {
 		foreach ( $args as $arg ) {
-			$query = preg_replace( '/%[dsf]/', (string) $arg, $query, 1 );
+			$replacement = is_string( $arg ) ? "'" . $arg . "'" : (string) $arg;
+			$query       = preg_replace( '/%[dsf]/', $replacement, $query, 1 );
 		}
 		return $query;
 	}
@@ -552,12 +553,6 @@ if ( ! function_exists( 'export_wp' ) ) {
 		$wpdb    = $GLOBALS['wpdb'];
 		$wp_posts = $GLOBALS['wp_posts'] ?? [];
 
-		if ( ! headers_sent() ) {
-			header( 'Content-Description: File Transfer' );
-			header( 'Content-Disposition: attachment; filename=saltus-export.xml' );
-			header( 'Content-Type: text/xml; charset=UTF-8' );
-		}
-
 		$args = apply_filters( 'export_args', $args );
 
 		$start_date = $args['start_date'] ?? false;
@@ -576,7 +571,12 @@ if ( ! function_exists( 'export_wp' ) ) {
 			$post_type = 'post';
 		}
 
-		$sql = "SELECT ID FROM {$wpdb->posts}  WHERE {$wpdb->posts}.post_type = '{$post_type}' AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= {$start_date_str} AND {$wpdb->posts}.post_date < {$end_date_str}";
+		$sql = $wpdb->prepare(
+			"SELECT ID FROM {$wpdb->posts} WHERE {$wpdb->posts}.post_type = %s AND {$wpdb->posts}.post_status != 'auto-draft' AND {$wpdb->posts}.post_date >= %s AND {$wpdb->posts}.post_date < %s",
+			$post_type,
+			$start_date_str,
+			$end_date_str
+		);
 
 		$wp_query = new \WP_Query( [
 			'post_type'   => $post_type,
