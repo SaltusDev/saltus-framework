@@ -86,4 +86,12 @@ class UpdatePost extends RestTool {
 			$body
 		);
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return $this->can_post( 'edit_post', $args );
+	}
 }

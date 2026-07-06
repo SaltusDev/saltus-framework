@@ -88,4 +88,15 @@ class GetSettings extends RestTool {
 	public function is_cacheable(): bool {
 		return true;
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		$post_type  = (string) ( $args['post_type'] ?? '' );
+		$capability = $post_type !== '' ? $this->post_type_capability( $post_type, 'edit_posts', 'edit_posts' ) : 'edit_posts';
+
+		return current_user_can( $capability );
+	}
 }

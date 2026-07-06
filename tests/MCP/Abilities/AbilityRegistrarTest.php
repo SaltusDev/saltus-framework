@@ -53,7 +53,7 @@ class AbilityRegistrarTest extends TestCase {
 
 		$registered = ( new AbilityRegistrar( $this->defaultToolProvider() ) )->register();
 
-		$this->assertCount( 17, $registered );
+		$this->assertCount( 18, $registered );
 		$this->assertArrayHasKey( 'saltus/get-health', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/list-models', $wp_abilities_registered );
 		$this->assertArrayHasKey( 'saltus/list-meta-fields', $wp_abilities_registered );

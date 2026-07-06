@@ -87,4 +87,12 @@ class UpdateSettings extends RestTool {
 	public function update_settings( string $post_type, array $settings ) {
 		return $this->settings_manager->update_settings( $post_type, $settings );
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return current_user_can( 'manage_options' );
+	}
 }

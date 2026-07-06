@@ -78,4 +78,12 @@ class ListModels extends RestTool {
 	public function cache_ttl(): int {
 		return 600;
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return current_user_can( 'edit_posts' );
+	}
 }

@@ -98,35 +98,7 @@ class AbilityDefinitionFactory {
 			return current_user_can( 'read' );
 		}
 
-		return $this->can_use_tool( $tool->get_name(), $args );
-	}
-
-	/**
-	 * Check whether the current user can use a specific tool with known arguments.
-	 *
-	 * @param string $tool_name  Tool name.
-	 * @param array<string, mixed> $args  Ability arguments.
-	 * @return bool
-	 */
-	private function can_use_tool( string $tool_name, array $args ): bool {
-		$checks = [
-			'create_post'      => fn(): bool => $this->can_create_post( $args ),
-			'get_post'         => fn(): bool => $this->can_post( 'read_post', $args ),
-			'update_post'      => fn(): bool => $this->can_post( 'edit_post', $args ),
-			'delete_post'      => fn(): bool => $this->can_post( 'delete_post', $args ),
-			'duplicate_post'   => fn(): bool => $this->can_post( 'edit_post', $args ),
-			'export_post'      => fn(): bool => current_user_can( 'export' ),
-			'create_term'      => fn(): bool => $this->can_create_term( $args ),
-			'update_settings'  => fn(): bool => current_user_can( 'manage_options' ),
-			'get_settings'     => fn(): bool => current_user_can( (string) ( $args['post_type'] ?? '' ) !== '' ? $this->post_type_capability( (string) $args['post_type'], 'edit_posts', 'edit_posts' ) : 'edit_posts' ),
-			'reorder_posts'    => fn(): bool => current_user_can( 'edit_posts' ),
-			'list_models'      => fn(): bool => current_user_can( 'edit_posts' ),
-			'get_model'        => fn(): bool => current_user_can( (string) ( $args['slug'] ?? '' ) !== '' ? $this->post_type_capability( (string) $args['slug'], 'edit_posts', 'edit_posts' ) : 'edit_posts' ),
-			'list_meta_fields' => fn(): bool => current_user_can( 'edit_posts' ),
-			'get_meta_fields'  => fn(): bool => current_user_can( (string) ( $args['post_type'] ?? '' ) !== '' ? $this->post_type_capability( (string) $args['post_type'], 'edit_posts', 'edit_posts' ) : 'edit_posts' ),
-		];
-
-		return isset( $checks[ $tool_name ] ) ? $checks[ $tool_name ]() : current_user_can( 'read' );
+		return $tool->has_permission( $args );
 	}
 
 	/**
@@ -141,81 +113,6 @@ class AbilityDefinitionFactory {
 		}
 
 		return is_array( $args ) ? $args : [];
-	}
-
-	/**
-	 * Check whether the current user can create posts for the requested post type.
-	 *
-	 * @param array<string, mixed> $args  Ability arguments.
-	 * @return bool
-	 */
-	private function can_create_post( array $args ): bool {
-		$post_type  = (string) ( $args['post_type'] ?? 'posts' );
-		$capability = $this->post_type_capability( $post_type, 'create_posts', 'edit_posts' );
-
-		return current_user_can( $capability );
-	}
-
-	/**
-	 * Check a post-specific WordPress capability.
-	 *
-	 * @param string $capability  Capability to check.
-	 * @param array<string, mixed> $args  Ability arguments.
-	 * @return bool
-	 */
-	private function can_post( string $capability, array $args ): bool {
-		$post_id = (int) ( $args['post_id'] ?? 0 );
-		if ( $post_id <= 0 ) {
-			return false;
-		}
-
-		return current_user_can( $capability, $post_id );
-	}
-
-	/**
-	 * Check whether the current user can create terms for the requested taxonomy.
-	 *
-	 * @param array<string, mixed> $args  Ability arguments.
-	 * @return bool
-	 */
-	private function can_create_term( array $args ): bool {
-		$taxonomy = (string) ( $args['taxonomy'] ?? '' );
-		if ( $taxonomy === '' || ! function_exists( 'get_taxonomy' ) ) {
-			return false;
-		}
-
-		$taxonomy_object = get_taxonomy( $taxonomy );
-		if ( ! is_object( $taxonomy_object ) ) {
-			return false;
-		}
-
-		$capability = 'manage_categories';
-		if ( isset( $taxonomy_object->cap->edit_terms ) && is_string( $taxonomy_object->cap->edit_terms ) ) {
-			$capability = $taxonomy_object->cap->edit_terms;
-		}
-
-		return current_user_can( $capability );
-	}
-
-	/**
-	 * Resolve a post type capability from its registered object.
-	 *
-	 * @param string $post_type  Post type slug.
-	 * @param string $capability  Capability property to read.
-	 * @param string $fallback  Fallback capability.
-	 * @return string
-	 */
-	private function post_type_capability( string $post_type, string $capability, string $fallback ): string {
-		if ( ! function_exists( 'get_post_type_object' ) ) {
-			return $fallback;
-		}
-
-		$post_type_object = get_post_type_object( $post_type );
-		if ( is_object( $post_type_object ) && isset( $post_type_object->cap->{$capability} ) && is_string( $post_type_object->cap->{$capability} ) ) {
-			return $post_type_object->cap->{$capability};
-		}
-
-		return $fallback;
 	}
 
 	/**

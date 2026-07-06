@@ -93,4 +93,12 @@ class ReorderPosts extends RestTool {
 	public function reorder_posts( array $items, ?ModelRestPolicy $policy = null ): array {
 		return $this->reorder_service->reorder( $items, $policy );
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return current_user_can( 'edit_posts' );
+	}
 }
