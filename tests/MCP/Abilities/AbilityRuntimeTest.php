@@ -11,6 +11,9 @@ use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\Abilities\AbilityRuntime
+ */
 class AbilityRuntimeTest extends TestCase {
 
 	protected function setUp(): void {

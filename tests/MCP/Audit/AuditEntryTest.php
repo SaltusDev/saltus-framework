@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Tests\MCP\Audit;
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Audit\AuditEntry;
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\Audit\AuditEntry
+ */
 class AuditEntryTest extends TestCase
 {
     public function testConstructorSetsToolNameAndArguments(): void
