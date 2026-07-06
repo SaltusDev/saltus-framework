@@ -51,20 +51,33 @@ class SettingsManager {
 		}
 
 		$option_name = $this->option_name( $post_type );
-		$updated     = update_option( $option_name, $sanitized );
+		$current     = get_option( $option_name );
 
-		if ( ! $updated && get_option( $option_name ) !== $sanitized ) {
-			return new \WP_Error(
-				'rest_update_failed',
-				__( 'Failed to update settings.', 'saltus-framework' ),
-				[ 'status' => 500 ]
-			);
+		if ( $current === $sanitized ) {
+			return [
+				'post_type' => $post_type,
+				'settings'  => $sanitized,
+				'status'    => 'unchanged',
+			];
+		}
+
+		$updated = update_option( $option_name, $sanitized );
+
+		if ( ! $updated ) {
+			$recheck = get_option( $option_name );
+			if ( $recheck !== $sanitized ) {
+				return new \WP_Error(
+					'rest_update_failed',
+					__( 'Failed to update settings.', 'saltus-framework' ),
+					[ 'status' => 500 ]
+				);
+			}
 		}
 
 		return [
 			'post_type' => $post_type,
 			'settings'  => $sanitized,
-			'status'    => $updated ? 'updated' : 'unchanged',
+			'status'    => 'updated',
 		];
 	}
 
