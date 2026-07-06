@@ -11,6 +11,9 @@ use WP_Error;
 
 require_once __DIR__ . '/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Rest\MetaController
+ */
 class MetaControllerTest extends TestCase {
 	private MetaController $controller;
 	private Modeler $modeler;

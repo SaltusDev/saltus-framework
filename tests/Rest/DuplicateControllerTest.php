@@ -12,6 +12,9 @@ use WP_Error;
 
 require_once __DIR__ . '/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Rest\DuplicateController
+ */
 class DuplicateControllerTest extends TestCase {
 	private DuplicateController $controller;
 

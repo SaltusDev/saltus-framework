@@ -9,6 +9,9 @@ use WP_Error;
 
 require_once __DIR__ . '/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Rest\HealthController
+ */
 class HealthControllerTest extends TestCase {
 	private HealthController $controller;
 
