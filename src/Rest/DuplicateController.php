@@ -63,7 +63,10 @@ class DuplicateController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to duplicate posts.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => __( 'Assign the edit_posts capability to your user role, or use an administrator account.', 'saltus-framework' ),
+				]
 			);
 		}
 		return true;
@@ -91,7 +94,14 @@ class DuplicateController extends WP_REST_Controller {
 			return new WP_Error(
 				'model_rest_capability_disabled',
 				__( 'Duplication is not enabled for this post type.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => sprintf(
+						/* translators: %s: post type slug */
+						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'duplicate' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						$post->post_type
+					),
+				]
 			);
 		}
 
@@ -99,7 +109,14 @@ class DuplicateController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to duplicate this post.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => sprintf(
+						/* translators: %d: post ID */
+						__( 'You need the edit_post capability for post ID %d. Assign a role with this capability or use an administrator account.', 'saltus-framework' ),
+						$post_id
+					),
+				]
 			);
 		}
 

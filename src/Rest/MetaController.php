@@ -86,7 +86,10 @@ class MetaController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to view meta fields.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => __( "Assign edit_posts to your user, or ensure the model has 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] in its config.", 'saltus-framework' ),
+				]
 			);
 		}
 		return true;

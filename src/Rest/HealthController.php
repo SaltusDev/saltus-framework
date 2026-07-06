@@ -55,7 +55,10 @@ class HealthController extends WP_REST_Controller {
 		return new WP_Error(
 			'rest_forbidden',
 			__( 'You do not have permission to view framework health.', 'saltus-framework' ),
-			[ 'status' => 403 ]
+			[
+				'status' => 403,
+				'hint'   => __( 'Assign the edit_posts capability to your user role, or use an administrator account.', 'saltus-framework' ),
+			]
 		);
 	}
 

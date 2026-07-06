@@ -78,7 +78,14 @@ class SettingsController extends WP_REST_Controller {
 				return new WP_Error(
 					'model_not_found',
 					__( 'Model not found.', 'saltus-framework' ),
-					[ 'status' => 404 ]
+					[
+						'status' => 404,
+						'hint'   => sprintf(
+							/* translators: %s: post type slug */
+							__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+							$post_type
+						),
+					]
 				);
 			}
 
@@ -91,7 +98,14 @@ class SettingsController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to view settings.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => sprintf(
+						/* translators: %s: capability name */
+						__( "Assign the '%s' capability to your user role, or use an administrator account.", 'saltus-framework' ),
+						$capability
+					),
+				]
 			);
 		}
 		return true;
@@ -130,7 +144,14 @@ class SettingsController extends WP_REST_Controller {
 				return new WP_Error(
 					'model_not_found',
 					__( 'Model not found.', 'saltus-framework' ),
-					[ 'status' => 404 ]
+					[
+						'status' => 404,
+						'hint'   => sprintf(
+							/* translators: %s: post type slug */
+							__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+							$post_type
+						),
+					]
 				);
 			}
 		}
@@ -139,7 +160,10 @@ class SettingsController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to update settings.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => __( "Assign the 'manage_options' capability to your user role. Only administrators can update settings.", 'saltus-framework' ),
+				]
 			);
 		}
 		return true;
@@ -157,7 +181,14 @@ class SettingsController extends WP_REST_Controller {
 			return new WP_Error(
 				'model_not_found',
 				__( 'Model not found.', 'saltus-framework' ),
-				[ 'status' => 404 ]
+				[
+					'status' => 404,
+					'hint'   => sprintf(
+						/* translators: %s: post type slug */
+						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						$post_type
+					),
+				]
 			);
 		}
 
@@ -176,7 +207,14 @@ class SettingsController extends WP_REST_Controller {
 			return new WP_Error(
 				'model_not_found',
 				__( 'Model not found.', 'saltus-framework' ),
-				[ 'status' => 404 ]
+				[
+					'status' => 404,
+					'hint'   => sprintf(
+						/* translators: %s: post type slug */
+						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						$post_type
+					),
+				]
 			);
 		}
 

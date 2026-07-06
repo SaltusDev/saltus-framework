@@ -81,7 +81,10 @@ class ReorderController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to reorder posts.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => __( "Assign edit_posts to your user, or ensure all requested posts are editable by the current user. Check that each post's post type has 'saltus_rest' configured.", 'saltus-framework' ),
+				]
 			);
 		}
 		return true;

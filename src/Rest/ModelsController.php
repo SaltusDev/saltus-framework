@@ -75,7 +75,10 @@ class ModelsController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to view models.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => __( "Assign edit_posts to your user, or ensure at least one model has 'saltus_rest' => true in its config.", 'saltus-framework' ),
+				]
 			);
 		}
 		return true;
@@ -97,7 +100,14 @@ class ModelsController extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to view models.', 'saltus-framework' ),
-				[ 'status' => 403 ]
+				[
+					'status' => 403,
+					'hint'   => sprintf(
+						/* translators: %s: model name */
+						__( "Assign edit_posts to your user, or ensure model '%s' has 'saltus_rest' => true in its config.", 'saltus-framework' ),
+						$model_name ?? '(unknown)'
+					),
+				]
 			);
 		}
 		return true;
@@ -146,7 +156,14 @@ class ModelsController extends WP_REST_Controller {
 			return new WP_Error(
 				'model_not_found',
 				__( 'Model not found.', 'saltus-framework' ),
-				[ 'status' => 404 ]
+				[
+					'status' => 404,
+					'hint'   => sprintf(
+						/* translators: %s: model slug */
+						__( "Model '%s' is not registered in the Saltus modeler. Check the model slug and ensure it is registered in src/models/.", 'saltus-framework' ),
+						$name
+					),
+				]
 			);
 		}
 
