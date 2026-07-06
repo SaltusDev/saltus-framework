@@ -142,6 +142,25 @@ class ServiceContainer
 	}
 
 	/**
+	 * Instantiate a service class without checking is_needed().
+	 *
+	 * Unlike register(), this bypasses the Conditional gate and does
+	 * not store the service in the container. Use it to obtain an
+	 * instance solely for interface detection (e.g. RestRouteProvider,
+	 * ToolContributor).
+	 *
+	 * @param class-string $service_class Service class to instantiate.
+	 * @param array<mixed> $dependencies  Constructor dependencies.
+	 *
+	 * @throws Invalid If the service could not be properly instantiated.
+	 *
+	 * @return Service Instantiated service.
+	 */
+	public function instantiate_unconditionally( string $service_class, array $dependencies ): Service {
+		return $this->instantiate( $service_class, $dependencies );
+	}
+
+	/**
 	 * Instantiate a single service.
 	 *
 	 * @param class-string $service_class Service class to instantiate.
