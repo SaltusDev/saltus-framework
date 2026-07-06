@@ -37,6 +37,26 @@ use Saltus\WP\Framework\Rest\SettingsController;
 
 require_once dirname( __DIR__ ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Features\AdminCols\AdminCols
+ * @covers \Saltus\WP\Framework\Features\AdminCols\SaltusAdminCols
+ * @covers \Saltus\WP\Framework\Features\AdminFilters\AdminFilters
+ * @covers \Saltus\WP\Framework\Features\AdminFilters\SaltusAdminFilters
+ * @covers \Saltus\WP\Framework\Features\DragAndDrop\DragAndDrop
+ * @covers \Saltus\WP\Framework\Features\DragAndDrop\SaltusDragAndDrop
+ * @covers \Saltus\WP\Framework\Features\Duplicate\Duplicate
+ * @covers \Saltus\WP\Framework\Features\Duplicate\SaltusDuplicate
+ * @covers \Saltus\WP\Framework\Features\Meta\CodestarMeta
+ * @covers \Saltus\WP\Framework\Features\Meta\Meta
+ * @covers \Saltus\WP\Framework\Features\QuickEdit\QuickEdit
+ * @covers \Saltus\WP\Framework\Features\QuickEdit\SaltusQuickEdit
+ * @covers \Saltus\WP\Framework\Features\RememberTabs\RememberTabs
+ * @covers \Saltus\WP\Framework\Features\RememberTabs\SaltusRememberTabs
+ * @covers \Saltus\WP\Framework\Features\Settings\CodestarSettings
+ * @covers \Saltus\WP\Framework\Features\Settings\Settings
+ * @covers \Saltus\WP\Framework\Features\SingleExport\SaltusSingleExport
+ * @covers \Saltus\WP\Framework\Features\SingleExport\SingleExport
+ */
 class LegacyFeatureTest extends TestCase {
 
 	protected function setUp(): void {

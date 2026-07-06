@@ -8,6 +8,9 @@ use Saltus\WP\Framework\Tests\TestCase;
 
 require_once dirname( __DIR__ ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Core
+ */
 class FrameworkBootTest extends TestCase {
 	public function testCoreRegistersDefaultServices(): void {
 		$core = new Core( __DIR__ );

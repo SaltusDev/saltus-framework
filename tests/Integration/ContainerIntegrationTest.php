@@ -12,6 +12,9 @@ use Saltus\WP\Framework\Tests\TestCase;
 
 require_once dirname( __DIR__ ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Infrastructure\Container\ContainerAssembler
+ */
 class ContainerIntegrationTest extends TestCase {
 
 	protected function setUp(): void {
