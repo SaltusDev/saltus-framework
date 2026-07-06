@@ -199,6 +199,12 @@ The standalone local stdio MCP server has been removed. Saltus MCP development t
 
 Abilities dispatch through WordPress REST requests, so existing REST permission callbacks and `current_user_can()` checks remain authoritative. WordPress versions without the Abilities API simply skip Saltus ability registration.
 
+### Service Gating and `is_needed()`
+
+To keep the application performant and clean, the framework separates REST/MCP route registration from the execution of admin and frontend hooks using a two-pass registration model:
+- **First Pass (Unconditional):** Services implementing `RestRouteProvider` or `ToolContributor` are instantiated unconditionally during plugin boot to register endpoints and tools. No scripts, styles, or hooks are wired up.
+- **Second Pass (Gated):** Services are registered in the main service container, which strictly enforces the `is_needed()` gate (defined by the `Conditional` interface). If `is_needed()` returns `false` (e.g. an admin-only feature on a frontend page, or a disabled feature), the service is skipped, avoiding loading unneeded scripts, styles, or hooks.
+
 Saltus wraps ability execution with WordPress-native audit logging, rate limiting, and transient caching. Read-only abilities can be cached in transients, mutating abilities clear the MCP cache, rate limits are keyed by the current user or request identifier, and audit records are written to the Saltus MCP audit table. Expired audit rows are removed by a daily WP-Cron retention job.
 
 ### Available Tools
