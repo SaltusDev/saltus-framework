@@ -265,7 +265,7 @@ class ModelsControllerTest extends TestCase {
 		$data   = rest_ensure_response( $result )->get_data();
 
 		$this->assertIsArray( $data );
-		$this->assertSame( '', $data['name'] );
+		$this->assertSame( 'book', $data['name'] );
 	}
 
 	public function testGetItemReturnsTaxonomyMetadata(): void {
