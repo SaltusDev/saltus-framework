@@ -71,10 +71,21 @@ class SettingsController extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$post_type  = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
-		$capability = is_string( $post_type ) && $post_type !== ''
-			? $this->post_type_edit_capability( $post_type )
-			: 'edit_posts';
+		$post_type = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
+
+		if ( is_string( $post_type ) && $post_type !== '' ) {
+			if ( $this->policy && ! $this->policy->is_post_type_enabled( $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
+				return new WP_Error(
+					'model_not_found',
+					__( 'Model not found.', 'saltus-framework' ),
+					[ 'status' => 404 ]
+				);
+			}
+
+			$capability = $this->post_type_edit_capability( $post_type );
+		} else {
+			$capability = 'edit_posts';
+		}
 
 		if ( ! current_user_can( $capability ) ) {
 			return new WP_Error(
@@ -112,6 +123,18 @@ class SettingsController extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+		$post_type = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'post_type' ) : null;
+
+		if ( is_string( $post_type ) && $post_type !== '' ) {
+			if ( $this->policy && ! $this->policy->is_post_type_enabled( $post_type, ModelRestPolicy::CAPABILITY_SETTINGS ) ) {
+				return new WP_Error(
+					'model_not_found',
+					__( 'Model not found.', 'saltus-framework' ),
+					[ 'status' => 404 ]
+				);
+			}
+		}
+
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',

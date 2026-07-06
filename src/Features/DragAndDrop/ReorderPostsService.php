@@ -12,16 +12,25 @@ class ReorderPostsService {
 	 * Check whether the current user can edit at least one post in the request.
 	 *
 	 * @param array<int, mixed> $items Requested reorder items.
+	 * @param ModelRestPolicy|null $policy Optional REST policy for capability gating.
 	 * @return bool
 	 */
-	public function can_edit_any_requested_post( array $items ): bool {
+	public function can_edit_any_requested_post( array $items, ?ModelRestPolicy $policy = null ): bool {
 		foreach ( $items as $item ) {
 			if ( ! is_array( $item ) || ! isset( $item['id'] ) ) {
 				continue;
 			}
 
 			$post_id = (int) $item['id'];
-			if ( $post_id > 0 && get_post( $post_id ) && current_user_can( 'edit_post', $post_id ) ) {
+			if ( $post_id <= 0 || ! get_post( $post_id ) ) {
+				continue;
+			}
+
+			if ( $policy && ! $policy->is_post_enabled( $post_id, ModelRestPolicy::CAPABILITY_REORDER ) ) {
+				continue;
+			}
+
+			if ( current_user_can( 'edit_post', $post_id ) ) {
 				return true;
 			}
 		}
