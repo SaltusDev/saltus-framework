@@ -98,6 +98,15 @@
 - Code review feedback round 2: removed static clear guard from TransientCache to avoid stale cache in long-running processes; replaced fragile strict array comparison in SettingsManager with database re-read to prevent false-positive rest_update_failed errors; switched export SQL detection from regex to WP_Query var inspection via posts_request filter; set explicit UTC timezone in AuditEntry DateTimeImmutable to fix incorrect timestamps — 5 commits @since 2026-07-06
 - Code review gemini-code-assist round 1: replaced direct $model->name access with check_method() helper in ModelsController to avoid fatal errors on private/protected properties; added added_option and deleted_option hooks to MCP cache-clearing list to flush caches on option creation and deletion; replaced sanitize_key() with case-preserving preg_replace() in SettingsManager to avoid breaking camelCase settings keys; replaced ISO 8601 datetime format with MySQL-compatible format in AuditEntry and AuditLogger to prevent "Truncated incorrect datetime value" warnings — 4 commits, 8 files @since 2026-07-06
 
+- FilterAwareTrait extracted from 5 identical `filter()` private methods in RateLimiter, HealthController, AbilityRuntime, AuditLogger, TransientCache — shared trait applied across MCP infrastructure @since 2026-07-06
+- REST route registration bug fix: `is_needed()` gate bypassed for RestRouteProvider/ToolContributor registries via two-pass approach in `Core::register_services()` — REST routes now appear in WP-REST index even when `REST_REQUEST` is undefined during plugin boot @since 2026-07-06
+- ServiceContainer::instantiate_unconditionally() added for bypassing Conditional gates @since 2026-07-06
+- MCP contributors() fallback preserves backward compatibility when MCP is instantiated outside Core @since 2026-07-06
+- AuditDatabase::prepare() added to interface and WpdbAuditDatabase for safe SQL parameterization @since 2026-07-06
+- Validator::is_list() helper added for type checks @since 2026-07-06
+- Test suite fixed and passing: 214 tests, 605 assertions — AuditLogger DAY_IN_SECONDS fallback, ExportController export_wp echo fix, wpdb prepare %s quoting, MCPFeatureTest contributor fallback, RestRegistrationTest modeler mock injection @since 2026-07-06
+- @covers annotations added to all test classes (26 test files) @since 2026-07-06
+
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer phpcs` passes.

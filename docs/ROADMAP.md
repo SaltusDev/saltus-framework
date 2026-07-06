@@ -9,7 +9,8 @@
 - PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
-- 208 PHPUnit tests passing (598 assertions), PHPStan Level 7 clean across the configured analysis set
+- Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
+- 214 PHPUnit tests passing (605 assertions), PHPStan Level 7 clean across the configured analysis set
 - **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
