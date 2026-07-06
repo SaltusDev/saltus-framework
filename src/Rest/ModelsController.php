@@ -313,6 +313,10 @@ class ModelsController extends WP_REST_Controller {
 			return $target->{$method}();
 		}
 
+		if ( $method === 'get_registration_name' && method_exists( $target, 'get_name' ) ) {
+			return $target->get_name();
+		}
+
 		$public_properties = get_object_vars( $target );
 
 		return array_key_exists( $default_prop, $public_properties ) ? $public_properties[ $default_prop ] : $default_val;
