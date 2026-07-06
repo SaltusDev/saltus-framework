@@ -44,7 +44,7 @@ class MetaControllerTest extends TestCase {
 
 		$this->controller->register_routes();
 
-		$this->assertCount( 2, $wp_rest_routes_registered );
+		$this->assertCount( 3, $wp_rest_routes_registered );
 		$this->assertStringContainsString( 'meta', $wp_rest_routes_registered[0]['route'] );
 	}
 
@@ -355,6 +355,147 @@ class MetaControllerTest extends TestCase {
 		$this->assertFalse( $fields['globe_id']['serialized'] );
 		$this->assertTrue( $fields['globe_id']['writable_rest'] );
 		$this->assertSame( 'relationship_point', $fields['globe_id']['metabox_id'] );
+	}
+
+	public function testUpdateItemPermissionsCheckReturnsTrueWhenAuthorized(): void {
+		global $wp_current_user_can, $wp_post_type_objects;
+
+		$wp_post_type_objects['book'] = $this->postTypeObject( 'book', 'edit_books' );
+		$wp_current_user_can          = [
+			'edit_books:123' => true,
+		];
+
+		$request = new WP_REST_Request( 'PUT', '/saltus-framework/v1/meta/book/123' );
+		$request->set_param( 'post_type', 'book' );
+		$request->set_param( 'post_id', 123 );
+
+		$result = $this->controller->update_item_permissions_check( $request );
+		$this->assertTrue( $result );
+	}
+
+	public function testUpdateItemPermissionsCheckReturnsErrorWhenUnauthorized(): void {
+		global $wp_current_user_can, $wp_post_type_objects;
+
+		$wp_post_type_objects['book'] = $this->postTypeObject( 'book', 'edit_books' );
+		$wp_current_user_can          = [
+			'edit_books:123' => false,
+		];
+
+		$request = new WP_REST_Request( 'PUT', '/saltus-framework/v1/meta/book/123' );
+		$request->set_param( 'post_type', 'book' );
+		$request->set_param( 'post_id', 123 );
+
+		$result = $this->controller->update_item_permissions_check( $request );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
+	}
+
+	public function testUpdateItemReturnsErrorWhenPostNotFound(): void {
+		global $wp_posts;
+		$wp_posts = []; // empty
+
+		$request = new WP_REST_Request( 'PUT', '/saltus-framework/v1/meta/book/123' );
+		$request->set_param( 'post_type', 'book' );
+		$request->set_param( 'post_id', 123 );
+		$request->set_json_params( [ 'meta' => [ 'isbn' => '978-3-16-148410-0' ] ] );
+
+		$result = $this->controller->update_item( $request );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'rest_post_invalid_id', $result->get_error_code() );
+	}
+
+	public function testUpdateItemReturnsErrorWhenPostTypeMismatch(): void {
+		global $wp_posts;
+		$wp_posts[123] = new \WP_Post( [ 'ID' => 123, 'post_type' => 'movie' ] );
+
+		$request = new WP_REST_Request( 'PUT', '/saltus-framework/v1/meta/book/123' );
+		$request->set_param( 'post_type', 'book' );
+		$request->set_param( 'post_id', 123 );
+		$request->set_json_params( [ 'meta' => [ 'isbn' => '978-3-16-148410-0' ] ] );
+
+		$result = $this->controller->update_item( $request );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'rest_post_invalid_id', $result->get_error_code() );
+	}
+
+	public function testUpdateItemReturnsErrorWhenNoDataProvided(): void {
+		global $wp_posts;
+		$wp_posts[123] = new \WP_Post( [ 'ID' => 123, 'post_type' => 'book' ] );
+
+		$request = new WP_REST_Request( 'PUT', '/saltus-framework/v1/meta/book/123' );
+		$request->set_param( 'post_type', 'book' );
+		$request->set_param( 'post_id', 123 );
+		$request->set_json_params( [] );
+
+		$result = $this->controller->update_item( $request );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'rest_empty_data', $result->get_error_code() );
+	}
+
+	public function testUpdateItemUpdatesUnserializedMetaFields(): void {
+		global $wp_posts, $wp_post_meta;
+		$wp_posts[123] = new \WP_Post( [ 'ID' => 123, 'post_type' => 'book' ] );
+		$wp_post_meta  = [];
+
+		$meta_fields = [
+			'book_info' => [
+				'fields' => [
+					'author' => [ 'type' => 'text' ],
+					'isbn'   => [ 'type' => 'text' ],
+				],
+			],
+		];
+		$model = $this->createModelMock( 'post_type', $meta_fields );
+		$this->modeler->method( 'get_models' )->willReturn( [ 'book' => $model ] );
+
+		$request = new WP_REST_Request( 'PUT', '/saltus-framework/v1/meta/book/123' );
+		$request->set_param( 'post_type', 'book' );
+		$request->set_param( 'post_id', 123 );
+		$request->set_json_params( [ 'meta' => [ 'isbn' => '1111', 'invalid_key' => 'hack' ] ] );
+
+		$result = $this->controller->update_item( $request );
+		$this->assertNotInstanceOf( WP_Error::class, $result );
+
+		$data = rest_ensure_response( $result )->get_data();
+		$this->assertSame( 123, $data['post_id'] );
+		$this->assertSame( 'book', $data['post_type'] );
+		$this->assertSame( [ 'isbn' => '1111' ], $data['meta'] );
+		$this->assertSame( '1111', get_post_meta( 123, 'isbn', true ) );
+		$this->assertSame( '', get_post_meta( 123, 'invalid_key', true ) );
+	}
+
+	public function testUpdateItemMergesSerializedMetaFields(): void {
+		global $wp_posts, $wp_post_meta;
+		$wp_posts[123] = new \WP_Post( [ 'ID' => 123, 'post_type' => 'point' ] );
+		$wp_post_meta  = [
+			123 => [
+				'location_data' => [ [ 'latitude' => 10, 'longitude' => 20 ] ],
+			]
+		];
+
+		$meta_fields = [
+			'location_data' => [
+				'data_type' => 'serialize',
+				'fields'    => [
+					'latitude'  => [ 'type' => 'number' ],
+					'longitude' => [ 'type' => 'number' ],
+				],
+			],
+		];
+		$model = $this->createModelMock( 'post_type', $meta_fields );
+		$this->modeler->method( 'get_models' )->willReturn( [ 'point' => $model ] );
+
+		$request = new WP_REST_Request( 'PUT', '/saltus-framework/v1/meta/point/123' );
+		$request->set_param( 'post_type', 'point' );
+		$request->set_param( 'post_id', 123 );
+		$request->set_json_params( [ 'meta' => [ 'location_data' => [ 'latitude' => 15 ] ] ] );
+
+		$result = $this->controller->update_item( $request );
+		$this->assertNotInstanceOf( WP_Error::class, $result );
+
+		$data = rest_ensure_response( $result )->get_data();
+		$this->assertSame( [ 'location_data' => [ 'latitude' => 15, 'longitude' => 20 ] ], $data['meta'] );
+		$this->assertSame( [ 'latitude' => 15, 'longitude' => 20 ], get_post_meta( 123, 'location_data', true ) );
 	}
 
 	/**

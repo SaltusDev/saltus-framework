@@ -68,6 +68,33 @@ class MetaController extends WP_REST_Controller {
 				],
 			]
 		);
+
+		register_rest_route(
+			self::ROUTE_NAMESPACE,
+			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)/(?P<post_id>\d+)',
+			[
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => [ $this, 'update_item' ],
+				'permission_callback' => [ $this, 'update_item_permissions_check' ],
+				'args'                => [
+					'post_type' => [
+						'type'        => 'string',
+						'required'    => true,
+						'description' => 'Post type slug of the post',
+					],
+					'post_id'   => [
+						'type'        => 'integer',
+						'required'    => true,
+						'description' => 'Post ID to update meta fields for',
+					],
+					'meta'      => [
+						'type'        => 'object',
+						'required'    => true,
+						'description' => 'Meta fields to update as key-value pairs',
+					],
+				],
+			]
+		);
 	}
 
 	/**
@@ -125,6 +152,134 @@ class MetaController extends WP_REST_Controller {
 		$post_type = $request->get_param( 'post_type' );
 
 		return rest_ensure_response( $this->meta_field_provider->post_type_meta( $this->modeler, $this->policy, (string) $post_type ) );
+	}
+
+	/**
+	 * Check whether the current user can update meta fields for a specific post.
+	 *
+	 * @param mixed $request The REST request.
+	 * @return WP_Error|bool
+	 */
+	public function update_item_permissions_check( $request ) {
+		$post_type = $request->get_param( 'post_type' );
+		$post_id   = (int) $request->get_param( 'post_id' );
+
+		if ( $this->policy && ! $this->policy->is_post_type_enabled( (string) $post_type, ModelRestPolicy::CAPABILITY_META ) ) {
+			return new WP_Error(
+				'model_not_found',
+				__( 'Model not found.', 'saltus-framework' ),
+				[
+					'status' => 404,
+					'hint'   => sprintf(
+						/* translators: %s: post type slug */
+						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						$post_type
+					),
+				]
+			);
+		}
+
+		if ( ! current_user_can( $this->post_type_edit_capability( (string) $post_type ), $post_id ) ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to edit this post.', 'saltus-framework' ),
+				[
+					'status' => 403,
+					'hint'   => sprintf(
+						/* translators: 1: capability, 2: post ID */
+						__( "Assign the '%1\$s' capability to your user role for post ID %2\$d, or use an administrator account.", 'saltus-framework' ),
+						$this->post_type_edit_capability( (string) $post_type ),
+						$post_id
+					),
+				]
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Update meta fields for a specific post.
+	 *
+	 * @param mixed $request The REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+		$post_type = $request->get_param( 'post_type' );
+		$post_id   = (int) $request->get_param( 'post_id' );
+
+		$post = get_post( $post_id );
+		if ( ! $post || $post->post_type !== $post_type ) {
+			return new WP_Error(
+				'rest_post_invalid_id',
+				__( 'Invalid post ID or post type mismatch.', 'saltus-framework' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		$meta_data = $request->get_json_params();
+		if ( isset( $meta_data['meta'] ) && is_array( $meta_data['meta'] ) ) {
+			$meta_data = $meta_data['meta'];
+		} elseif ( ! is_array( $meta_data ) ) {
+			$meta_data = [];
+		}
+
+		if ( empty( $meta_data ) ) {
+			return new WP_Error(
+				'rest_empty_data',
+				__( 'No meta data provided.', 'saltus-framework' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		// Retrieve registered meta fields for the post type
+		$meta_fields_info = $this->meta_field_provider->post_type_meta( $this->modeler, $this->policy, (string) $post_type );
+		if ( is_wp_error( $meta_fields_info ) ) {
+			return $meta_fields_info;
+		}
+
+		$rest_meta_keys = isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] )
+			? $meta_fields_info['normalized']['rest_meta_keys']
+			: [];
+
+		$valid_keys     = [];
+		$serialized_map = [];
+		foreach ( $rest_meta_keys as $meta_key_info ) {
+			if ( isset( $meta_key_info['meta_key'] ) ) {
+				$key          = (string) $meta_key_info['meta_key'];
+				$valid_keys[] = $key;
+				if ( ! empty( $meta_key_info['serialized'] ) ) {
+					$serialized_map[ $key ] = true;
+				}
+			}
+		}
+
+		$updated = [];
+		foreach ( $meta_data as $key => $value ) {
+			if ( ! in_array( (string) $key, $valid_keys, true ) ) {
+				continue;
+			}
+
+			if ( isset( $serialized_map[ $key ] ) ) {
+				$existing = get_post_meta( $post_id, $key, true );
+				if ( ! is_array( $existing ) ) {
+					$existing = [];
+				}
+				$new_value    = is_array( $value ) ? $value : [];
+				$merged_value = array_replace_recursive( $existing, $new_value );
+				update_post_meta( $post_id, $key, $merged_value );
+			} else {
+				update_post_meta( $post_id, $key, $value );
+			}
+			$updated[ $key ] = get_post_meta( $post_id, $key, true );
+		}
+
+		return rest_ensure_response(
+			[
+				'post_id'   => $post_id,
+				'post_type' => $post_type,
+				'meta'      => $updated,
+			]
+		);
 	}
 
 	/**
