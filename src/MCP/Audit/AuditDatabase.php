@@ -43,4 +43,13 @@ interface AuditDatabase {
 	 * @return list<array<string, mixed>>|object|null
 	 */
 	public function get_results( string $query, $output = null );
+
+	/**
+	 * Prepare a SQL query with placeholder substitution.
+	 *
+	 * @param string $query  The SQL query with placeholders.
+	 * @param mixed ...$args  The values to substitute.
+	 * @return string
+	 */
+	public function prepare( string $query, ...$args ): string;
 }

@@ -56,6 +56,18 @@ class WpdbAuditDatabase implements AuditDatabase {
 	}
 
 	/**
+	 * Prepare a SQL query with placeholder substitution.
+	 *
+	 * @param string $query  The SQL query with placeholders.
+	 * @param mixed ...$args  The values to substitute.
+	 * @return string
+	 */
+	public function prepare( string $query, ...$args ): string {
+		/** @phpstan-ignore-next-line wpdb::prepare expects literal-string */
+		return $this->wpdb->prepare( $query, ...$args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.WP.AlternativeFunctions -- Pass-through to wpdb::prepare.
+	}
+
+	/**
 	 * Execute a SELECT query and return results.
 	 *
 	 * @param string $query  The SQL SELECT query.
