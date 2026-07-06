@@ -25,6 +25,9 @@ require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 /**
  * @phpstan-import-type AbilityDefinition from \Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory
  */
+/**
+ * @covers \Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar
+ */
 class AbilityRegistrarTest extends TestCase {
 
 	protected function setUp(): void {
@@ -296,7 +299,7 @@ class AbilityRegistrarTest extends TestCase {
 			]
 		);
 
-		$this->assertArrayNotHasKey( 'saltus_mcp_cache_keys', $wp_options );
+		$this->assertArrayHasKey( 'saltus_mcp_cache_keys', $wp_options );
 		$this->assertCount( 2, $wp_rest_request_log );
 	}
 

@@ -8,6 +8,9 @@ use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\Audit\AuditLogger
+ */
 class AuditLoggerTest extends TestCase
 {
     protected function setUp(): void
@@ -59,7 +62,7 @@ class AuditLoggerTest extends TestCase
         $delete_queries = array_values(array_filter($wpdb->queries, static fn(string $query): bool => strpos($query, 'DELETE FROM') === 0));
 
         $this->assertCount(1, $delete_queries);
-        $this->assertStringStartsWith("DELETE FROM wp_saltus_mcp_audit WHERE created_at < '", $delete_queries[0]);
+		$this->assertStringStartsWith("DELETE FROM wp_saltus_mcp_audit WHERE created_at < '", $delete_queries[0]);
     }
 
     public function testRecordStoresErrors(): void
@@ -181,13 +184,14 @@ class AuditLoggerTest extends TestCase
                 return true;
             }
 
-            public function prepare(string $query, ...$args): string
-            {
-                foreach ($args as $arg) {
-                    $query = preg_replace('/%[dsf]/', (string) $arg, $query, 1);
-                }
-                return $query;
-            }
+			public function prepare(string $query, ...$args): string
+			{
+				foreach ($args as $arg) {
+					$replacement = is_string( $arg ) ? "'" . (string) $arg . "'" : (string) $arg;
+					$query       = preg_replace( '/%[dsf]/', $replacement, $query, 1 );
+				}
+				return $query;
+			}
 
             public function get_results(string $query, $output = null)
             {

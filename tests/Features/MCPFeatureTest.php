@@ -21,6 +21,9 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 require_once dirname( __DIR__ ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Features\MCP\MCP
+ */
 class MCPFeatureTest extends TestCase {
 
 	protected function setUp(): void {
