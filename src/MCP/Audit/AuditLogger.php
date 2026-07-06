@@ -5,6 +5,7 @@ namespace Saltus\WP\Framework\MCP\Audit;
  * Persists MCP audit entries to a custom database table.
  */
 class AuditLogger {
+	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
 	private const TABLE_SUFFIX = 'saltus_mcp_audit';
 
@@ -19,6 +20,8 @@ class AuditLogger {
 		'exception',
 	];
 
+	private bool $db_initialized = false;
+
 	/**
 	 * Persist an audit entry to the database.
 	 *
@@ -29,10 +32,7 @@ class AuditLogger {
 			return;
 		}
 
-		if ( get_option( 'saltus_mcp_audit_db_version' ) !== '1.0.0' ) {
-			$this->ensure_table();
-			update_option( 'saltus_mcp_audit_db_version', '1.0.0' );
-		}
+		$this->ensure_db();
 
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {
@@ -111,6 +111,24 @@ class AuditLogger {
 	}
 
 	/**
+	 * Ensure the audit table exists, running only once per request.
+	 */
+	private function ensure_db(): void {
+		if ( $this->db_initialized ) {
+			return;
+		}
+
+		if ( function_exists( 'get_option' ) && get_option( 'saltus_mcp_audit_db_version' ) !== '1.0.0' ) {
+			$this->ensure_table();
+			if ( function_exists( 'update_option' ) ) {
+				update_option( 'saltus_mcp_audit_db_version', '1.0.0' );
+			}
+		}
+
+		$this->db_initialized = true;
+	}
+
+	/**
 	 * Delete audit entries older than the retention period.
 	 */
 	public function cleanup_expired_entries(): void {
@@ -124,9 +142,11 @@ class AuditLogger {
 			return;
 		}
 
-		$cutoff = gmdate( 'Y-m-d H:i:s.000', time() - ( $days * 86400 ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Cutoff is gmdate output and table name is internal.
-		$wpdb->query( 'DELETE FROM ' . $this->table_name() . " WHERE created_at < '{$cutoff}'" );
+		$day_seconds = defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400;
+		$cutoff      = gmdate( 'Y-m-d H:i:s.000', time() - ( $days * $day_seconds ) );
+		$table  = $this->table_name();
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is internal.
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $cutoff ) );
 	}
 
 	/**
@@ -221,21 +241,5 @@ class AuditLogger {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Fallback for non-WordPress contexts.
 		$encoded = json_encode( $data );
 		return is_string( $encoded ) ? $encoded : '';
-	}
-
-	/**
-	 * Apply a WordPress filter, falling back to the default value outside WordPress.
-	 *
-	 * @param non-empty-string $hook  The filter hook name.
-	 * @param mixed $value  The value to filter.
-	 * @return mixed
-	 */
-	private function filter( string $hook, $value ) {
-		if ( function_exists( 'apply_filters' ) ) {
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook names are internal constants passed through this helper.
-			return apply_filters( $hook, $value );
-		}
-
-		return $value;
 	}
 }
