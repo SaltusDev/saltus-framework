@@ -13,6 +13,7 @@ use Saltus\WP\Framework\MCP\Validation\Validator;
  * Coordinates validation, rate limiting, REST dispatch, caching, and audit logging for MCP tool execution.
  */
 class AbilityRuntime {
+	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
 	private AuditLogger $audit_logger;
 	private RateLimiter $rate_limiter;
@@ -68,7 +69,7 @@ class AbilityRuntime {
 		}
 
 		if ( ! $tool instanceof RestBackedToolInterface ) {
-			$error = $this->error( 'unsupported_ability', 'This Saltus ability is registered for discovery only until a native dispatcher is available.', 501 );
+			$error = $this->error( 'unsupported_ability', 'This tool does not support REST dispatch.', 501 );
 			$this->record_error( $entry, 'error', $error );
 			return $error;
 		}
@@ -120,8 +121,6 @@ class AbilityRuntime {
 
 			if ( $this->is_cacheable( $tool ) ) {
 				$this->cache->set( $cache_key, $result, $this->cache_ttl( $tool ) );
-			} elseif ( $request->get_method() !== 'GET' ) {
-				$this->cache->clear();
 			}
 
 			$entry->complete( 'success' );
@@ -227,22 +226,5 @@ class AbilityRuntime {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- Fallback for non-WordPress contexts.
 		$encoded = \json_encode( $payload );
 		return \is_string( $encoded ) ? $encoded : '';
-	}
-
-	/**
-	 * Apply a WordPress filter, falling back to the default value outside WordPress.
-	 *
-	 * @param non-empty-string $hook  The filter hook name.
-	 * @param mixed $value  The value to filter.
-	 * @param mixed ...$args  Additional arguments passed to the filter.
-	 * @return mixed
-	 */
-	private function filter( string $hook, $value, ...$args ) {
-		if ( function_exists( 'apply_filters' ) ) {
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook names are internal constants passed through this helper.
-			return apply_filters( $hook, $value, ...$args );
-		}
-
-		return $value;
 	}
 }
