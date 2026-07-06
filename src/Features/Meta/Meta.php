@@ -9,6 +9,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\MCP\Tools\GetMetaFields;
 use Saltus\WP\Framework\MCP\Tools\ListMetaFields;
+use Saltus\WP\Framework\MCP\Tools\UpdateMetaFields;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Rest\MetaController;
@@ -79,6 +80,7 @@ final class Meta implements Service, Conditional, Assembly, RestRouteProvider, T
 		return [
 			new ListMetaFields( $this->meta_field_provider ),
 			new GetMetaFields( $this->meta_field_provider ),
+			new UpdateMetaFields( $this->meta_field_provider ),
 		];
 	}
 }
