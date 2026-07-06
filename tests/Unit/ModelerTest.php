@@ -7,6 +7,9 @@ use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\ModelFactory;
 use Saltus\WP\Framework\Tests\TestCase;
 
+/**
+ * @covers \Saltus\WP\Framework\Modeler
+ */
 class ModelerTest extends TestCase {
 	private function callAdd( Modeler $modeler, Model $model ): void {
 		( function () use ( $model ): void {

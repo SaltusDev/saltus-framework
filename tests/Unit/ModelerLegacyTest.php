@@ -15,6 +15,9 @@ use Saltus\WP\Framework\Tests\TestCase;
 
 require_once dirname( __DIR__ ) . '/Rest/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Modeler
+ */
 class ModelerLegacyTest extends TestCase {
 
 	private string $tmp_dir;
