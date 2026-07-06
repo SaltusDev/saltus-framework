@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Tests\Unit\Models\Config;
 use Saltus\WP\Framework\Models\Config\NoFile;
 use Saltus\WP\Framework\Tests\TestCase;
 
+/**
+ * @covers \Saltus\WP\Framework\Models\Config\NoFile
+ */
 class NoFileTest extends TestCase {
 	public function testStoresArrayDataWithoutReadingAFile(): void {
 		$config = new NoFile(
