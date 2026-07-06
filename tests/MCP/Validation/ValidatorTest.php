@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Tests\MCP\Validation;
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Validation\Validator;
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\Validation\Validator
+ */
 class ValidatorTest extends TestCase
 {
     public function testValidPasses(): void

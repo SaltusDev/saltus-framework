@@ -6,6 +6,9 @@ use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 
+/**
+ * @covers \Saltus\WP\Framework\MCP\Tools\ToolProvider
+ */
 class ToolProviderTest extends TestCase
 {
     private ToolProvider $provider;
