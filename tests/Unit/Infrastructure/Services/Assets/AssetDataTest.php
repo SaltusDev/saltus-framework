@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Tests\Unit\Infrastructure\Services\Assets;
 use Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData;
 use Saltus\WP\Framework\Tests\TestCase;
 
+/**
+ * @covers \Saltus\WP\Framework\Infrastructure\Services\Assets\AssetData
+ */
 class AssetDataTest extends TestCase {
 	public function testExposesConfiguredAssetData(): void {
 		$data = new AssetData(
