@@ -18,6 +18,9 @@ use Saltus\WP\Framework\Models\Model;
 
 require_once __DIR__ . '/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Rest\RestServer
+ */
 class RestServerTest extends TestCase {
 	private Modeler $modeler;
 

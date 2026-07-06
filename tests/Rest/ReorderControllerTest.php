@@ -12,6 +12,9 @@ use WP_Error;
 
 require_once __DIR__ . '/functions.php';
 
+/**
+ * @covers \Saltus\WP\Framework\Rest\ReorderController
+ */
 class ReorderControllerTest extends TestCase {
 	private ReorderController $controller;
 
