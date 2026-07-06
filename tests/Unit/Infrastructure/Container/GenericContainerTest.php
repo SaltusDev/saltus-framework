@@ -8,6 +8,9 @@ use Saltus\WP\Framework\Infrastructure\Container\Invalid;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\Tests\TestCase;
 
+/**
+ * @covers \Saltus\WP\Framework\Infrastructure\Container\GenericContainer
+ */
 class GenericContainerTest extends TestCase {
 	public function testRegisterInstantiatesServiceWithDependencies(): void {
 		$container = new GenericContainer();

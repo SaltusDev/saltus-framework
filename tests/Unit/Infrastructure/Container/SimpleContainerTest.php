@@ -7,6 +7,9 @@ use Saltus\WP\Framework\Infrastructure\Container\SimpleContainer;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\Tests\TestCase;
 
+/**
+ * @covers \Saltus\WP\Framework\Infrastructure\Container\SimpleContainer
+ */
 class SimpleContainerTest extends TestCase {
 	public function testPutStoresServiceForLaterRetrieval(): void {
 		$container = new SimpleContainer();
