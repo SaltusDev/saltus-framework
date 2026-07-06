@@ -74,7 +74,7 @@ class ReorderController extends WP_REST_Controller {
 	public function create_item_permissions_check( $request ) {
 		$items   = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'items' ) : null;
 		$allowed = is_array( $items ) && $items !== []
-			? $this->reorder_service->can_edit_any_requested_post( $items )
+			? $this->reorder_service->can_edit_any_requested_post( $items, $this->policy )
 			: current_user_can( 'edit_posts' );
 
 		if ( ! $allowed ) {

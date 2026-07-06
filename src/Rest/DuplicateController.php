@@ -56,9 +56,6 @@ class DuplicateController extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		$post_id = is_object( $request ) && method_exists( $request, 'get_param' ) ? (int) $request->get_param( 'post_id' ) : 0;
-		if ( $post_id > 0 && ! get_post( $post_id ) ) {
-			return true;
-		}
 
 		$allowed = $post_id > 0 ? current_user_can( 'edit_post', $post_id ) : current_user_can( 'edit_posts' );
 
