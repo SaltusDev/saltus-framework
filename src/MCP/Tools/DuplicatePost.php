@@ -59,4 +59,12 @@ class DuplicatePost extends RestTool {
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
 		return $this->request( 'POST', '/saltus-framework/v1/duplicate/' . (int) ( $args['post_id'] ?? 0 ) );
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return $this->can_post( 'edit_post', $args );
+	}
 }

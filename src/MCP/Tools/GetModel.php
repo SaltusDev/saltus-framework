@@ -77,4 +77,15 @@ class GetModel extends RestTool {
 	public function cache_ttl(): int {
 		return 600;
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		$slug       = (string) ( $args['slug'] ?? '' );
+		$capability = $slug !== '' ? $this->post_type_capability( $slug, 'edit_posts', 'edit_posts' ) : 'edit_posts';
+
+		return current_user_can( $capability );
+	}
 }

@@ -158,4 +158,51 @@ abstract class RestTool implements RestBackedToolInterface {
 
 		return is_string( $rest_base ) && $rest_base !== '' ? $rest_base : null;
 	}
+
+	/**
+	 * Check whether the current user can use this tool with the given arguments.
+	 *
+	 * @param array<string, mixed> $args  Ability arguments.
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return current_user_can( 'read' );
+	}
+
+	/**
+	 * Check a post-specific WordPress capability.
+	 *
+	 * @param string $capability  Capability to check.
+	 * @param array<string, mixed> $args  Ability arguments.
+	 * @return bool
+	 */
+	protected function can_post( string $capability, array $args ): bool {
+		$post_id = (int) ( $args['post_id'] ?? 0 );
+		if ( $post_id <= 0 ) {
+			return false;
+		}
+
+		return current_user_can( $capability, $post_id );
+	}
+
+	/**
+	 * Resolve a post type capability from its registered object.
+	 *
+	 * @param string $post_type  Post type slug.
+	 * @param string $capability  Capability property to read.
+	 * @param string $fallback  Fallback capability.
+	 * @return string
+	 */
+	protected function post_type_capability( string $post_type, string $capability, string $fallback ): string {
+		if ( ! function_exists( 'get_post_type_object' ) ) {
+			return $fallback;
+		}
+
+		$post_type_object = get_post_type_object( $post_type );
+		if ( is_object( $post_type_object ) && isset( $post_type_object->cap->{$capability} ) && is_string( $post_type_object->cap->{$capability} ) ) {
+			return $post_type_object->cap->{$capability};
+		}
+
+		return $fallback;
+	}
 }

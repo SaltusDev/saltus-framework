@@ -87,4 +87,15 @@ class CreatePost extends RestTool {
 
 		return $this->request( 'POST', '/wp/v2/' . rawurlencode( $this->post_type_rest_base( (string) ( $args['post_type'] ?? 'posts' ) ) ), [], $body );
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		$post_type  = (string) ( $args['post_type'] ?? 'posts' );
+		$capability = $this->post_type_capability( $post_type, 'create_posts', 'edit_posts' );
+
+		return current_user_can( $capability );
+	}
 }

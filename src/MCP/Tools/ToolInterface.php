@@ -23,4 +23,12 @@ interface ToolInterface {
 	 * @return array<string, mixed>
 	 */
 	public function get_parameters(): array;
+
+	/**
+	 * Check whether the current user can use this tool with the given arguments.
+	 *
+	 * @param array<string, mixed> $args  Ability arguments.
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool;
 }

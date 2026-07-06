@@ -62,4 +62,12 @@ class DeletePost extends RestTool {
 			[ 'force' => ! empty( $args['force'] ) ]
 		);
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return $this->can_post( 'delete_post', $args );
+	}
 }

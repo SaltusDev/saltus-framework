@@ -67,4 +67,27 @@ class CreateTerm extends RestTool {
 
 		return $this->request( 'POST', '/wp/v2/' . rawurlencode( $this->taxonomy_rest_base( (string) ( $args['taxonomy'] ?? '' ) ) ), [], $body );
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		$taxonomy = (string) ( $args['taxonomy'] ?? '' );
+		if ( $taxonomy === '' || ! function_exists( 'get_taxonomy' ) ) {
+			return false;
+		}
+
+		$taxonomy_object = get_taxonomy( $taxonomy );
+		if ( ! is_object( $taxonomy_object ) ) {
+			return false;
+		}
+
+		$capability = 'manage_categories';
+		if ( isset( $taxonomy_object->cap->edit_terms ) && is_string( $taxonomy_object->cap->edit_terms ) ) {
+			$capability = $taxonomy_object->cap->edit_terms;
+		}
+
+		return current_user_can( $capability );
+	}
 }

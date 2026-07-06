@@ -79,4 +79,12 @@ class ExportPost extends RestTool {
 	public function export_post( int $post_id ) {
 		return $this->exporter->export_post( $post_id );
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return current_user_can( 'export' );
+	}
 }

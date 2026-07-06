@@ -100,4 +100,15 @@ class GetMetaFields extends RestTool {
 	public function cache_ttl(): int {
 		return 600;
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		$post_type  = (string) ( $args['post_type'] ?? '' );
+		$capability = $post_type !== '' ? $this->post_type_capability( $post_type, 'edit_posts', 'edit_posts' ) : 'edit_posts';
+
+		return current_user_can( $capability );
+	}
 }

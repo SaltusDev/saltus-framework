@@ -65,4 +65,12 @@ class GetPost extends RestTool {
 	public function is_cacheable(): bool {
 		return true;
 	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return bool
+	 */
+	public function has_permission( array $args ): bool {
+		return $this->can_post( 'read_post', $args );
+	}
 }
