@@ -31,6 +31,7 @@ use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
@@ -77,6 +78,24 @@ class Core implements Plugin {
 	 * Instanciates Services
 	 */
 	protected ?object $instantiator = null;
+
+	/**
+	 * Dedicated registry of RestRouteProvider services.
+	 * Populated before the is_needed() gate so REST routes are always
+	 * available regardless of the admin/REST_REQUEST context.
+	 *
+	 * @var list<RestRouteProvider>
+	 */
+	protected array $rest_route_providers = [];
+
+	/**
+	 * Dedicated registry of ToolContributor services.
+	 * Populated before the is_needed() gate so MCP tools are always
+	 * available regardless of the admin/REST_REQUEST context.
+	 *
+	 * @var list<ToolContributor>
+	 */
+	protected array $tool_contributors = [];
 
 	public function __construct( string $project_path, ?string $plugin_file = null ) {
 
@@ -166,15 +185,47 @@ class Core implements Plugin {
 
 		$routes = array_merge( $routes, $this->modeler->get_rest_routes( $this->modeler, $policy ) );
 
-		foreach ( $this->service_container as $service ) {
-			if ( ! $service instanceof RestRouteProvider ) {
-				continue;
-			}
-
-			$routes = array_merge( $routes, $service->get_rest_routes( $this->modeler, $policy ) );
+		foreach ( $this->rest_route_providers as $provider ) {
+			$routes = array_merge( $routes, $provider->get_rest_routes( $this->modeler, $policy ) );
 		}
 
 		return $routes;
+	}
+
+	/**
+	 * If the given service class implements RestRouteProvider, instantiate
+	 * it unconditionally and add it to the dedicated registry.
+	 *
+	 * @param class-string   $class        Service class name.
+	 * @param array<mixed>   $dependencies Constructor dependencies.
+	 */
+	private function maybe_register_route_provider( string $class, array $dependencies ): void {
+		if ( ! is_a( $class, RestRouteProvider::class, true ) ) {
+			return;
+		}
+
+		$instance = $this->service_container->instantiate_unconditionally( $class, $dependencies );
+		if ( $instance instanceof RestRouteProvider ) {
+			$this->rest_route_providers[] = $instance;
+		}
+	}
+
+	/**
+	 * If the given service class implements ToolContributor, instantiate
+	 * it unconditionally and add it to the dedicated registry.
+	 *
+	 * @param class-string   $class        Service class name.
+	 * @param array<mixed>   $dependencies Constructor dependencies.
+	 */
+	private function maybe_register_tool_contributor( string $class, array $dependencies ): void {
+		if ( ! is_a( $class, ToolContributor::class, true ) ) {
+			return;
+		}
+
+		$instance = $this->service_container->instantiate_unconditionally( $class, $dependencies );
+		if ( $instance instanceof ToolContributor ) {
+			$this->tool_contributors[] = $instance;
+		}
 	}
 
 	private function register_rest_routes(): void {
@@ -261,8 +312,24 @@ class Core implements Plugin {
 			'modeler_resolver' => function (): ?Modeler {
 				return $this->modeler;
 			},
-			'services'         => $this->service_container,
+			'services'          => $this->service_container,
+			'tool_contributors' => function (): array {
+				return $this->tool_contributors;
+			},
 		];
+
+		// First pass: populate dedicated registries for RestRouteProvider
+		// and ToolContributor unconditionally (bypasses is_needed()).
+		// REST routes and MCP tools must be available even when the
+		// admin-facing gate returns false during plugin boot.
+		foreach ( $services as $class ) {
+			$this->maybe_register_route_provider( $class, $dependencies );
+			$this->maybe_register_tool_contributor( $class, $dependencies );
+		}
+
+		// Second pass: register services with the is_needed() gate.
+		// This determines whether admin hooks (Registerable, Actionable,
+		// HasAssets) are wired up.
 		foreach ( $services as $id => $class ) {
 			$this->service_container->register( $id, $class, $dependencies );
 		}

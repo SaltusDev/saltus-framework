@@ -149,10 +149,19 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 			$contributors[] = $modeler;
 		}
 
-		$services = $this->dependencies['services'] ?? [];
-		foreach ( $services as $service ) {
-			if ( $service instanceof ToolContributor ) {
-				$contributors[] = $service;
+		// Use the pre-built ToolContributor registry populated by Core
+		// before the is_needed() gate, so tools are always available.
+		$contributor_callback = $this->dependencies['tool_contributors'] ?? null;
+		if ( is_callable( $contributor_callback ) ) {
+			$contributors = array_merge( $contributors, $contributor_callback() );
+		} else {
+			// Fallback when MCP is instantiated directly (outside Core):
+			// iterate the services container for ToolContributor instances.
+			$services = $this->dependencies['services'] ?? [];
+			foreach ( $services as $service ) {
+				if ( $service instanceof ToolContributor ) {
+					$contributors[] = $service;
+				}
 			}
 		}
 
