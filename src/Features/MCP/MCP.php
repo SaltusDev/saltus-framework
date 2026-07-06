@@ -140,7 +140,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 	}
 
 	/**
-	 * @return list<ToolContributor>
+	 * @return ToolContributor[]
 	 */
 	private function contributors(): array {
 		$contributors = [];
