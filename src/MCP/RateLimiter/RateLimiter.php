@@ -5,6 +5,7 @@ namespace Saltus\WP\Framework\MCP\RateLimiter;
  * Sliding-window rate limiter backed by WordPress transients.
  */
 class RateLimiter {
+	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
 	private int $default_max_requests;
 	private int $default_window_seconds;
@@ -116,21 +117,5 @@ class RateLimiter {
 		if ( function_exists( 'set_transient' ) ) {
 			set_transient( $key, $requests, $ttl );
 		}
-	}
-
-	/**
-	 * Apply a WordPress filter, falling back to the default value outside WordPress.
-	 *
-	 * @param non-empty-string $hook  The filter hook name.
-	 * @param mixed $value  The value to filter.
-	 * @return mixed
-	 */
-	private function filter( string $hook, $value ) {
-		if ( function_exists( 'apply_filters' ) ) {
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook names are internal constants passed through this helper.
-			return apply_filters( $hook, $value );
-		}
-
-		return $value;
 	}
 }

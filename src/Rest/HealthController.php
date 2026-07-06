@@ -12,6 +12,7 @@ use WP_REST_Server;
  * REST controller exposing framework health and MCP runtime metrics.
  */
 class HealthController extends WP_REST_Controller {
+	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
 	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 
@@ -65,7 +66,7 @@ class HealthController extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ): WP_REST_Response {
-		$limit   = max( 1, (int) $this->filter( 'saltus/framework/health/audit_sample_size', 100 ) );
+		$limit   = max( 1, min( 1000, (int) $this->filter( 'saltus/framework/health/audit_sample_size', 100 ) ) );
 		$entries = $this->audit_logger->get_recent_entries( $limit );
 		$audit   = $this->audit_stats( $entries );
 
@@ -180,21 +181,5 @@ class HealthController extends WP_REST_Controller {
 		$rank = max( 1, min( $rank, count( $values ) ) );
 
 		return $values[ $rank - 1 ];
-	}
-
-	/**
-	 * Apply a WordPress filter, falling back to the default outside WordPress.
-	 *
-	 * @param non-empty-string $hook  Filter hook.
-	 * @param mixed $value  Default value.
-	 * @return mixed
-	 */
-	private function filter( string $hook, $value ) {
-		if ( function_exists( 'apply_filters' ) ) {
-			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Health filter names are internal.
-			return apply_filters( $hook, $value );
-		}
-
-		return $value;
 	}
 }
