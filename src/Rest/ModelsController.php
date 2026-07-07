@@ -286,7 +286,7 @@ class ModelsController extends WP_REST_Controller {
 			'label_singular' => $this->check_method( $model, 'get_label_singular', 'one', '' ),
 			'label_plural'   => $this->check_method( $model, 'get_label_plural', 'many', '' ),
 			'featured_image' => $this->check_method( $model, 'get_featured_image_label', 'featured_image', '' ),
-			'description'    => $model->description ?? '',
+			'description'    => $this->check_method( $model, 'get_description', 'description', '' ),
 			'is_public'      => $options['public'] ?? true,
 			'show_in_rest'   => $options['show_in_rest'] ?? true,
 			'rest_base'      => method_exists( $model, 'get_rest_base' ) ? $model->get_rest_base() : ( $options['rest_base'] ?? $this->check_method( $model, 'get_registration_name', 'name', '' ) ),
