@@ -289,14 +289,33 @@ final class SaltusSingleExport implements Processable {
 		}
 
 		$date_query = $query->get( 'date_query' );
-		if ( empty( $date_query[0]['after'] ) || empty( $date_query[0]['before'] ) ) {
+		if ( ! is_array( $date_query ) ) {
+			return false;
+		}
+
+		$after  = null;
+		$before = null;
+
+		foreach ( $date_query as $clause ) {
+			if ( ! is_array( $clause ) ) {
+				continue;
+			}
+			if ( isset( $clause['after'] ) ) {
+				$after = $clause['after'];
+			}
+			if ( isset( $clause['before'] ) ) {
+				$before = $clause['before'];
+			}
+		}
+
+		if ( empty( $after ) || empty( $before ) ) {
 			return false;
 		}
 
 		$start = gmdate( 'Y-m-d', strtotime( self::FAKE_DATE ) );
 		$end   = gmdate( 'Y-m-d', strtotime( '+1 month', strtotime( self::FAKE_DATE ) ) );
 
-		return gmdate( 'Y-m-d', strtotime( $date_query[0]['after'] ) ) === $start
-			&& gmdate( 'Y-m-d', strtotime( $date_query[0]['before'] ) ) === $end;
+		return gmdate( 'Y-m-d', strtotime( $after ) ) === $start
+			&& gmdate( 'Y-m-d', strtotime( $before ) ) === $end;
 	}
 }
