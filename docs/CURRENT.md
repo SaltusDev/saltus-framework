@@ -106,6 +106,11 @@
 - Validator::is_list() helper added for type checks @since 2026-07-06
 - Test suite fixed and passing: 214 tests, 605 assertions — AuditLogger DAY_IN_SECONDS fallback, ExportController export_wp echo fix, wpdb prepare %s quoting, MCPFeatureTest contributor fallback, RestRegistrationTest modeler mock injection @since 2026-07-06
 - @covers annotations added to all test classes (26 test files) @since 2026-07-06
+- MCP error hints: actionable `hint` keys added to every WP_Error `$data` array across 7 REST controllers (HealthController, ExportController, DuplicateController, ModelsController, MetaController, ReorderController, SettingsController) and MetaFieldProvider — 5 commits @since 2026-07-07
+- Permission delegation: ToolInterface::has_permission() added; RestTool default + 13 per-tool overrides; AbilityDefinitionFactory::can_use_tool refactored to delegate to per-tool has_permission — 2 commits @since 2026-07-07
+- MetaController PUT route: `update_item` + `update_item_permissions_check` at `PUT /saltus-framework/v1/meta/{post_type}/{post_id}` with serialized meta merging; UpdateMetaFields MCP tool and MetaControllerTest + UpdateMetaFieldsTest added — 1 commit @since 2026-07-07
+- Test suite: 226 tests, 639 assertions (bumped from 214/605 by +12 tests, +34 assertions for new MCP tool, MetaController PUT, and count updates) @since 2026-07-07
+- ModelsController: use `check_method` for description property access to prevent PHP 8.2+ dynamic property deprecation notices @since 2026-07-07
 
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
