@@ -58,7 +58,7 @@ class RestServerTest extends TestCase {
 		foreach ( $expectedPatterns as $pattern ) {
 			$found = false;
 			foreach ( $routes as $route ) {
-				if ( str_contains( $route, $pattern ) ) {
+				if ( strpos( $route, $pattern ) !== false ) {
 					$found = true;
 					break;
 				}
