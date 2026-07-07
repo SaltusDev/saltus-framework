@@ -20,6 +20,7 @@ class Asset implements Service {
 	/**
 	 * The asset dependencies.
 	 */
+	/** @var array<int, string> */
 	public array $dependencies;
 
 	/**
@@ -31,7 +32,7 @@ class Asset implements Service {
 	 * Constructor.
 	 *
 	 * @param string $src          File path/URL (e.g., "assets/js/script.js")
-	 * @param array  $dependencies Script/style dependencies (e.g., ['jquery'])
+	 * @param array<int, string> $dependencies Script/style dependencies (e.g., ['jquery'])
 	 * @param bool   $in_footer    Load in footer (for scripts only)
 	 * @param string $type         Explicitly set "script" or "style" (auto-detected if empty)
 	 */
@@ -76,7 +77,7 @@ class Asset implements Service {
 	/**
 	 * Get the asset dependencies.
 	 *
-	 * @return array
+	 * @return array<int, string>
 	 */
 	public function get_dependencies(): array {
 		return $this->dependencies;

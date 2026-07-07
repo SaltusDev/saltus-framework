@@ -25,6 +25,7 @@ class AssetData implements Service {
 	/**
 	 * The data to be made available to the script.
 	 */
+	/** @var array<string, mixed> */
 	private array $data;
 
 	/**
@@ -32,7 +33,7 @@ class AssetData implements Service {
 	 *
 	 * @param string $source       File path/URL (e.g., "assets/js/script.js").
 	 * @param string $identifier   Name for the JavaScript object that will contain the data.
-	 * @param array  $data         The data to be made available to the script.
+	 * @param array<string, mixed> $data The data to be made available to the script.
 	 */
 	public function __construct( string $source, string $identifier, array $data = [] ) {
 		$this->source     = $source;
@@ -61,7 +62,7 @@ class AssetData implements Service {
 	/**
 	 * Get the asset data.
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public function get_data(): array {
 		return $this->data;

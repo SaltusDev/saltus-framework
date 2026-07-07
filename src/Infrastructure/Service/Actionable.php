@@ -16,5 +16,5 @@ interface Actionable {
 	/**
 	 * Add an action to the WordPress action hook.
 	 */
-	public function add_action();
+	public function add_action(): void;
 }

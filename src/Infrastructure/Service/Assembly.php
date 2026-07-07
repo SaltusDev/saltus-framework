@@ -13,7 +13,10 @@ interface Assembly {
 	/**
 	 * Create a new instance of the service provider
 	 *
+	 * @param string               $name    Service name.
+	 * @param array<string, mixed> $project Project data.
+	 * @param array<string, mixed> $args    Service arguments.
 	 * @return object The new instance
 	 */
-	public static function make( $name, $project, $args );
+	public static function make( string $name, array $project, array $args ): object;
 }

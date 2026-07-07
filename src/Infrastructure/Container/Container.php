@@ -13,6 +13,9 @@ use Traversable;
  * be able to easily swap out the implementation for something else later on.
  *
  * @see https://www.php-fig.org/psr/psr-11/
+ *
+ * @extends Traversable<string, mixed>
+ * @extends ArrayAccess<string, mixed>
  */
 interface Container extends Traversable, Countable, ArrayAccess {
 
@@ -44,5 +47,5 @@ interface Container extends Traversable, Countable, ArrayAccess {
 	 *                         container.
 	 * @param mixed   $item    Item to put into the container.
 	 */
-	public function put( string $id, $item );
+	public function put( string $id, $item ): void;
 }

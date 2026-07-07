@@ -9,17 +9,17 @@ class Project {
 	/**
 	 * Unique identifier (slug)
 	 */
-	public $name;
+	public string $name;
 
 	/**
 	 * Current version.
 	 */
-	public $version;
+	public string $version;
 
 	/**
 	 * Plugin file path
 	 */
-	public $file_path;
+	public string $file_path;
 
 
 	/**
@@ -40,7 +40,7 @@ class Project {
 	 *
 	 * @return string The unique identifier (slug)
 	 */
-	public function get_name() {
+	public function get_name(): string {
 		return $this->name;
 	}
 
@@ -49,7 +49,7 @@ class Project {
 	 *
 	 * @return string The current version.
 	 */
-	public function get_version() {
+	public function get_version(): string {
 		return $this->version;
 	}
 }

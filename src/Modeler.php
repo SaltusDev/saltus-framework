@@ -6,21 +6,41 @@
  */
 namespace Saltus\WP\Framework;
 
+use Noodlehaus\AbstractConfig;
 use Noodlehaus\Config;
 use Saltus\WP\Framework\Models\Config\NoFile;
+use Saltus\WP\Framework\Models\Model;
+use Saltus\WP\Framework\Models\ModelFactory;
+use Saltus\WP\Framework\MCP\Tools\CreatePost;
+use Saltus\WP\Framework\MCP\Tools\CreateTerm;
+use Saltus\WP\Framework\MCP\Tools\DeletePost;
+use Saltus\WP\Framework\MCP\Tools\GetHealth;
+use Saltus\WP\Framework\MCP\Tools\GetModel;
+use Saltus\WP\Framework\MCP\Tools\GetPost;
+use Saltus\WP\Framework\MCP\Tools\ListModels;
+use Saltus\WP\Framework\MCP\Tools\ListPosts;
+use Saltus\WP\Framework\MCP\Tools\ListTerms;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
+use Saltus\WP\Framework\MCP\Tools\UpdatePost;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\ModelsController;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
 
-class Modeler {
+class Modeler implements RestRouteProvider, ToolContributor {
 
-	protected $model_factory;
+	protected ModelFactory $model_factory;
 
-	protected $model_list;
+	/** @var array<string, Model> */
+	protected array $model_list = [];
 
-	public function __construct( $model_factory ) {
+	public function __construct( ModelFactory $model_factory ) {
 		$this->model_factory = $model_factory;
 		// should contain a list of loaded models
 	}
 
-	public function init( $project_path ) {
+	public function init( string $project_path ): void {
 		$path = $this->get_path( $project_path );
 		if ( ! $path ) {
 			return;
@@ -31,7 +51,7 @@ class Modeler {
 	/**
 	 * Get custom path
 	 */
-	protected function get_path( $project_path ) {
+	protected function get_path( string $project_path ): ?string {
 
 		$path = $project_path . '/src/models/';
 		if ( has_filter( 'saltus_models_path' ) ) {
@@ -45,13 +65,13 @@ class Modeler {
 		if ( file_exists( $path ) ) {
 			return $path;
 		}
-		return false;
+		return null;
 	}
 
 	/**
 	 * Load Models
 	 */
-	protected function load( $path ) {
+	protected function load( string $path ): void {
 		if ( file_exists( $path ) ) {
 			$path_dir      = new \RecursiveDirectoryIterator( $path );
 			$path_dir_iter = new \RecursiveIteratorIterator( $path_dir );
@@ -74,10 +94,7 @@ class Modeler {
 
 			foreach ( $files as $file ) { // Iterate over sorted files
 				$config = new Config( $file );
-				( $this->is_multiple( $config ) ?
-					$this->iterate_multiple( $config ) :
-					$this->create( $config )
-				);
+				$this->process_config( $config );
 			}
 		}
 
@@ -85,10 +102,7 @@ class Modeler {
 		if ( has_filter( 'saltus_models' ) ) {
 			/** @deprecated 1.2.0 */
 			$model = apply_filters( 'saltus_models', [] );
-			( ! empty( $model ) && count( $model ) > 0 ?
-					$this->iterate_multiple( $model ) :
-					$this->create( $model )
-				);
+			$this->process_config( $model );
 		}
 		// check for models added with filters
 		if ( has_filter( 'saltus/framework/models/extra_models' ) ) {
@@ -100,17 +114,39 @@ class Modeler {
 			 */
 			$empty_list = [];
 			$model      = apply_filters( 'saltus/framework/models/extra_models', $empty_list );
-			( ! empty( $model ) && count( $model ) > 0 ?
-					$this->iterate_multiple( $model ) :
-					$this->create( $model )
-				);
+			$this->process_config( $model );
 		}
+	}
+
+	/**
+	 * Process a single model config or a list of model configs.
+	 *
+	 * @param AbstractConfig|array<string|int, mixed> $config Model config data.
+	 */
+	protected function process_config( $config ): void {
+		if ( $config instanceof AbstractConfig ) {
+			( $this->is_multiple( $config ) ?
+				$this->iterate_multiple( $config ) :
+				$this->create( $config )
+			);
+			return;
+		}
+
+		if ( $config === [] ) {
+			return;
+		}
+
+		$wrapped_config = new NoFile( $config );
+		( $this->is_multiple( $wrapped_config ) ?
+			$this->iterate_multiple( $wrapped_config ) :
+			$this->create( $wrapped_config )
+		);
 	}
 
 	/**
 	 * Is multidimensional config
 	 */
-	protected function is_multiple( $config ) {
+	protected function is_multiple( AbstractConfig $config ): bool {
 		return ( is_array( current( $config->all() ) ) );
 	}
 
@@ -119,7 +155,7 @@ class Modeler {
 	 *
 	 * Creates a new config from the part
 	 */
-	protected function iterate_multiple( $config ) {
+	protected function iterate_multiple( AbstractConfig $config ): void {
 		foreach ( $config as $single_config ) {
 			$this->create( new NoFile( $single_config ) );
 		}
@@ -130,10 +166,10 @@ class Modeler {
 	 *
 	 * @param $config The set of configurations for the cpt/tax
 	 */
-	protected function create( $config ) {
+	protected function create( AbstractConfig $config ): void {
 		$model = $this->model_factory->create( $config );
-		if ( $model === false ) {
-			return false;
+		if ( $model === null ) {
+			return;
 		}
 		$this->add( $model );
 	}
@@ -141,7 +177,46 @@ class Modeler {
 	/**
 	 * Adds the model to a list
 	 */
-	protected function add( $model ) {
-		$this->model_list[ $model->get_type() ] = $model;
+	protected function add( Model $model ): void {
+		$this->model_list[ $model->get_name() ] = $model;
+	}
+
+	/**
+	 * Return all loaded models.
+	 *
+	 * @return array<string, \Saltus\WP\Framework\Models\Model> Associative array keyed by model name.
+	 */
+	public function get_models(): array {
+		return $this->model_list;
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	public function get_rest_routes( Modeler $modeler, ModelRestPolicy $policy ): array {
+		return [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_MODELS,
+				new ModelsController( $this, $policy )
+			),
+		];
+	}
+
+	/**
+	 * @return list<ToolInterface>
+	 */
+	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {
+		return [
+			new GetHealth(),
+			new ListModels(),
+			new GetModel(),
+			new ListPosts(),
+			new GetPost(),
+			new CreatePost(),
+			new UpdatePost(),
+			new DeletePost(),
+			new ListTerms(),
+			new CreateTerm(),
+		];
 	}
 }

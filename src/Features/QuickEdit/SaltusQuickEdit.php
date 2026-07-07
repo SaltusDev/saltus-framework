@@ -5,9 +5,9 @@
  * @package Saltus/WP/Framework
  */
 
-namespace Saltus\WP\Plugin\InteractiveGlobes\Saltus\WP\Framework\Features\QuickEdit;
+namespace Saltus\WP\Framework\Features\QuickEdit;
 
-use Saltus\WP\Plugin\InteractiveGlobes\Saltus\WP\Framework\Infrastructure\Service\{
+use Saltus\WP\Framework\Infrastructure\Service\{
 	Processable
 };
 
@@ -20,18 +20,18 @@ final class SaltusQuickEdit implements Processable {
 	/**
 	 * @var string $name The name of the custom post type (CPT)
 	 */
-	private $name;
+	private string $name;
 
 	/**
-	 * @var array $fields List of fields for the custom fields
+	 * @var array<string, array<string, mixed>> $fields List of fields for the custom fields
 	 */
-	private $fields = [];
+	private array $fields = [];
 
 	/**
 	 * Instantiate this Service object.
 	 *
 	 * @param string $name The name of the custom post type (CPT)
-	 * @param array  $args List of Quick Edit Fields
+	 * @param array<string, mixed> $args List of Quick Edit Fields
 	 */
 	public function __construct( string $name, array $args ) {
 		$this->name = $name; // cpt name
@@ -49,7 +49,7 @@ final class SaltusQuickEdit implements Processable {
 	 *
 	 * @return void
 	 */
-	public function process() {
+	public function process(): void {
 
 		// Save Quick Edit data
 		add_action( 'save_post', [ $this, 'save_quick_edit_data' ] );
@@ -57,7 +57,7 @@ final class SaltusQuickEdit implements Processable {
 		add_action( 'current_screen', [ $this, 'current_screen_actions' ] );
 	}
 
-	public function save_quick_edit_data( $post_id ) {
+	public function save_quick_edit_data( int $post_id ): void {
 		if (
 			! isset( $_POST['quick_edit_nonce_field'] ) ||
 			! wp_verify_nonce( $_POST['quick_edit_nonce_field'], 'quick_edit_nonce' ) ||
@@ -72,7 +72,7 @@ final class SaltusQuickEdit implements Processable {
 		}
 	}
 
-	public function current_screen_actions() {
+	public function current_screen_actions(): void {
 		$screen = get_current_screen();
 
 		if ( ! $screen ) {
@@ -99,7 +99,7 @@ final class SaltusQuickEdit implements Processable {
 	 * @param string $column The name of the column.
 	 * @param int    $post_id The ID of the post.
 	 */
-	public function populate_custom_column( $column, $post_id ) {
+	public function populate_custom_column( string $column, int $post_id ): void {
 		foreach ( $this->fields as $meta_key => $field ) {
 			if ( $column === $field['column_name'] ) {
 				$value = get_post_meta( $post_id, $meta_key, true );
@@ -114,7 +114,7 @@ final class SaltusQuickEdit implements Processable {
 	 * @param string $column_name The name of the column.
 	 * @param string $post_type   The post type.
 	 */
-	public function add_quick_edit_field( $column_name, $post_type ) {
+	public function add_quick_edit_field( string $column_name, string $post_type ): void {
 		if ( $post_type !== $this->name ) {
 			return;
 		}
@@ -141,7 +141,7 @@ final class SaltusQuickEdit implements Processable {
 	 * This script will populate the Quick Edit field with the custom field value
 	 * when the user clicks on the Quick Edit link.
 	 */
-	public function quick_edit_javascript() {
+	public function quick_edit_javascript(): void {
 		?>
 		<script type="text/javascript">
 		jQuery(function($) {

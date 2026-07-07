@@ -2,7 +2,7 @@
 /**
  * Saltus Framework
  *
- * @version 1.3.1
+ * @version 2.0.0
  */
 namespace Saltus\WP\Framework;
 
@@ -30,43 +30,78 @@ use Saltus\WP\Framework\Features\QuickEdit\QuickEdit;
 use Saltus\WP\Framework\Features\RememberTabs\RememberTabs;
 use Saltus\WP\Framework\Features\Settings\Settings;
 use Saltus\WP\Framework\Features\SingleExport\SingleExport;
+use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\Rest\HealthController;
+use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RestRouteDefinition;
+use Saltus\WP\Framework\Rest\RestRouteProvider;
+use Saltus\WP\Framework\Rest\RestServer;
 
 
 class Core implements Plugin {
 
-	// Main filters to control the flow of the plugin from outside code.
-	const SERVICES_FILTER = 'services';
+	public const VERSION = '2.0.0';
 
-	// Prefixes to use.
-	const HOOK_PREFIX    = 'saltus/framework/';
-	const SERVICE_PREFIX = '';
+	/**
+	 * Main filters to control the flow of the plugin from outside code.
+	 * @var non-empty-string
+	 */
+	private const SERVICES_FILTER = 'services';
+
+	/**
+	 * Prefixes to use.
+	 * @var non-empty-string
+	 */
+	private const HOOK_PREFIX = 'saltus/framework/';
 
 
 	/**
 	 * If services can be filtered out
-	 * @var bool */
-	protected $enable_filters;
+	 * @var bool
+	 */
+	protected bool $enable_filters = true;
 
 	/**
 	 * Service list
 	 **/
-	protected $service_container;
+	protected ServiceContainer $service_container;
 
 	/** A list of paths and urls */
-	protected $project = [];
+	/** @var array<string, mixed> */
+	protected array $project = [];
 
 	/** Loads paths and models */
-	protected $modeler;
+	protected ?Modeler $modeler = null;
 
 	/**
 	 * Instanciates Services
 	 */
-	protected $instantiator;
+	protected ?object $instantiator = null;
 
-	public function __construct( string $project_path ) {
+	/**
+	 * Dedicated registry of RestRouteProvider services.
+	 * Populated before the is_needed() gate so REST routes are always
+	 * available regardless of the admin/REST_REQUEST context.
+	 *
+	 * @var list<RestRouteProvider>
+	 */
+	protected array $rest_route_providers = [];
+
+	/**
+	 * Dedicated registry of ToolContributor services.
+	 * Populated before the is_needed() gate so MCP tools are always
+	 * available regardless of the admin/REST_REQUEST context.
+	 *
+	 * @var list<ToolContributor>
+	 */
+	protected array $tool_contributors = [];
+
+	public function __construct( string $project_path, ?string $plugin_file = null ) {
 
 		//TODO by pcarvalho: move to project class
-		$this->project['path'] = $project_path;
+		$this->project['path']        = $project_path;
+		$this->project['plugin_file'] = $plugin_file ?? $project_path;
 
 		// the framework root path
 		$this->project['root_path'] = dirname( __DIR__ );
@@ -82,21 +117,23 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function register() {
-		// Todo validate key:
-		\register_activation_hook(
-			__FILE__,
-			function () {
-				$this->activate();
-			}
-		);
+	public function register(): void {
+		$plugin_file = (string) $this->project['plugin_file'];
+		if ( is_file( $plugin_file ) ) {
+			\register_activation_hook(
+				$plugin_file,
+				function () {
+					$this->activate();
+				}
+			);
 
-		\register_deactivation_hook(
-			__FILE__,
-			function () {
-				$this->deactivate();
-			}
-		);
+			\register_deactivation_hook(
+				$plugin_file,
+				function () {
+					$this->deactivate();
+				}
+			);
+		}
 
 		// loads models and stores the list
 
@@ -109,20 +146,92 @@ class Core implements Plugin {
 		// 3- Create a "store" with a factory
 		$this->modeler = new Modeler( $model_factory );
 		$project_path  = $this->project['path'];
-		/** @deprecated 1.2.0 */
-		$priority = apply_filters( 'saltus_modeler_priority', 1 );
-		$priority = apply_filters( 'saltus/framework/modeler/priority', 1 );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+		$priority = (int) apply_filters( self::HOOK_PREFIX . 'modeler/priority', 1 );
 		add_action(
 			'init',
 			function () use ( $project_path ) {
 				$this->modeler->init( $project_path );
+
+				add_action(
+					'rest_api_init',
+					function () {
+						$this->register_rest_routes();
+					}
+				);
+
+				// If rest_api_init has already fired (e.g., modeler priority >= 100),
+				// the hook above will never run, so call routes directly.
+				if ( did_action( 'rest_api_init' ) ) {
+					$this->register_rest_routes();
+				}
 			},
 			$priority
 		);
 
-		// 4- When the store starts ( init() ), it will ask the factory to make a cpt/tax
-		// and stores the result in either list (cpt or tax list )
-		// TODO
+		// 6- MCP is registered through the default feature list.
+	}
+
+	/**
+	 * @return list<RestRouteDefinition>
+	 */
+	private function get_rest_routes( ModelRestPolicy $policy ): array {
+		$routes = [
+			new RestRouteDefinition(
+				ModelRestPolicy::CAPABILITY_HEALTH,
+				new HealthController( self::VERSION )
+			),
+		];
+
+		$routes = array_merge( $routes, $this->modeler->get_rest_routes( $this->modeler, $policy ) );
+
+		foreach ( $this->rest_route_providers as $provider ) {
+			$routes = array_merge( $routes, $provider->get_rest_routes( $this->modeler, $policy ) );
+		}
+
+		return $routes;
+	}
+
+	/**
+	 * If the given service class implements RestRouteProvider, instantiate
+	 * it unconditionally and add it to the dedicated registry.
+	 *
+	 * @param class-string   $service_class Service class name.
+	 * @param array<mixed>   $dependencies  Constructor dependencies.
+	 */
+	private function maybe_register_route_provider( string $service_class, array $dependencies ): void {
+		if ( ! is_a( $service_class, RestRouteProvider::class, true ) ) {
+			return;
+		}
+
+		$instance = $this->service_container->instantiate_unconditionally( $service_class, $dependencies );
+		if ( $instance instanceof RestRouteProvider ) {
+			$this->rest_route_providers[] = $instance;
+		}
+	}
+
+	/**
+	 * If the given service class implements ToolContributor, instantiate
+	 * it unconditionally and add it to the dedicated registry.
+	 *
+	 * @param class-string   $service_class Service class name.
+	 * @param array<mixed>   $dependencies  Constructor dependencies.
+	 */
+	private function maybe_register_tool_contributor( string $service_class, array $dependencies ): void {
+		if ( ! is_a( $service_class, ToolContributor::class, true ) ) {
+			return;
+		}
+
+		$instance = $this->service_container->instantiate_unconditionally( $service_class, $dependencies );
+		if ( $instance instanceof ToolContributor ) {
+			$this->tool_contributors[] = $instance;
+		}
+	}
+
+	private function register_rest_routes(): void {
+		$rest_policy = new ModelRestPolicy( $this->modeler );
+		$rest_server = new RestServer( $rest_policy, $this->get_rest_routes( $rest_policy ) );
+		$rest_server->register_routes();
 	}
 
 	/**
@@ -130,7 +239,7 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function activate() {
+	public function activate(): void {
 		$this->register_services();
 
 		foreach ( $this->service_container as $service ) {
@@ -147,7 +256,7 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function deactivate() {
+	public function deactivate(): void {
 		$this->register_services();
 
 		foreach ( $this->service_container as $service ) {
@@ -166,7 +275,7 @@ class Core implements Plugin {
 	 *
 	 * @return void
 	 */
-	public function register_services() {
+	public function register_services(): void {
 
 		// Bail early so we don't instantiate services twice.
 		if ( count( $this->service_container ) > 0 ) {
@@ -189,23 +298,49 @@ class Core implements Plugin {
 			 *                                classes need to implement the
 			 *                                Service interface.
 			 */
-			$services = \apply_filters(
-				static::HOOK_PREFIX . static::SERVICES_FILTER, // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+			$hook_name = self::HOOK_PREFIX . self::SERVICES_FILTER;
+			$services  = \apply_filters(
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
+				$hook_name,
 				$services
 			);
 		}
 
-		$dependencies = [ $this->project ];
-		foreach ( $services as $id => $class ) {
-			$this->service_container->register( $id, $class, $dependencies );
+		$dependencies = [
+			'project'           => $this->project,
+			'modeler'           => $this->modeler,
+			'modeler_resolver'  => function (): ?Modeler {
+				return $this->modeler;
+			},
+			'services'          => $this->service_container,
+			'tool_contributors' => function (): array {
+				return $this->tool_contributors;
+			},
+		];
+
+		// First pass: populate dedicated registries for RestRouteProvider
+		// and ToolContributor unconditionally (bypasses is_needed()).
+		// REST routes and MCP tools must be available even when the
+		// admin-facing gate returns false during plugin boot.
+		foreach ( $services as $service_class ) {
+			$this->maybe_register_route_provider( $service_class, $dependencies );
+			$this->maybe_register_tool_contributor( $service_class, $dependencies );
+		}
+
+		// Second pass: register services with the is_needed() gate.
+		// This determines whether admin hooks (Registerable, Actionable,
+		// HasAssets) are wired up.
+		foreach ( $services as $id => $service_class ) {
+			$service_id = is_string( $id ) ? $id : $service_class;
+			$this->service_container->register( $service_id, $service_class, $dependencies );
 		}
 	}
 
 	/**
 	 * Get the list of services to register.
 	 *
-	 * @return array<string> Associative array of identifiers mapped to fully
-	 *                       qualified class names.
+	 * @return array<string, class-string> Associative array of identifiers mapped
+	 *                                     to fully qualified class names.
 	 */
 	protected function get_service_classes(): array {
 		return [
@@ -214,6 +349,7 @@ class Core implements Plugin {
 			'draganddrop'   => DragAndDrop::class,
 			'duplicate'     => Duplicate::class,
 			'meta'          => Meta::class,
+			'mcp'           => MCP::class,
 			'quick_edit'    => QuickEdit::class,
 			'remember_tabs' => RememberTabs::class,
 			'settings'      => Settings::class,
@@ -226,7 +362,7 @@ class Core implements Plugin {
 	 * Get the Container that contains the services that make up the
 	 * plugin.
 	 *
-	 * @return Container Container of the plugin.
+	 * @return Container<string, mixed> Container of the plugin.
 	 */
 	public function get_container(): Container {
 		return $this->service_container;

@@ -37,12 +37,12 @@ class RememberTabs implements Service, Conditional, Assembly {
 	 * Create a new instance of the service provider
 	 *
 	 * @param string $name        The name of the custom post type (CPT)
-	 * @param array|null $project Project information.
-	 * @param array|null $args    Additional arguments.
+	 * @param array<string, mixed> $project Project information.
+	 * @param array<string, mixed> $args    Additional arguments.
 	 *
 	 * @return object The new instance
 	 */
-	public static function make( $name, $project, $args ) {
-		return new SaltusRememberTabs( $name, $project );
+	public static function make( string $name, array $project, array $args ): object {
+		return new SaltusRememberTabs( $project );
 	}
 }

@@ -24,7 +24,7 @@ class QuickEdit implements Service, Conditional, Assembly {
 	 *
 	 * @return object The new instance
 	 */
-	public static function make( $name, $project, $args ) {
+	public static function make( string $name, array $project, array $args ): object {
 		return new SaltusQuickEdit( $name, $args );
 	}
 

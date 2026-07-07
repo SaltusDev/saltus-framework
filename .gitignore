@@ -7,3 +7,4 @@ vendor/
 .vscode
 *~
 saltus-framework.code-workspace
+tests/tester.php

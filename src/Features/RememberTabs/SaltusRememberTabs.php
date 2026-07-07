@@ -8,30 +8,24 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 final class SaltusRememberTabs implements Processable {
 
 	/**
-	 * @var string $name The name of the custom post type (CPT)
-	 */
-	private $name;
-
-	/**
 	 * @var string $name Project information.
 	 */
-	private $project;
+	/** @var array<string, mixed> */
+	private array $project;
 
 	/**
 	 * Instantiate this Service object.
 	 *
-	 * @param string $name The name of the custom post type (CPT)
-	 * @param array  $project Project information.
+	 * @param array<string, mixed> $project Project information.
 	 */
-	public function __construct( string $name, array $project ) {
-		$this->name    = $name;
+	public function __construct( array $project ) {
 		$this->project = $project;
 	}
 
 	/**
 	 * Process the functionality
 	 */
-	public function process() {
+	public function process(): void {
 		add_action( 'admin_enqueue_scripts', [ $this, 'load_script_css' ] );
 	}
 	/**
@@ -39,7 +33,7 @@ final class SaltusRememberTabs implements Processable {
 	 *
 	 * @return bool
 	 */
-	private function check_load_script_css() {
+	private function check_load_script_css(): bool {
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return false;
@@ -56,7 +50,7 @@ final class SaltusRememberTabs implements Processable {
 	/**
 	 * Load the script and CSS
 	 */
-	public function load_script_css() {
+	public function load_script_css(): void {
 
 		if ( ! $this->check_load_script_css() ) {
 			return;

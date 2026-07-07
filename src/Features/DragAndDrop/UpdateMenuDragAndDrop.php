@@ -22,7 +22,7 @@ class UpdateMenuDragAndDrop implements Actionable {
 	/**
 	 * Register the WordPress action for handling the AJAX request.
 	 */
-	public function add_action() {
+	public function add_action(): void {
 		add_action( 'wp_ajax_saltus-framwork-drop-and-drag-update-menu-order', array( $this, 'update_menu_order' ) );
 	}
 
@@ -32,14 +32,14 @@ class UpdateMenuDragAndDrop implements Actionable {
 	 * Validates the nonce, checks user permissions, and updates the menu order
 	 * in the database based on the provided data.
 	 */
-	public function update_menu_order() {
+	public function update_menu_order(): void {
 		global $wpdb;
 
 		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'drag-drop-nonce' ) ) {
 			return;
 		}
 
-		if ( empty( $_POST['order'] ) ) {
+		if ( ! isset( $_POST['order'] ) || ! is_string( $_POST['order'] ) ) {
 			return;
 		}
 
@@ -52,6 +52,9 @@ class UpdateMenuDragAndDrop implements Actionable {
 
 		$id_arr = array();
 		foreach ( $data as $id_sorted ) {
+			if ( ! is_iterable( $id_sorted ) ) {
+				continue;
+			}
 			foreach ( $id_sorted as $position => $id ) {
 				$id_arr[ absint( $position ) ] = absint( $id );
 			}

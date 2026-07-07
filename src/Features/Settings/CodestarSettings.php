@@ -13,15 +13,15 @@ final class CodestarSettings implements Processable {
 	private $name;
 
 	/**
-	 * @var array $settings The settings to be used for the settings page.
+	 * @var array<string, array<string, mixed>> $settings The settings to be used for the settings page.
 	 */
-	private $settings;
+	private array $settings;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param string  $name The name of the custom post type (CPT)
-	 * @param array   $settings Optional. Settings options
+	 * @param string                              $name The name of the custom post type (CPT)
+	 * @param array<string, array<string, mixed>> $settings Optional. Settings options
 	 */
 	public function __construct( string $name, array $settings = [] ) {
 		$this->name     = $name;
@@ -31,7 +31,7 @@ final class CodestarSettings implements Processable {
 	/**
 	 * Process the settings
 	 */
-	public function process() {
+	public function process(): void {
 		/**
 		 * Create Settings pages
 		*/
@@ -48,11 +48,11 @@ final class CodestarSettings implements Processable {
 	/**
 	 * Create settings page
 	 *
-	 * @param int   $settings_id identifier of the settings
-	 * @param array $settings_page paramaters for the page
+	 * @param string               $settings_id identifier of the settings
+	 * @param array<string, mixed> $settings_page paramaters for the page
 	 * @return void
 	 */
-	private function create_settings_page( $settings_id, $settings_page ) {
+	private function create_settings_page( string $settings_id, array $settings_page ): void {
 
 		$default_args = array(
 			'menu_slug'       => $settings_id,
@@ -85,21 +85,21 @@ final class CodestarSettings implements Processable {
 	/**
 	 * Create section using builtin Codestart method
 	 *
-	 * @param mixed $id - identifier of the section
-	 * @param array  $section - parameters for the section
+	 * @param string               $id - identifier of the section
+	 * @param array<string, mixed> $section - parameters for the section
 	 * @return void
 	 */
-	private function create_section( $id, $section ) {
+	private function create_section( string $id, array $section ): void {
 		\CSF::createSection( $id, $section );
 	}
 
 	/**
 	 * Prepare fields to make sure they have all necessary parameters
 	 *
-	 * @param array $fields
-	 * @return array $fields array of fields prepared to be rendered by CodestarFields
+	 * @param array<string, array<string, mixed>> $fields
+	 * @return array<int, array<string, mixed>> $fields array of fields prepared to be rendered by CodestarFields
 	 */
-	private function prepare_fields( $fields ) {
+	private function prepare_fields( array $fields ): array {
 
 		foreach ( $fields as $key => &$field ) {
 

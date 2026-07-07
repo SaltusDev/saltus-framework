@@ -14,6 +14,8 @@ use Saltus\WP\Framework\Infrastructure\{
  *
  * Extend ArrayObject to have default implementations for iterators and
  * array access.
+ *
+ * @extends ArrayObject<string, mixed>
  */
 class SimpleContainer extends ArrayObject implements Container {
 
@@ -56,7 +58,7 @@ class SimpleContainer extends ArrayObject implements Container {
 	 *                         container.
 	 * @param Service $service Service to put into the container.
 	 */
-	public function put( string $id, $service ) {
+	public function put( string $id, $service ): void {
 		$this->offsetSet( $id, $service );
 	}
 }

@@ -10,7 +10,7 @@ interface CanRegister {
 	/**
 	 * Register the service.
 	 *
-	 * @return void
+	 * @param array<int, mixed> $dependencies
 	 */
-	public function register( string $id, string $service_class, array $dependencies );
+	public function register( string $id, string $service_class, array $dependencies ): void;
 }
