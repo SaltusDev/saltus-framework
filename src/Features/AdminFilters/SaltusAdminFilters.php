@@ -140,15 +140,15 @@ final class SaltusAdminFilters implements Processable {
 				continue;
 			}
 
-				$meta_query_key = wp_unslash( $query[ $filter_key ] );
+			$meta_query_key = wp_unslash( $query[ $filter_key ] );
 			if ( is_array( $meta_query_key ) ) {
 				$meta_query_key = array_map( 'strval', $meta_query_key );
 			} elseif ( $meta_query_key !== null ) {
 				$meta_query_key = (string) $meta_query_key;
 			}
 
-				$meta_query = self::build_meta_query( $filter, $meta_query_key );
-				$date_query = self::build_date_query( $filter, $meta_query_key );
+			$meta_query = self::build_meta_query( $filter, $meta_query_key );
+			$date_query = self::build_date_query( $filter, $meta_query_key );
 
 			if ( ! empty( $meta_query ) ) {
 				$return['meta_query'][] = $meta_query;
