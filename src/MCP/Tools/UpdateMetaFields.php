@@ -116,24 +116,43 @@ class UpdateMetaFields extends RestTool {
 			return $meta_fields_info;
 		}
 
-		$rest_meta_keys = isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] )
-			? $meta_fields_info['normalized']['rest_meta_keys']
-			: [];
+		$meta_key_lookup = $this->buildMetaKeyLookup( $meta_fields_info );
+		$updated         = $this->applyMetaUpdates( $post_id, $meta, $meta_key_lookup );
+
+		return [
+			'post_id'   => $post_id,
+			'post_type' => $post_type,
+			'meta'      => $updated,
+		];
+	}
+
+	private function buildMetaKeyLookup( array $meta_fields_info ): array {
+		$rest_meta_keys = [];
+		if ( isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] ) ) {
+			$rest_meta_keys = $meta_fields_info['normalized']['rest_meta_keys'];
+		}
 
 		$valid_keys     = [];
 		$serialized_map = [];
 		foreach ( $rest_meta_keys as $meta_key_info ) {
-			if ( isset( $meta_key_info['meta_key'] ) ) {
-				$key          = (string) $meta_key_info['meta_key'];
-				$valid_keys[] = $key;
-				if ( ! empty( $meta_key_info['serialized'] ) ) {
-					$serialized_map[ $key ] = true;
-				}
+			if ( ! isset( $meta_key_info['meta_key'] ) ) {
+				continue;
+			}
+			$key          = (string) $meta_key_info['meta_key'];
+			$valid_keys[] = $key;
+			if ( ! empty( $meta_key_info['serialized'] ) ) {
+				$serialized_map[ $key ] = true;
 			}
 		}
 
+		return [ $valid_keys, $serialized_map ];
+	}
+
+	private function applyMetaUpdates( int $post_id, array $meta_data, array $meta_key_lookup ): array {
+		[ $valid_keys, $serialized_map ] = $meta_key_lookup;
+
 		$updated = [];
-		foreach ( $meta as $key => $value ) {
+		foreach ( $meta_data as $key => $value ) {
 			if ( ! in_array( (string) $key, $valid_keys, true ) ) {
 				continue;
 			}
@@ -152,11 +171,7 @@ class UpdateMetaFields extends RestTool {
 			$updated[ $key ] = get_post_meta( $post_id, $key, true );
 		}
 
-		return [
-			'post_id'   => $post_id,
-			'post_type' => $post_type,
-			'meta'      => $updated,
-		];
+		return $updated;
 	}
 
 	/**

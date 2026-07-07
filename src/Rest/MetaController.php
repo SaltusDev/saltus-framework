@@ -216,6 +216,29 @@ class MetaController extends WP_REST_Controller {
 			);
 		}
 
+		$meta_data = $this->extract_meta_from_request( $request );
+		if ( is_wp_error( $meta_data ) ) {
+			return $meta_data;
+		}
+
+		$meta_fields_info = $this->meta_field_provider->post_type_meta( $this->modeler, $this->policy, (string) $post_type );
+		if ( is_wp_error( $meta_fields_info ) ) {
+			return $meta_fields_info;
+		}
+
+		$meta_key_lookup = $this->build_meta_key_lookup( $meta_fields_info );
+		$updated         = $this->apply_meta_updates( $post_id, $meta_data, $meta_key_lookup );
+
+		return rest_ensure_response(
+			[
+				'post_id'   => $post_id,
+				'post_type' => $post_type,
+				'meta'      => $updated,
+			]
+		);
+	}
+
+	private function extract_meta_from_request( $request ) {
 		$meta_data = $request->get_json_params();
 		if ( isset( $meta_data['meta'] ) && is_array( $meta_data['meta'] ) ) {
 			$meta_data = $meta_data['meta'];
@@ -231,27 +254,33 @@ class MetaController extends WP_REST_Controller {
 			);
 		}
 
-		// Retrieve registered meta fields for the post type
-		$meta_fields_info = $this->meta_field_provider->post_type_meta( $this->modeler, $this->policy, (string) $post_type );
-		if ( is_wp_error( $meta_fields_info ) ) {
-			return $meta_fields_info;
-		}
+		return $meta_data;
+	}
 
-		$rest_meta_keys = isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] )
-			? $meta_fields_info['normalized']['rest_meta_keys']
-			: [];
+	private function build_meta_key_lookup( array $meta_fields_info ): array {
+		$rest_meta_keys = [];
+		if ( isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] ) ) {
+			$rest_meta_keys = $meta_fields_info['normalized']['rest_meta_keys'];
+		}
 
 		$valid_keys     = [];
 		$serialized_map = [];
 		foreach ( $rest_meta_keys as $meta_key_info ) {
-			if ( isset( $meta_key_info['meta_key'] ) ) {
-				$key          = (string) $meta_key_info['meta_key'];
-				$valid_keys[] = $key;
-				if ( ! empty( $meta_key_info['serialized'] ) ) {
-					$serialized_map[ $key ] = true;
-				}
+			if ( ! isset( $meta_key_info['meta_key'] ) ) {
+				continue;
+			}
+			$key          = (string) $meta_key_info['meta_key'];
+			$valid_keys[] = $key;
+			if ( ! empty( $meta_key_info['serialized'] ) ) {
+				$serialized_map[ $key ] = true;
 			}
 		}
+
+		return [ $valid_keys, $serialized_map ];
+	}
+
+	private function apply_meta_updates( int $post_id, array $meta_data, array $meta_key_lookup ): array {
+		[ $valid_keys, $serialized_map ] = $meta_key_lookup;
 
 		$updated = [];
 		foreach ( $meta_data as $key => $value ) {
@@ -273,13 +302,7 @@ class MetaController extends WP_REST_Controller {
 			$updated[ $key ] = get_post_meta( $post_id, $key, true );
 		}
 
-		return rest_ensure_response(
-			[
-				'post_id'   => $post_id,
-				'post_type' => $post_type,
-				'meta'      => $updated,
-			]
-		);
+		return $updated;
 	}
 
 	/**
