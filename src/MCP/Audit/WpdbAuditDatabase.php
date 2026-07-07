@@ -81,7 +81,7 @@ class WpdbAuditDatabase implements AuditDatabase {
 			return $rows;
 		}
 
-		if ( $output !== ARRAY_A ) {
+		if ( ! defined( 'ARRAY_A' ) || $output !== ARRAY_A ) {
 			/** @phpstan-ignore-next-line Return type varies by $output format (OBJECT returns array<stdClass>, etc.) */
 			return $rows;
 		}
