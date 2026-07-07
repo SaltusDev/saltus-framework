@@ -238,12 +238,15 @@ class MetaController extends WP_REST_Controller {
 		);
 	}
 
+	/**
+	 * @param WP_REST_Request $request
+	 * @return array<string, mixed>|WP_Error
+	 */
 	private function extract_meta_from_request( $request ) {
 		$meta_data = $request->get_json_params();
+
 		if ( isset( $meta_data['meta'] ) && is_array( $meta_data['meta'] ) ) {
 			$meta_data = $meta_data['meta'];
-		} elseif ( ! is_array( $meta_data ) ) {
-			$meta_data = [];
 		}
 
 		if ( empty( $meta_data ) ) {
@@ -257,6 +260,10 @@ class MetaController extends WP_REST_Controller {
 		return $meta_data;
 	}
 
+	/**
+	 * @param array<string, mixed> $meta_fields_info
+	 * @return array{0: string[], 1: array<string, bool>}
+	 */
 	private function build_meta_key_lookup( array $meta_fields_info ): array {
 		$rest_meta_keys = [];
 		if ( isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] ) ) {
@@ -279,6 +286,11 @@ class MetaController extends WP_REST_Controller {
 		return [ $valid_keys, $serialized_map ];
 	}
 
+	/**
+	 * @param array<string, mixed> $meta_data
+	 * @param array{0: string[], 1: array<string, bool>} $meta_key_lookup
+	 * @return array<string, mixed>
+	 */
 	private function apply_meta_updates( int $post_id, array $meta_data, array $meta_key_lookup ): array {
 		[ $valid_keys, $serialized_map ] = $meta_key_lookup;
 

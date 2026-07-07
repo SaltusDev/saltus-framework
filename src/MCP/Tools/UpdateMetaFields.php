@@ -126,6 +126,10 @@ class UpdateMetaFields extends RestTool {
 		];
 	}
 
+	/**
+	 * @param array<string, mixed> $meta_fields_info
+	 * @return array{0: string[], 1: array<string, bool>}
+	 */
 	private function buildMetaKeyLookup( array $meta_fields_info ): array {
 		$rest_meta_keys = [];
 		if ( isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] ) ) {
@@ -148,6 +152,11 @@ class UpdateMetaFields extends RestTool {
 		return [ $valid_keys, $serialized_map ];
 	}
 
+	/**
+	 * @param array<string, mixed> $meta_data
+	 * @param array{0: string[], 1: array<string, bool>} $meta_key_lookup
+	 * @return array<string, mixed>
+	 */
 	private function applyMetaUpdates( int $post_id, array $meta_data, array $meta_key_lookup ): array {
 		[ $valid_keys, $serialized_map ] = $meta_key_lookup;
 
