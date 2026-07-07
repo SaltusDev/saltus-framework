@@ -111,31 +111,59 @@ final class CodestarMeta implements Processable {
 			return;
 		}
 
-		$post_type = $this->name;
-		$data_type = $box_settings['data_type'] ?? 'unserialize'; // default
-
-			/**
-			 * @param array<string|int, MetaConfig> $fields
-			 */
-			$process_fields = function ( array $fields, bool $serialized ) use ( $box_id, $post_type ): void {
-				if ( $serialized ) {
-					$this->create_meta_fields_serialized( $fields, $box_id, $post_type );
-				} else {
-					foreach ( $fields as $meta_name => $meta_fields ) {
-						$this->create_meta_fields_not_serialized( $meta_name, $meta_fields, $post_type );
-					}
-				}
-			};
-
+		$data_type  = $box_settings['data_type'] ?? 'unserialize';
 		$serialized = $data_type === 'serialize';
+
+		$fields = $this->get_box_fields( $box_settings );
+		if ( empty( $fields ) ) {
+			return;
+		}
+
+		$this->process_rest_fields( $fields, $box_id, $serialized );
+	}
+
+	/**
+	 * Extract field groups from box settings, whether nested in sections or flat.
+	 *
+	 * @param array<string|int, mixed> $box_settings
+	 * @return array<int, array<string|int, mixed>>
+	 */
+	private function get_box_fields( array $box_settings ): array {
 		if ( ! empty( $box_settings['sections'] ) && is_array( $box_settings['sections'] ) ) {
+			$fields = [];
 			foreach ( $box_settings['sections'] as $section ) {
 				if ( ! empty( $section['fields'] ) ) {
-					$process_fields( $section['fields'], $serialized );
+					$fields[] = $section['fields'];
 				}
 			}
-		} elseif ( ! empty( $box_settings['fields'] ) ) {
-			$process_fields( $box_settings['fields'], $serialized );
+			return $fields;
+		}
+
+		if ( ! empty( $box_settings['fields'] ) ) {
+			return [ $box_settings['fields'] ];
+		}
+
+		return [];
+	}
+
+	/**
+	 * Process field groups for REST API registration.
+	 *
+	 * @param array<int, array<string|int, MetaConfig>> $field_groups
+	 * @param string                                     $box_id
+	 * @param bool                                       $serialized
+	 */
+	private function process_rest_fields( array $field_groups, string $box_id, bool $serialized ): void {
+		$post_type = $this->name;
+		foreach ( $field_groups as $fields ) {
+			if ( $serialized ) {
+				$this->create_meta_fields_serialized( $fields, $box_id, $post_type );
+			} else {
+				foreach ( $fields as $meta_name => $meta_fields ) {
+					$actual_name = is_string( $meta_name ) ? $meta_name : (string) ( $meta_fields['id'] ?? $meta_name );
+					$this->create_meta_fields_not_serialized( $actual_name, $meta_fields, $post_type );
+				}
+			}
 		}
 	}
 
