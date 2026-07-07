@@ -32,13 +32,14 @@ class MetaFieldProvider {
 			}
 
 			$args = $this->get_model_args( $model, $policy );
+			$meta = isset( $args['meta'] ) && \is_array( $args['meta'] ) ? $args['meta'] : [];
 
 			$post_types[] = [
 				'post_type'      => (string) $post_type,
 				'label_singular' => $args['label_singular'] ?? '',
 				'label_plural'   => $args['label_plural'] ?? '',
-				'meta'           => $args['meta'] ?? [],
-				'normalized'     => $this->normalize_meta_fields( $args['meta'] ?? [] ),
+				'meta'           => $meta,
+				'normalized'     => $this->normalize_meta_fields( $meta ),
 			];
 		}
 
@@ -62,7 +63,7 @@ class MetaFieldProvider {
 				__( 'Model not found.', 'saltus-framework' ),
 				[
 					'status' => 404,
-					'hint'   => sprintf(
+					'hint'   => \sprintf(
 						/* translators: %s: post type slug */
 						__( "Model '%s' is not registered or the post type is not enabled. Check the model slug and ensure it has 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] in src/models/.", 'saltus-framework' ),
 						$post_type
