@@ -116,8 +116,8 @@ class UpdateMetaFields extends RestTool {
 			return $meta_fields_info;
 		}
 
-		$meta_key_lookup = $this->buildMetaKeyLookup( $meta_fields_info );
-		$updated         = $this->applyMetaUpdates( $post_id, $meta, $meta_key_lookup );
+		$meta_key_lookup = $this->build_meta_key_lookup( $meta_fields_info );
+		$updated         = $this->apply_meta_updates( $post_id, $meta, $meta_key_lookup );
 
 		return [
 			'post_id'   => $post_id,
@@ -130,7 +130,7 @@ class UpdateMetaFields extends RestTool {
 	 * @param array<string, mixed> $meta_fields_info
 	 * @return array{0: string[], 1: array<string, bool>}
 	 */
-	private function buildMetaKeyLookup( array $meta_fields_info ): array {
+	private function build_meta_key_lookup( array $meta_fields_info ): array {
 		$rest_meta_keys = [];
 		if ( isset( $meta_fields_info['normalized']['rest_meta_keys'] ) && is_array( $meta_fields_info['normalized']['rest_meta_keys'] ) ) {
 			$rest_meta_keys = $meta_fields_info['normalized']['rest_meta_keys'];
@@ -157,7 +157,7 @@ class UpdateMetaFields extends RestTool {
 	 * @param array{0: string[], 1: array<string, bool>} $meta_key_lookup
 	 * @return array<string, mixed>
 	 */
-	private function applyMetaUpdates( int $post_id, array $meta_data, array $meta_key_lookup ): array {
+	private function apply_meta_updates( int $post_id, array $meta_data, array $meta_key_lookup ): array {
 		[ $valid_keys, $serialized_map ] = $meta_key_lookup;
 
 		$updated = [];
