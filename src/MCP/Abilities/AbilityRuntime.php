@@ -107,12 +107,6 @@ class AbilityRuntime {
 				return $error;
 			}
 
-			if ( ! $response instanceof \WP_REST_Response ) {
-				$error = $this->error( 'rest_dispatch_error', 'Invalid REST response.', 500 );
-				$this->record_error( $entry, 'error', $error );
-				return $error;
-			}
-
 			$status = (int) $response->get_status();
 			$data   = $response->get_data();
 			$result = is_array( $data ) ? $data : [ 'result' => $data ];
