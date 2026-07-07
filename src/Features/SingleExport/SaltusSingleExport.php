@@ -143,13 +143,17 @@ final class SaltusSingleExport implements Processable {
 	 *
 	 * @return string Modified SQL query.
 	 */
-	public function query( string $query, \WP_Query $wp_query ): string {
+	public function query( string $query, ?\WP_Query $wp_query = null ): string {
 		if ( ! isset( $_GET['export_single'] ) ) {
 			return $query;
 		}
 
 		// verify nonce
 		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'single_export' ) ) {
+			return $query;
+		}
+
+		if ( ! $wp_query instanceof \WP_Query ) {
 			return $query;
 		}
 
