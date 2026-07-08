@@ -98,7 +98,7 @@ class DuplicateController extends WP_REST_Controller {
 					'status' => 403,
 					'hint'   => sprintf(
 						/* translators: %s: post type slug */
-						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'duplicate' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						__( "Add 'show_in_rest' => true under the 'duplicate' section in the model config for '%s' in src/models/.", 'saltus-framework' ),
 						$post->post_type
 					),
 				]

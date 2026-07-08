@@ -65,7 +65,7 @@ class MetaFieldProvider {
 					'status' => 404,
 					'hint'   => \sprintf(
 						/* translators: %s: post type slug */
-						__( "Model '%s' is not registered or the post type is not enabled. Check the model slug and ensure it has 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] in src/models/.", 'saltus-framework' ),
+						__( "Model '%s' is not registered or the post type is not enabled. Check the model slug and add 'show_in_rest' => true under the 'meta' section in its config.", 'saltus-framework' ),
 						$post_type
 					),
 				]

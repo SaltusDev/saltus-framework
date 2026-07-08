@@ -114,7 +114,7 @@ class MetaController extends WP_REST_Controller {
 				__( 'You do not have permission to view meta fields.', 'saltus-framework' ),
 				[
 					'status' => 403,
-					'hint'   => __( "Assign edit_posts to your user, or ensure the model has 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] in its config.", 'saltus-framework' ),
+					'hint'   => __( "Assign edit_posts to your user, or add 'show_in_rest' => true under the 'meta' section in the model config.", 'saltus-framework' ),
 				]
 			);
 		}
@@ -171,7 +171,7 @@ class MetaController extends WP_REST_Controller {
 					'status' => 404,
 					'hint'   => sprintf(
 						/* translators: %s: post type slug */
-						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						__( "Add 'show_in_rest' => true under the 'meta' section in the model config for '%s' in src/models/.", 'saltus-framework' ),
 						$post_type
 					),
 				]

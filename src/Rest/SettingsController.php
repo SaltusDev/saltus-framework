@@ -82,7 +82,7 @@ class SettingsController extends WP_REST_Controller {
 						'status' => 404,
 						'hint'   => sprintf(
 							/* translators: %s: post type slug */
-							__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+							__( "Add 'show_in_rest' => true under the 'settings' section in the model config for '%s' in src/models/.", 'saltus-framework' ),
 							$post_type
 						),
 					]
@@ -148,7 +148,7 @@ class SettingsController extends WP_REST_Controller {
 						'status' => 404,
 						'hint'   => sprintf(
 							/* translators: %s: post type slug */
-							__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+							__( "Add 'show_in_rest' => true under the 'settings' section in the model config for '%s' in src/models/.", 'saltus-framework' ),
 							$post_type
 						),
 					]
@@ -185,7 +185,7 @@ class SettingsController extends WP_REST_Controller {
 					'status' => 404,
 					'hint'   => sprintf(
 						/* translators: %s: post type slug */
-						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						__( "Add 'show_in_rest' => true under the 'settings' section in the model config for '%s' in src/models/.", 'saltus-framework' ),
 						$post_type
 					),
 				]
@@ -211,7 +211,7 @@ class SettingsController extends WP_REST_Controller {
 					'status' => 404,
 					'hint'   => sprintf(
 						/* translators: %s: post type slug */
-						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'settings' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						__( "Add 'show_in_rest' => true under the 'settings' section in the model config for '%s' in src/models/.", 'saltus-framework' ),
 						$post_type
 					),
 				]

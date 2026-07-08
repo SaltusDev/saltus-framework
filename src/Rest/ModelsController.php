@@ -76,7 +76,7 @@ class ModelsController extends WP_REST_Controller {
 				__( 'You do not have permission to view models.', 'saltus-framework' ),
 				[
 					'status' => 403,
-					'hint'   => __( "Assign edit_posts to your user, or ensure at least one model has 'saltus_rest' => true in its config.", 'saltus-framework' ),
+					'hint'   => __( "Assign edit_posts to your user, or ensure at least one model has 'show_in_rest' => true in its options.", 'saltus-framework' ),
 				]
 			);
 		}
@@ -103,7 +103,7 @@ class ModelsController extends WP_REST_Controller {
 					'status' => 403,
 					'hint'   => sprintf(
 						/* translators: %s: model name */
-						__( "Assign edit_posts to your user, or ensure model '%s' has 'saltus_rest' => true in its config.", 'saltus-framework' ),
+						__( "Assign edit_posts to your user, or ensure model '%s' has 'show_in_rest' => true in its options.", 'saltus-framework' ),
 						$model_name ?? '(unknown)'
 					),
 				]
