@@ -43,7 +43,7 @@ abstract class RestTool implements RestBackedToolInterface {
 	 * @return string  Full route (e.g. '/saltus-framework/v1/models').
 	 */
 	protected function mcp_route( string $path ): string {
-		return '/' . MCPConfig::get_namespace() . $path;
+		return esc_url_raw( '/' . MCPConfig::get_namespace() . $path );
 	}
 
 	/**

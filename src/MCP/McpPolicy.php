@@ -80,12 +80,14 @@ class McpPolicy {
 	 * @return bool
 	 */
 	private function resolve_show_in_mcp( array $config, string $capability ): bool {
+		$features = ( isset( $config['features'] ) && is_array( $config['features'] ) ) ? $config['features'] : [];
+
 		$map = [
 			ModelRestPolicy::CAPABILITY_META      => $config['meta'] ?? null,
 			ModelRestPolicy::CAPABILITY_SETTINGS  => $config['settings'] ?? null,
-			ModelRestPolicy::CAPABILITY_DUPLICATE => $config['features']['duplicate'] ?? null,
-			ModelRestPolicy::CAPABILITY_EXPORT    => $config['features']['single_export'] ?? null,
-			ModelRestPolicy::CAPABILITY_REORDER   => $config['features']['drag_and_drop'] ?? null,
+			ModelRestPolicy::CAPABILITY_DUPLICATE => $features['duplicate'] ?? null,
+			ModelRestPolicy::CAPABILITY_EXPORT    => $features['single_export'] ?? null,
+			ModelRestPolicy::CAPABILITY_REORDER   => $features['drag_and_drop'] ?? null,
 		];
 
 		$section = $map[ $capability ] ?? null;

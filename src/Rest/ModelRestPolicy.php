@@ -59,12 +59,14 @@ class ModelRestPolicy {
 	 * @param array<string, mixed> $config
 	 */
 	private function resolve_show_in_rest( array $config, string $capability ): bool {
+		$features = ( isset( $config['features'] ) && is_array( $config['features'] ) ) ? $config['features'] : [];
+
 		$map = [
 			self::CAPABILITY_META      => $config['meta'] ?? null,
 			self::CAPABILITY_SETTINGS  => $config['settings'] ?? null,
-			self::CAPABILITY_DUPLICATE => $config['features']['duplicate'] ?? null,
-			self::CAPABILITY_EXPORT    => $config['features']['single_export'] ?? null,
-			self::CAPABILITY_REORDER   => $config['features']['drag_and_drop'] ?? null,
+			self::CAPABILITY_DUPLICATE => $features['duplicate'] ?? null,
+			self::CAPABILITY_EXPORT    => $features['single_export'] ?? null,
+			self::CAPABILITY_REORDER   => $features['drag_and_drop'] ?? null,
 		];
 
 		$section = $map[ $capability ] ?? null;
