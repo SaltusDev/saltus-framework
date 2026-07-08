@@ -38,15 +38,19 @@ class MCPConfig {
 	 * @return array{id: string, label: string, description: string}
 	 */
 	public static function get_ability_category(): array {
+		$default = [
+			'id'          => 'saltus-framework',
+			'label'       => 'Saltus Framework',
+			'description' => 'Saltus Framework content modeling and administration abilities.',
+		];
+
 		/** @var array{id: string, label: string, description: string} */
-		return (array) \apply_filters(
+		$filtered = (array) \apply_filters(
 			'saltus/framework/mcp/ability_category',
-			[
-				'id'          => 'saltus-framework',
-				'label'       => 'Saltus Framework',
-				'description' => 'Saltus Framework content modeling and administration abilities.',
-			]
+			$default
 		);
+
+		return array_merge( $default, $filtered );
 	}
 
 	/**
