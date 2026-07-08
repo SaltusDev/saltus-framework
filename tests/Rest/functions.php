@@ -839,6 +839,12 @@ if ( ! function_exists( 'esc_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'esc_url_raw' ) ) {
+	function esc_url_raw( $url ): string {
+		return (string) $url;
+	}
+}
+
 if ( ! function_exists( 'esc_html__' ) ) {
 	function esc_html__( string $text, string $domain = 'default' ): string {
 		return $text;
