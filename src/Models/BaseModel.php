@@ -540,6 +540,15 @@ abstract class BaseModel {
 		return $this->args;
 	}
 
+	/**
+	 * Return the full raw model configuration.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_config(): array {
+		return $this->data;
+	}
+
 	public function get_rest_base(): string {
 		return is_string( $this->options['rest_base'] ?? null )
 			? $this->options['rest_base']
