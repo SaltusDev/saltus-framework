@@ -35,11 +35,23 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	/** @var array<string, Model> */
 	protected array $model_list = [];
 
+
+
+	/**
+	 * Construct the modeler.
+
+	 * @param ModelFactory $model_factory
+	 */
 	public function __construct( ModelFactory $model_factory ) {
 		$this->model_factory = $model_factory;
 		// should contain a list of loaded models
 	}
 
+	/**
+	 * Initialize the modeler.
+	 *
+	 * @param string $project_path The project path.
+	 */
 	public function init( string $project_path ): void {
 		$path = $this->get_path( $project_path );
 		if ( ! $path ) {
@@ -50,6 +62,10 @@ class Modeler implements RestRouteProvider, ToolContributor {
 
 	/**
 	 * Get custom path
+	 *
+	 * @param string $project_path The project path.
+	 *
+	 * @return string|null The path.
 	 */
 	protected function get_path( string $project_path ): ?string {
 
@@ -69,7 +85,9 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	}
 
 	/**
-	 * Load Models
+	 * Load Models.
+	 *
+	 * @param string $path The path to the model
 	 */
 	protected function load( string $path ): void {
 		if ( file_exists( $path ) ) {
@@ -176,6 +194,8 @@ class Modeler implements RestRouteProvider, ToolContributor {
 
 	/**
 	 * Adds the model to a list
+	*
+	 * @param Model $model The model.
 	 */
 	protected function add( Model $model ): void {
 		$this->model_list[ $model->get_name() ] = $model;
@@ -184,13 +204,17 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	/**
 	 * Return all loaded models.
 	 *
-	 * @return array<string, \Saltus\WP\Framework\Models\Model> Associative array keyed by model name.
+	 * @return array<string, Model> Associative array keyed by model name.
 	 */
 	public function get_models(): array {
 		return $this->model_list;
 	}
 
 	/**
+	 * Get rest routes.
+	 *
+	 * @param Modeler $modeler
+	 * @param ModelRestPolicy $policy
 	 * @return list<RestRouteDefinition>
 	 */
 	public function get_rest_routes( Modeler $modeler, ModelRestPolicy $policy ): array {
@@ -203,6 +227,10 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	}
 
 	/**
+	 * Get MCP tools.
+	 *
+	 * @param Modeler $modeler
+	 * @param ModelRestPolicy|null $policy
 	 * @return list<ToolInterface>
 	 */
 	public function get_mcp_tools( Modeler $modeler, ?ModelRestPolicy $policy = null ): array {

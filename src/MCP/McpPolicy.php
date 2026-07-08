@@ -7,13 +7,29 @@ use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 class McpPolicy {
-
+	/**
+	 * Modeler instance.
+	 * It is responsible for providing models and model types.
+	 *
+	 * @var Modeler
+	 */
 	private Modeler $modeler;
 
+	/**
+	 * @param Modeler $modeler
+	 */
 	public function __construct( Modeler $modeler ) {
 		$this->modeler = $modeler;
 	}
 
+	/**
+	 * Check if a capability is enabled.
+	 *
+	 * @param string $capability      The capability.
+	 * @param string|null $model_type The model type.
+	 *
+	 * @return bool
+	 */
 	public function has_capability( string $capability, ?string $model_type = null ): bool {
 		if ( $capability === ModelRestPolicy::CAPABILITY_HEALTH ) {
 			return true;
@@ -32,6 +48,14 @@ class McpPolicy {
 		return false;
 	}
 
+	/**
+	 * Check if a capability is enabled for a model.
+	 *
+	 * @param Model  $model      The model.
+	 * @param string $capability The capability.
+	 *
+	 * @return bool
+	 */
 	public function is_enabled( Model $model, string $capability ): bool {
 		$options = $model->get_options();
 
@@ -49,7 +73,11 @@ class McpPolicy {
 	}
 
 	/**
+	 * Resolve whether a capability should be shown in MCP.
+	 *
 	 * @param array<string, mixed> $config
+	 *
+	 * @return bool
 	 */
 	private function resolve_show_in_mcp( array $config, string $capability ): bool {
 		$map = [
@@ -73,7 +101,10 @@ class McpPolicy {
 	}
 
 	/**
-	 * @param string $name
+	 * Get a model by name.
+	 *
+	 * @param string $name The model name.
+	 * @return Model|null
 	 */
 	public function get_model( string $name ): ?Model {
 		$models = $this->modeler->get_models();

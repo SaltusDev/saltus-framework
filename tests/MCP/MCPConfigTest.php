@@ -97,6 +97,18 @@ class MCPConfigTest extends TestCase {
 		$this->assertSame( 'Overridden Label', $category['label'] );
 	}
 
+	public function testGetAbilityCategoryFilterReturnsIncompleteArrayMergesWithDefaults(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/ability_category'] = [
+			'id' => 'custom-id',
+		];
+
+		$category = MCPConfig::get_ability_category();
+		$this->assertSame( 'custom-id', $category['id'] );
+		$this->assertSame( 'Saltus Framework', $category['label'] );
+		$this->assertSame( 'Saltus Framework content modeling and administration abilities.', $category['description'] );
+	}
+
 	public function testGetAbilityPrefixReturnsDefault(): void {
 		$this->assertSame( 'saltus/', MCPConfig::get_ability_prefix() );
 	}
