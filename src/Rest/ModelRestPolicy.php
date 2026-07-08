@@ -46,16 +46,37 @@ class ModelRestPolicy {
 			return false;
 		}
 
-		$saltus_rest = $options['saltus_rest'] ?? false;
-		if ( $saltus_rest === true ) {
+		if ( $capability === self::CAPABILITY_HEALTH || $capability === self::CAPABILITY_MODELS ) {
 			return true;
 		}
 
-		if ( ! is_array( $saltus_rest ) ) {
+		$config = $model->get_config();
+
+		return $this->resolve_show_in_rest( $config, $capability );
+	}
+
+	/**
+	 * @param array<string, mixed> $config
+	 */
+	private function resolve_show_in_rest( array $config, string $capability ): bool {
+		$section = match ( $capability ) {
+			self::CAPABILITY_META      => $config['meta'] ?? null,
+			self::CAPABILITY_SETTINGS  => $config['settings'] ?? null,
+			self::CAPABILITY_DUPLICATE => $config['features']['duplicate'] ?? null,
+			self::CAPABILITY_EXPORT    => $config['features']['single_export'] ?? null,
+			self::CAPABILITY_REORDER   => $config['features']['drag_and_drop'] ?? null,
+			default                    => null,
+		};
+
+		if ( $section === null ) {
 			return false;
 		}
 
-		return ! empty( $saltus_rest[ $capability ] );
+		if ( ! is_array( $section ) || ! array_key_exists( 'show_in_rest', $section ) ) {
+			return true;
+		}
+
+		return (bool) $section['show_in_rest'];
 	}
 
 	public function is_post_type_enabled( string $post_type, string $capability ): bool {
