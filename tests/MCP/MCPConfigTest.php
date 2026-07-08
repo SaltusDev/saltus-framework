@@ -60,6 +60,13 @@ class MCPConfigTest extends TestCase {
 		$this->assertSame( 'SALTUS-FRAMEWORK/V1', MCPConfig::get_namespace() );
 	}
 
+	public function testGetNamespaceFallsBackToDefaultWhenFilteredValueIsEmpty(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/namespace'] = '';
+
+		$this->assertSame( 'saltus-framework/v1', MCPConfig::get_namespace() );
+	}
+
 	public function testGetAbilityCategoryReturnsDefault(): void {
 		$category = MCPConfig::get_ability_category();
 

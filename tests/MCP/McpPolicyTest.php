@@ -156,6 +156,30 @@ class McpPolicyTest extends TestCase {
 		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
 	}
 
+	public function testIsEnabledHandlesMissingFeaturesConfigDefensively(): void {
+		$modeler = $this->createStub( Modeler::class );
+		$policy  = new McpPolicy( $modeler );
+
+		$model = $this->createModelMock(
+			[ 'mcp_tools' => true ],
+			[] // config has no features key
+		);
+
+		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
+	}
+
+	public function testIsEnabledHandlesNonArrayFeaturesConfigDefensively(): void {
+		$modeler = $this->createStub( Modeler::class );
+		$policy  = new McpPolicy( $modeler );
+
+		$model = $this->createModelMock(
+			[ 'mcp_tools' => true ],
+			[ 'features' => null ] // config features key is null
+		);
+
+		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
+	}
+
 	public function testGetModelReturnsNullForUnknownModel(): void {
 		$modeler = $this->createStub( Modeler::class );
 		$modeler->method( 'get_models' )->willReturn( [] );

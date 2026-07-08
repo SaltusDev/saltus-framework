@@ -93,6 +93,26 @@ class RestRegistrationTest extends TestCase {
 		$this->assertTrue( $policy->has_capability( ModelRestPolicy::CAPABILITY_HEALTH ) );
 	}
 
+	public function testIsEnabledHandlesMissingFeaturesConfigDefensively(): void {
+		$modeler = $this->createMock( Modeler::class );
+		$policy  = new ModelRestPolicy( $modeler );
+		$model   = $this->createMock( Model::class );
+		$model->method( 'get_options' )->willReturn( [ 'show_in_rest' => true ] );
+		$model->method( 'get_config' )->willReturn( [] );
+
+		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
+	}
+
+	public function testIsEnabledHandlesNonArrayFeaturesConfigDefensively(): void {
+		$modeler = $this->createMock( Modeler::class );
+		$policy  = new ModelRestPolicy( $modeler );
+		$model   = $this->createMock( Model::class );
+		$model->method( 'get_options' )->willReturn( [ 'show_in_rest' => true ] );
+		$model->method( 'get_config' )->willReturn( [ 'features' => null ] );
+
+		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
+	}
+
 	public function testHealthControllerImplementsRegisterRoutes(): void {
 		$controller = new HealthController( '1.0.0' );
 		$this->assertTrue( method_exists( $controller, 'register_routes' ) );
