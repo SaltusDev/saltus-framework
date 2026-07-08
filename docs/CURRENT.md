@@ -1,7 +1,7 @@
 # Current: Live Working State
 
 ## Working
-- Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-06
+- Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-08
 - Phase 5D: Documentation — fill README placeholders, add model examples @since 2026-07-05
 
 ## Next
@@ -111,6 +111,7 @@
 - MetaController PUT route: `update_item` + `update_item_permissions_check` at `PUT /saltus-framework/v1/meta/{post_type}/{post_id}` with serialized meta merging; UpdateMetaFields MCP tool and MetaControllerTest + UpdateMetaFieldsTest added — 1 commit @since 2026-07-07
 - Test suite: 226 tests, 639 assertions (bumped from 214/605 by +12 tests, +34 assertions for new MCP tool, MetaController PUT, and count updates) @since 2026-07-07
 - ModelsController: use `check_method` for description property access to prevent PHP 8.2+ dynamic property deprecation notices @since 2026-07-07
+- MCP namespace config filterability: added MCPConfig utility class with 3 WordPress filters (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix); added mcp_route() helper to RestTool base; refactored 21 source files from hardcoded strings to MCPConfig calls; added MCPConfigTest with 13 test cases — 6 commits, 236 tests, 655 assertions @since 2026-07-08
 
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
