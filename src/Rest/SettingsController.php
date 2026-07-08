@@ -33,8 +33,10 @@ class SettingsController extends WP_REST_Controller {
 	 * Register the REST routes for reading and updating settings.
 	 */
 	public function register_routes(): void {
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		register_rest_route(
-			$this->namespace,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				[

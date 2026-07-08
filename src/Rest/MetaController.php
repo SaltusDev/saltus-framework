@@ -41,8 +41,10 @@ class MetaController extends WP_REST_Controller {
 			return;
 		}
 
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		register_rest_route(
-			$this->namespace,
+			$namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -52,7 +54,7 @@ class MetaController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			$this->namespace,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -69,7 +71,7 @@ class MetaController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			$this->namespace,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)/(?P<post_id>\d+)',
 			[
 				'methods'             => WP_REST_Server::EDITABLE,

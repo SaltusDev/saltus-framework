@@ -35,8 +35,10 @@ class ModelsController extends WP_REST_Controller {
 	 * Register the REST routes for listing and reading models.
 	 */
 	public function register_routes(): void {
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		register_rest_route(
-			$this->namespace,
+			$namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -46,7 +48,7 @@ class ModelsController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			$this->namespace,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,
