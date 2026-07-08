@@ -52,15 +52,15 @@ class McpPolicy {
 	 * @param array<string, mixed> $config
 	 */
 	private function resolve_show_in_mcp( array $config, string $capability ): bool {
-		$section = match ( $capability ) {
+		$map = [
 			ModelRestPolicy::CAPABILITY_META      => $config['meta'] ?? null,
 			ModelRestPolicy::CAPABILITY_SETTINGS  => $config['settings'] ?? null,
 			ModelRestPolicy::CAPABILITY_DUPLICATE => $config['features']['duplicate'] ?? null,
 			ModelRestPolicy::CAPABILITY_EXPORT    => $config['features']['single_export'] ?? null,
 			ModelRestPolicy::CAPABILITY_REORDER   => $config['features']['drag_and_drop'] ?? null,
-			default                               => null,
-		};
+		];
 
+		$section = $map[ $capability ] ?? null;
 		if ( $section === null ) {
 			return false;
 		}
@@ -73,7 +73,7 @@ class McpPolicy {
 	}
 
 	/**
-	 * @param Model $model
+	 * @param string $name
 	 */
 	public function get_model( string $name ): ?Model {
 		$models = $this->modeler->get_models();
