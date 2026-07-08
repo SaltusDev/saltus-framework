@@ -136,7 +136,9 @@ class MetaControllerTest extends TestCase {
 					'Books',
 					[
 						'show_in_rest' => true,
-						'saltus_rest'  => [ 'meta' => true ],
+					],
+					[
+						'meta' => [ 'show_in_rest' => true ],
 					]
 				),
 				'movie'  => $this->createModelMock(
@@ -146,7 +148,9 @@ class MetaControllerTest extends TestCase {
 					'Movies',
 					[
 						'show_in_rest' => true,
-						'saltus_rest'  => [ 'meta' => false ],
+					],
+					[
+						'meta' => [ 'show_in_rest' => false ],
 					]
 				),
 				'hidden' => $this->createModelMock(
@@ -156,7 +160,9 @@ class MetaControllerTest extends TestCase {
 					'Hidden',
 					[
 						'show_in_rest' => false,
-						'saltus_rest'  => true,
+					],
+					[
+						'meta' => [ 'show_in_rest' => false ],
 					]
 				),
 			]
@@ -525,7 +531,7 @@ class MetaControllerTest extends TestCase {
 	/**
 	 * @return \Saltus\WP\Framework\Models\Model&object{args: array<string, mixed>}
 	 */
-	private function createModelMock( string $type, ?array $meta = null, string $label_singular = '', string $label_plural = '', array $options = [] ) {
+	private function createModelMock( string $type, ?array $meta = null, string $label_singular = '', string $label_plural = '', array $options = [], array $config = [] ) {
 		$args = [];
 
 		if ( $meta !== null ) {
@@ -538,21 +544,25 @@ class MetaControllerTest extends TestCase {
 			$args['label_plural'] = $label_plural;
 		}
 
-		return new class( $type, $args, $options ) implements \Saltus\WP\Framework\Models\Model {
+		return new class( $type, $args, $options, $config ) implements \Saltus\WP\Framework\Models\Model {
 			/** @var array<string, mixed> */
 			public array $args;
 			/** @var array<string, mixed> */
 			public array $options;
+			/** @var array<string, mixed> */
+			public array $config = [];
 			private string $type;
 
 			/**
 			 * @param array<string, mixed> $args
 			 * @param array<string, mixed> $options
+			 * @param array<string, mixed> $config
 			 */
-			public function __construct( string $type, array $args, array $options ) {
+			public function __construct( string $type, array $args, array $options, array $config = [] ) {
 				$this->type    = $type;
 				$this->args    = $args;
 				$this->options = $options;
+				$this->config  = $config;
 			}
 
 			public function setup(): void {}
@@ -571,6 +581,10 @@ class MetaControllerTest extends TestCase {
 
 			public function get_args(): array {
 				return $this->args;
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 		};
 	}

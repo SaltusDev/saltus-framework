@@ -103,12 +103,14 @@ class DuplicateControllerTest extends TestCase {
 		$modeler = $this->createStub( Modeler::class );
 		$modeler->method( 'get_models' )->willReturn(
 			[
-				'book' => $this->createModelMock(
-					[
-						'show_in_rest' => true,
-						'saltus_rest'  => [ 'duplicate' => false ],
-					]
-				),
+			'book' => $this->createModelMock(
+				[
+					'show_in_rest' => true,
+				],
+				[
+					'features' => [ 'duplicate' => [ 'show_in_rest' => false ] ],
+				]
+			),
 			]
 		);
 		$this->controller = new DuplicateController( new ModelRestPolicy( $modeler ) );
@@ -185,16 +187,20 @@ class DuplicateControllerTest extends TestCase {
 	 * @param array<string, mixed> $options
 	 * @return Model&object{options: array<string, mixed>}
 	 */
-	private function createModelMock( array $options ) {
-		return new class( $options ) implements Model {
+	private function createModelMock( array $options, array $config = [] ) {
+		return new class( $options, $config ) implements Model {
 			/** @var array<string, mixed> */
 			public array $options;
+			/** @var array<string, mixed> */
+			public array $config;
 
 			/**
 			 * @param array<string, mixed> $options
+			 * @param array<string, mixed> $config
 			 */
-			public function __construct( array $options ) {
+			public function __construct( array $options, array $config = [] ) {
 				$this->options = $options;
+				$this->config  = $config;
 			}
 
 			public function setup(): void {}
@@ -209,6 +215,10 @@ class DuplicateControllerTest extends TestCase {
 
 			public function get_options(): array {
 				return $this->options;
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 
 			public function get_args(): array {

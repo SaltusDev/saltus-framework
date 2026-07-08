@@ -142,7 +142,9 @@ class ReorderControllerTest extends TestCase {
 				'book' => $this->createModelMock(
 					[
 						'show_in_rest' => true,
-						'saltus_rest'  => [ 'reorder' => false ],
+					],
+					[
+						'features' => [ 'drag_and_drop' => [ 'show_in_rest' => false ] ],
 					]
 				),
 			]
@@ -201,16 +203,20 @@ class ReorderControllerTest extends TestCase {
 	 * @param array<string, mixed> $options
 	 * @return Model&object{options: array<string, mixed>}
 	 */
-	private function createModelMock( array $options ) {
-		return new class( $options ) implements Model {
+	private function createModelMock( array $options, array $config = [] ) {
+		return new class( $options, $config ) implements Model {
 			/** @var array<string, mixed> */
 			public array $options;
+			/** @var array<string, mixed> */
+			public array $config;
 
 			/**
 			 * @param array<string, mixed> $options
+			 * @param array<string, mixed> $config
 			 */
-			public function __construct( array $options ) {
+			public function __construct( array $options, array $config = [] ) {
 				$this->options = $options;
+				$this->config  = $config;
 			}
 
 			public function setup(): void {}
@@ -229,6 +235,10 @@ class ReorderControllerTest extends TestCase {
 
 			public function get_args(): array {
 				return [];
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 		};
 	}
