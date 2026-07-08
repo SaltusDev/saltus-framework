@@ -18,11 +18,12 @@ class MCPConfig {
 	 * @return non-falsy-string
 	 */
 	public static function get_namespace(): string {
-		/** @var non-falsy-string */
-		return (string) \apply_filters(
+		$namespace = (string) \apply_filters(
 			'saltus/framework/mcp/namespace',
 			'saltus-framework/v1'
 		);
+		/** @var non-falsy-string */
+		return $namespace !== '' ? $namespace : 'saltus-framework/v1';
 	}
 
 	/**
