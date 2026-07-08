@@ -123,6 +123,7 @@ class AbilityDefinitionFactory {
 	 * @return lowercase-string&non-falsy-string
 	 */
 	private function ability_name( string $tool_name ): string {
+		/** @var lowercase-string&non-falsy-string */
 		return strtolower( MCPConfig::get_ability_prefix() . str_replace( '_', '-', $tool_name ) );
 	}
 

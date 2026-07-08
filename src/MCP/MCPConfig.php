@@ -15,9 +15,10 @@ class MCPConfig {
 	 *
 	 * Default: 'saltus-framework/v1'
 	 *
-	 * @return string
+	 * @return non-falsy-string
 	 */
 	public static function get_namespace(): string {
+		/** @var non-falsy-string */
 		return (string) \apply_filters(
 			'saltus/framework/mcp/namespace',
 			'saltus-framework/v1'
@@ -37,6 +38,7 @@ class MCPConfig {
 	 * @return array{id: string, label: string, description: string}
 	 */
 	public static function get_ability_category(): array {
+		/** @var array{id: string, label: string, description: string} */
 		return (array) \apply_filters(
 			'saltus/framework/mcp/ability_category',
 			[
