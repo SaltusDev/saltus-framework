@@ -62,7 +62,7 @@ class ListMetaFields extends RestTool {
 	 * @return \WP_REST_Request|null
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
-		return $this->request( 'GET', '/saltus-framework/v1/meta' );
+		return $this->request( 'GET', $this->mcp_route( '/meta' ) );
 	}
 
 	/**

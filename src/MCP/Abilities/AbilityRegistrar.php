@@ -1,6 +1,7 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Abilities;
 
+use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
@@ -45,11 +46,13 @@ class AbilityRegistrar {
 			return;
 		}
 
+		$category = MCPConfig::get_ability_category();
+
 		\wp_register_ability_category(
-			'saltus-framework',
+			$category['id'],
 			[
-				'label'       => 'Saltus Framework',
-				'description' => 'Saltus Framework content modeling and administration abilities.',
+				'label'       => $category['label'],
+				'description' => $category['description'],
 			]
 		);
 	}
