@@ -8,13 +8,13 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\DragAndDrop\ReorderPostsService;
+use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for reordering posts via menu_order updates.
  */
 class ReorderController extends WP_REST_Controller {
 
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 	private ReorderPostsService $reorder_service;
 
@@ -25,7 +25,7 @@ class ReorderController extends WP_REST_Controller {
 	public function __construct( ?ModelRestPolicy $policy = null, ?ReorderPostsService $reorder_service = null ) {
 		$this->policy          = $policy;
 		$this->reorder_service = $reorder_service ?? new ReorderPostsService();
-		$this->namespace       = self::ROUTE_NAMESPACE;
+		$this->namespace       = MCPConfig::get_namespace();
 		$this->rest_base       = 'reorder';
 	}
 
@@ -34,7 +34,7 @@ class ReorderController extends WP_REST_Controller {
 	 */
 	public function register_routes(): void {
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::CREATABLE,

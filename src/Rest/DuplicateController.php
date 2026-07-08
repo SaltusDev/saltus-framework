@@ -8,13 +8,13 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\Duplicate\SaltusDuplicate;
+use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for duplicating posts.
  */
 class DuplicateController extends WP_REST_Controller {
 
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 
 	/**
@@ -22,7 +22,7 @@ class DuplicateController extends WP_REST_Controller {
 	 */
 	public function __construct( ?ModelRestPolicy $policy = null ) {
 		$this->policy    = $policy;
-		$this->namespace = self::ROUTE_NAMESPACE;
+		$this->namespace = MCPConfig::get_namespace();
 		$this->rest_base = 'duplicate';
 	}
 
@@ -31,7 +31,7 @@ class DuplicateController extends WP_REST_Controller {
 	 */
 	public function register_routes(): void {
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<post_id>\d+)',
 			[
 				'methods'             => WP_REST_Server::CREATABLE,

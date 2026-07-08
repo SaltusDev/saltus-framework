@@ -8,14 +8,13 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
+use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\Modeler;
 
 /**
  * REST controller exposing meta field configuration per post type.
  */
 class MetaController extends WP_REST_Controller {
-
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 
 	protected Modeler $modeler;
 	private ?ModelRestPolicy $policy;
@@ -30,7 +29,7 @@ class MetaController extends WP_REST_Controller {
 		$this->modeler             = $modeler;
 		$this->policy              = $policy;
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
-		$this->namespace           = self::ROUTE_NAMESPACE;
+		$this->namespace           = MCPConfig::get_namespace();
 		$this->rest_base           = 'meta';
 	}
 
@@ -43,7 +42,7 @@ class MetaController extends WP_REST_Controller {
 		}
 
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -53,7 +52,7 @@ class MetaController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -70,7 +69,7 @@ class MetaController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)/(?P<post_id>\d+)',
 			[
 				'methods'             => WP_REST_Server::EDITABLE,

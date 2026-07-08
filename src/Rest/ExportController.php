@@ -7,13 +7,13 @@ use WP_REST_Server;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\SingleExport\SaltusSingleExport;
+use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for exporting posts as WXR.
  */
 class ExportController extends WP_REST_Controller {
 
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 	private SaltusSingleExport $exporter;
 
@@ -24,7 +24,7 @@ class ExportController extends WP_REST_Controller {
 	public function __construct( ?ModelRestPolicy $policy = null, ?SaltusSingleExport $exporter = null ) {
 		$this->policy    = $policy;
 		$this->exporter  = $exporter ?? new SaltusSingleExport( '', [] );
-		$this->namespace = self::ROUTE_NAMESPACE;
+		$this->namespace = MCPConfig::get_namespace();
 		$this->rest_base = 'export';
 	}
 
@@ -33,7 +33,7 @@ class ExportController extends WP_REST_Controller {
 	 */
 	public function register_routes(): void {
 		\register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<post_id>\d+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,

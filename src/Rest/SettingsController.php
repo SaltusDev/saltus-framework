@@ -8,13 +8,13 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\Settings\SettingsManager;
+use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for reading and updating per-post-type settings.
  */
 class SettingsController extends WP_REST_Controller {
 
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 	private SettingsManager $settings_manager;
 
@@ -25,7 +25,7 @@ class SettingsController extends WP_REST_Controller {
 	public function __construct( ?ModelRestPolicy $policy = null, ?SettingsManager $settings_manager = null ) {
 		$this->policy           = $policy;
 		$this->settings_manager = $settings_manager ?? new SettingsManager();
-		$this->namespace        = self::ROUTE_NAMESPACE;
+		$this->namespace        = MCPConfig::get_namespace();
 		$this->rest_base        = 'settings';
 	}
 
@@ -34,7 +34,7 @@ class SettingsController extends WP_REST_Controller {
 	 */
 	public function register_routes(): void {
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				[

@@ -7,6 +7,7 @@ use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
+use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\Taxonomy;
@@ -15,8 +16,6 @@ use Saltus\WP\Framework\Models\Taxonomy;
  * REST controller exposing registered Saltus models and their metadata.
  */
 class ModelsController extends WP_REST_Controller {
-
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 
 	protected Modeler $modeler;
 	private ?ModelRestPolicy $policy;
@@ -28,7 +27,7 @@ class ModelsController extends WP_REST_Controller {
 	public function __construct( Modeler $modeler, ?ModelRestPolicy $policy = null ) {
 		$this->modeler   = $modeler;
 		$this->policy    = $policy;
-		$this->namespace = self::ROUTE_NAMESPACE;
+		$this->namespace = MCPConfig::get_namespace();
 		$this->rest_base = 'models';
 	}
 
@@ -37,7 +36,7 @@ class ModelsController extends WP_REST_Controller {
 	 */
 	public function register_routes(): void {
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -47,7 +46,7 @@ class ModelsController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,
