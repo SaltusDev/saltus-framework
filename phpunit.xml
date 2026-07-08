@@ -9,6 +9,11 @@
          beStrictAboutTestsThatDoNotTestAnything="true"
          failOnRisky="true"
          failOnWarning="true">
+    <coverage processUncoveredFiles="false">
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </coverage>
     <testsuites>
         <testsuite name="Unit">
             <directory suffix="Test.php">tests/Unit/</directory>
