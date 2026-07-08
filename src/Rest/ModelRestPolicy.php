@@ -56,25 +56,50 @@ class ModelRestPolicy {
 	}
 
 	/**
+	 * Get the configuration section for a specific capability.
+	 *
+	 * @param array<string, mixed> $config     The model configuration.
+	 * @param string               $capability The capability.
+	 * @return mixed
+	 */
+	private function get_capability_config( array $config, string $capability ) {
+		if ( $capability === self::CAPABILITY_META || $capability === self::CAPABILITY_SETTINGS ) {
+			return $config[ $capability ] ?? null;
+		}
+
+		$features = $config['features'] ?? [];
+		if ( ! is_array( $features ) ) {
+			return null;
+		}
+
+		$feature_keys = [
+			self::CAPABILITY_DUPLICATE => 'duplicate',
+			self::CAPABILITY_EXPORT    => 'single_export',
+			self::CAPABILITY_REORDER   => 'drag_and_drop',
+		];
+
+		$key = $feature_keys[ $capability ] ?? null;
+		if ( $key === null ) {
+			return null;
+		}
+
+		return $features[ $key ] ?? null;
+	}
+
+	/**
 	 * @param array<string, mixed> $config
 	 */
 	private function resolve_show_in_rest( array $config, string $capability ): bool {
-		$features = ( isset( $config['features'] ) && is_array( $config['features'] ) ) ? $config['features'] : [];
-
-		$map = [
-			self::CAPABILITY_META      => $config['meta'] ?? null,
-			self::CAPABILITY_SETTINGS  => $config['settings'] ?? null,
-			self::CAPABILITY_DUPLICATE => $features['duplicate'] ?? null,
-			self::CAPABILITY_EXPORT    => $features['single_export'] ?? null,
-			self::CAPABILITY_REORDER   => $features['drag_and_drop'] ?? null,
-		];
-
-		$section = $map[ $capability ] ?? null;
+		$section = $this->get_capability_config( $config, $capability );
 		if ( $section === null ) {
-			return false;
+			return true;
 		}
 
-		if ( ! is_array( $section ) || ! array_key_exists( 'show_in_rest', $section ) ) {
+		if ( ! is_array( $section ) ) {
+			return (bool) $section;
+		}
+
+		if ( ! array_key_exists( 'show_in_rest', $section ) ) {
 			return true;
 		}
 

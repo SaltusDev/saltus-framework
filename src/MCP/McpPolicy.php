@@ -73,6 +73,37 @@ class McpPolicy {
 	}
 
 	/**
+	 * Get the configuration section for a specific capability.
+	 *
+	 * @param array<string, mixed> $config     The model configuration.
+	 * @param string               $capability The capability.
+	 * @return mixed
+	 */
+	private function get_capability_config( array $config, string $capability ) {
+		if ( $capability === ModelRestPolicy::CAPABILITY_META || $capability === ModelRestPolicy::CAPABILITY_SETTINGS ) {
+			return $config[ $capability ] ?? null;
+		}
+
+		$features = $config['features'] ?? [];
+		if ( ! is_array( $features ) ) {
+			return null;
+		}
+
+		$feature_keys = [
+			ModelRestPolicy::CAPABILITY_DUPLICATE => 'duplicate',
+			ModelRestPolicy::CAPABILITY_EXPORT    => 'single_export',
+			ModelRestPolicy::CAPABILITY_REORDER   => 'drag_and_drop',
+		];
+
+		$key = $feature_keys[ $capability ] ?? null;
+		if ( $key === null ) {
+			return null;
+		}
+
+		return $features[ $key ] ?? null;
+	}
+
+	/**
 	 * Resolve whether a capability should be shown in MCP.
 	 *
 	 * @param array<string, mixed> $config
@@ -80,22 +111,16 @@ class McpPolicy {
 	 * @return bool
 	 */
 	private function resolve_show_in_mcp( array $config, string $capability ): bool {
-		$features = ( isset( $config['features'] ) && is_array( $config['features'] ) ) ? $config['features'] : [];
-
-		$map = [
-			ModelRestPolicy::CAPABILITY_META      => $config['meta'] ?? null,
-			ModelRestPolicy::CAPABILITY_SETTINGS  => $config['settings'] ?? null,
-			ModelRestPolicy::CAPABILITY_DUPLICATE => $features['duplicate'] ?? null,
-			ModelRestPolicy::CAPABILITY_EXPORT    => $features['single_export'] ?? null,
-			ModelRestPolicy::CAPABILITY_REORDER   => $features['drag_and_drop'] ?? null,
-		];
-
-		$section = $map[ $capability ] ?? null;
+		$section = $this->get_capability_config( $config, $capability );
 		if ( $section === null ) {
-			return false;
+			return true;
 		}
 
-		if ( ! is_array( $section ) || ! array_key_exists( 'show_in_mcp', $section ) ) {
+		if ( ! is_array( $section ) ) {
+			return (bool) $section;
+		}
+
+		if ( ! array_key_exists( 'show_in_mcp', $section ) ) {
 			return true;
 		}
 
