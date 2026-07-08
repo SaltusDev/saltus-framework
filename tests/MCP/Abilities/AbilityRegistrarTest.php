@@ -78,7 +78,11 @@ class AbilityRegistrarTest extends TestCase {
 						'mcp_tools' => true,
 					],
 					[
-						'meta' => [],
+						'meta'     => [],
+						'settings' => false,
+						'features' => [
+							'duplicate' => false,
+						],
 					]
 				),
 			]

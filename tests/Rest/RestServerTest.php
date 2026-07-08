@@ -109,7 +109,7 @@ class RestServerTest extends TestCase {
 		$this->assertGreaterThan( 1, count( $wp_rest_routes_registered ) );
 	}
 
-	public function testRegisterRoutesRegistersOnlyHealthWithoutOptIn(): void {
+	public function testRegisterRoutesRegistersAllRoutesByDefault(): void {
 		global $wp_rest_routes_registered;
 
 		$this->modeler->method( 'get_models' )->willReturn(
@@ -120,7 +120,7 @@ class RestServerTest extends TestCase {
 
 		$this->createServer()->register_routes();
 
-		$this->assertCount( 3, $wp_rest_routes_registered );
+		$this->assertCount( 10, $wp_rest_routes_registered );
 		$this->assertSame( '/health', $wp_rest_routes_registered[0]['route'] );
 	}
 

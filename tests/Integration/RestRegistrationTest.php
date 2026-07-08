@@ -100,7 +100,7 @@ class RestRegistrationTest extends TestCase {
 		$model->method( 'get_options' )->willReturn( [ 'show_in_rest' => true ] );
 		$model->method( 'get_config' )->willReturn( [] );
 
-		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
+		$this->assertTrue( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
 	}
 
 	public function testIsEnabledHandlesNonArrayFeaturesConfigDefensively(): void {
@@ -110,7 +110,17 @@ class RestRegistrationTest extends TestCase {
 		$model->method( 'get_options' )->willReturn( [ 'show_in_rest' => true ] );
 		$model->method( 'get_config' )->willReturn( [ 'features' => null ] );
 
-		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
+		$this->assertTrue( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_EXPORT ) );
+	}
+
+	public function testIsEnabledHandlesExplicitDisable(): void {
+		$modeler = $this->createMock( Modeler::class );
+		$policy  = new ModelRestPolicy( $modeler );
+		$model   = $this->createMock( Model::class );
+		$model->method( 'get_options' )->willReturn( [ 'show_in_rest' => true ] );
+		$model->method( 'get_config' )->willReturn( [ 'meta' => false ] );
+
+		$this->assertFalse( $policy->is_enabled( $model, ModelRestPolicy::CAPABILITY_META ) );
 	}
 
 	public function testHealthControllerImplementsRegisterRoutes(): void {
