@@ -110,11 +110,31 @@ class MCPFeatureTest extends TestCase {
 	public function testNativeRegistrationUsesDefaultFeatureToolContributors(): void {
 		global $wp_actions_registered, $wp_abilities_registered;
 
+		$config = [
+			'meta'      => [
+				'show_in_mcp' => true,
+			],
+			'settings'  => [
+				'show_in_mcp' => true,
+			],
+			'features'  => [
+				'duplicate'     => [
+					'show_in_mcp' => true,
+				],
+				'single_export' => [
+					'show_in_mcp' => true,
+				],
+				'drag_and_drop' => [
+					'show_in_mcp' => true,
+				],
+			],
+		];
+
 		$modeler = new ModelerWithModels(
 			$this->createStub( ModelFactory::class ),
 			[
-				'book'  => $this->createModelMock( 'post_type' ),
-				'genre' => $this->createModelMock( 'taxonomy' ),
+				'book'  => $this->createModelMock( 'post_type', $config ),
+				'genre' => $this->createModelMock( 'taxonomy', $config ),
 			]
 		);
 		$feature = new MCP(
@@ -147,12 +167,18 @@ class MCPFeatureTest extends TestCase {
 		$this->assertArrayHasKey( 'saltus/reorder-posts', $wp_abilities_registered );
 	}
 
-	private function createModelMock( string $type ): Model {
-		return new class( $type ) implements Model {
+	private function createModelMock( string $type, array $config = [] ): Model {
+		return new class( $type, $config ) implements Model {
 			private string $type;
+			/** @var array<string, mixed> */
+			private array $config;
 
-			public function __construct( string $type ) {
-				$this->type = $type;
+			/**
+			 * @param array<string, mixed> $config
+			 */
+			public function __construct( string $type, array $config = [] ) {
+				$this->type   = $type;
+				$this->config = $config;
 			}
 
 			public function setup(): void {}
@@ -171,12 +197,16 @@ class MCPFeatureTest extends TestCase {
 			public function get_options(): array {
 				return [
 					'show_in_rest' => true,
-					'saltus_rest'  => true,
+					'mcp_tools'    => true,
 				];
 			}
 
 			public function get_args(): array {
 				return [];
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 		};
 	}
