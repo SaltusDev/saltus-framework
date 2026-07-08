@@ -3,6 +3,7 @@
 ## Working
 - Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-08
 - Phase 5D: Documentation — fill README placeholders, add model examples @since 2026-07-05
+- MCP/REST gating refactor: McpPolicy + config-section model @since 2026-07-08
 
 ## Next
 - Phase 5B: WP-CLI tools — 7 grouped command classes mapping every MCP tool
@@ -112,6 +113,7 @@
 - Test suite: 226 tests, 639 assertions (bumped from 214/605 by +12 tests, +34 assertions for new MCP tool, MetaController PUT, and count updates) @since 2026-07-07
 - ModelsController: use `check_method` for description property access to prevent PHP 8.2+ dynamic property deprecation notices @since 2026-07-07
 - MCP namespace config filterability: added MCPConfig utility class with 3 WordPress filters (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix); added mcp_route() helper to RestTool base; refactored 21 source files from hardcoded strings to MCPConfig calls; added MCPConfigTest with 13 test cases — 6 commits, 236 tests, 655 assertions @since 2026-07-08
+- MCP/REST capability gating refactored: added get_config() to Model interface; added McpPolicy class with 14 test cases for MCP-specific mcp_tools/show_in_mcp gating; refactored ModelRestPolicy from saltus_rest array to per-feature config-section model; updated REST controller error hints; updated all existing tests for new config-section pattern — 7 commits, 250 tests, 669 assertions @since 2026-07-08
 
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
