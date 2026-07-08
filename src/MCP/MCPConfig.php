@@ -18,12 +18,15 @@ class MCPConfig {
 	 * @return non-falsy-string
 	 */
 	public static function get_namespace(): string {
-		$namespace = (string) \apply_filters(
+		$namespace = \apply_filters(
 			'saltus/framework/mcp/namespace',
 			'saltus-framework/v1'
 		);
+		if ( ! is_string( $namespace ) || trim( $namespace ) === '' ) {
+			return 'saltus-framework/v1';
+		}
 		/** @var non-falsy-string */
-		return $namespace !== '' ? $namespace : 'saltus-framework/v1';
+		return trim( $namespace );
 	}
 
 	/**
@@ -45,13 +48,23 @@ class MCPConfig {
 			'description' => 'Saltus Framework content modeling and administration abilities.',
 		];
 
-		/** @var array{id: string, label: string, description: string} */
-		$filtered = (array) \apply_filters(
+		$filtered = \apply_filters(
 			'saltus/framework/mcp/ability_category',
 			$default
 		);
 
-		return array_merge( $default, $filtered );
+		if ( ! is_array( $filtered ) ) {
+			return $default;
+		}
+
+		$sanitized = [];
+		foreach ( [ 'id', 'label', 'description' ] as $key ) {
+			$val = $filtered[ $key ] ?? null;
+			$sanitized[ $key ] = is_string( $val ) ? $val : $default[ $key ];
+		}
+
+		/** @var array{id: string, label: string, description: string} */
+		return $sanitized;
 	}
 
 	/**
@@ -62,9 +75,13 @@ class MCPConfig {
 	 * @return string
 	 */
 	public static function get_ability_prefix(): string {
-		return (string) \apply_filters(
+		$prefix = \apply_filters(
 			'saltus/framework/mcp/ability_prefix',
 			'saltus/'
 		);
+		if ( ! is_string( $prefix ) ) {
+			return 'saltus/';
+		}
+		return $prefix;
 	}
 }
