@@ -80,7 +80,7 @@ class ReorderPosts extends RestTool {
 	 * @return \WP_REST_Request|null
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
-		return $this->request( 'POST', '/saltus-framework/v1/reorder', [], [ 'items' => $args['items'] ?? [] ] );
+		return $this->request( 'POST', $this->mcp_route( '/reorder' ), [], [ 'items' => $args['items'] ?? [] ] );
 	}
 
 	/**

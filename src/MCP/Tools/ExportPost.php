@@ -67,7 +67,7 @@ class ExportPost extends RestTool {
 	 * @return \WP_REST_Request|null
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
-		return $this->request( 'GET', '/saltus-framework/v1/export/' . (int) ( $args['post_id'] ?? 0 ) );
+		return $this->request( 'GET', $this->mcp_route( '/export/' . (int) ( $args['post_id'] ?? 0 ) ) );
 	}
 
 	/**
