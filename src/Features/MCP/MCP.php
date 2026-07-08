@@ -9,6 +9,7 @@ use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\Cache\TransientCache;
+use Saltus\WP\Framework\MCP\McpPolicy;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
@@ -31,6 +32,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 	/** @var callable|null */
 	private $modeler_resolver;
 	private ?ModelRestPolicy $policy;
+	private ?McpPolicy $mcp_policy;
 
 	/**
 	 * @param array<string, mixed> $dependencies Framework dependencies injected by the service container.
@@ -42,6 +44,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 		$this->modeler           = $modeler instanceof Modeler ? $modeler : null;
 		$this->modeler_resolver  = is_callable( $dependencies['modeler_resolver'] ?? null ) ? $dependencies['modeler_resolver'] : null;
 		$this->policy            = null;
+		$this->mcp_policy        = null;
 	}
 
 	public function register(): void {
@@ -106,7 +109,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 			return $this->ability_registrar;
 		}
 
-		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), null, $this->policy() );
+		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), null, $this->mcp_policy() );
 
 		return $this->ability_registrar;
 	}
@@ -194,5 +197,18 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 		}
 
 		return $this->policy;
+	}
+
+	private function mcp_policy(): ?McpPolicy {
+		$modeler = $this->modeler();
+		if ( ! $modeler instanceof Modeler ) {
+			return null;
+		}
+
+		if ( ! $this->mcp_policy instanceof McpPolicy ) {
+			$this->mcp_policy = new McpPolicy( $modeler );
+		}
+
+		return $this->mcp_policy;
 	}
 }
