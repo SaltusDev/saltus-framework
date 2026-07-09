@@ -109,11 +109,35 @@ Saltus reuses WordPress capability checks such as:
 | Settings updates | `manage_options` |
 | Term creation | taxonomy edit/manage capability |
 
-REST routes are also gated by model configuration. The master `show_in_rest` option acts as both the WordPress core registration gate and the Saltus REST gate. Each Saltus feature (meta, settings, duplicate, export, reorder) can be independently enabled or disabled using a `show_in_rest` flag in its own config section within the model's `config` key. The `models` and `health` capabilities are always enabled when `show_in_rest` is not false for that model (or always, for health).
+REST routes and MCP tools are gated by model configuration.
 
-Similarly, MCP tools are gated by the `mcp_tools` master option at the model level, and each feature can be independently gated with `show_in_mcp` in its config section. When `mcp_tools` is absent or false, no MCP tools are generated for that model. When `mcp_tools` is true, all features are enabled for MCP unless a feature's `show_in_mcp` is explicitly `false`.
+### Master Options (Model Level)
 
-Enable all Saltus REST-backed capabilities for a model:
+At the model level, two master options in the `options` array control access:
+- **`show_in_rest`**: Controls whether model-scoped REST routes (and consequently MCP tools) are registered. If explicitly set to `false`, all model-scoped REST and MCP capabilities for the model are disabled. Defaults to `true` (if omitted or not `false`).
+- **`mcp_tools`**: Must be set and truthy (e.g., `true`) in model options to enable any MCP tools for that model.
+
+The framework-scoped health capability (`health` ability / REST route) is independent of per-model opt-in and is always available. The `models` capability is always enabled for a model as long as its `show_in_rest` is not `false` (or always, for MCP, if `mcp_tools` is enabled).
+
+### Feature-Level Gating
+
+Each individual framework capability can be gated in the model's `config` array. They map to specific configuration sections:
+- **Meta (`meta`):** `'meta'` key (root level of `config`)
+- **Settings (`settings`):** `'settings'` key (root level of `config`)
+- **Duplicate (`duplicate`):** `'duplicate'` key (nested under `config.features.duplicate`)
+- **Export (`export`):** `'single_export'` key (nested under `config.features.single_export`)
+- **Reorder (`reorder`):** `'drag_and_drop'` key (nested under `config.features.drag_and_drop`)
+
+### Resolution Rules
+
+For each feature/capability configuration section:
+1. **Omitted (Null):** If a capability config section is omitted from the model configuration, the feature defaults to **enabled** for both REST and MCP.
+2. **Boolean Value:** If defined as a simple boolean (e.g., `'meta' => false` or `'features' => ['duplicate' => false]`), it acts as a joint gate. A value of `false` disables both REST and MCP for that capability; a value of `true` enables both.
+3. **Array Value:** If defined as an array, REST and MCP gating can be configured independently:
+   - **REST Route Gating:** Governed by the `show_in_rest` key in the section array. If the key is omitted, REST is **enabled** (`true`). If present, it resolves to its boolean value.
+   - **MCP Tool Gating:** Governed by the `show_in_mcp` key in the section array. If the key is omitted, MCP is **enabled** (`true`). If present, it resolves to its boolean value.
+
+Enable all Saltus REST-backed and MCP capabilities for a model:
 
 ```php
 return [
@@ -126,7 +150,7 @@ return [
 ];
 ```
 
-Enable REST for all features but block MCP for specific features:
+Example showing various feature-level configurations:
 
 ```php
 return [
@@ -137,36 +161,27 @@ return [
 		'mcp_tools'    => true,
 	],
 	'config'  => [
+		// 1. Array style: enabled for REST but disabled for MCP
 		'meta'     => [
 			'show_in_rest' => true,
 			'show_in_mcp'  => false,
 		],
-		'settings' => [
-			'show_in_rest' => true,
-		],
+		// 2. Boolean style: disabled for both REST and MCP
+		'settings' => false,
+
 		'features' => [
+			// 3. Array style: enabled for REST, and defaults to enabled for MCP
 			'duplicate'     => [
 				'show_in_rest' => true,
 			],
-			'single_export' => [
-				'show_in_rest' => true,
-			],
-			'drag_and_drop' => [
-				'show_in_rest' => true,
-			],
+			// 4. Omitted config for single_export and drag_and_drop:
+			// both default to enabled for REST and MCP
 		],
 	],
 ];
 ```
 
 If `show_in_rest` is explicitly `false`, Saltus does not expose model-scoped REST or MCP routes for that model. The health ability is framework-scoped and remains independent of per-model opt-in.
-
-Config section keys:
-- `meta` — top-level key in `config`
-- `settings` — top-level key in `config`
-- `duplicate` — nested under `config.features.duplicate`
-- `single_export` — nested under `config.features.single_export`
-- `drag_and_drop` — nested under `config.features.drag_and_drop`
 
 ## Available Abilities
 

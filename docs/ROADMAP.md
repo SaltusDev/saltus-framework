@@ -9,7 +9,7 @@
 - PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
 - MCP namespace/category/prefix now filterable via MCPConfig utility class (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix)
-- MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from saltus_rest array to per-feature config-section model (config.meta.show_in_rest)
+- MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from saltus_rest array to per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
 - 250 PHPUnit tests passing (669 assertions), PHPStan Level 7 clean across the configured analysis set
@@ -397,3 +397,128 @@ frontend:
 ## Tracking
 - Check GitHub Issues for active sprint items.
 - Active development on `feature/mcp-v1` branch.
+
+
+
+//// new
+• Current state: Saltus already has the “external agent connects to WordPress
+  and modifies content through governed abilities” piece partly implemented.
+  What it does not appear to have yet is a first-class “context control center”
+  model or a mandatory editorial approval queue for agent writes.
+
+────────────────────────────────────────────────────────────────────────────────
+
+• For Saltus, that translates less like “Drupal AI” and more like a WordPress-
+  native AI governance layer for CPT-driven plugins.
+
+  Saltus already has the foundation: model-defined CPTs, REST routes, MCP/
+  Abilities tools, capability checks, audit logging, rate limits, health checks,
+  and per-model mcp_tools / show_in_mcp gates. The missing higher-level product
+  layer would be this:
+
+  Context Control Center
+
+  A Saltus model/config area where a plugin defines:
+
+  - brand voice
+  - field-level writing rules
+  - audience profiles
+  - taxonomy/content standards
+  - allowed statuses
+  - forbidden actions
+  - required review rules
+  - per-CPT AI instructions
+
+  In Saltus terms, this could live as model config, for example:
+
+  'options' => [
+      'show_in_rest' => true,
+      'mcp_tools' => true,
+  ],
+  'config' => [
+      'ai_context' => [
+          'brand_voice' => 'Clear, practical, expert, no hype.',
+          'audiences' => ['developers', 'site editors'],
+          'rules' => [
+              'never_publish_directly' => true,
+              'require_human_review' => true,
+              'preserve_technical_accuracy' => true,
+          ],
+      ],
+  ]
+
+  Then MCP tools like create_post, update_post, update_settings, and
+  update_meta_fields would receive this context before executing or expose it
+  through a new tool like saltus/get-context.
+
+  Inside AI
+
+  This would mean AI operating from inside WordPress admin.
+
+  Examples:
+
+  - AI buttons beside metabox fields
+  - “Improve title”
+  - “Summarize this CPT entry”
+  - “Generate excerpt from meta”
+  - “Validate against brand rules”
+  - “Suggest taxonomy terms”
+  - “Prepare draft update”
+
+  The key point: inside AI would still use Saltus models and WordPress
+  permissions. It should not bypass CPT config, field schemas, validation, or
+  post status rules.
+
+  Outside AI
+
+  This maps directly to Saltus MCP/Abilities.
+
+  External agents such as Codex, Claude Desktop, Cursor, or custom automation
+  clients connect to WordPress and call:
+
+  - saltus/list-models
+  - saltus/get-model
+  - saltus/list-posts
+  - saltus/get-post
+  - saltus/create-post
+  - saltus/update-post
+  - saltus/update-settings
+  - saltus/get-meta-fields
+
+  Saltus already has this architectural direction. The next step would be adding
+  stronger editorial governance around mutating tools.
+
+  Editorial Review
+
+  Right now, agent writes can be permission-gated and audited. To match the idea
+  you quoted, Saltus would need an approval layer:
+
+  - agent proposes a change
+  - Saltus stores it as a draft, revision, or pending change record
+  - human editor reviews diff
+  - editor approves, rejects, or edits
+  - only approved changes are published
+  - audit log records the full chain
+
+  Practically, mutating MCP tools should default to:
+
+  AI write -> draft/pending/revision -> human approval -> publish
+
+  Not:
+
+  AI write -> publish
+
+  Best Saltus framing
+
+  I’d describe it as:
+
+  > Saltus can become the governance layer for AI-operated WordPress content
+  > models: models define the content structure, context rules define how AI
+  > should behave, MCP/Abilities expose controlled operations to external
+  > agents, and WordPress revisions, statuses, capabilities, and audit logs keep
+  > every change reviewable.
+
+  The big opportunity is that Saltus already owns the model definition. That
+  means it can give AI agents structured knowledge of each CPT, its fields,
+  allowed operations, and editorial policy without every plugin author
+  rebuilding that machinery.
