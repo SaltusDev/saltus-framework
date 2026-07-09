@@ -59,7 +59,7 @@ class MCPConfig {
 
 		$sanitized = [];
 		foreach ( [ 'id', 'label', 'description' ] as $key ) {
-			$val = $filtered[ $key ] ?? null;
+			$val               = $filtered[ $key ] ?? null;
 			$sanitized[ $key ] = is_string( $val ) ? $val : $default[ $key ];
 		}
 
