@@ -400,125 +400,84 @@ frontend:
 
 
 
-//// new
-• Current state: Saltus already has the “external agent connects to WordPress
-  and modifies content through governed abilities” piece partly implemented.
-  What it does not appear to have yet is a first-class “context control center”
-  model or a mandatory editorial approval queue for agent writes.
+### Phase 6: AI Governance & Editorial Review (v2.2+)
 
-────────────────────────────────────────────────────────────────────────────────
+**Theme:** Add a first-class AI governance layer — context control, editorial review queues, and inside-admin AI assistants — on top of the existing MCP/Abilities foundation.
 
-• For Saltus, that translates less like “Drupal AI” and more like a WordPress-
-  native AI governance layer for CPT-driven plugins.
+Saltus already has model-defined CPTs, REST routes, MCP/Abilities tools, capability checks, audit logging, rate limits, health checks, and per-model `mcp_tools`/`show_in_mcp` gates. Phase 6 adds the higher-level product layer.
 
-  Saltus already has the foundation: model-defined CPTs, REST routes, MCP/
-  Abilities tools, capability checks, audit logging, rate limits, health checks,
-  and per-model mcp_tools / show_in_mcp gates. The missing higher-level product
-  layer would be this:
+---
 
-  Context Control Center
+#### 6A — Context Control Center
 
-  A Saltus model/config area where a plugin defines:
+**Goal:** A Saltus model config area where a plugin defines AI governance rules that MCP tools receive before executing.
 
-  - brand voice
-  - field-level writing rules
-  - audience profiles
-  - taxonomy/content standards
-  - allowed statuses
-  - forbidden actions
-  - required review rules
-  - per-CPT AI instructions
+**Config shape:**
+```yaml
+config:
+  ai_context:
+    brand_voice: 'Clear, practical, expert, no hype.'
+    audiences: ['developers', 'site editors']
+    field_rules:
+      post_content:
+        - 'Maintain technical accuracy'
+        - 'Never include affiliate links'
+    allowed_statuses: ['draft', 'pending']
+    forbidden_actions: ['delete', 'publish']
+    require_human_review: true
+```
 
-  In Saltus terms, this could live as model config, for example:
+| Item | Status |
+|------|--------|
+| `ai_context` config schema definition and validation | ○ Pending |
+| `AiContextProvider` service — parses and serves ai_context per model | ○ Pending |
+| MCP tool `get_context` — exposes ai_context to external agents | ○ Pending |
+| Context injection into mutating MCP tools (create/update/delete) | ○ Pending |
+| Filter: `saltus/framework/ai_context/defaults` | ○ Pending |
+| PHPUnit tests for context validation and injection | ○ Pending |
 
-  'options' => [
-      'show_in_rest' => true,
-      'mcp_tools' => true,
-  ],
-  'config' => [
-      'ai_context' => [
-          'brand_voice' => 'Clear, practical, expert, no hype.',
-          'audiences' => ['developers', 'site editors'],
-          'rules' => [
-              'never_publish_directly' => true,
-              'require_human_review' => true,
-              'preserve_technical_accuracy' => true,
-          ],
-      ],
-  ]
+**Exit criteria:** Models with `config.ai_context` expose a `saltus/get-context` MCP tool. Mutating MCP tools receive context rules and can reject operations that violate them.
 
-  Then MCP tools like create_post, update_post, update_settings, and
-  update_meta_fields would receive this context before executing or expose it
-  through a new tool like saltus/get-context.
+---
 
-  Inside AI
+#### 6B — Editorial Review Queue
 
-  This would mean AI operating from inside WordPress admin.
+**Theme:** Agent-proposed changes go through a human approval workflow instead of publishing directly.
 
-  Examples:
+**Flow:**
+```
+AI write -> draft/pending/revision -> human approval -> publish
+```
 
-  - AI buttons beside metabox fields
-  - “Improve title”
-  - “Summarize this CPT entry”
-  - “Generate excerpt from meta”
-  - “Validate against brand rules”
-  - “Suggest taxonomy terms”
-  - “Prepare draft update”
+| Item | Status |
+|------|--------|
+| `AiChangeProposal` service — stores agent writes as pending change records | ○ Pending |
+| `EditorialReviewController` — REST endpoints for listing/reviewing/approving/rejecting proposals | ○ Pending |
+| Review dashboard UI (admin screen with diff view) | ○ Pending |
+| Audit log integration — full chain from proposal to approval/rejection | ○ Pending |
+| Default all mutating MCP tools to draft/pending (configurable) | ○ Pending |
+| PHPUnit tests for proposal lifecycle | ○ Pending |
 
-  The key point: inside AI would still use Saltus models and WordPress
-  permissions. It should not bypass CPT config, field schemas, validation, or
-  post status rules.
+**Exit criteria:** Mutating MCP tools create pending change records by default. A review admin screen lists proposals with diff view. Approved proposals are published; rejected ones are discarded. Audit log records the full chain.
 
-  Outside AI
+---
 
-  This maps directly to Saltus MCP/Abilities.
+#### 6C — Inside-Admin AI Assistants
 
-  External agents such as Codex, Claude Desktop, Cursor, or custom automation
-  clients connect to WordPress and call:
+**Theme:** AI operates from inside WordPress admin — buttons beside metabox fields, inline suggestions, and validation.
 
-  - saltus/list-models
-  - saltus/get-model
-  - saltus/list-posts
-  - saltus/get-post
-  - saltus/create-post
-  - saltus/update-post
-  - saltus/update-settings
-  - saltus/get-meta-fields
+| Item | Status |
+|------|--------|
+| `AiAssistantProvider` service — registers meta box assistants per model | ○ Pending |
+| Admin JS entry point (`assets/Feature/AiAssistant/editor.js`) | ○ Pending |
+| Assistant actions: improve title, summarize, generate excerpt, suggest terms | ○ Pending |
+| Brand rule validation button for post content | ○ Pending |
+| REST endpoints for assistant actions (reuse existing permission checks) | ○ Pending |
+| Filter: `saltus/framework/ai/assistant_actions` | ○ Pending |
+| PHPUnit tests for assistant REST endpoints | ○ Pending |
 
-  Saltus already has this architectural direction. The next step would be adding
-  stronger editorial governance around mutating tools.
+**Exit criteria:** Models with `config.ai_context` show AI assistant buttons in the admin. Clicking "Improve title" or "Summarize" calls a REST endpoint and updates the field. Brand rule validation highlights content that violates configured rules.
 
-  Editorial Review
+---
 
-  Right now, agent writes can be permission-gated and audited. To match the idea
-  you quoted, Saltus would need an approval layer:
-
-  - agent proposes a change
-  - Saltus stores it as a draft, revision, or pending change record
-  - human editor reviews diff
-  - editor approves, rejects, or edits
-  - only approved changes are published
-  - audit log records the full chain
-
-  Practically, mutating MCP tools should default to:
-
-  AI write -> draft/pending/revision -> human approval -> publish
-
-  Not:
-
-  AI write -> publish
-
-  Best Saltus framing
-
-  I’d describe it as:
-
-  > Saltus can become the governance layer for AI-operated WordPress content
-  > models: models define the content structure, context rules define how AI
-  > should behave, MCP/Abilities expose controlled operations to external
-  > agents, and WordPress revisions, statuses, capabilities, and audit logs keep
-  > every change reviewable.
-
-  The big opportunity is that Saltus already owns the model definition. That
-  means it can give AI agents structured knowledge of each CPT, its fields,
-  allowed operations, and editorial policy without every plugin author
-  rebuilding that machinery.
+**Exit criteria (Phase 6 overall):** AI governance is configurable per model via `ai_context`. Mutating MCP tools respect context rules and default to review-queue creation. Inside-admin assistants are operational for configured models. All features are tested.
