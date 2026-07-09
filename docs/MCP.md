@@ -114,7 +114,7 @@ REST routes and MCP tools are gated by model configuration.
 ### Master Options (Model Level)
 
 At the model level, two master options in the `options` array control access:
-- **`show_in_rest`**: Controls whether model-scoped REST routes (and consequently MCP tools) are registered. If explicitly set to `false`, all model-scoped REST and MCP capabilities for the model are disabled. Defaults to `true` (if omitted or not `false`).
+- **`show_in_rest`**: Controls whether model-scoped REST routes are registered. If explicitly set to `false`, all model-scoped REST capabilities for the model are disabled. It does not control whether the model's MCP tools are generated/shown (which is managed by `mcp_tools` and `show_in_mcp`), although calling those MCP tools will fail if the underlying REST route is disabled. Defaults to `true` (if omitted or not `false`).
 - **`mcp_tools`**: Must be set and truthy (e.g., `true`) in model options to enable any MCP tools for that model.
 
 The framework-scoped health capability (`health` ability / REST route) is independent of per-model opt-in and is always available. The `models` capability is always enabled for a model as long as its `show_in_rest` is not `false` (or always, for MCP, if `mcp_tools` is enabled).
@@ -181,7 +181,7 @@ return [
 ];
 ```
 
-If `show_in_rest` is explicitly `false`, Saltus does not expose model-scoped REST or MCP routes for that model. The health ability is framework-scoped and remains independent of per-model opt-in.
+If `show_in_rest` is explicitly `false`, Saltus does not register the model-scoped REST routes. The `mcp_tools` option controls whether MCP tools are exposed. The health ability is framework-scoped and remains independent of per-model opt-in.
 
 ## Available Abilities
 
@@ -318,7 +318,7 @@ Audit retention cleanup runs through the daily `saltus_framework_mcp_audit_clean
 | WordPress with Abilities API | Saltus registers `saltus/*` abilities |
 | WordPress without Abilities API | Saltus skips native ability registration |
 | `mcp_tools` not set or `false` | No MCP tools are generated for that model |
-| `show_in_rest` set to `false` | Model-scoped Saltus REST and MCP routes are unavailable for that model |
+| `show_in_rest` set to `false` | Model-scoped Saltus REST routes are disabled (calling any corresponding MCP tools will fail) |
 | No WordPress-native MCP client | Saltus abilities are registered, but no client consumes them |
 
 ## Troubleshooting
@@ -326,7 +326,7 @@ Audit retention cleanup runs through the daily `saltus_framework_mcp_audit_clean
 | Symptom | Check |
 |---------|-------|
 | No `saltus/*` abilities appear | Confirm the WordPress build provides the Abilities API and the plugin is active |
-| A model is missing from MCP results | Confirm the model has `show_in_rest` and `mcp_tools` enabled, and required feature-level `show_in_mcp` flags |
+| A model is missing from MCP results | Confirm the model has `mcp_tools` enabled, and required feature-level `show_in_mcp` flags |
 | A write operation fails | Confirm the current WordPress user has the needed post, taxonomy, or settings capability |
 | Calls are throttled | Check `saltus/framework/mcp/rate_limit/*` filters |
 | Results look stale | Clear transients or disable MCP cache while testing |
