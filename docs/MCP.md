@@ -190,6 +190,7 @@ Config section keys:
 | `list_posts` | `saltus/list-posts` | `GET /wp/v2/posts` | Query posts from a Custom Post Type with optional filters |
 | `list_terms` | `saltus/list-terms` | `GET /wp/v2/{taxonomy_rest_base}` | List terms from a taxonomy (categories, tags, or custom taxonomies) |
 | `reorder_posts` | `saltus/reorder-posts` | `POST /saltus-framework/v1/reorder` | Reorder multiple posts by updating their menu_order values in a single batch operation |
+| `update_meta_fields` | `saltus/update-meta-fields` | `PUT /saltus-framework/v1/meta/{post_type}/123` | Update meta fields for a specific post of a registered Saltus post type |
 | `update_post` | `saltus/update-post` | `PUT /wp/v2/posts/123` | Update an existing post's fields and meta data |
 | `update_settings` | `saltus/update-settings` | `PUT /saltus-framework/v1/settings/{post_type}` | Update the Saltus Framework settings for a specific post type |
 

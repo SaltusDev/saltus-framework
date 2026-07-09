@@ -16,6 +16,12 @@ use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 $root = dirname( __DIR__ );
 require_once $root . '/vendor/autoload.php';
 
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( string $hook_name, mixed $value, mixed ...$args ): mixed {
+		return $value;
+	}
+}
+
 if ( ! class_exists( 'WP_REST_Request' ) ) {
 	class WP_REST_Request {
 		private string $method;
