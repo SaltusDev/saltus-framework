@@ -17,7 +17,7 @@ $root = dirname( __DIR__ );
 require_once $root . '/vendor/autoload.php';
 
 if ( ! function_exists( 'apply_filters' ) ) {
-	function apply_filters( string $hook_name, mixed $value, mixed ...$args ): mixed {
+	function apply_filters( string $hook_name, $value, ...$args ) {
 		return $value;
 	}
 }
