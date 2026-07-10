@@ -46,15 +46,15 @@ class Taxonomy extends BaseModel implements Model {
 			return $options;
 		}
 
-		$config['hierarchical'] = false;
+		$options['hierarchical'] = false;
 		if ( in_array( $this->config->get( 'type' ), [ 'cat', 'category' ], true ) ) {
-			$config['hierarchical'] = true;
+			$options['hierarchical'] = true;
 		}
 
 		// show in rest api by default
-		$config['show_in_rest'] = true;
+		$options['show_in_rest'] = true;
 
-		return $config;
+		return $options;
 	}
 
 	/**
@@ -79,11 +79,11 @@ class Taxonomy extends BaseModel implements Model {
 			'update_item'                => 'Update ' . $this->one,
 			'add_new_item'               => 'Add New ' . $this->one,
 			'new_item_name'              => 'New ' . $this->one . ' Name',
-			'separate_items_with_commas' => 'Separate ' . strtolower( $this->many ) . ' with commas',
-			'add_or_remove_items'        => 'Add or remove ' . strtolower( $this->many ),
-			'choose_from_most_used'      => 'Choose from the most used ' . strtolower( $this->many ),
-			'not_found'                  => 'No ' . strtolower( $this->many ) . ' found.',
-			'no_terms'                   => 'No ' . strtolower( $this->many ),
+			'separate_items_with_commas' => 'Separate ' . $this->many_low . ' with commas',
+			'add_or_remove_items'        => 'Add or remove ' . $this->many_low,
+			'choose_from_most_used'      => 'Choose from the most used ' . $this->many_low,
+			'not_found'                  => 'No ' . $this->many_low . ' found.',
+			'no_terms'                   => 'No ' . $this->many_low,
 			'items_list_navigation'      => $this->many . ' list navigation',
 			'items_list'                 => $this->many . ' list',
 		];
