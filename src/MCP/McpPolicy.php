@@ -57,19 +57,28 @@ class McpPolicy {
 	 * @return bool
 	 */
 	public function is_enabled( Model $model, string $capability ): bool {
-		$options = $model->get_options();
-
-		if ( empty( $options['mcp_tools'] ) ) {
-			return false;
+		$options    = $model->get_options();
+		$global_val = null;
+		if ( array_key_exists( 'mcp_tools', $options ) ) {
+			$global_val = (bool) $options['mcp_tools'];
 		}
 
-		if ( $capability === ModelRestPolicy::CAPABILITY_HEALTH || $capability === ModelRestPolicy::CAPABILITY_MODELS ) {
+		if ( $capability === ModelRestPolicy::CAPABILITY_HEALTH ) {
 			return true;
 		}
 
-		$config = $model->get_config();
+		if ( $capability === ModelRestPolicy::CAPABILITY_MODELS ) {
+			return $global_val === true;
+		}
 
-		return $this->resolve_show_in_mcp( $config, $capability );
+		$config      = $model->get_config();
+		$feature_val = $this->resolve_feature_value( $config, $capability );
+
+		if ( $feature_val !== null ) {
+			return $feature_val;
+		}
+
+		return $global_val === true;
 	}
 
 	/**
@@ -107,13 +116,13 @@ class McpPolicy {
 	 * Resolve whether a capability should be shown in MCP.
 	 *
 	 * @param array<string, mixed> $config
-	 *
-	 * @return bool
+	 * @param string               $capability
+	 * @return bool|null
 	 */
-	private function resolve_show_in_mcp( array $config, string $capability ): bool {
+	private function resolve_feature_value( array $config, string $capability ): ?bool {
 		$section = $this->get_capability_config( $config, $capability );
 		if ( $section === null ) {
-			return true;
+			return null;
 		}
 
 		if ( ! is_array( $section ) ) {

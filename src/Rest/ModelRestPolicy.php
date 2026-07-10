@@ -40,19 +40,28 @@ class ModelRestPolicy {
 	}
 
 	public function is_enabled( Model $model, string $capability ): bool {
-		$options = $this->get_model_options( $model );
-
-		if ( array_key_exists( 'show_in_rest', $options ) && $options['show_in_rest'] === false ) {
-			return false;
+		$options    = $this->get_model_options( $model );
+		$global_val = null;
+		if ( array_key_exists( 'show_in_rest', $options ) ) {
+			$global_val = (bool) $options['show_in_rest'];
 		}
 
-		if ( $capability === self::CAPABILITY_HEALTH || $capability === self::CAPABILITY_MODELS ) {
+		if ( $capability === self::CAPABILITY_HEALTH ) {
 			return true;
 		}
 
-		$config = $model->get_config();
+		if ( $capability === self::CAPABILITY_MODELS ) {
+			return $global_val !== false;
+		}
 
-		return $this->resolve_show_in_rest( $config, $capability );
+		$config      = $model->get_config();
+		$feature_val = $this->resolve_feature_value( $config, $capability );
+
+		if ( $feature_val !== null ) {
+			return $feature_val;
+		}
+
+		return $global_val === true;
 	}
 
 	/**
@@ -87,12 +96,16 @@ class ModelRestPolicy {
 	}
 
 	/**
+	 * Resolve the capability value from the feature configuration.
+	 *
 	 * @param array<string, mixed> $config
+	 * @param string               $capability
+	 * @return bool|null
 	 */
-	private function resolve_show_in_rest( array $config, string $capability ): bool {
+	private function resolve_feature_value( array $config, string $capability ): ?bool {
 		$section = $this->get_capability_config( $config, $capability );
 		if ( $section === null ) {
-			return true;
+			return null;
 		}
 
 		if ( ! is_array( $section ) ) {

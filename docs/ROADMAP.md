@@ -481,3 +481,21 @@ AI write -> draft/pending/revision -> human approval -> publish
 ---
 
 **Exit criteria (Phase 6 overall):** AI governance is configurable per model via `ai_context`. Mutating MCP tools respect context rules and default to review-queue creation. Inside-admin assistants are operational for configured models. All features are tested.
+
+---
+
+### Phase 7: Advanced Dependency Injection & Container Hardening (v2.3+)
+
+**Theme:** Upgrade the framework's dependency injection container to support reflection-based parameter resolution (autowiring) for third-party services, avoiding standard constructor mapping errors.
+
+| Item | Status |
+|------|--------|
+| `ReflectionInstantiator` class implementing `Instantiator` | ○ Pending |
+| Positional constructor parameter resolution and dependency matching | ○ Pending |
+| Constructor parameter default value fallbacks | ○ Pending |
+| Clean validation and exception flow for unresolved parameters | ○ Pending |
+| Remove requirement for `Assembly::make` boilerplate on custom services | ○ Pending |
+| Container autowiring unit tests (`tests/Unit/Infrastructure/Container/`) | ○ Pending |
+| Developer documentation update for custom service constructors | ○ Pending |
+
+**Exit criteria:** Developers can register custom services in the container with standard typed/positional constructor arguments. The container uses PHP Reflection to map parameter names to container keys, falling back to default arguments or throwing descriptive runtime exceptions when dependencies cannot be resolved.

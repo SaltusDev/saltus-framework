@@ -131,11 +131,14 @@ Each individual framework capability can be gated in the model's `config` array.
 ### Resolution Rules
 
 For each feature/capability configuration section:
-1. **Omitted (Null):** If a capability config section is omitted from the model configuration, the feature defaults to **enabled** for both REST and MCP.
+1. **Omitted (Null):** If a capability config section is omitted from the model configuration, the feature's availability defaults to the master model option:
+   - For **REST API**: falls back to `show_in_rest` (which itself defaults to `true`).
+   - For **MCP Tools**: falls back to `mcp_tools` (which itself defaults to `false` if omitted).
+   - If the respective master option is omitted/false, the feature is **disabled**. If the master option is `true`, the feature is **enabled**.
 2. **Boolean Value:** If defined as a simple boolean (e.g., `'meta' => false` or `'features' => ['duplicate' => false]`), it acts as a joint gate. A value of `false` disables both REST and MCP for that capability; a value of `true` enables both.
 3. **Array Value:** If defined as an array, REST and MCP gating can be configured independently:
-   - **REST Route Gating:** Governed by the `show_in_rest` key in the section array. If the key is omitted, REST is **enabled** (`true`). If present, it resolves to its boolean value.
-   - **MCP Tool Gating:** Governed by the `show_in_mcp` key in the section array. If the key is omitted, MCP is **enabled** (`true`). If present, it resolves to its boolean value.
+   - **REST Route Gating:** Governed by the `show_in_rest` key in the section array. If present, it resolves to its boolean value. If omitted, it falls back to matching the master model `show_in_rest` option.
+   - **MCP Tool Gating:** Governed by the `show_in_mcp` key in the section array. If present, it resolves to its boolean value. If omitted, it falls back to matching the master model `mcp_tools` option.
 
 Enable all Saltus REST-backed and MCP capabilities for a model:
 
@@ -170,12 +173,12 @@ return [
 		'settings' => false,
 
 		'features' => [
-			// 3. Array style: enabled for REST, and defaults to enabled for MCP
+			// 3. Array style: enabled for REST, and defaults to matching master options (enabled) for MCP
 			'duplicate'     => [
 				'show_in_rest' => true,
 			],
 			// 4. Omitted config for single_export and drag_and_drop:
-			// both default to enabled for REST and MCP
+			// both default to matching the master options (enabled here because show_in_rest & mcp_tools are true)
 		],
 	],
 ];
