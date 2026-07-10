@@ -39,7 +39,6 @@ class Modeler implements RestRouteProvider, ToolContributor {
 
 	/**
 	 * Construct the modeler.
-
 	 * @param ModelFactory $model_factory
 	 */
 	public function __construct( ModelFactory $model_factory ) {
