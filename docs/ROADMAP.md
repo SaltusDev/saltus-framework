@@ -152,7 +152,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | **Docker image** | Skipped with standalone server path |
 | **GitHub Action** | Skipped with standalone server path |
 | **VS Code extension** | Future WordPress-native MCP client integration |
-| **Documentation site** | Source pages added at `docs/MCP.md`, `docs/MCP-CLIENTS.md`, and generated `docs/MCP-ABILITIES.md` for future `docs.saltus.dev/mcp` |
+| **Documentation site** | VitePress site live at `docs.saltus.dev`, phpDocumentor API docs, GitHub Actions auto-deploy, MCP docs integrated |
 | **MCP Registry listing** | Reassess for WordPress-native abilities |
 | **Support & SLA model** | Paid support contracts, custom tool development |
 
@@ -358,8 +358,16 @@ frontend:
 
 **Auto-generation:** `composer docs:wpcli` script in `bin/generate-wpcli-docs.php` to generate WP-CLI command tables (parallel to `bin/generate-mcp-docs.php`).
 
+**Docs site infrastructure (new):** VitePress static site at `docs.saltus.dev` + phpDocumentor API docs + GitHub Actions auto-deploy.
+
 | Item | Status |
 |------|--------|
+| VitePress site config + landing page | ✓ Done |
+| phpDocumentor config (phpdoc.dist.xml) | ✓ Done |
+| @api annotations on 84 public classes/interfaces | ✓ Done |
+| GitHub Actions workflow (build + deploy to Pages) | ✓ Done |
+| Docs content: getting-started, architecture, build, features, MCP | ✓ Done |
+| `composer docs:all` script (mcp + api) | ✓ Done |
 | README features table | ○ Pending |
 | README labels reference | ○ Pending |
 | README meta structure | ○ Pending |
@@ -372,11 +380,11 @@ frontend:
 | docs/FEATURES.md | ○ Pending |
 | bin/generate-wpcli-docs.php | ○ Pending |
 
-**Exit criteria:** Zero `(More Info Soon)` or `(Soon)` placeholders in README. All four new features have dedicated doc files. Feature reference is extracted to `docs/FEATURES.md`. WP-CLI docs are auto-generated.
+**Exit criteria:** `(More Info Soon)` placeholders filled, docs.saltus.dev live with VitePress + API docs, auto-deploy via GitHub Actions. All four feature doc files created. WP-CLI docs auto-generated.
 
 ---
 
-*Plugin Generator moved to its own repository — see [docs/PLUGIN_GENERATOR_ROADMAP.md](./PLUGIN_GENERATOR_ROADMAP.md).*
+*Plugin Generator moved to its own repository — see the [framework-demo repository](https://github.com/SaltusDev/framework-demo).*
 
 ## Framework Core Roadmap
 
