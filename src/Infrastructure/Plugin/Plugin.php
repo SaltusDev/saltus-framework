@@ -16,6 +16,7 @@ use Saltus\WP\Framework\Infrastructure\Container\Container;
  * Additionally, we provide a means to get access to the plugin's container that
  * collects all the features it is made up of. This allows direct access to the
  * features to outside code if needed.
+ * @api
  */
 interface Plugin extends Activateable, Deactivateable, Registerable {
 

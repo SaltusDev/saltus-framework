@@ -12,6 +12,7 @@ namespace Saltus\WP\Framework\Infrastructure\Plugin;
  *
  * Registering such an object is the explicit act of making it known to the
  * overarching system.
+ * @api
  */
 interface Registerable {
 
