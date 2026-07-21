@@ -10,6 +10,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 /**
  * Adds admin filters in the post type admin archive
+ * @api
  */
 class AdminFilters implements Service, Conditional, Assembly {
 

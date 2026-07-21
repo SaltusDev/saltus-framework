@@ -11,6 +11,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
  * Class RememberTabs
  *
  * Enable an option to remember the last active tab in the admin area.
+ * @api
  */
 class RememberTabs implements Service, Conditional, Assembly {
 

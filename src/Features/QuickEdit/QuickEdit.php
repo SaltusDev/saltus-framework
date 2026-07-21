@@ -10,6 +10,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 /**
  * Adds custom admin columns in the post type archive
+ * @api
  */
 class QuickEdit implements Service, Conditional, Assembly {
 

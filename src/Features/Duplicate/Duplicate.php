@@ -17,6 +17,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
 
 
 /**
+ * @api
  */
 class Duplicate implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 
