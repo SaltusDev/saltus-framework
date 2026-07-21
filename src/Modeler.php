@@ -3,6 +3,7 @@
  * Loads paths and models from the paths
  *
  * This is a simplified version of soberwp/Models
+ * @api
  */
 namespace Saltus\WP\Framework;
 
