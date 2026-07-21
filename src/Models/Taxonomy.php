@@ -7,6 +7,7 @@ namespace Saltus\WP\Framework\Models;
  * This model is used to register a custom taxonomy
  *
  * @see https://developer.wordpress.org/reference/functions/register_taxonomy/
+ * @api
  */
 class Taxonomy extends BaseModel implements Model {
 

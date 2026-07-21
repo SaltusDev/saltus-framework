@@ -6,6 +6,9 @@ use Noodlehaus\AbstractConfig;
 use Saltus\WP\Framework\Infrastructure\Container\Container;
 use Saltus\WP\Framework\Infrastructure\Service\Processable;
 
+/**
+ * @api
+ */
 class ModelFactory {
 
 	/** @var Container<string, mixed> */

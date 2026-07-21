@@ -7,6 +7,7 @@ namespace Saltus\WP\Framework\Models;
  * This model is used to register a custom post type
  *
  * @see https://developer.wordpress.org/reference/functions/register_post_type/
+ * @api
  */
 class PostType extends BaseModel implements Model {
 

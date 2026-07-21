@@ -2,6 +2,9 @@
 
 namespace Saltus\WP\Framework\Models;
 
+/**
+ * @api
+ */
 interface Model {
 
 	/**

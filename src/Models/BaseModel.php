@@ -3,6 +3,9 @@ namespace Saltus\WP\Framework\Models;
 
 use Noodlehaus\AbstractConfig;
 
+/**
+ * @api
+ */
 abstract class BaseModel {
 
 	/**
