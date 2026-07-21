@@ -6,6 +6,9 @@ use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
+/**
+ * @api
+ */
 class McpPolicy {
 	/**
 	 * Modeler instance.

@@ -7,6 +7,7 @@ namespace Saltus\WP\Framework\MCP;
  * All values are filterable so plugins can customise the MCP server name,
  * REST namespace, ability category, and ability name prefix without
  * modifying framework source files.
+ * @api
  */
 class MCPConfig {
 
