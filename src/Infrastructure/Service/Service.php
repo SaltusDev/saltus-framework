@@ -7,6 +7,7 @@ namespace Saltus\WP\Framework\Infrastructure\Service;
  * Splitting your logic up into independent services makes the approach of
  * assembling a plugin more systematic and scalable and lowers the cognitive
  * load when the code base increases in size.
+ * @api
  */
 interface Service {
 }

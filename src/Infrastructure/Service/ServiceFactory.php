@@ -3,6 +3,9 @@ namespace Saltus\WP\Framework\Infrastructure\Service;
 
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 
+/**
+ * @api
+ */
 class ServiceFactory implements Service, Factory {
 
 	/**

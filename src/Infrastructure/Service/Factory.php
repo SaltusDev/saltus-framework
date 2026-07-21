@@ -1,6 +1,9 @@
 <?php
 namespace Saltus\WP\Framework\Infrastructure\Service;
 
+/**
+ * @api
+ */
 interface Factory {
 	/**
 	 * Create a new resource that can return its instance
