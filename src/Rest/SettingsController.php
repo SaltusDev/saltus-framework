@@ -12,6 +12,7 @@ use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for reading and updating per-post-type settings.
+ * @api
  */
 class SettingsController extends WP_REST_Controller {
 

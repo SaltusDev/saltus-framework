@@ -14,6 +14,7 @@ use Saltus\WP\Framework\Models\Taxonomy;
 
 /**
  * REST controller exposing registered Saltus models and their metadata.
+ * @api
  */
 class ModelsController extends WP_REST_Controller {
 

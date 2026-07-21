@@ -12,6 +12,7 @@ use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for duplicating posts.
+ * @api
  */
 class DuplicateController extends WP_REST_Controller {
 

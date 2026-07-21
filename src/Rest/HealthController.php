@@ -11,6 +11,7 @@ use WP_REST_Server;
 
 /**
  * REST controller exposing framework health and MCP runtime metrics.
+ * @api
  */
 class HealthController extends WP_REST_Controller {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;

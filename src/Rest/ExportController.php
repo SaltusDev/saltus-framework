@@ -11,6 +11,7 @@ use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for exporting posts as WXR.
+ * @api
  */
 class ExportController extends WP_REST_Controller {
 

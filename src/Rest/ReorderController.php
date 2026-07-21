@@ -12,6 +12,7 @@ use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for reordering posts via menu_order updates.
+ * @api
  */
 class ReorderController extends WP_REST_Controller {
 

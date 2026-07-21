@@ -13,6 +13,7 @@ use Saltus\WP\Framework\Modeler;
 
 /**
  * REST controller exposing meta field configuration per post type.
+ * @api
  */
 class MetaController extends WP_REST_Controller {
 
