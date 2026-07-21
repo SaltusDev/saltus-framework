@@ -20,6 +20,7 @@ use Saltus\WP\Framework\MCP\Tools\ToolProvider;
  *     callback: callable,
  *     meta: array<string, mixed>
  * }
+ * @api
  */
 class AbilityDefinitionFactory {
 

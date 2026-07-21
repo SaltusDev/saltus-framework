@@ -11,6 +11,7 @@ use Saltus\WP\Framework\MCP\Tools\ToolProvider;
  * Registers MCP abilities with the WordPress native wp_register_ability API.
  *
  * @phpstan-import-type AbilityDefinition from \Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory
+ * @api
  */
 class AbilityRegistrar {
 
