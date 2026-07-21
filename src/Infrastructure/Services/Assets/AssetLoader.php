@@ -7,6 +7,9 @@ use Saltus\WP\Framework\Infrastructure\Services\Assets\AssetsContainer;
 use Saltus\WP\Framework\Infrastructure\Service\Factory;
 use Saltus\WP\Framework\Infrastructure\Service\ServiceFactory;
 
+/**
+ * @api
+ */
 trait AssetLoader {
 
 	/**

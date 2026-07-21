@@ -7,6 +7,7 @@ use Saltus\WP\Framework\Infrastructure\Service\Service;
 
 /**
  * Manage Assets like scripts and styles.
+ * @api
  */
 class AssetManager implements Service {
 

@@ -9,6 +9,7 @@ use Saltus\WP\Framework\Infrastructure\Service\Service;
  *
  * This class holds the data that will be made available to a specific script
  * using `wp_localize_script`.
+ * @api
  */
 class AssetData implements Service {
 

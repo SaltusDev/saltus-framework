@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Infrastructure\Services;
 
 /**
  * Shared helper for applying WordPress filters with a safe fallback outside WordPress.
+ * @api
  */
 trait FilterAwareTrait {
 
