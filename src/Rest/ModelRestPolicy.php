@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Rest;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Model;
 
+/**
+ * @api
+ */
 class ModelRestPolicy {
 
 	public const CAPABILITY_MODELS    = 'models';
