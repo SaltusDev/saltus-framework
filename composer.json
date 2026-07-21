@@ -66,7 +66,13 @@
 		"test:phpstan": "./vendor/bin/phpstan analyse --memory-limit=2G",
 		"test:phpcs": "./vendor/bin/phpcs --standard=phpcs.xml",
 		"fix:phpcbf": "./vendor/bin/phpcbf --standard=phpcs.xml",
-		"docs:mcp": "php bin/generate-mcp-docs.php"
+		"docs:mcp": "php bin/generate-mcp-docs.php",
+		"docs:api": "php phpDocumentor.phar -c phpdoc.dist.xml",
+		"docs:wpcli": "php bin/generate-wpcli-docs.php",
+		"docs:all": [
+			"@docs:mcp",
+			"@docs:api"
+		]
 	},
 	"minimum-stability": "dev",
 	"prefer-stable": true,
