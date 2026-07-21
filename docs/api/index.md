@@ -1,0 +1,33 @@
+---
+title: API Reference
+---
+
+# API Reference
+
+This section contains auto-generated API documentation for the Saltus Framework's public interfaces and classes.
+
+## Overview
+
+The API reference is generated from PHPDoc annotations using phpDocumentor. It covers the public API surface — interfaces, classes, and methods tagged with `@api`.
+
+## Key Namespaces
+
+| Namespace | Description |
+|-----------|-------------|
+| `Saltus\WP\Framework` | Core entry point and modeler |
+| `Saltus\WP\Framework\Models` | Model interface, PostType, Taxonomy |
+| `Saltus\WP\Framework\Rest` | REST controllers, route providers, policies |
+| `Saltus\WP\Framework\MCP` | MCP/Abilities infrastructure |
+| `Saltus\WP\Framework\MCP\Tools` | MCP tool interfaces and implementations |
+| `Saltus\WP\Framework\Infrastructure\Container` | DI container interfaces |
+| `Saltus\WP\Framework\Infrastructure\Plugin` | Plugin lifecycle interfaces |
+| `Saltus\WP\Framework\Infrastructure\Service` | Service framework interfaces |
+| `Saltus\WP\Framework\Features` | Feature service implementations |
+
+## Generating the API Docs
+
+```bash
+composer docs:api
+```
+
+This requires phpDocumentor to be installed. See the [Build Guide](/guides/build) for setup instructions.
