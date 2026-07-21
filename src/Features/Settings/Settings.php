@@ -20,6 +20,7 @@ use Saltus\WP\Framework\Rest\SettingsController;
  * Class Settings
  *
  * Enable an option to create Settings page
+ * @api
  */
 final class Settings implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 

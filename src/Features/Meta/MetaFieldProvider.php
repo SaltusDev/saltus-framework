@@ -7,6 +7,7 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 /**
  * Provides model-defined meta field payloads and normalized field metadata.
+ * @api
  */
 class MetaFieldProvider {
 

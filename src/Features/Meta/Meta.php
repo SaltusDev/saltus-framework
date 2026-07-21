@@ -21,6 +21,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  * Class Meta
  *
  * Enable an option to manage meta fields
+ * @api
  */
 final class Meta implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 

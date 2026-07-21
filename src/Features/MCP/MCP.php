@@ -20,6 +20,7 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
  * WordPress-native abilities are registered when the host WordPress version
  * exposes the Abilities API. Older WordPress versions skip native ability
  * registration.
+ * @api
  */
 class MCP implements Service, Registerable, Activateable, Deactivateable {
 
