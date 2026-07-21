@@ -3,7 +3,7 @@ Saltus Framework helps you develop WordPress plugins that are based on Custom Po
 
 We built it to make things easier and faster for developers with different skills. Add metaboxes, settings pages and other enhancements with just a few lines of code.
 
-Visit saltus.dev for more information.
+Visit [saltus.dev](https://saltus.dev) for more information. Full documentation is available at [docs.saltus.dev](https://docs.saltus.dev).
 
 ## Version
 
@@ -42,7 +42,7 @@ composer require saltus/framework
 
 ### Demo
 
-Refer to the [Framework Demo](https://github.com/SaltusDev/framework-demo) for a complete plugin example and to the [Wiki](https://github.com/SaltusDev/saltus-framework/wiki) for complete documentation.
+Refer to the [Framework Demo](https://github.com/SaltusDev/framework-demo) for a complete plugin example and to the [documentation site](https://docs.saltus.dev) for complete documentation.
 
 
 Once the framework is installed and Composer's autoloader is loaded by your plugin, you can initialize it the following way:
@@ -187,7 +187,7 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 
 Saltus Framework exposes its AI-facing tool surface through the WordPress-native MCP/Abilities API. Native WordPress MCP clients can discover and call the `saltus/*` abilities directly from the active plugin.
 
-For full documentation, see [docs/MCP.md](docs/MCP.md). For client integration guidance, see [docs/MCP-CLIENTS.md](docs/MCP-CLIENTS.md). These pages are source material for the future Saltus MCP documentation site.
+For full documentation, see [docs/MCP.md](docs/MCP.md) or the [MCP section](https://docs.saltus.dev/mcp/) of the documentation site. For client integration guidance, see [docs/MCP-CLIENTS.md](docs/MCP-CLIENTS.md) or the [client guide](https://docs.saltus.dev/mcp/clients).
 
 ### Quick Start
 
