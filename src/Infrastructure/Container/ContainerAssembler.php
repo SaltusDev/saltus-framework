@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Infrastructure\Container;
 /**
  * A simplified implementation of a container Assembler.
  *
+ * @api
  */
 class ContainerAssembler {
 

@@ -16,6 +16,7 @@ use Traversable;
  *
  * @extends Traversable<string, mixed>
  * @extends ArrayAccess<string, mixed>
+ * @api
  */
 interface Container extends Traversable, Countable, ArrayAccess {
 

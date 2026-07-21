@@ -28,6 +28,7 @@ use Saltus\WP\Framework\Infrastructure\Services\Assets\HasAssets;
  * Can trigger service registration proccess with CanRegister.
  *
  * @extends ArrayObject<string, mixed>
+ * @api
  */
 class ServiceContainer
 	extends ArrayObject

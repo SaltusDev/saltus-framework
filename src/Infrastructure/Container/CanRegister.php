@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Infrastructure\Container;
 /**
  * Something that triggers class instantiation
  *
+ * @api
  */
 interface CanRegister {
 
