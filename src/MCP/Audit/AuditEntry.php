@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\MCP\Audit;
 
 /**
  * Value object representing a single MCP audit trail entry.
+ * @api
  */
 class AuditEntry {
 

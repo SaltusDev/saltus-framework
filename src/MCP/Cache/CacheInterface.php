@@ -1,6 +1,9 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Cache;
 
+/**
+ * @api
+ */
 interface CacheInterface {
 
 	/**
