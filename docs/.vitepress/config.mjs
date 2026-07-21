@@ -1,0 +1,89 @@
+import { defineConfig } from 'vitepress'
+
+export default defineConfig({
+  title: 'Saltus Framework',
+  description: 'WordPress plugin development framework for Custom Post Types',
+  lang: 'en-US',
+  base: '/',
+
+  ignoreDeadLinks: [
+    /^\/roadmap/,
+    /^\/current/,
+  ],
+
+  head: [
+    ['link', { rel: 'icon', href: '/favicon.ico' }],
+  ],
+
+  themeConfig: {
+    logo: '/logo.png',
+
+    nav: [
+      { text: 'Getting Started', link: '/getting-started' },
+      {
+        text: 'Guides',
+        items: [
+          { text: 'Features', link: '/guides/features' },
+          { text: 'Architecture', link: '/guides/architecture' },
+          { text: 'Build & Setup', link: '/guides/build' },
+        ],
+      },
+      {
+        text: 'MCP/Abilities',
+        link: '/mcp/index',
+      },
+      {
+        text: 'API Reference',
+        link: '/api/index',
+      },
+    ],
+
+    sidebar: {
+      '/getting-started': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Quick Start', link: '/getting-started' },
+          ],
+        },
+      ],
+      '/guides/': [
+        {
+          text: 'Guides',
+          items: [
+            { text: 'Features', link: '/guides/features' },
+            { text: 'Architecture', link: '/guides/architecture' },
+            { text: 'Build & Setup', link: '/guides/build' },
+          ],
+        },
+      ],
+      '/mcp/': [
+        {
+          text: 'MCP/Abilities',
+          items: [
+            { text: 'Overview', link: '/mcp/index' },
+            { text: 'Abilities Reference', link: '/mcp/abilities' },
+            { text: 'Client Integration', link: '/mcp/clients' },
+          ],
+        },
+      ],
+    },
+
+    editLink: {
+      pattern: 'https://github.com/SaltusDev/saltus-framework/edit/main/docs/:path',
+    },
+
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/SaltusDev/saltus-framework' },
+    ],
+
+    footer: {
+      message: 'GPL-3.0 License',
+      copyright: 'Copyright Saltus Plugin Framework',
+    },
+
+    search: {
+      provider: 'local',
+    },
+  },
+})
