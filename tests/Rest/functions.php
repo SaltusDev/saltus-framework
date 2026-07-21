@@ -122,6 +122,10 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 		public function get_route(): string {
 			return $this->route;
 		}
+
+		public function get_attributes(): array {
+			return [];
+		}
 	}
 }
 
