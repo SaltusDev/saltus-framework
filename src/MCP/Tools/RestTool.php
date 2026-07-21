@@ -6,6 +6,7 @@ use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * Abstract base for MCP tools that dispatch via the WordPress REST API.
+ * @api
  */
 abstract class RestTool implements RestBackedToolInterface {
 

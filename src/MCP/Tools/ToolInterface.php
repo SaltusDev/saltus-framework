@@ -1,6 +1,9 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+/**
+ * @api
+ */
 interface ToolInterface {
 
 	/**
