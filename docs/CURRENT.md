@@ -119,6 +119,8 @@
 - MCP namespace config filterability: added MCPConfig utility class with 3 WordPress filters (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix); added mcp_route() helper to RestTool base; refactored 21 source files from hardcoded strings to MCPConfig calls; added MCPConfigTest with 13 test cases — 6 commits, 236 tests, 655 assertions @since 2026-07-08
 - MCP/REST capability gating refactored: added get_config() to Model interface; added McpPolicy class with 14 test cases for MCP-specific mcp_tools/show_in_mcp gating; refactored ModelRestPolicy from saltus_rest array to per-feature config-section model; updated REST controller error hints; updated all existing tests for new config-section pattern — 7 commits, 250 tests, 669 assertions @since 2026-07-08
 
+- Version bump to v1.1.0: `phpdocumentor/phpdocumentor` added to require-dev, composer dev platform pinned to PHP 8.4 (runtime still targets 7.4+), brand assets added to `docs/assets/`, BUILD.md notes the docs tooling @since 2026-07-31
+
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer phpcs` passes.
