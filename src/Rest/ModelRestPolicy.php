@@ -17,6 +17,7 @@ class ModelRestPolicy {
 	public const CAPABILITY_EXPORT    = 'export';
 	public const CAPABILITY_REORDER   = 'reorder';
 	public const CAPABILITY_HEALTH    = 'health';
+	public const CAPABILITY_BLOCKS    = 'blocks';
 
 	private Modeler $modeler;
 
@@ -75,7 +76,7 @@ class ModelRestPolicy {
 	 * @return mixed
 	 */
 	private function get_capability_config( array $config, string $capability ) {
-		if ( $capability === self::CAPABILITY_META || $capability === self::CAPABILITY_SETTINGS ) {
+		if ( in_array( $capability, [ self::CAPABILITY_META, self::CAPABILITY_SETTINGS, self::CAPABILITY_BLOCKS ], true ) ) {
 			return $config[ $capability ] ?? null;
 		}
 
