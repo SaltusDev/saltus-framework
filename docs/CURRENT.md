@@ -1,12 +1,12 @@
 # Current: Live Working State
 
 ## Working
+- Phase 5D: Fill remaining README placeholders (features, labels, meta, settings tables) @since 2026-07-31
 - Phase 5D: Documentation site infrastructure — VitePress + phpDocumentor hybrid, GitHub Actions deploy to docs.saltus.dev, @api annotations on 84 public classes/interfaces, doc content pages @since 2026-07-21
 - Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-08
 - Phase 4F/4G: AbilityRuntime middleware pipeline integration — backward-compatible pipeline delegation added to execute() @since 2026-07-21
 
 ## Next
-- Phase 5D: Fill remaining README placeholders (features, labels, meta, settings tables)
 - Phase 5D: Create BLOCKS.md, WPCLI.md, FRONTEND.md content pages
 - Phase 5D: Create bin/generate-wpcli-docs.php doc generator
 - Phase 5B: WP-CLI tools — 7 grouped command classes mapping every MCP tool
