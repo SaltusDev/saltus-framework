@@ -9,6 +9,7 @@ export default defineConfig({
   ignoreDeadLinks: [
     /^\/roadmap/,
     /^\/current/,
+    /^\/downloads\//,
   ],
 
   head: [

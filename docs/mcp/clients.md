@@ -287,3 +287,4 @@ Avoid these client behaviors:
 - Main MCP docs: [MCP Overview](../mcp/index.md)
 
 - Generated ability reference: [Abilities Reference](../mcp/abilities.md)
+- Agent skill: [Download the Saltus MCP Skill](/downloads/saltus-mcp/SKILL.md) — SKILL.md for connecting AI clients to `saltus/*` abilities
