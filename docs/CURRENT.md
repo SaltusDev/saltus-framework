@@ -1,10 +1,13 @@
 # Current: Live Working State
 
 ## Working
-- Phase 4F/4G: AbilityRuntime middleware pipeline integration — backward-compatible pipeline delegation added to execute() @since 2026-07-21
+- Phase 5C: Frontend rendering — shortcodes, templates, meta field exposure @since 2026-07-31
 
 ## Next
-- Phase 5C: Frontend rendering — shortcodes, templates, meta field exposure
+- Phase 6A: Context Control Center — ai_context schema, AiContextProvider, get_context tool
+- Phase 6B: Editorial Review Queue — proposals, review UI, audit integration
+- Phase 6C: Inside-Admin AI Assistants — meta box assistants, REST endpoints
+- Phase 7: Advanced DI container hardening — ReflectionInstantiator autowiring
 
 ## Blocked
 - None
