@@ -237,7 +237,7 @@ Use these heuristics when planning autonomous workflows:
 2. Check recent error rate and latency.
 3. Confirm the requested ability exists.
 4. Confirm the target model is visible through `saltus/list-models`.
-5. Confirm required parameters match `docs/MCP-ABILITIES.md` or the discovered input schema.
+5. Confirm required parameters match the [Abilities Reference](/mcp/abilities) or the discovered input schema.
 6. Stop if the error is permission-related.
 
 ## Editor And VS Code Guidance
@@ -286,4 +286,4 @@ Avoid these client behaviors:
 ## Reference
 
 - Main MCP docs: [MCP.md](MCP.md)
-- Generated ability reference: [MCP-ABILITIES.md](MCP-ABILITIES.md)
+- Generated ability reference: [Abilities Reference](/mcp/abilities)

@@ -4,36 +4,15 @@
 
 Saltus Framework exposes 18 WordPress-native MCP/Abilities tools.
 
-| Tool | Ability | REST request | Description |
-|------|---------|--------------|-------------|
-| `create_post` | `saltus/create-post` | `POST /wp/v2/posts` | Create a new post in any registered Custom Post Type |
-| `create_term` | `saltus/create-term` | `POST /wp/v2/{taxonomy_rest_base}` | Create a new term in a taxonomy |
-| `delete_post` | `saltus/delete-post` | `DELETE /wp/v2/posts/123` | Delete (trash or force delete) a post by ID |
-| `duplicate_post` | `saltus/duplicate-post` | `POST /saltus-framework/v1/duplicate/123` | Duplicate a WordPress post, creating a copy with "(Copy)" appended to the title |
-| `export_post` | `saltus/export-post` | `GET /saltus-framework/v1/export/123` | Export a WordPress post as WXR (WordPress eXtended RSS) for import into another site |
-| `get_health` | `saltus/get-health` | `GET /saltus-framework/v1/health` | Get Saltus Framework health, version, audit error rate, latency, cache, and rate limit status |
-| `get_meta_fields` | `saltus/get-meta-fields` | `GET /saltus-framework/v1/meta/{post_type}` | Get the meta field definitions for a post type as configured in the Saltus Framework model |
-| `get_model` | `saltus/get-model` | `GET /saltus-framework/v1/models/{slug}` | Get details of a specific Custom Post Type or Taxonomy by slug |
-| `get_post` | `saltus/get-post` | `GET /wp/v2/posts/123` | Get a single post by ID with all fields and meta data |
-| `get_settings` | `saltus/get-settings` | `GET /saltus-framework/v1/settings/{post_type}` | Get the Saltus Framework settings for a specific post type |
-| `list_meta_fields` | `saltus/list-meta-fields` | `GET /saltus-framework/v1/meta` | List model-defined meta field definitions for all registered Saltus post types |
-| `list_models` | `saltus/list-models` | `GET /saltus-framework/v1/models` | List all registered Custom Post Types and Taxonomies on the WordPress site |
-| `list_posts` | `saltus/list-posts` | `GET /wp/v2/posts` | Query posts from a Custom Post Type with optional filters |
-| `list_terms` | `saltus/list-terms` | `GET /wp/v2/{taxonomy_rest_base}` | List terms from a taxonomy (categories, tags, or custom taxonomies) |
-| `reorder_posts` | `saltus/reorder-posts` | `POST /saltus-framework/v1/reorder` | Reorder multiple posts by updating their menu_order values in a single batch operation |
-| `update_meta_fields` | `saltus/update-meta-fields` | `PUT /saltus-framework/v1/meta/{post_type}/123` | Update meta fields for a specific post of a registered Saltus post type |
-| `update_post` | `saltus/update-post` | `PUT /wp/v2/posts/123` | Update an existing post's fields and meta data |
-| `update_settings` | `saltus/update-settings` | `PUT /saltus-framework/v1/settings/{post_type}` | Update the Saltus Framework settings for a specific post type |
-
 ## `create_post`
 
-Create a new post in any registered Custom Post Type
+**Title:** `create_post`
 
-- Ability: `saltus/create-post`
-- REST request: `POST /wp/v2/posts`
-- REST capability: `none`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/create-post</code>
+
+**REST request:** <code style="color:#00b8db">POST /wp/v2/posts</code>
+
+Create a new post in any registered Custom Post Type
 
 ### Parameters
 
@@ -50,13 +29,13 @@ Create a new post in any registered Custom Post Type
 
 ## `create_term`
 
-Create a new term in a taxonomy
+**Title:** `create_term`
 
-- Ability: `saltus/create-term`
-- REST request: `POST /wp/v2/{taxonomy_rest_base}`
-- REST capability: `none`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/create-term</code>
+
+**REST request:** <code style="color:#00b8db">POST /wp/v2/{taxonomy_rest_base}</code>
+
+Create a new term in a taxonomy
 
 ### Parameters
 
@@ -70,13 +49,13 @@ Create a new term in a taxonomy
 
 ## `delete_post`
 
-Delete (trash or force delete) a post by ID
+**Title:** `delete_post`
 
-- Ability: `saltus/delete-post`
-- REST request: `DELETE /wp/v2/posts/123`
-- REST capability: `none`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/delete-post</code>
+
+**REST request:** <code style="color:#00b8db">DELETE /wp/v2/posts/123</code>
+
+Delete (trash or force delete) a post by ID
 
 ### Parameters
 
@@ -88,13 +67,13 @@ Delete (trash or force delete) a post by ID
 
 ## `duplicate_post`
 
-Duplicate a WordPress post, creating a copy with "(Copy)" appended to the title
+**Title:** `duplicate_post`
 
-- Ability: `saltus/duplicate-post`
-- REST request: `POST /saltus-framework/v1/duplicate/123`
-- REST capability: `duplicate (post_type)`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/duplicate-post</code>
+
+**REST request:** <code style="color:#00b8db">POST /saltus-framework/v1/duplicate/123</code>
+
+Duplicate a WordPress post, creating a copy with "(Copy)" appended to the title
 
 ### Parameters
 
@@ -104,13 +83,13 @@ Duplicate a WordPress post, creating a copy with "(Copy)" appended to the title
 
 ## `export_post`
 
-Export a WordPress post as WXR (WordPress eXtended RSS) for import into another site
+**Title:** `export_post`
 
-- Ability: `saltus/export-post`
-- REST request: `GET /saltus-framework/v1/export/123`
-- REST capability: `export (post_type)`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/export-post</code>
+
+**REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/export/123</code>
+
+Export a WordPress post as WXR (WordPress eXtended RSS) for import into another site
 
 ### Parameters
 
@@ -120,13 +99,13 @@ Export a WordPress post as WXR (WordPress eXtended RSS) for import into another 
 
 ## `get_health`
 
-Get Saltus Framework health, version, audit error rate, latency, cache, and rate limit status
+**Title:** `get_health`
 
-- Ability: `saltus/get-health`
-- REST request: `GET /saltus-framework/v1/health`
-- REST capability: `health`
-- Cacheable: `yes`
-- Cache TTL: `60s`
+**Ability:** <code style="color:#00bc7d">saltus/get-health</code>
+
+**REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/health</code>
+
+Get Saltus Framework health, version, audit error rate, latency, cache, and rate limit status
 
 ### Parameters
 
@@ -134,13 +113,13 @@ This tool does not accept parameters.
 
 ## `get_meta_fields`
 
-Get the meta field definitions for a post type as configured in the Saltus Framework model
+**Title:** `get_meta_fields`
 
-- Ability: `saltus/get-meta-fields`
-- REST request: `GET /saltus-framework/v1/meta/{post_type}`
-- REST capability: `meta (post_type)`
-- Cacheable: `yes`
-- Cache TTL: `600s`
+**Ability:** <code style="color:#00bc7d">saltus/get-meta-fields</code>
+
+**REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/meta/{post_type}</code>
+
+Get the meta field definitions for a post type as configured in the Saltus Framework model
 
 ### Parameters
 
@@ -150,13 +129,13 @@ Get the meta field definitions for a post type as configured in the Saltus Frame
 
 ## `get_model`
 
-Get details of a specific Custom Post Type or Taxonomy by slug
+**Title:** `get_model`
 
-- Ability: `saltus/get-model`
-- REST request: `GET /saltus-framework/v1/models/{slug}`
-- REST capability: `models`
-- Cacheable: `yes`
-- Cache TTL: `600s`
+**Ability:** <code style="color:#00bc7d">saltus/get-model</code>
+
+**REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/models/{slug}</code>
+
+Get details of a specific Custom Post Type or Taxonomy by slug
 
 ### Parameters
 
@@ -166,13 +145,13 @@ Get details of a specific Custom Post Type or Taxonomy by slug
 
 ## `get_post`
 
-Get a single post by ID with all fields and meta data
+**Title:** `get_post`
 
-- Ability: `saltus/get-post`
-- REST request: `GET /wp/v2/posts/123`
-- REST capability: `none`
-- Cacheable: `yes`
-- Cache TTL: `300s`
+**Ability:** <code style="color:#00bc7d">saltus/get-post</code>
+
+**REST request:** <code style="color:#00b8db">GET /wp/v2/posts/123</code>
+
+Get a single post by ID with all fields and meta data
 
 ### Parameters
 
@@ -183,13 +162,13 @@ Get a single post by ID with all fields and meta data
 
 ## `get_settings`
 
-Get the Saltus Framework settings for a specific post type
+**Title:** `get_settings`
 
-- Ability: `saltus/get-settings`
-- REST request: `GET /saltus-framework/v1/settings/{post_type}`
-- REST capability: `settings (post_type)`
-- Cacheable: `yes`
-- Cache TTL: `300s`
+**Ability:** <code style="color:#00bc7d">saltus/get-settings</code>
+
+**REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/settings/{post_type}</code>
+
+Get the Saltus Framework settings for a specific post type
 
 ### Parameters
 
@@ -199,13 +178,13 @@ Get the Saltus Framework settings for a specific post type
 
 ## `list_meta_fields`
 
-List model-defined meta field definitions for all registered Saltus post types
+**Title:** `list_meta_fields`
 
-- Ability: `saltus/list-meta-fields`
-- REST request: `GET /saltus-framework/v1/meta`
-- REST capability: `meta (post_type)`
-- Cacheable: `yes`
-- Cache TTL: `600s`
+**Ability:** <code style="color:#00bc7d">saltus/list-meta-fields</code>
+
+**REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/meta</code>
+
+List model-defined meta field definitions for all registered Saltus post types
 
 ### Parameters
 
@@ -213,13 +192,13 @@ This tool does not accept parameters.
 
 ## `list_models`
 
-List all registered Custom Post Types and Taxonomies on the WordPress site
+**Title:** `list_models`
 
-- Ability: `saltus/list-models`
-- REST request: `GET /saltus-framework/v1/models`
-- REST capability: `models`
-- Cacheable: `yes`
-- Cache TTL: `600s`
+**Ability:** <code style="color:#00bc7d">saltus/list-models</code>
+
+**REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/models</code>
+
+List all registered Custom Post Types and Taxonomies on the WordPress site
 
 ### Parameters
 
@@ -229,13 +208,13 @@ List all registered Custom Post Types and Taxonomies on the WordPress site
 
 ## `list_posts`
 
-Query posts from a Custom Post Type with optional filters
+**Title:** `list_posts`
 
-- Ability: `saltus/list-posts`
-- REST request: `GET /wp/v2/posts`
-- REST capability: `none`
-- Cacheable: `yes`
-- Cache TTL: `300s`
+**Ability:** <code style="color:#00bc7d">saltus/list-posts</code>
+
+**REST request:** <code style="color:#00b8db">GET /wp/v2/posts</code>
+
+Query posts from a Custom Post Type with optional filters
 
 ### Parameters
 
@@ -252,13 +231,13 @@ Query posts from a Custom Post Type with optional filters
 
 ## `list_terms`
 
-List terms from a taxonomy (categories, tags, or custom taxonomies)
+**Title:** `list_terms`
 
-- Ability: `saltus/list-terms`
-- REST request: `GET /wp/v2/{taxonomy_rest_base}`
-- REST capability: `none`
-- Cacheable: `yes`
-- Cache TTL: `300s`
+**Ability:** <code style="color:#00bc7d">saltus/list-terms</code>
+
+**REST request:** <code style="color:#00b8db">GET /wp/v2/{taxonomy_rest_base}</code>
+
+List terms from a taxonomy (categories, tags, or custom taxonomies)
 
 ### Parameters
 
@@ -271,13 +250,13 @@ List terms from a taxonomy (categories, tags, or custom taxonomies)
 
 ## `reorder_posts`
 
-Reorder multiple posts by updating their menu_order values in a single batch operation
+**Title:** `reorder_posts`
 
-- Ability: `saltus/reorder-posts`
-- REST request: `POST /saltus-framework/v1/reorder`
-- REST capability: `reorder (post_type)`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/reorder-posts</code>
+
+**REST request:** <code style="color:#00b8db">POST /saltus-framework/v1/reorder</code>
+
+Reorder multiple posts by updating their menu_order values in a single batch operation
 
 ### Parameters
 
@@ -287,13 +266,13 @@ Reorder multiple posts by updating their menu_order values in a single batch ope
 
 ## `update_meta_fields`
 
-Update meta fields for a specific post of a registered Saltus post type
+**Title:** `update_meta_fields`
 
-- Ability: `saltus/update-meta-fields`
-- REST request: `PUT /saltus-framework/v1/meta/{post_type}/123`
-- REST capability: `meta (post_type)`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/update-meta-fields</code>
+
+**REST request:** <code style="color:#00b8db">PUT /saltus-framework/v1/meta/{post_type}/123</code>
+
+Update meta fields for a specific post of a registered Saltus post type
 
 ### Parameters
 
@@ -305,13 +284,13 @@ Update meta fields for a specific post of a registered Saltus post type
 
 ## `update_post`
 
-Update an existing post's fields and meta data
+**Title:** `update_post`
 
-- Ability: `saltus/update-post`
-- REST request: `PUT /wp/v2/posts/123`
-- REST capability: `none`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/update-post</code>
+
+**REST request:** <code style="color:#00b8db">PUT /wp/v2/posts/123</code>
+
+Update an existing post's fields and meta data
 
 ### Parameters
 
@@ -328,13 +307,13 @@ Update an existing post's fields and meta data
 
 ## `update_settings`
 
-Update the Saltus Framework settings for a specific post type
+**Title:** `update_settings`
 
-- Ability: `saltus/update-settings`
-- REST request: `PUT /saltus-framework/v1/settings/{post_type}`
-- REST capability: `settings (post_type)`
-- Cacheable: `no`
-- Cache TTL: `n/a`
+**Ability:** <code style="color:#00bc7d">saltus/update-settings</code>
+
+**REST request:** <code style="color:#00b8db">PUT /saltus-framework/v1/settings/{post_type}</code>
+
+Update the Saltus Framework settings for a specific post type
 
 ### Parameters
 

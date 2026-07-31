@@ -80,7 +80,7 @@ usort(
 );
 
 $reference = build_reference_document( $tools );
-write_file_if_changed( $root . '/docs/MCP-ABILITIES.md', $reference );
+write_file_if_changed( $root . '/docs/mcp/abilities.md', $reference );
 replace_generated_section(
 	$root . '/docs/MCP.md',
 	'<!-- BEGIN AUTO-GENERATED MCP ABILITIES -->',
@@ -172,7 +172,7 @@ function build_embedded_section( array $tools ): string {
 			'',
 			'Saltus Framework exposes ' . count( $tools ) . ' WordPress-native MCP/Abilities tools.',
 			'',
-			'For full details including parameters, see [MCP-ABILITIES.md](MCP-ABILITIES.md).',
+			'For full details including parameters, see [Abilities Reference](/mcp/abilities).',
 		]
 	);
 }

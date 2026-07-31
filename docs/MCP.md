@@ -4,7 +4,7 @@ Saltus Framework exposes its AI-facing tool surface through the WordPress-native
 
 This document is written as the source page for the future Saltus documentation site.
 
-For client implementation guidance, see [MCP-CLIENTS.md](MCP-CLIENTS.md). For the generated ability reference, see [MCP-ABILITIES.md](MCP-ABILITIES.md).
+For client implementation guidance, see [MCP-CLIENTS.md](MCP-CLIENTS.md). For the generated ability reference, see [Abilities Reference](/mcp/abilities).
 
 ## Status
 
@@ -193,7 +193,7 @@ If `show_in_rest` is explicitly `false`, Saltus does not register the model-scop
 
 Saltus Framework exposes 18 WordPress-native MCP/Abilities tools.
 
-For full details including parameters, see [MCP-ABILITIES.md](MCP-ABILITIES.md).
+For full details including parameters, see [Abilities Reference](/mcp/abilities).
 <!-- END AUTO-GENERATED MCP ABILITIES -->
 
 ## Metadata Discovery
