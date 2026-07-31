@@ -46,7 +46,7 @@ A PSR-11-compatible dependency injection container with support for:
 Nine REST controllers registered under the `saltus-framework/v1/` namespace, covering models, posts, settings, meta, and more.
 
 ### MCP/Abilities (`src/MCP/`)
-WordPress-native MCP/Abilities integration exposing 18 tools through a middleware pipeline with caching, rate limiting, audit logging, and permission gating.
+WordPress-native MCP/Abilities integration exposing 19 tools through a middleware pipeline with caching, rate limiting, audit logging, and permission gating.
 
 ## Design Decisions
 

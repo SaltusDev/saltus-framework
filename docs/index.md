@@ -25,7 +25,7 @@ features:
   - title: REST API
     details: 9 REST routes registered in saltus-framework/v1/ covering models, posts, terms, settings, meta, duplicate, export, and reorder.
   - title: MCP/Abilities
-    details: WordPress-native MCP/Abilities surface with 18 tools — models, posts, terms, settings, meta, health, and reorder.
+    details: WordPress-native MCP/Abilities surface with 19 tools - models, posts, terms, settings, meta, blocks, health, and reorder.
   - title: Meta Boxes & Settings
     details: Powered by Codestar Framework — build complex meta boxes and settings pages with 40+ field types.
   - title: WordPress-native AI

@@ -26,6 +26,8 @@ export default defineConfig({
         text: 'Guides',
         items: [
           { text: 'Features', link: '/guides/features' },
+          { text: 'Blocks', link: '/guides/blocks' },
+          { text: 'WP-CLI', link: '/guides/wp-cli' },
           { text: 'Architecture', link: '/guides/architecture' },
           { text: 'Build & Setup', link: '/guides/build' },
         ],
@@ -54,6 +56,8 @@ export default defineConfig({
           text: 'Guides',
           items: [
             { text: 'Features', link: '/guides/features' },
+            { text: 'Blocks', link: '/guides/blocks' },
+            { text: 'WP-CLI', link: '/guides/wp-cli' },
             { text: 'Architecture', link: '/guides/architecture' },
             { text: 'Build & Setup', link: '/guides/build' },
           ],

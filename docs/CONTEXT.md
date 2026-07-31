@@ -49,6 +49,15 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 - **Decision:** Refactoring these paths is debt reduction around runtime-critical behavior, not cosmetic cleanup. The goal is to reduce regression risk, improve standards compliance, and prepare the code for focused unit and integration tests.
 - **Compatibility:** Existing Saltus plugins should continue working while internals become safer to maintain, easier to type-check, and easier to test.
 
+### 7. Model-Driven Blocks
+- **Purpose:** Provide editor-native list and single views without duplicating post data into block content.
+- **Decision:** Blocks use runtime Block API v3 metadata arrays and one shared unbundled editor script. Model metadata supplies selectable field paths; dynamic PHP rendering reads current post values.
+- **Templates:** Resolution order is consuming-plugin config, active theme override, then framework defaults under `templates/blocks/`.
+
+### 8. WP-CLI Parity
+- **Purpose:** Make the WordPress-native ability surface available to operators and scripts without HTTP dispatch.
+- **Decision:** Eight `wp saltus` command groups call WordPress APIs and shared framework services directly. `CommandCatalog` is the authoritative 19-command parity map and generates `docs/guides/wp-cli.md`.
+
 ## Naming & Standards
 - **Quality Assurance:** PHP CodeSniffer (PHPCS) ensures adherence to WordPress coding standards, while PHPStan handles static analysis to catch type errors and logical bugs early.
 - **Testing:** Automated tests are powered by PHPUnit, ensuring framework stability across different WordPress and PHP versions.

@@ -18,6 +18,10 @@ The project defines several Composer scripts for quality assurance:
 - **Linting (PHPCS):** `./vendor/bin/phpcs --standard=phpcs.xml`
   Run via `composer phpcs`
 - **API docs (phpDocumentor):** `composer docs:api` (uses `phpDocumentor.phar -c phpdoc.dist.xml`)
+- **MCP ability docs:** `composer docs:mcp`
+- **WP-CLI command docs:** `composer docs:wpcli`
+- **All generated docs:** `composer docs:all`
+- **VitePress site:** `npm run docs:build`
 
 ## Patching Codestar Framework
 If the Codestar Framework is updated, re-apply the custom patches:

@@ -29,6 +29,8 @@ Saltus Framework is designed to make things easier and faster for developers wit
   - Single entry export functionality
   - Built-in drag-and-drop reordering
 - **Extensibility**: Provides a robust set of hooks (`actions` and `filters`) to customize the framework's behavior (e.g., duplicate post data, admin filter queries, modeler priorities).
+- **Block Editor**: Generates dynamic list and single blocks from CPT model configuration and metadata.
+- **Operational Tooling**: Exposes all 19 WordPress-native abilities through equivalent `wp saltus` commands.
 
 ## Core Concepts
 
