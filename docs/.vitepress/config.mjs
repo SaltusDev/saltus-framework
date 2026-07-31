@@ -17,6 +17,7 @@ export default defineConfig({
 
   themeConfig: {
     logo: '/logo.png',
+    logoLink: 'https://saltus.dev',
 
     nav: [
       { text: 'Getting Started', link: '/getting-started' },
