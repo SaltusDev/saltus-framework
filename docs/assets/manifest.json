@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "brand": {
+    "logoLight": {
+      "id": "brand:logoLight",
+      "filename": "saltus-icon.jpg",
+      "relativePath": "branding/saltus-icon.jpg",
+      "mimeType": "image/jpeg",
+      "size": 67834,
+      "modifiedAt": "1784687769"
+    },
+    "logoDark": null,
+    "wordmarkLight": null,
+    "wordmarkDark": null
+  },
+  "palette": [
+    {
+      "id": "auto-1-200040",
+      "name": "Auto 1",
+      "hex": "#200040",
+      "source": "auto"
+    },
+    {
+      "id": "auto-2-204080",
+      "name": "Auto 2",
+      "hex": "#204080",
+      "source": "auto"
+    },
+    {
+      "id": "auto-3-202060",
+      "name": "Auto 3",
+      "hex": "#202060",
+      "source": "auto"
+    },
+    {
+      "id": "auto-4-202040",
+      "name": "Auto 4",
+      "hex": "#202040",
+      "source": "auto"
+    },
+    {
+      "id": "auto-5-204060",
+      "name": "Auto 5",
+      "hex": "#204060",
+      "source": "auto"
+    }
+  ],
+  "extras": []
+}
