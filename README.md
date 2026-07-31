@@ -106,35 +106,117 @@ The above example will create a Custom Post Type 'movie' and a hierarchical Taxo
 
 Currently there are 2 types of Model, one for **Custom Post Types** and another for **Taxonomies**. Depending what you define, you’ll have different parameters available.
 
-### Model type = ‘cpt’
+### Model type = `cpt`
 
 | Parameter | Description |
 | --- | --- |
-| active | `boolean` - sets this model to active or inactive |
-type | `string` - type of model |
-name | `string` - identifier of the custom post type |
-features | `array` - Features that this CPT will support (More Info Soon)  |
-supports | `array` - refer to the supports argument of the [register_post_type](https://developer.wordpress.org/reference/functions/register_post_type/) function from WordPress |
-labels | `array` - Everything related with labels for this custom post type (More Info Soon)  |
-options | `array` - Refer to the second argument in the [register_post_type](https://developer.wordpress.org/reference/functions/register_post_type/) function from WordPress |
-block_editor | `boolean` - if the Block Editor should be enabled or not |
-meta | `array` - Information for the Metaboxes for this CPT (More Info Soon)  |
-settings | `array` - Information for the Settings page of this CPT (More Info Soon)  |
+| `active` | `boolean` - set to `false` to skip this model; defaults to active |
+| `type` | `string` - `cpt`, `post-type`, `posttype`, or `post_type` |
+| `name` | `string` - WordPress post type identifier (maximum 20 characters) |
+| `features` | `array` - enable `admin_cols`, `admin_filters`, `draganddrop`, `duplicate`, `quick_edit`, `remember_tabs`, and `single_export`; see [Features Reference](docs/guides/features.md) |
+| `supports` | `array` - WordPress post type supports such as `title`, `editor`, and `thumbnail` |
+| `labels` | `array` - singular/plural names, text domain, featured-image wording, and UI/message/label overrides |
+| `options` | `array` - overrides passed to [`register_post_type()`](https://developer.wordpress.org/reference/functions/register_post_type/) |
+| `block_editor` | `boolean` - set to `false` to disable the block editor for this post type |
+| `blocks` | `boolean|array` - generate dynamic list and/or single blocks; see [Blocks Guide](docs/guides/blocks.md) |
+| `meta` | `array` - Codestar metaboxes keyed by metabox ID, each with `fields` or `sections`; `register_rest_api: true` exposes declared fields |
+| `settings` | `array` - Codestar settings pages keyed by option/page ID, each with page arguments and `fields` or `sections` |
+| `saltus_rest` | `boolean|array` - opt models and feature routes into the Saltus REST surface |
+| `mcp_tools` | `boolean|array` - control model visibility through WordPress-native MCP/Abilities |
 
-Example File for a CPT Model (Soon)
+The `labels` object supports `has_one`, `has_many`, `text_domain`, and `featured_image`. Use `overrides.ui.enter_title_here` for the editor title placeholder, `overrides.labels` for any WordPress registration label, `overrides.messages` for post-update messages, and `overrides.bulk_messages` for bulk-action messages. See the [features and model reference](docs/guides/features.md#labels) for the accepted message keys.
 
+Metaboxes and settings pages use [Codestar Framework field definitions](https://codestarframework.com/documentation/#/fields). Fields may be supplied directly or grouped into `sections`. For metaboxes, `data_type: serialize` stores the box as one serialized value; the default `unserialize` mode stores fields separately. Set `register_rest_api: true` on a metabox to register its fields with the WordPress REST API.
 
-### Model type = ‘category’ or ‘tag’
+Complete CPT model:
+
+```php
+<?php
+return [
+    'type'         => 'cpt',
+    'name'         => 'movie',
+    'supports'     => [ 'title', 'editor', 'excerpt', 'thumbnail' ],
+    'labels'       => [
+        'has_one'        => 'Movie',
+        'has_many'       => 'Movies',
+        'text_domain'    => 'my-plugin',
+        'featured_image' => 'Poster',
+        'overrides'      => [
+            'ui' => [ 'enter_title_here' => 'Enter movie title' ],
+        ],
+    ],
+    'options'      => [
+        'has_archive' => true,
+        'rewrite'     => [ 'slug' => 'movies' ],
+    ],
+    'blocks'       => [ 'list' => true, 'single' => true ],
+    'saltus_rest'  => true,
+    'mcp_tools'    => true,
+    'features'     => [
+        'admin_cols' => [
+            'release_year' => [ 'title' => 'Year', 'meta_key' => 'release_year' ],
+            'genre'        => [ 'title' => 'Genres', 'taxonomy' => 'genre' ],
+        ],
+        'admin_filters' => [
+            'genre' => [ 'taxonomy' => 'genre', 'label' => 'All genres' ],
+        ],
+        'duplicate'     => [ 'label' => 'Duplicate movie' ],
+        'single_export' => [ 'label' => 'Export movie' ],
+    ],
+    'meta'         => [
+        'movie_details' => [
+            'title'             => 'Movie Details',
+            'register_rest_api' => true,
+            'fields'            => [
+                'release_year' => [ 'type' => 'number', 'title' => 'Release year' ],
+                'rating'       => [ 'type' => 'text', 'title' => 'Rating' ],
+            ],
+        ],
+    ],
+    'settings'     => [
+        'movie_settings' => [
+            'title'  => 'Movie Settings',
+            'fields' => [
+                'items_per_page' => [ 'type' => 'number', 'title' => 'Items per page' ],
+            ],
+        ],
+    ],
+];
+```
+
+### Model type = `category` or `tag`
 
 | Parameter | Description |
 | --- | --- |
-type | `string` - ‘category’ // or 'tag' to set it to non-hierarchical automatically |
-name | `string` - identifier of this taxonomy |
-associations | `string` - to what CPT it should be associated |
-labels | `array` - Everything related with labels for this custom post type (More Info Soon)  |
-options | `array` - Refer to the third parameter for register_taxonomy function from WordPress |
+| `active` | `boolean` - set to `false` to skip this model; defaults to active |
+| `type` | `string` - `category`/`cat` for hierarchical behavior, or `tag`, `taxonomy`, or `tax` for non-hierarchical behavior |
+| `name` | `string` - WordPress taxonomy identifier (maximum 32 characters) |
+| `associations` | `string|array` - post type or post types associated with the taxonomy |
+| `labels` | `array` - the same singular/plural and `overrides.labels` structure used by CPT models |
+| `options` | `array` - overrides passed to [`register_taxonomy()`](https://developer.wordpress.org/reference/functions/register_taxonomy/) |
 
-Example File for a Taxonomy Model (Soon)
+Complete taxonomy model:
+
+```php
+<?php
+return [
+    'type'         => 'category',
+    'name'         => 'genre',
+    'associations' => [ 'movie' ],
+    'labels'       => [
+        'has_one'  => 'Genre',
+        'has_many' => 'Genres',
+        'overrides' => [
+            'labels' => [ 'all_items' => 'All movie genres' ],
+        ],
+    ],
+    'options'      => [
+        'public'       => true,
+        'show_in_rest' => true,
+        'rewrite'      => [ 'slug' => 'movie-genre' ],
+    ],
+];
+```
 
 ## Filters/Hooks
 
@@ -228,6 +310,8 @@ Saltus wraps ability execution with WordPress-native audit logging, rate limitin
 | `reorder_posts` | Batch update post menu order |
 | `list_meta_fields` | Discover Saltus meta field definitions across all registered CPTs |
 | `get_meta_fields` | Get Saltus meta field definitions for a post type |
+| `update_meta_fields` | Update registered meta fields for a post |
+| `list_block_models` | List model-driven blocks and their attributes |
 
 Meta field discovery preserves the raw Saltus/Codestar configuration in `meta` and includes normalized MCP-friendly metadata in `normalized.fields` and `normalized.rest_meta_keys`. Nested fields are exposed as paths such as `points_info.coordinates.latitude`, with JSON-schema-like types and REST writability information.
 
