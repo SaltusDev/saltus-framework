@@ -1,21 +1,18 @@
 # Current: Live Working State
 
 ## Working
-- Phase 5D: Fill remaining README placeholders (features, labels, meta, settings tables) @since 2026-07-31
-- Phase 5D: Documentation site infrastructure — VitePress + phpDocumentor hybrid, GitHub Actions deploy to docs.saltus.dev, @api annotations on 84 public classes/interfaces, doc content pages @since 2026-07-21
-- Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-08
 - Phase 4F/4G: AbilityRuntime middleware pipeline integration — backward-compatible pipeline delegation added to execute() @since 2026-07-21
 
 ## Next
-- Phase 5D: Create BLOCKS.md, WPCLI.md, FRONTEND.md content pages
-- Phase 5D: Create bin/generate-wpcli-docs.php doc generator
-- Phase 5B: WP-CLI tools — 7 grouped command classes mapping every MCP tool
 - Phase 5C: Frontend rendering — shortcodes, templates, meta field exposure
 
 ## Blocked
 - None
 
 ## Recent Changes
+- Phase 5A delivered: runtime Block API v3 list/single blocks, shared editor assets, dynamic render templates, REST discovery, and `list_block_models` MCP ability @since 2026-07-31
+- Phase 5B delivered: eight `wp saltus` command groups provide parity with all 19 abilities, direct shared-service execution, table/JSON/YAML output, JSON file input, tests, and generated command docs @since 2026-07-31
+- Phase 5D delivered for implemented features: README placeholders replaced, model/feature references corrected, Blocks and WP-CLI guides added to VitePress, and MCP/WP-CLI docs regenerated for 19 tools; frontend guide remains deferred with 5C @since 2026-07-31
 - Docs infrastructure: VitePress site scaffolded at `docs/.vitepress/`, phpDocumentor config at `phpdoc.dist.xml`, `.github/workflows/docs.yml` for auto-build + GH Pages deploy to `docs.saltus.dev`, `docs/public/CNAME` for custom domain, 6 doc content pages (getting-started, features, architecture, build, MCP overview, API index), `composer docs:all` script (`docs:mcp` + `docs:api`), @api annotations on 84 public classes/interfaces across all namespaces, README updated with docs.saltus.dev links, ROADMAP.md Phase 5D progress tracked @since 2026-07-21
 - AbilityRuntime middleware pipeline integration: backward-compatible `execute_via_pipeline()` delegated from `execute()`, `execute_legacy()` preserved as fallback, optional `MiddlewarePipeline` constructor injection — resolves Phase 4F/4G strip-cache/strip-rate-limit items @since 2026-07-21
 - Code review feedback: replaced wp_die with RuntimeException in single_export_query to avoid HTML death pages in REST/MCP contexts; added catch clause in export_post to return structured WP_Error; replaced unsafe property_exists with get_object_vars in ModelRestPolicy to avoid fatal errors on non-public properties; added explicit edit_posts permission checks for list_models/get_model/list_meta_fields/get_meta_fields in AbilityDefinitionFactory; changed AuditLogger created_at column from varchar(32) to datetime(3) — 2 commits @since 2026-07-04
@@ -124,7 +121,7 @@
 ## Known Issues
 - `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer phpcs` passes.
-- PHPStan: Level 7 clean across the configured analysis set (new service classes ReorderPostsService, MetaFieldProvider, SettingsManager added).
+- PHPStan: Level 7 clean across the configured analysis set; use `--debug` when the sandbox prevents PHPStan's local TCP worker server from binding.
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
@@ -133,4 +130,4 @@
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
 - Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
-- Current verification: full `composer test` (208 tests, 598 assertions), `composer phpstan`, `composer phpcs`, and `git diff --check` pass after the service extraction pass.
+- Current verification: full `composer test` (319 tests, 842 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check` pass for Phase 5A/5B/5D.

@@ -3,7 +3,7 @@
 ## Current Status
 - Version: 2.0.0 (released 2026-06-30)
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
-- WordPress-native MCP/Abilities surface with 18 tools (9 Phase 1 + 8 Phase 2 + health)
+- WordPress-native MCP/Abilities surface with 19 tools
 - Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
 - PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
@@ -172,7 +172,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 
 ---
 
-#### 5A — Block Editor Integration (block.json tied to models)
+#### 5A — Block Editor Integration (runtime metadata tied to models)
 
 **Goal:** Auto-register Gutenberg blocks from CPT model config, using the model's meta fields as block attributes. One named block per CPT (e.g., `saltus/movie-list`, `saltus/book-list`).
 
@@ -192,14 +192,14 @@ blocks:
 | `src/Features/Blocks/Blocks.php` | Service class (Service, Conditional, Assembly, ToolContributor) |
 | `src/Features/Blocks/SaltusBlocks.php` | Processable — iterates models, register_block_type() per CPT |
 | `src/Features/Blocks/BlockRenderer.php` | Shared render_callback for list and single blocks |
-| `templates/block-list.php` | Default list block template |
-| `templates/block-single.php` | Default single block template |
+| `templates/blocks/list.php` | Default list block template |
+| `templates/blocks/single.php` | Default single block template |
 | `assets/Feature/Blocks/editor.js` | Editor script (InspectorControls) |
 | `assets/Feature/Blocks/style.css` | Block styles |
 
 **How it wires in:**
 - `Core::get_service_classes()` adds `'blocks' => Blocks::class`
-- `ModelFactory::process_services()` reads `config['blocks']` → `Blocks::make()` → `process()`
+- `Blocks` reads all post type models from `Modeler` and registers enabled definitions on `init`
 - Each call to `register_block_type()` uses a metadata array (no static block.json needed)
 - Meta fields from model `meta` config auto-mapped as block attributes via `MetaFieldProvider`
 - Dedicated MCP tool `list_block_models` contributed by `Blocks::get_mcp_tools()`
@@ -207,13 +207,13 @@ blocks:
 
 | Item | Status |
 |------|--------|
-| Blocks feature service + SaltusBlocks implementation | ○ Pending |
-| BlockRenderer with default render callbacks | ○ Pending |
-| Default list/single block templates | ○ Pending |
-| Editor script and styles | ○ Pending |
-| MCP tool for block model discovery | ○ Pending |
-| PHPUnit tests for block registration | ○ Pending |
-| Integration with existing ModelRestPolicy | ○ Pending |
+| Blocks feature service + SaltusBlocks implementation | ✓ Done |
+| BlockRenderer with default render callbacks | ✓ Done |
+| Default list/single block templates | ✓ Done |
+| Editor script and styles | ✓ Done |
+| MCP tool for block model discovery | ✓ Done |
+| PHPUnit tests for block registration | ✓ Done |
+| Integration with existing ModelRestPolicy | ✓ Done |
 
 **Exit criteria:** `saltus/{cpt_name}-list` and `saltus/{cpt_name}-single` blocks are registered for every CPT with `blocks: true`. Block attributes reflect the model's meta field config. List block queries and renders posts; single block renders a post with all meta.
 
@@ -223,7 +223,7 @@ blocks:
 
 **Goal:** `wp saltus <command>` mapping every MCP tool to a WP-CLI command, using the same shared service classes.
 
-**Command tree (7 grouped command classes):**
+**Command tree (8 grouped command classes):**
 
 | Command | MCP Tool | Shared Service |
 |---------|----------|----------------|
@@ -243,6 +243,8 @@ blocks:
 | `wp saltus settings update <post_type> <json>` | `update_settings` | `SettingsManager` |
 | `wp saltus reorder <json>` | `reorder_posts` | `ReorderPostsService` |
 | `wp saltus meta list [<post_type>]` | `list_meta_fields` / `get_meta_fields` | `MetaFieldProvider` |
+| `wp saltus meta update <post_type> <post_id> <json>` | `update_meta_fields` | `MetaFieldProvider` |
+| `wp saltus block list` | `list_block_models` | `SaltusBlocks` |
 
 **Files:**
 
@@ -256,6 +258,7 @@ blocks:
 | `src/Features/WpCli/Commands/SettingsCommand.php` | `wp saltus settings {get\|update}` |
 | `src/Features/WpCli/Commands/MetaCommand.php` | `wp saltus meta {list\|get}` |
 | `src/Features/WpCli/Commands/ReorderCommand.php` | `wp saltus reorder` |
+| `src/Features/WpCli/Commands/BlockCommand.php` | `wp saltus block list` |
 
 **Output formatting:** `--format=table|json|yaml` flag on all list/detail commands. Table is default for interactive, JSON for scripting.
 
@@ -263,16 +266,17 @@ blocks:
 
 | Item | Status |
 |------|--------|
-| WpCli feature service | ○ Pending |
-| SaltusCommand (health + help) | ○ Pending |
-| ModelCommand (list, get) | ○ Pending |
-| PostCommand (list, get, create, update, delete, duplicate, export) | ○ Pending |
-| TermCommand (list, create) | ○ Pending |
-| SettingsCommand (get, update) | ○ Pending |
-| MetaCommand (list, get) | ○ Pending |
-| ReorderCommand | ○ Pending |
-| `composer docs:wpcli` script | ○ Pending |
-| PHPUnit tests with WP_CLI stubs | ○ Pending |
+| WpCli feature service | ✓ Done |
+| SaltusCommand (health + help) | ✓ Done |
+| ModelCommand (list, get) | ✓ Done |
+| PostCommand (list, get, create, update, delete, duplicate, export) | ✓ Done |
+| TermCommand (list, create) | ✓ Done |
+| SettingsCommand (get, update) | ✓ Done |
+| MetaCommand (list, get, update) | ✓ Done |
+| ReorderCommand | ✓ Done |
+| BlockCommand | ✓ Done |
+| `composer docs:wpcli` script | ✓ Done |
+| PHPUnit tests with WP_CLI stubs | ✓ Done |
 
 **Exit criteria:** Every MCP tool has a corresponding `wp saltus` subcommand. Commands use shared service classes (not REST dispatch). Output formatting supports `--format=table|json|yaml`. Test suite covers all command groups.
 
@@ -340,21 +344,21 @@ frontend:
 
 | Section | Current State | Target |
 |---------|---------------|--------|
-| `features` parameter table | `(More Info Soon)` | Complete table of all 7 features with config keys and one-liners |
-| `labels` parameter table | `(More Info Soon)` | Full reference: `has_one`, `has_many`, `text_domain`, `featured_image`, `overrides.ui`, `overrides.messages`, `overrides.bulk_messages`, `overrides.labels` |
-| `meta` parameter table | `(More Info Soon)` | Metabox structure: sections, fields, Codestar field types, REST API registration |
-| `settings` parameter table | `(More Info Soon)` | Settings page structure: page args, sections, fields, parent menu, tabs |
-| CPT example file | `(Soon)` | Complete YAML + PHP model with all common parameters |
-| Taxonomy example file | `(Soon)` | Complete YAML + PHP taxonomy model with associations |
+| `features` parameter table | Complete | Table of all 7 features with config keys and one-liners |
+| `labels` parameter table | Complete | Full reference: `has_one`, `has_many`, `text_domain`, `featured_image`, and overrides |
+| `meta` parameter table | Complete | Metabox structure: sections, fields, Codestar field types, REST API registration |
+| `settings` parameter table | Complete | Settings page structure: page args, sections, fields, parent menu, tabs |
+| CPT example file | Complete | Complete PHP model with all common parameters |
+| Taxonomy example file | Complete | Complete PHP taxonomy model with associations |
 
 **New doc files:**
 
 | File | Content |
 |------|---------|
-| `docs/BLOCKS.md` | Block config reference, template customization, attributes guide, editor integration |
-| `docs/WPCLI.md` | Full command reference with examples (auto-generated marker from `composer docs:wpcli`) |
-| `docs/FRONTEND.md` | Shortcode API, template variables, customization guide, attribute reference |
-| `docs/FEATURES.md` | Deep feature reference extracted from README: admin_cols, admin_filters, draganddrop, duplicate, quick_edit, remember_tabs, single_export |
+| `docs/guides/blocks.md` | Block config reference, template customization, attributes guide, editor integration |
+| `docs/guides/wp-cli.md` | Full command reference with examples, auto-generated by `composer docs:wpcli` |
+| `docs/guides/frontend.md` | Deferred with 5C: shortcode API, template variables, customization guide |
+| `docs/guides/features.md` | Deep feature and model reference |
 
 **Auto-generation:** `composer docs:wpcli` script in `bin/generate-wpcli-docs.php` to generate WP-CLI command tables (parallel to `bin/generate-mcp-docs.php`).
 
@@ -367,20 +371,20 @@ frontend:
 | @api annotations on 84 public classes/interfaces | ✓ Done |
 | GitHub Actions workflow (build + deploy to Pages) | ✓ Done |
 | Docs content: getting-started, architecture, build, features, MCP | ✓ Done |
-| `composer docs:all` script (mcp + api) | ✓ Done |
-| README features table | ○ Pending |
-| README labels reference | ○ Pending |
-| README meta structure | ○ Pending |
-| README settings structure | ○ Pending |
-| README CPT example | ○ Pending |
-| README taxonomy example | ○ Pending |
-| docs/BLOCKS.md | ○ Pending |
-| docs/WPCLI.md (auto-generated) | ○ Pending |
-| docs/FRONTEND.md | ○ Pending |
-| docs/FEATURES.md | ○ Pending |
-| bin/generate-wpcli-docs.php | ○ Pending |
+| `composer docs:all` script (MCP + WP-CLI + API) | ✓ Done |
+| README features table | ✓ Done |
+| README labels reference | ✓ Done |
+| README meta structure | ✓ Done |
+| README settings structure | ✓ Done |
+| README CPT example | ✓ Done |
+| README taxonomy example | ✓ Done |
+| docs/guides/blocks.md | ✓ Done |
+| docs/guides/wp-cli.md (auto-generated) | ✓ Done |
+| docs/guides/frontend.md | ○ Deferred with 5C |
+| docs/guides/features.md | ✓ Done |
+| bin/generate-wpcli-docs.php | ✓ Done |
 
-**Exit criteria:** `(More Info Soon)` placeholders filled, docs.saltus.dev live with VitePress + API docs, auto-deploy via GitHub Actions. All four feature doc files created. WP-CLI docs auto-generated.
+**Exit criteria:** README placeholders filled, docs.saltus.dev backed by VitePress + API docs and GitHub Actions deployment, Blocks and Features guides published, and WP-CLI docs auto-generated. Frontend documentation ships with 5C.
 
 ---
 
