@@ -144,8 +144,6 @@ function build_reference_document( array $tools ): string {
 		$metadata = tool_metadata( $tool );
 		$lines[] = '## `' . $tool->get_name() . '`';
 		$lines[] = '';
-		$lines[] = '**Title:** `' . $tool->get_name() . '`';
-		$lines[] = '';
 		$lines[] = '**Ability:** <code style="color:#00bc7d">' . $metadata['ability'] . '</code>';
 		$lines[] = '';
 		$lines[] = '**REST request:** <code style="color:#00b8db">' . $metadata['rest_request'] . '</code>';

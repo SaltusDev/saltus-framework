@@ -6,8 +6,6 @@ Saltus Framework exposes 18 WordPress-native MCP/Abilities tools.
 
 ## `create_post`
 
-**Title:** `create_post`
-
 **Ability:** <code style="color:#00bc7d">saltus/create-post</code>
 
 **REST request:** <code style="color:#00b8db">POST /wp/v2/posts</code>
@@ -29,8 +27,6 @@ Create a new post in any registered Custom Post Type
 
 ## `create_term`
 
-**Title:** `create_term`
-
 **Ability:** <code style="color:#00bc7d">saltus/create-term</code>
 
 **REST request:** <code style="color:#00b8db">POST /wp/v2/{taxonomy_rest_base}</code>
@@ -49,8 +45,6 @@ Create a new term in a taxonomy
 
 ## `delete_post`
 
-**Title:** `delete_post`
-
 **Ability:** <code style="color:#00bc7d">saltus/delete-post</code>
 
 **REST request:** <code style="color:#00b8db">DELETE /wp/v2/posts/123</code>
@@ -67,8 +61,6 @@ Delete (trash or force delete) a post by ID
 
 ## `duplicate_post`
 
-**Title:** `duplicate_post`
-
 **Ability:** <code style="color:#00bc7d">saltus/duplicate-post</code>
 
 **REST request:** <code style="color:#00b8db">POST /saltus-framework/v1/duplicate/123</code>
@@ -82,8 +74,6 @@ Duplicate a WordPress post, creating a copy with "(Copy)" appended to the title
 | `post_id` | `number` | yes |  | The ID of the post to duplicate |
 
 ## `export_post`
-
-**Title:** `export_post`
 
 **Ability:** <code style="color:#00bc7d">saltus/export-post</code>
 
@@ -99,8 +89,6 @@ Export a WordPress post as WXR (WordPress eXtended RSS) for import into another 
 
 ## `get_health`
 
-**Title:** `get_health`
-
 **Ability:** <code style="color:#00bc7d">saltus/get-health</code>
 
 **REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/health</code>
@@ -112,8 +100,6 @@ Get Saltus Framework health, version, audit error rate, latency, cache, and rate
 This tool does not accept parameters.
 
 ## `get_meta_fields`
-
-**Title:** `get_meta_fields`
 
 **Ability:** <code style="color:#00bc7d">saltus/get-meta-fields</code>
 
@@ -129,8 +115,6 @@ Get the meta field definitions for a post type as configured in the Saltus Frame
 
 ## `get_model`
 
-**Title:** `get_model`
-
 **Ability:** <code style="color:#00bc7d">saltus/get-model</code>
 
 **REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/models/{slug}</code>
@@ -144,8 +128,6 @@ Get details of a specific Custom Post Type or Taxonomy by slug
 | `slug` | `string` | yes |  | The slug of the post type or taxonomy (e.g., "post", "page", "product") |
 
 ## `get_post`
-
-**Title:** `get_post`
 
 **Ability:** <code style="color:#00bc7d">saltus/get-post</code>
 
@@ -162,8 +144,6 @@ Get a single post by ID with all fields and meta data
 
 ## `get_settings`
 
-**Title:** `get_settings`
-
 **Ability:** <code style="color:#00bc7d">saltus/get-settings</code>
 
 **REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/settings/{post_type}</code>
@@ -178,8 +158,6 @@ Get the Saltus Framework settings for a specific post type
 
 ## `list_meta_fields`
 
-**Title:** `list_meta_fields`
-
 **Ability:** <code style="color:#00bc7d">saltus/list-meta-fields</code>
 
 **REST request:** <code style="color:#00b8db">GET /saltus-framework/v1/meta</code>
@@ -191,8 +169,6 @@ List model-defined meta field definitions for all registered Saltus post types
 This tool does not accept parameters.
 
 ## `list_models`
-
-**Title:** `list_models`
 
 **Ability:** <code style="color:#00bc7d">saltus/list-models</code>
 
@@ -207,8 +183,6 @@ List all registered Custom Post Types and Taxonomies on the WordPress site
 | `type` | `string` | no | `all` | Filter by type: post_types, taxonomies, or all (default) |
 
 ## `list_posts`
-
-**Title:** `list_posts`
 
 **Ability:** <code style="color:#00bc7d">saltus/list-posts</code>
 
@@ -231,8 +205,6 @@ Query posts from a Custom Post Type with optional filters
 
 ## `list_terms`
 
-**Title:** `list_terms`
-
 **Ability:** <code style="color:#00bc7d">saltus/list-terms</code>
 
 **REST request:** <code style="color:#00b8db">GET /wp/v2/{taxonomy_rest_base}</code>
@@ -250,8 +222,6 @@ List terms from a taxonomy (categories, tags, or custom taxonomies)
 
 ## `reorder_posts`
 
-**Title:** `reorder_posts`
-
 **Ability:** <code style="color:#00bc7d">saltus/reorder-posts</code>
 
 **REST request:** <code style="color:#00b8db">POST /saltus-framework/v1/reorder</code>
@@ -265,8 +235,6 @@ Reorder multiple posts by updating their menu_order values in a single batch ope
 | `items` | `array` | yes |  | Array of objects with "id" (post ID) and "menu_order" (integer position) |
 
 ## `update_meta_fields`
-
-**Title:** `update_meta_fields`
 
 **Ability:** <code style="color:#00bc7d">saltus/update-meta-fields</code>
 
@@ -283,8 +251,6 @@ Update meta fields for a specific post of a registered Saltus post type
 | `meta` | `object` | yes |  | Meta fields to update as key-value pairs |
 
 ## `update_post`
-
-**Title:** `update_post`
 
 **Ability:** <code style="color:#00bc7d">saltus/update-post</code>
 
@@ -306,8 +272,6 @@ Update an existing post's fields and meta data
 | `meta` | `object` | no |  | Meta fields to update as key-value pairs |
 
 ## `update_settings`
-
-**Title:** `update_settings`
 
 **Ability:** <code style="color:#00bc7d">saltus/update-settings</code>
 
