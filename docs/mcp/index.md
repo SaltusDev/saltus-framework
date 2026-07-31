@@ -43,4 +43,5 @@ Install and activate the plugin that uses Saltus Framework on a WordPress versio
 
 - [Abilities Reference](/mcp/abilities) — full parameter details for every tool
 - [Client Integration](/mcp/clients) — integration guide, workflow, and anti-patterns
+- [Saltus MCP Skill](/mcp/skill) — why, how, and example for the ready-to-use agent skill
 - [Download the Saltus MCP Skill](/downloads/saltus-mcp/SKILL.md) — agent skill for connecting AI clients to `saltus/*` abilities
