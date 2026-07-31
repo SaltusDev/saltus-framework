@@ -66,6 +66,7 @@ export default defineConfig({
             { text: 'Overview', link: '/mcp/index' },
             { text: 'Abilities Reference', link: '/mcp/abilities' },
             { text: 'Client Integration', link: '/mcp/clients' },
+            { text: 'Saltus MCP Skill', link: '/mcp/skill' },
           ],
         },
       ],
