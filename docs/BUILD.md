@@ -5,7 +5,7 @@
 - Composer
 
 ## Installation
-Run `composer install` to install dependencies.
+Run `composer install` to install dependencies. The composer dev platform is pinned to PHP 8.4 (required by `phpdocumentor/phpdocumentor` for API docs generation); runtime code still targets PHP 7.4+.
 
 ## Running Tests and Linting
 The project defines several Composer scripts for quality assurance:
@@ -17,6 +17,7 @@ The project defines several Composer scripts for quality assurance:
   Run via `composer phpstan`
 - **Linting (PHPCS):** `./vendor/bin/phpcs --standard=phpcs.xml`
   Run via `composer phpcs`
+- **API docs (phpDocumentor):** `composer docs:api` (uses `phpDocumentor.phar -c phpdoc.dist.xml`)
 
 ## Patching Codestar Framework
 If the Codestar Framework is updated, re-apply the custom patches:
