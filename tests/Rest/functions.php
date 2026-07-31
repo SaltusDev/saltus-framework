@@ -155,6 +155,7 @@ if ( ! class_exists( 'WP_Post' ) ) {
 		public string $post_name  = '';
 		public int $post_parent   = 0;
 		public string $post_excerpt = '';
+		public string $post_date = '2026-01-01 00:00:00';
 		public string $post_password = '';
 		public string $comment_status = 'open';
 		public string $ping_status = 'open';
@@ -182,6 +183,8 @@ $wp_filter_values          = [];
 $wp_scripts_enqueued       = [];
 $wp_styles_enqueued        = [];
 $wp_scripts_localized      = [];
+$wp_blocks_registered      = [];
+$wp_query_posts            = [];
 $wp_nonce_valid            = true;
 $wp_meta_updates           = [];
 $wp_post_type_objects      = [];
@@ -759,11 +762,14 @@ if ( ! function_exists( 'add_query_arg' ) ) {
 if ( ! class_exists( 'WP_Query' ) ) {
 	class WP_Query {
 		public array $query = [];
+		public array $posts = [];
 		private array $vars = [];
 
 		public function __construct( array $query = [] ) {
+			global $wp_query_posts;
 			$this->query = $query;
 			$this->vars  = $query;
+			$this->posts = is_array( $wp_query_posts ) ? $wp_query_posts : [];
 		}
 
 		public function get( string $key ) {
@@ -776,10 +782,55 @@ if ( ! class_exists( 'WP_Query' ) ) {
 	}
 }
 
+if ( ! function_exists( 'register_block_type' ) ) {
+	function register_block_type( string $block_type, array $args = [] ) {
+		global $wp_blocks_registered;
+		$wp_blocks_registered[ $block_type ] = $args;
+		return (object) [ 'name' => $block_type ];
+	}
+}
+
+if ( ! function_exists( 'get_block_wrapper_attributes' ) ) {
+	function get_block_wrapper_attributes( array $extra_attributes = [] ): string {
+		$class = (string) ( $extra_attributes['class'] ?? '' );
+		return 'class="' . esc_attr( $class ) . '"';
+	}
+}
+
+if ( ! function_exists( 'is_object_in_taxonomy' ) ) {
+	function is_object_in_taxonomy( string $object_type, string $taxonomy ): bool {
+		global $wp_taxonomy_objects;
+		if ( ! isset( $wp_taxonomy_objects[ $taxonomy ] ) ) {
+			return false;
+		}
+		$types = $wp_taxonomy_objects[ $taxonomy ]->object_type ?? [];
+		return in_array( $object_type, (array) $types, true );
+	}
+}
+
+if ( ! function_exists( 'locate_template' ) ) {
+	function locate_template( $template_names, bool $load = false, bool $load_once = true, array $args = [] ): string {
+		return '';
+	}
+}
+
+if ( ! function_exists( 'wp_kses_post' ) ) {
+	function wp_kses_post( $data ): string {
+		return (string) $data;
+	}
+}
+
+if ( ! function_exists( 'mysql2date' ) ) {
+	function mysql2date( string $format, string $date, bool $translate = true ): string {
+		return date( $format, strtotime( $date ) );
+	}
+}
+
 if ( ! class_exists( 'WP_Term' ) ) {
 	class WP_Term {
 		public int $term_id = 0;
 		public string $name = '';
+		public string $slug = '';
 		public int $count = 0;
 
 		public function __construct( array $properties = [] ) {
@@ -787,6 +838,43 @@ if ( ! class_exists( 'WP_Term' ) ) {
 				$this->$key = $value;
 			}
 		}
+	}
+}
+
+if ( ! function_exists( 'sanitize_title' ) ) {
+	function sanitize_title( string $title ): string {
+		return trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( $title ) ), '-' );
+	}
+}
+
+if ( ! function_exists( 'sanitize_textarea_field' ) ) {
+	function sanitize_textarea_field( string $str ): string {
+		return trim( $str );
+	}
+}
+
+if ( ! function_exists( 'get_terms' ) ) {
+	function get_terms( array $args = [] ) {
+		global $wp_terms;
+		return is_array( $wp_terms ?? null ) ? $wp_terms : [];
+	}
+}
+
+if ( ! function_exists( 'wp_insert_term' ) ) {
+	function wp_insert_term( string $term, string $taxonomy, array $args = [] ) {
+		global $wp_terms;
+		$term_id    = count( (array) ( $wp_terms ?? [] ) ) + 1;
+		$wp_terms[] = new WP_Term( [ 'term_id' => $term_id, 'name' => $term, 'slug' => $args['slug'] ?? sanitize_title( $term ) ] );
+		return [ 'term_id' => $term_id, 'term_taxonomy_id' => $term_id ];
+	}
+}
+
+if ( ! function_exists( 'wp_delete_post' ) ) {
+	function wp_delete_post( int $post_id, bool $force_delete = false ): ?WP_Post {
+		global $wp_posts;
+		$post = $wp_posts[ $post_id ] ?? null;
+		unset( $wp_posts[ $post_id ] );
+		return $post instanceof WP_Post ? $post : null;
 	}
 }
 
