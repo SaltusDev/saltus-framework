@@ -82,9 +82,14 @@ final class AiContextProvider {
 
 	private function mutation_action( string $tool_name ): ?string {
 		return [
-			'create_post' => 'create',
-			'update_post' => 'update',
-			'delete_post' => 'delete',
+			'create_post'        => 'create',
+			'update_post'        => 'update',
+			'delete_post'        => 'delete',
+			'create_term'        => 'create',
+			'duplicate_post'     => 'create',
+			'update_meta_fields' => 'update',
+			'update_settings'    => 'update',
+			'reorder_posts'      => 'update',
 		][ $tool_name ] ?? null;
 	}
 

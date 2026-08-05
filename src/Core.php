@@ -36,6 +36,8 @@ use Saltus\WP\Framework\Features\Blocks\Blocks;
 use Saltus\WP\Framework\Features\WpCli\WpCli;
 use Saltus\WP\Framework\Features\Frontend\Frontend;
 use Saltus\WP\Framework\Features\AiContext\AiContext;
+use Saltus\WP\Framework\Features\AiAssistant\AiAssistant;
+use Saltus\WP\Framework\Features\EditorialReview\EditorialReview;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
@@ -349,20 +351,22 @@ class Core implements Plugin {
 	 */
 	protected function get_service_classes(): array {
 		return [
-			'admin_cols'    => AdminCols::class,
-			'admin_filters' => AdminFilters::class,
-			'ai_context'    => AiContext::class,
-			'blocks'        => Blocks::class,
-			'draganddrop'   => DragAndDrop::class,
-			'duplicate'     => Duplicate::class,
-			'frontend'      => Frontend::class,
-			'meta'          => Meta::class,
-			'mcp'           => MCP::class,
-			'quick_edit'    => QuickEdit::class,
-			'remember_tabs' => RememberTabs::class,
-			'settings'      => Settings::class,
-			'single_export' => SingleExport::class,
-			'wp_cli'        => WpCli::class,
+			'admin_cols'       => AdminCols::class,
+			'admin_filters'    => AdminFilters::class,
+			'ai_context'       => AiContext::class,
+			'ai_assistant'     => AiAssistant::class,
+			'editorial_review' => EditorialReview::class,
+			'blocks'           => Blocks::class,
+			'draganddrop'      => DragAndDrop::class,
+			'duplicate'        => Duplicate::class,
+			'frontend'         => Frontend::class,
+			'meta'             => Meta::class,
+			'mcp'              => MCP::class,
+			'quick_edit'       => QuickEdit::class,
+			'remember_tabs'    => RememberTabs::class,
+			'settings'         => Settings::class,
+			'single_export'    => SingleExport::class,
+			'wp_cli'           => WpCli::class,
 		];
 	}
 

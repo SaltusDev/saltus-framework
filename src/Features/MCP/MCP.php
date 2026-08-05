@@ -16,6 +16,7 @@ use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
+use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 
 /**
  * Enables Saltus MCP support.
@@ -115,7 +116,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 
 		$modeler                 = $this->modeler();
 		$provider                = new AiContextProvider( $modeler );
-		$runtime                 = new AbilityRuntime( null, null, null, null, $provider );
+		$runtime                 = new AbilityRuntime( null, null, null, null, $provider, new ProposalService() );
 		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), new AbilityDefinitionFactory( $runtime ), $this->mcp_policy() );
 
 		return $this->ability_registrar;
