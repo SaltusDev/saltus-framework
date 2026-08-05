@@ -1,10 +1,10 @@
 # Current: Live Working State
 
 ## Working
-- Phase 7: Advanced DI container hardening — ReflectionInstantiator autowiring @since 2026-08-06
+- Phase 7 complete: ReflectionInstantiator autowiring delivered @since 2026-08-06
 
 ## Next
-- Phase 6 complete: inside-admin AI assistants, provider filter, REST actions, editor integration, and tests delivered @since 2026-08-06
+- Phase 8 scope definition pending
 
 ## Blocked
 - None
@@ -12,6 +12,7 @@
 ## Recent Changes
 - Phase 6B delivered: persistent proposals for all eight mutating Saltus abilities, permission-checked MCP queueing, before/after review payloads, REST approval/rejection endpoints, admin review dashboard, proposal audit events, and lifecycle tests. Full suite green: 336 tests, 904 assertions. @since 2026-08-06
 - Phase 6C delivered: model-scoped admin assistant actions, provider filter contract, authenticated REST endpoint, post editor controls, field-rule validation output, and PHPUnit coverage. @since 2026-08-06
+- Phase 7 delivered: ReflectionInstantiator autowiring for named, positional, typed, default, nullable, variadic, and legacy dependency-bag constructor parameters, with container tests and documentation. @since 2026-08-06
 - Version bumped to 1.2.1. `get_context` MCP tool + `GET /saltus-framework/v1/context/{post_type}` + `wp saltus context get` command added; AI governance now enforced at runtime via `AiContextProvider` in `AbilityRuntime`; command catalog is the authoritative 20-ability parity map. Frontend and AiContext features documented in CONTEXT.md. Full suite green: 329 tests, 872 assertions. @since 2026-08-06
 - Phase 6A delivered: normalized per-model ai_context, defaults filter, get_context MCP/REST discovery, and hard mutation governance for statuses and forbidden actions @since 2026-08-06
 - Phase 5C delivered: model-driven frontend shortcodes, list/single templates, safe query attribute parsing, taxonomy filtering, meta field exposure, config/theme/default template overrides, tests, and frontend feature documentation @since 2026-08-06
