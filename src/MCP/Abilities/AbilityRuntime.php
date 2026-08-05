@@ -11,6 +11,7 @@ use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Validation\Validator;
 use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
+use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 
 /**
  * Coordinates validation, rate limiting, REST dispatch, caching, and audit logging for MCP tool execution.
@@ -27,6 +28,7 @@ class AbilityRuntime {
 	private TransientCache $cache;
 	private ?MiddlewarePipeline $pipeline;
 	private ?AiContextProvider $ai_context;
+	private ?ProposalService $proposals;
 
 	/**
 	 * @param AuditLogger|null $audit_logger  Optional audit logger.
@@ -39,13 +41,15 @@ class AbilityRuntime {
 		?RateLimiter $rate_limiter = null,
 		?TransientCache $cache = null,
 		?MiddlewarePipeline $pipeline = null,
-		?AiContextProvider $ai_context = null
+		?AiContextProvider $ai_context = null,
+		?ProposalService $proposals = null
 	) {
 		$this->audit_logger = $audit_logger ?? new AuditLogger();
 		$this->rate_limiter = $rate_limiter ?? new RateLimiter();
 		$this->cache        = $cache ?? new TransientCache();
 		$this->pipeline     = $pipeline;
 		$this->ai_context   = $ai_context;
+		$this->proposals    = $proposals;
 	}
 
 	/**
@@ -93,11 +97,20 @@ class AbilityRuntime {
 		$result = $this->pipeline->execute(
 			$context,
 			function ( RequestContext $ctx ) use ( $tool, $args ) {
+				if ( ! $tool->has_permission( $args ) ) {
+					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::forbidden(
+						'edit_posts',
+						\__( 'You do not have permission to use this tool.', 'saltus-framework' )
+					);
+				}
 				if ( $this->ai_context !== null ) {
 					$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
 					if ( $governance_error instanceof \WP_Error ) {
 						return $governance_error;
 					}
+				}
+				if ( $this->proposals !== null && $this->proposals->should_queue( $tool->get_name() ) ) {
+					return $this->proposals->propose( $tool->get_name(), $args );
 				}
 				if ( ! $tool instanceof RestBackedToolInterface ) {
 					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::internal_error(
@@ -167,6 +180,7 @@ class AbilityRuntime {
 	 * @return array<string, mixed>|\WP_Error
 	 */
 	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded
 	private function execute_legacy( ToolInterface $tool, array $args ) {
 		$entry = new AuditEntry( $tool->get_name(), $args, $this->identifier() );
 
@@ -177,6 +191,12 @@ class AbilityRuntime {
 			return $error;
 		}
 
+		if ( ! $tool->has_permission( $args ) ) {
+			$error = $this->error( 'forbidden', 'You do not have permission to use this tool.', 403 );
+			$this->record_error( $entry, 'error', $error );
+			return $error;
+		}
+
 		if ( $this->ai_context !== null ) {
 			$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
 			if ( $governance_error instanceof \WP_Error ) {
@@ -184,7 +204,6 @@ class AbilityRuntime {
 				return $governance_error;
 			}
 		}
-
 		$rate_limit = $this->rate_limiter->check( $this->identifier() );
 		if ( ! $rate_limit->allowed ) {
 			$error = $this->error(
@@ -199,6 +218,10 @@ class AbilityRuntime {
 			);
 			$this->record_error( $entry, 'rate_limited', $error );
 			return $error;
+		}
+
+		if ( $this->proposals !== null && $this->proposals->should_queue( $tool->get_name() ) ) {
+			return $this->proposals->propose( $tool->get_name(), $args );
 		}
 
 		if ( ! $tool instanceof RestBackedToolInterface ) {
