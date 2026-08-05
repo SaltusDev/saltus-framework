@@ -41,6 +41,19 @@ A PSR-11-compatible dependency injection container with support for:
 - Conditional service loading via `is_needed()`
 - Factory-based instantiation
 - Assembly-based wiring
+- Reflection-based constructor resolution through `ReflectionInstantiator`
+
+### Constructor Resolution
+
+Services registered in `ServiceContainer` or `GenericContainer` may use normal constructor parameters. `ReflectionInstantiator` resolves each parameter in this order:
+
+1. A dependency with the parameter's name.
+2. A positional dependency at the parameter's index.
+3. An object compatible with the parameter's declared class or interface.
+4. The parameter's default value.
+5. `null` when the parameter allows it.
+
+If no value can be resolved, the container throws `FailedToMakeInstance` with the unresolved parameter and target class. Existing services using a single `array $dependencies` constructor continue to receive the complete dependency bag.
 
 ### REST API (`src/Rest/`)
 Nine REST controllers registered under the `saltus-framework/v1/` namespace, covering models, posts, settings, meta, and more.
