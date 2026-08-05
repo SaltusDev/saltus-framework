@@ -82,7 +82,8 @@ class AiContextFeatureTest extends TestCase {
 		$this->assertSame( '/saltus-framework/v1/context/book', $tools[0]->build_rest_request( [ 'post_type' => 'book' ] )->get_route() );
 		$controller = new AiContextController( new ModelRestPolicy( $modeler ), $provider );
 		$controller->register_routes();
-		$this->assertStringContainsString( '/context/', $wp_rest_routes_registered[0]['route'] );
+		$routes = array_column( $wp_rest_routes_registered, 'route' );
+		$this->assertTrue( (bool) array_filter( $routes, static fn( string $route ): bool => strpos( $route, '/context/' ) !== false ) );
 	}
 
 	/** @param array<string, mixed> $config */
