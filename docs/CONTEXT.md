@@ -56,7 +56,16 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 
 ### 8. WP-CLI Parity
 - **Purpose:** Make the WordPress-native ability surface available to operators and scripts without HTTP dispatch.
-- **Decision:** Eight `wp saltus` command groups call WordPress APIs and shared framework services directly. `CommandCatalog` is the authoritative 19-command parity map and generates `docs/guides/wp-cli.md`.
+- **Decision:** Eight `wp saltus` command groups call WordPress APIs and shared framework services directly. `CommandCatalog` is the authoritative 20-command parity map and generates `docs/guides/wp-cli.md`.
+
+### 9. Model-Scoped AI Governance Context
+- **Purpose:** Expose normalized, per-model AI governance context (brand voice, audiences, field rules, allowed statuses, forbidden actions, human-review flag) to AI clients via REST and MCP.
+- **Decision:** `AiContextProvider` normalizes raw model `ai_context` config against registered defaults (overridable via `saltus/framework/ai_context/defaults`). Mutating MCP tools are validated through `validate_mutation()` before REST dispatch, rejecting forbidden actions and disallowed statuses.
+- **Surface:** `GetContext` MCP tool (`saltus/get-context`) + `GET /saltus-framework/v1/context/{post_type}` and the `wp saltus context get <post-type>` WP-CLI command.
+
+### 10. Model-Driven Frontend Shortcodes
+- **Purpose:** Render model-driven list and single views without writing template code, using a shared `FrontendRenderer` and configurable templates.
+- **Decision:** `SaltusFrontend` registers the `[saltus_cpt]` shortcode (plus optional aliases) per model. Arguments are strictly validated/sanitized (limit clamp, allowlisted orderby/order, sanitized taxonomy and terms, path-traversal-guarded template resolution). Default templates ship under `templates/`.
 
 ## Naming & Standards
 - **Quality Assurance:** PHP CodeSniffer (PHPCS) ensures adherence to WordPress coding standards, while PHPStan handles static analysis to catch type errors and logical bugs early.
