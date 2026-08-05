@@ -184,6 +184,7 @@ $wp_scripts_enqueued       = [];
 $wp_styles_enqueued        = [];
 $wp_scripts_localized      = [];
 $wp_blocks_registered      = [];
+$wp_shortcodes_registered  = [];
 $wp_query_posts            = [];
 $wp_nonce_valid            = true;
 $wp_meta_updates           = [];
@@ -352,6 +353,13 @@ if ( ! function_exists( 'get_post' ) ) {
 			return null;
 		}
 		return $wp_posts[ $post_id ] ?? null;
+	}
+}
+
+if ( ! function_exists( 'get_permalink' ) ) {
+	function get_permalink( $post = null ): string {
+		$id = $post instanceof WP_Post ? $post->ID : (int) $post;
+		return 'http://example.com/?p=' . $id;
 	}
 }
 
@@ -787,6 +795,13 @@ if ( ! function_exists( 'register_block_type' ) ) {
 		global $wp_blocks_registered;
 		$wp_blocks_registered[ $block_type ] = $args;
 		return (object) [ 'name' => $block_type ];
+	}
+}
+
+if ( ! function_exists( 'add_shortcode' ) ) {
+	function add_shortcode( string $tag, callable $callback ): void {
+		global $wp_shortcodes_registered;
+		$wp_shortcodes_registered[ $tag ] = $callback;
 	}
 }
 

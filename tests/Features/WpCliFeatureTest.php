@@ -53,6 +53,7 @@ class WpCliFeatureTest extends TestCase {
 			'saltus meta',
 			'saltus reorder',
 			'saltus block',
+			'saltus context',
 		], array_keys( $this->cli->commands ) );
 	}
 
@@ -77,7 +78,7 @@ class WpCliFeatureTest extends TestCase {
 		$catalog = CommandCatalog::abilities();
 		sort( $catalog );
 
-		$this->assertCount( 19, $catalog );
+		$this->assertCount( 20, $catalog );
 		$this->assertSame( $tool_names, $catalog );
 	}
 

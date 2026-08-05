@@ -8,6 +8,10 @@ use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Tools\CreatePost;
 use Saltus\WP\Framework\MCP\Tools\ListModels;
 use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
+use Saltus\WP\Framework\MCP\Tools\UpdatePost;
+use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
+use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Model;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 
@@ -51,6 +55,22 @@ class AbilityRuntimeTest extends TestCase {
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 		$this->assertSame( 'invalid_params', $result->get_error_code() );
+	}
+
+	public function testExecuteRejectsMutationBeforeRestDispatch(): void {
+		global $wp_rest_request_log;
+		$model = $this->createStub( Model::class );
+		$model->method( 'get_config' )->willReturn( [ 'ai_context' => [ 'allowed_statuses' => [ 'draft' ] ] ] );
+		$modeler = $this->createStub( Modeler::class );
+		$modeler->method( 'get_models' )->willReturn( [ 'book' => $model ] );
+		$provider = new AiContextProvider( $modeler );
+		$runtime  = new AbilityRuntime( null, null, null, null, $provider );
+
+		$result = $runtime->execute( new UpdatePost(), [ 'post_type' => 'book', 'post_id' => 7, 'status' => 'publish' ] );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'ai_context_violation', $result->get_error_code() );
+		$this->assertEmpty( $wp_rest_request_log );
 	}
 
 	public function testExecuteReturnsRateLimitError(): void {
