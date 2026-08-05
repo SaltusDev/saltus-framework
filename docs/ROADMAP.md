@@ -502,12 +502,12 @@ AI write -> draft/pending/revision -> human approval -> publish
 
 | Item | Status |
 |------|--------|
-| `ReflectionInstantiator` class implementing `Instantiator` | ○ Pending |
-| Positional constructor parameter resolution and dependency matching | ○ Pending |
-| Constructor parameter default value fallbacks | ○ Pending |
-| Clean validation and exception flow for unresolved parameters | ○ Pending |
-| Remove requirement for `Assembly::make` boilerplate on custom services | ○ Pending |
-| Container autowiring unit tests (`tests/Unit/Infrastructure/Container/`) | ○ Pending |
-| Developer documentation update for custom service constructors | ○ Pending |
+| `ReflectionInstantiator` class implementing `Instantiator` | ✓ Done |
+| Positional constructor parameter resolution and dependency matching | ✓ Done |
+| Constructor parameter default value fallbacks | ✓ Done |
+| Clean validation and exception flow for unresolved parameters | ✓ Done |
+| Remove requirement for `Assembly::make` boilerplate on custom services | ✓ Done |
+| Container autowiring unit tests (`tests/Unit/Infrastructure/Container/`) | ✓ Done |
+| Developer documentation update for custom service constructors | ✓ Done |
 
-**Exit criteria:** Developers can register custom services in the container with standard typed/positional constructor arguments. The container uses PHP Reflection to map parameter names to container keys, falling back to default arguments or throwing descriptive runtime exceptions when dependencies cannot be resolved.
+**Exit criteria:** Developers can register custom services in the container with standard typed/positional constructor arguments. The container uses PHP Reflection to map parameter names to container keys, falling back to default arguments or throwing descriptive runtime exceptions when dependencies cannot be resolved. ✓ Done 2026-08-06
