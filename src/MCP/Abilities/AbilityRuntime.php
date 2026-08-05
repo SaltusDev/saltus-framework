@@ -10,6 +10,7 @@ use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Validation\Validator;
+use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
 
 /**
  * Coordinates validation, rate limiting, REST dispatch, caching, and audit logging for MCP tool execution.
@@ -25,6 +26,7 @@ class AbilityRuntime {
 	private RateLimiter $rate_limiter;
 	private TransientCache $cache;
 	private ?MiddlewarePipeline $pipeline;
+	private ?AiContextProvider $ai_context;
 
 	/**
 	 * @param AuditLogger|null $audit_logger  Optional audit logger.
@@ -36,12 +38,14 @@ class AbilityRuntime {
 		?AuditLogger $audit_logger = null,
 		?RateLimiter $rate_limiter = null,
 		?TransientCache $cache = null,
-		?MiddlewarePipeline $pipeline = null
+		?MiddlewarePipeline $pipeline = null,
+		?AiContextProvider $ai_context = null
 	) {
 		$this->audit_logger = $audit_logger ?? new AuditLogger();
 		$this->rate_limiter = $rate_limiter ?? new RateLimiter();
 		$this->cache        = $cache ?? new TransientCache();
 		$this->pipeline     = $pipeline;
+		$this->ai_context   = $ai_context;
 	}
 
 	/**
@@ -89,6 +93,12 @@ class AbilityRuntime {
 		$result = $this->pipeline->execute(
 			$context,
 			function ( RequestContext $ctx ) use ( $tool, $args ) {
+				if ( $this->ai_context !== null ) {
+					$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
+					if ( $governance_error instanceof \WP_Error ) {
+						return $governance_error;
+					}
+				}
 				if ( ! $tool instanceof RestBackedToolInterface ) {
 					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::internal_error(
 						\__( 'This tool does not support REST dispatch.', 'saltus-framework' )
@@ -165,6 +175,14 @@ class AbilityRuntime {
 			$error = $this->error( 'invalid_params', implode( '; ', $valid['errors'] ), 400 );
 			$this->record_error( $entry, 'validation_error', $error );
 			return $error;
+		}
+
+		if ( $this->ai_context !== null ) {
+			$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
+			if ( $governance_error instanceof \WP_Error ) {
+				$this->record_error( $entry, 'error', $governance_error );
+				return $governance_error;
+			}
 		}
 
 		$rate_limit = $this->rate_limiter->check( $this->identifier() );
