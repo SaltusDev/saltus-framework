@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\WpCli;
 
 use Saltus\WP\Framework\Features\WpCli\Commands\BlockCommand;
+use Saltus\WP\Framework\Features\WpCli\Commands\ContextCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\MetaCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\ModelCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\PostCommand;
@@ -46,5 +47,6 @@ final class WpCli implements Service, Conditional, Registerable {
 		$this->cli->add_command( 'saltus meta', new MetaCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus reorder', new ReorderCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus block', new BlockCommand( $this->cli, $resolver ) );
+		$this->cli->add_command( 'saltus context', new ContextCommand( $this->cli, $resolver ) );
 	}
 }

@@ -12,6 +12,11 @@ final class CommandCatalog {
 				'description' => 'Show framework health and runtime metrics.',
 			],
 			[
+				'ability'     => 'get_context',
+				'command'     => 'wp saltus context get <post-type>',
+				'description' => 'Show AI governance context for a model.',
+			],
+			[
 				'ability'     => 'list_models',
 				'command'     => 'wp saltus model list',
 				'description' => 'List loaded Saltus models.',
