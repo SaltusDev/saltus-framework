@@ -15,6 +15,22 @@ Features are configured under the CPT model's `features` key. Each value must be
 | `quick_edit` | Edit text meta from Quick Edit | Meta keys mapped to `title` and `column_name` |
 | `remember_tabs` | Restore the active Codestar tab | `true` |
 | `single_export` | Export one post as WXR | `label` and optional `show_in_rest` |
+| `frontend` | Render CPT content with shortcodes | `shortcode`, `shortcode_alias`, and template paths |
+
+## Frontend Rendering
+
+Enable frontend rendering in a post type model with the top-level `frontend` key:
+
+```yaml
+frontend:
+  shortcode: true
+  shortcode_alias: movies
+  templates:
+    list: templates/movie-list.php
+    single: templates/movie-single.php
+```
+
+The framework registers `[saltus_cpt type="movie"]` and an optional alias such as `[movies type="movie"]`. Use `view="single"` with an `id` for one post. List shortcodes accept `limit`, `orderby`, `order`, `taxonomy`, and comma-separated `terms` attributes. Templates receive `$posts`, `$post`, `$meta`, `$model`, and `$attributes` as appropriate.
 
 ## Admin Columns
 

@@ -27,6 +27,8 @@ export default defineConfig({
         items: [
           { text: 'Features', link: '/guides/features' },
           { text: 'Blocks', link: '/guides/blocks' },
+          { text: 'Frontend', link: '/guides/frontend' },
+          { text: 'AI Context', link: '/guides/ai-context' },
           { text: 'WP-CLI', link: '/guides/wp-cli' },
           { text: 'Architecture', link: '/guides/architecture' },
           { text: 'Build & Setup', link: '/guides/build' },
@@ -57,6 +59,8 @@ export default defineConfig({
           items: [
             { text: 'Features', link: '/guides/features' },
             { text: 'Blocks', link: '/guides/blocks' },
+            { text: 'Frontend', link: '/guides/frontend' },
+            { text: 'AI Context', link: '/guides/ai-context' },
             { text: 'WP-CLI', link: '/guides/wp-cli' },
             { text: 'Architecture', link: '/guides/architecture' },
             { text: 'Build & Setup', link: '/guides/build' },

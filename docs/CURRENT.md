@@ -1,11 +1,9 @@
 # Current: Live Working State
 
 ## Working
-- Phase 5C: Frontend rendering — shortcodes, templates, meta field exposure @since 2026-07-31
+- Phase 6B: Editorial Review Queue — proposals, review UI, audit integration @since 2026-08-06
 
 ## Next
-- Phase 6A: Context Control Center — ai_context schema, AiContextProvider, get_context tool
-- Phase 6B: Editorial Review Queue — proposals, review UI, audit integration
 - Phase 6C: Inside-Admin AI Assistants — meta box assistants, REST endpoints
 - Phase 7: Advanced DI container hardening — ReflectionInstantiator autowiring
 
@@ -13,9 +11,11 @@
 - None
 
 ## Recent Changes
+- Phase 6A delivered: normalized per-model ai_context, defaults filter, get_context MCP/REST discovery, and hard mutation governance for statuses and forbidden actions @since 2026-08-06
+- Phase 5C delivered: model-driven frontend shortcodes, list/single templates, safe query attribute parsing, taxonomy filtering, meta field exposure, config/theme/default template overrides, tests, and frontend feature documentation @since 2026-08-06
 - Phase 5A delivered: runtime Block API v3 list/single blocks, shared editor assets, dynamic render templates, REST discovery, and `list_block_models` MCP ability @since 2026-07-31
 - Phase 5B delivered: eight `wp saltus` command groups provide parity with all 19 abilities, direct shared-service execution, table/JSON/YAML output, JSON file input, tests, and generated command docs @since 2026-07-31
-- Phase 5D delivered for implemented features: README placeholders replaced, model/feature references corrected, Blocks and WP-CLI guides added to VitePress, and MCP/WP-CLI docs regenerated for 19 tools; frontend guide remains deferred with 5C @since 2026-07-31
+- Phase 5D delivered for implemented features: README placeholders replaced, model/feature references corrected, Blocks, Frontend, and WP-CLI guides added to VitePress, and MCP/WP-CLI docs regenerated for 19 tools @since 2026-07-31
 - Docs infrastructure: VitePress site scaffolded at `docs/.vitepress/`, phpDocumentor config at `phpdoc.dist.xml`, `.github/workflows/docs.yml` for auto-build + GH Pages deploy to `docs.saltus.dev`, `docs/public/CNAME` for custom domain, 6 doc content pages (getting-started, features, architecture, build, MCP overview, API index), `composer docs:all` script (`docs:mcp` + `docs:api`), @api annotations on 84 public classes/interfaces across all namespaces, README updated with docs.saltus.dev links, ROADMAP.md Phase 5D progress tracked @since 2026-07-21
 - AbilityRuntime middleware pipeline integration: backward-compatible `execute_via_pipeline()` delegated from `execute()`, `execute_legacy()` preserved as fallback, optional `MiddlewarePipeline` constructor injection — resolves Phase 4F/4G strip-cache/strip-rate-limit items @since 2026-07-21
 - Code review feedback: replaced wp_die with RuntimeException in single_export_query to avoid HTML death pages in REST/MCP contexts; added catch clause in export_post to return structured WP_Error; replaced unsafe property_exists with get_object_vars in ModelRestPolicy to avoid fatal errors on non-public properties; added explicit edit_posts permission checks for list_models/get_model/list_meta_fields/get_meta_fields in AbilityDefinitionFactory; changed AuditLogger created_at column from varchar(32) to datetime(3) — 2 commits @since 2026-07-04

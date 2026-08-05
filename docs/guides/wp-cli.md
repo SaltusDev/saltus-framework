@@ -13,6 +13,7 @@ List and detail commands support `--format=table|json|yaml`; table is the defaul
 | Ability | Command | Description |
 |---|---|---|
 | `get_health` | `wp saltus health` | Show framework health and runtime metrics. |
+| `get_context` | `wp saltus context get <post-type>` | Show AI governance context for a model. |
 | `list_models` | `wp saltus model list` | List loaded Saltus models. |
 | `get_model` | `wp saltus model get <slug>` | Show one loaded model. |
 | `list_posts` | `wp saltus post list <post-type>` | List posts for a post type. |
