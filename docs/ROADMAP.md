@@ -3,7 +3,7 @@
 ## Current Status
 - Version: 2.0.0 (released 2026-06-30)
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
-- WordPress-native MCP/Abilities surface with 19 tools
+- WordPress-native MCP/Abilities surface with 20 tools
 - Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
 - PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path

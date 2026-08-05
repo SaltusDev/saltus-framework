@@ -11,6 +11,7 @@
 - None
 
 ## Recent Changes
+- Version bumped to 1.2.1. `get_context` MCP tool + `GET /saltus-framework/v1/context/{post_type}` + `wp saltus context get` command added; AI governance now enforced at runtime via `AiContextProvider` in `AbilityRuntime`; command catalog is the authoritative 20-ability parity map. Frontend and AiContext features documented in CONTEXT.md. Full suite green: 329 tests, 872 assertions. @since 2026-08-06
 - Phase 6A delivered: normalized per-model ai_context, defaults filter, get_context MCP/REST discovery, and hard mutation governance for statuses and forbidden actions @since 2026-08-06
 - Phase 5C delivered: model-driven frontend shortcodes, list/single templates, safe query attribute parsing, taxonomy filtering, meta field exposure, config/theme/default template overrides, tests, and frontend feature documentation @since 2026-08-06
 - Phase 5A delivered: runtime Block API v3 list/single blocks, shared editor assets, dynamic render templates, REST discovery, and `list_block_models` MCP ability @since 2026-07-31
@@ -133,4 +134,4 @@
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
 - Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
-- Current verification: full `composer test` (319 tests, 842 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check` pass for Phase 5A/5B/5D.
+- Current verification: full `composer test` (329 tests, 872 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check` pass for Phase 5A/5B/5C/5D.
