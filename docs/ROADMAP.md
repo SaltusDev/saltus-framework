@@ -463,12 +463,12 @@ AI write -> draft/pending/revision -> human approval -> publish
 
 | Item | Status |
 |------|--------|
-| `AiChangeProposal` service — stores agent writes as pending change records | ○ Pending |
-| `EditorialReviewController` — REST endpoints for listing/reviewing/approving/rejecting proposals | ○ Pending |
-| Review dashboard UI (admin screen with diff view) | ○ Pending |
-| Audit log integration — full chain from proposal to approval/rejection | ○ Pending |
-| Default all mutating MCP tools to draft/pending (configurable) | ○ Pending |
-| PHPUnit tests for proposal lifecycle | ○ Pending |
+| `ProposalService` (AI change proposals) — stores agent writes as pending change records | ✓ Done |
+| `EditorialReviewController` — REST endpoints for listing/reviewing/approving/rejecting proposals | ✓ Done |
+| Review dashboard UI (admin screen with diff view) | ✓ Done |
+| Audit log integration — full chain from proposal to approval/rejection | ✓ Done |
+| Default all mutating MCP tools to draft/pending (configurable) | ✓ Done |
+| PHPUnit tests for proposal lifecycle | ✓ Done |
 
 **Exit criteria:** Mutating MCP tools create pending change records by default. A review admin screen lists proposals with diff view. Approved proposals are published; rejected ones are discarded. Audit log records the full chain.
 
@@ -480,19 +480,19 @@ AI write -> draft/pending/revision -> human approval -> publish
 
 | Item | Status |
 |------|--------|
-| `AiAssistantProvider` service — registers meta box assistants per model | ○ Pending |
-| Admin JS entry point (`assets/Feature/AiAssistant/editor.js`) | ○ Pending |
-| Assistant actions: improve title, summarize, generate excerpt, suggest terms | ○ Pending |
-| Brand rule validation button for post content | ○ Pending |
-| REST endpoints for assistant actions (reuse existing permission checks) | ○ Pending |
-| Filter: `saltus/framework/ai/assistant_actions` | ○ Pending |
-| PHPUnit tests for assistant REST endpoints | ○ Pending |
+| `AiAssistantProvider` service — registers meta box assistants per model | ✓ Done |
+| Admin JS entry point (`assets/Feature/AiAssistant/editor.js`) | ✓ Done |
+| Assistant actions: improve title, summarize, generate excerpt, suggest terms | ✓ Done |
+| Brand rule validation button for post content | ✓ Done |
+| REST endpoints for assistant actions (reuse existing permission checks) | ✓ Done |
+| Filter: `saltus/framework/ai/assistant_actions` | ✓ Done |
+| PHPUnit tests for assistant REST endpoints | ✓ Done |
 
-**Exit criteria:** Models with `config.ai_context` show AI assistant buttons in the admin. Clicking "Improve title" or "Summarize" calls a REST endpoint and updates the field. Brand rule validation highlights content that violates configured rules.
+**Exit criteria:** Models with `config.ai_context` show AI assistant buttons in the admin. Clicking "Improve title" or "Summarize" calls a REST endpoint and updates the field. Brand rule validation highlights content that violates configured rules. ✓ Done 2026-08-06
 
 ---
 
-**Exit criteria (Phase 6 overall):** AI governance is configurable per model via `ai_context`. Mutating MCP tools respect context rules and default to review-queue creation. Inside-admin assistants are operational for configured models. All features are tested.
+**Exit criteria (Phase 6 overall):** AI governance is configurable per model via `ai_context`. Mutating MCP tools respect context rules and default to review-queue creation. Inside-admin assistants are operational for configured models. All features are tested. ✓ Done 2026-08-06
 
 ---
 

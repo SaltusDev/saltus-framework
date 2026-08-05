@@ -1,16 +1,17 @@
 # Current: Live Working State
 
 ## Working
-- Phase 6B: Editorial Review Queue — proposals, review UI, audit integration @since 2026-08-06
+- Phase 7: Advanced DI container hardening — ReflectionInstantiator autowiring @since 2026-08-06
 
 ## Next
-- Phase 6C: Inside-Admin AI Assistants — meta box assistants, REST endpoints
-- Phase 7: Advanced DI container hardening — ReflectionInstantiator autowiring
+- Phase 6 complete: inside-admin AI assistants, provider filter, REST actions, editor integration, and tests delivered @since 2026-08-06
 
 ## Blocked
 - None
 
 ## Recent Changes
+- Phase 6B delivered: persistent proposals for all eight mutating Saltus abilities, permission-checked MCP queueing, before/after review payloads, REST approval/rejection endpoints, admin review dashboard, proposal audit events, and lifecycle tests. Full suite green: 336 tests, 904 assertions. @since 2026-08-06
+- Phase 6C delivered: model-scoped admin assistant actions, provider filter contract, authenticated REST endpoint, post editor controls, field-rule validation output, and PHPUnit coverage. @since 2026-08-06
 - Version bumped to 1.2.1. `get_context` MCP tool + `GET /saltus-framework/v1/context/{post_type}` + `wp saltus context get` command added; AI governance now enforced at runtime via `AiContextProvider` in `AbilityRuntime`; command catalog is the authoritative 20-ability parity map. Frontend and AiContext features documented in CONTEXT.md. Full suite green: 329 tests, 872 assertions. @since 2026-08-06
 - Phase 6A delivered: normalized per-model ai_context, defaults filter, get_context MCP/REST discovery, and hard mutation governance for statuses and forbidden actions @since 2026-08-06
 - Phase 5C delivered: model-driven frontend shortcodes, list/single templates, safe query attribute parsing, taxonomy filtering, meta field exposure, config/theme/default template overrides, tests, and frontend feature documentation @since 2026-08-06
@@ -134,4 +135,4 @@
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
 - Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
-- Current verification: full `composer test` (329 tests, 872 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check` pass for Phase 5A/5B/5C/5D.
+- Current verification: full `composer test` (336 tests, 904 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check` pass for Phase 6B.
