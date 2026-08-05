@@ -7,12 +7,15 @@ use Saltus\WP\Framework\Infrastructure\Plugin\Registerable;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
+use Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory;
+use Saltus\WP\Framework\MCP\Abilities\AbilityRuntime;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\Cache\TransientCache;
 use Saltus\WP\Framework\MCP\McpPolicy;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
 
 /**
  * Enables Saltus MCP support.
@@ -110,7 +113,10 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 			return $this->ability_registrar;
 		}
 
-		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), null, $this->mcp_policy() );
+		$modeler                 = $this->modeler();
+		$provider                = new AiContextProvider( $modeler );
+		$runtime                 = new AbilityRuntime( null, null, null, null, $provider );
+		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), new AbilityDefinitionFactory( $runtime ), $this->mcp_policy() );
 
 		return $this->ability_registrar;
 	}
