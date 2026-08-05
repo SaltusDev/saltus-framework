@@ -34,6 +34,8 @@ use Saltus\WP\Framework\Features\SingleExport\SingleExport;
 use Saltus\WP\Framework\Features\MCP\MCP;
 use Saltus\WP\Framework\Features\Blocks\Blocks;
 use Saltus\WP\Framework\Features\WpCli\WpCli;
+use Saltus\WP\Framework\Features\Frontend\Frontend;
+use Saltus\WP\Framework\Features\AiContext\AiContext;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
@@ -349,9 +351,11 @@ class Core implements Plugin {
 		return [
 			'admin_cols'    => AdminCols::class,
 			'admin_filters' => AdminFilters::class,
+			'ai_context'    => AiContext::class,
 			'blocks'        => Blocks::class,
 			'draganddrop'   => DragAndDrop::class,
 			'duplicate'     => Duplicate::class,
+			'frontend'      => Frontend::class,
 			'meta'          => Meta::class,
 			'mcp'           => MCP::class,
 			'quick_edit'    => QuickEdit::class,
