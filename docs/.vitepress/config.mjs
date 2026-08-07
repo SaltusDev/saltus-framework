@@ -40,6 +40,12 @@ export default defineConfig({
         link: '/mcp/index',
       },
       {
+        text: 'Discovery',
+        items: [
+          { text: 'WebMCP', link: '/discovery/webmcp' },
+        ],
+      },
+      {
         text: 'API Reference',
         link: '/api/index',
       },
@@ -77,6 +83,14 @@ export default defineConfig({
             { text: 'Abilities Reference', link: '/mcp/abilities' },
             { text: 'Client Integration', link: '/mcp/clients' },
             { text: 'Saltus MCP Skill', link: '/mcp/skill' },
+          ],
+        },
+      ],
+      '/discovery/': [
+        {
+          text: 'Discovery',
+          items: [
+            { text: 'WebMCP', link: '/discovery/webmcp' },
           ],
         },
       ],
