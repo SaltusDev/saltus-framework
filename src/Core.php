@@ -38,6 +38,7 @@ use Saltus\WP\Framework\Features\Frontend\Frontend;
 use Saltus\WP\Framework\Features\AiContext\AiContext;
 use Saltus\WP\Framework\Features\AiAssistant\AiAssistant;
 use Saltus\WP\Framework\Features\EditorialReview\EditorialReview;
+use Saltus\WP\Framework\Features\WebMcp\WebMcp;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
@@ -366,6 +367,7 @@ class Core implements Plugin {
 			'remember_tabs'    => RememberTabs::class,
 			'settings'         => Settings::class,
 			'single_export'    => SingleExport::class,
+			'webmcp'           => WebMcp::class,
 			'wp_cli'           => WpCli::class,
 		];
 	}
