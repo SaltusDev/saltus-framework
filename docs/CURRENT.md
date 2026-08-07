@@ -2,7 +2,7 @@
 
 ## Working
 - Docs accuracy review: counts, config keys, and route pages reconciled against source @since 2026-08-07
-- Reconcile the historical `v1.4.2`/`v2.0.0` tag relationship with the current version line (package.json now at 1.7.0) @since 2026-08-07
+- Reconcile the historical `v1.4.2`/`v2.0.0` tag relationship with the current version line (package.json now at 1.8.0) @since 2026-08-08
 - Phase 8B implementation: admin surface and proposal-queue-governed writes @since 2026-08-07
 
 ## Next
@@ -12,6 +12,7 @@
 - None
 
 ## Recent Changes
+- Version bumped 1.7.0 → 1.8.0 (minor) via the automated version cycle; annotated `v1.8.0` tag created. The cycle committed the Phase 8A hardening and docs already recorded above (per-client `ClientIdentity` rate limiting, `ResultBudget` output clamp, `bridge.js` JS suite, and the generated WebMCP tool reference) as atomic commits, each passing the repo commit gate. Full suite green: 394 tests, 1072 assertions, plus 13 JS tests; PHPStan Level 7 and PHPCS clean. @since 2026-08-08
 - Phase 8A hardening and docs, closing the three checklist rows that had been ticked prematurely. `/webmcp/execute` is now rate-limited **per client** rather than on one shared key — `ClientIdentity` keys logged-in callers by user id and everyone else by a salted hash of `REMOTE_ADDR`, so one visitor's agent can no longer exhaust the window for every other visitor; forwarded headers are deliberately ignored, with `saltus/framework/webmcp/client_identifier` for sites behind a proxy or CDN. `ResultBudget` clamps a serialized result to the 1500-character agent output budget, dropping entries from the longest list before clipping strings, correcting sibling `count` values, and setting `truncated` only when something was actually removed. `docs/guides/webmcp.md` added with a generated tool reference (`composer docs:webmcp` → `bin/generate-webmcp-docs.php`), registered in the VitePress nav and sidebar. First JS test suite added: 13 `node:test` cases over `bridge.js`, covering the absent-API silent no-op, the deprecated-`navigator` fallback and probe order, error and network paths, and `pagehide` teardown — wired to `npm test` and a `bridge` CI job. Both new guards were mutation-tested: reverting to the shared key or removing the clamp fails 3 tests, and making the bridge log on unsupported browsers fails 2. Full suite green: 394 tests, 1072 assertions, plus 13 JS tests; PHPStan Level 7 and PHPCS clean. @since 2026-08-08
 - Phase 8A delivered: WebMCP frontend read-only tool surface. `WebMcp` feature service, `WebMcpPolicy` per-model gating, `ManifestBuilder` projecting existing `ToolInterface` definitions into JSON Schema descriptors, `PublicFieldFilter` for public meta field resolution, five read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe. Every invocation re-validates server-side, is rate-limited, and audit-logged; only published posts of publicly-queryable models surface. Component-based PHPUnit coverage added for policy, manifest, each tool, execute permissions, and the absent-API no-op. Full suite green: 372 tests, 1015 assertions. @since 2026-08-07
 - Version bumped 1.6.0 → 1.7.0 (minor) via the automated version cycle; annotated `v1.7.0` tag created. This cycle delivered Phase 8A (see above). @since 2026-08-07
@@ -139,7 +140,7 @@
 - `npm test` runs the `bridge.js` suite (13 tests) on Node's built-in test runner. No npm dependencies are needed for it; `npm ci` is only required for the docs build.
 - `composer test:phpcs` passes. Note the script names are `test:phpstan` and `test:phpcs` — bare `composer phpstan` / `composer phpcs` do not exist.
 - PHPStan: Level 7 clean across the configured analysis set; use `--debug` when the sandbox prevents PHPStan's local TCP worker server from binding.
-- Version numbering is partially resolved: `package.json` is now 1.7.0 with a matching `v1.7.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v1.4.2`/`v2.0.0` tags still exist. `CHANGELOG.md` now carries a 1.7.0 release section.
+- Version numbering is partially resolved: `package.json` is now 1.8.0 with a matching `v1.8.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v1.4.2`/`v2.0.0` tags still exist. `CHANGELOG.md` now carries a 1.8.0 release section.
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
