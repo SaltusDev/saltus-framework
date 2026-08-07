@@ -8,7 +8,9 @@ use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Validation\Validator;
+use Saltus\WP\Framework\WebMcp\ClientIdentity;
 use Saltus\WP\Framework\WebMcp\ManifestBuilder;
+use Saltus\WP\Framework\WebMcp\ResultBudget;
 use Saltus\WP\Framework\WebMcp\Tools\PublicTool;
 use WP_Error;
 use WP_REST_Controller;
@@ -25,14 +27,14 @@ use WP_REST_Server;
  */
 final class WebMcpController extends WP_REST_Controller {
 
-	/** Requests allowed per window on the execute route. */
+	/** Requests allowed per window, per client, on the execute route. */
 	private const RATE_LIMIT = 60;
 
 	/** Rate limit window in seconds. */
 	private const RATE_WINDOW = 60;
 
 	/** Audit identifier prefix, so WebMCP calls are distinguishable from ability calls. */
-	private const AUDIT_PREFIX = 'webmcp';
+	private const AUDIT_PREFIX = ClientIdentity::PREFIX;
 
 	private WebMcpPolicy $policy;
 	private ManifestBuilder $manifest_builder;
@@ -40,6 +42,8 @@ final class WebMcpController extends WP_REST_Controller {
 	private array $tools;
 	private ?AuditLogger $audit;
 	private RateLimiter $rate_limiter;
+	private ClientIdentity $client;
+	private ResultBudget $budget;
 
 	/**
 	 * @param WebMcpPolicy     $policy           Model gating policy.
@@ -47,19 +51,25 @@ final class WebMcpController extends WP_REST_Controller {
 	 * @param ManifestBuilder|null $manifest_builder Descriptor projector.
 	 * @param AuditLogger|null $audit            Audit logger, or null to skip logging.
 	 * @param RateLimiter|null $rate_limiter     Rate limiter for the execute route.
+	 * @param ClientIdentity|null $client        Client identity resolver for per-client limiting.
+	 * @param ResultBudget|null $budget          Output budget clamp.
 	 */
 	public function __construct(
 		WebMcpPolicy $policy,
 		array $tools,
 		?ManifestBuilder $manifest_builder = null,
 		?AuditLogger $audit = null,
-		?RateLimiter $rate_limiter = null
+		?RateLimiter $rate_limiter = null,
+		?ClientIdentity $client = null,
+		?ResultBudget $budget = null
 	) {
 		$this->policy           = $policy;
 		$this->tools            = $tools;
 		$this->manifest_builder = $manifest_builder ?? new ManifestBuilder();
 		$this->audit            = $audit;
 		$this->rate_limiter     = $rate_limiter ?? new RateLimiter( self::RATE_LIMIT, self::RATE_WINDOW );
+		$this->client           = $client ?? new ClientIdentity();
+		$this->budget           = $budget ?? new ResultBudget();
 		$this->namespace        = MCPConfig::get_namespace();
 		$this->rest_base        = 'webmcp';
 	}
@@ -145,6 +155,10 @@ final class WebMcpController extends WP_REST_Controller {
 		$name   = isset( $params['tool'] ) && is_string( $params['tool'] ) ? $params['tool'] : '';
 		$args   = isset( $params['arguments'] ) && is_array( $params['arguments'] ) ? $params['arguments'] : [];
 
+		// Resolved once and reused for both the rate-limit window and the audit
+		// row, so a throttled call is attributable to the client it throttled.
+		$client = $this->client->resolve();
+
 		$tool = $this->find_tool( $name );
 		if ( ! $tool instanceof PublicTool ) {
 			return new WP_Error(
@@ -154,9 +168,9 @@ final class WebMcpController extends WP_REST_Controller {
 			);
 		}
 
-		$limit = $this->rate_limiter->check( self::AUDIT_PREFIX );
+		$limit = $this->rate_limiter->check( $client );
 		if ( ! $limit->allowed ) {
-			$this->record( $name, $args, 'rate_limited' );
+			$this->record( $name, $args, 'rate_limited', $client );
 
 			return new WP_Error(
 				'saltus_webmcp_rate_limited',
@@ -172,7 +186,7 @@ final class WebMcpController extends WP_REST_Controller {
 		// rather than relying on whatever the agent claims it sent.
 		$validation = Validator::validate( $args, $tool->get_parameters() );
 		if ( ! $validation['valid'] ) {
-			$this->record( $name, $args, 'validation_error' );
+			$this->record( $name, $args, 'validation_error', $client );
 
 			return new WP_Error(
 				'saltus_webmcp_invalid_arguments',
@@ -182,7 +196,7 @@ final class WebMcpController extends WP_REST_Controller {
 		}
 
 		if ( ! $tool->has_permission( $args ) ) {
-			$this->record( $name, $args, 'error' );
+			$this->record( $name, $args, 'error', $client );
 
 			return new WP_Error(
 				'saltus_webmcp_forbidden',
@@ -191,8 +205,10 @@ final class WebMcpController extends WP_REST_Controller {
 			);
 		}
 
-		$result = $tool->execute( $args );
-		$this->record( $name, $args, 'success' );
+		// Clamped before it leaves the server: an oversized payload is cut
+		// mid-token by the agent's own limit, which corrupts the JSON it reads.
+		$result = $this->budget->apply( $tool->execute( $args ) );
+		$this->record( $name, $args, 'success', $client );
 
 		return rest_ensure_response(
 			[
@@ -311,13 +327,14 @@ final class WebMcpController extends WP_REST_Controller {
 	 * @param string               $tool   Tool name.
 	 * @param array<string, mixed> $args   Tool arguments.
 	 * @param string               $status Outcome status.
+	 * @param string|null          $client Resolved client identifier.
 	 */
-	private function record( string $tool, array $args, string $status ): void {
+	private function record( string $tool, array $args, string $status, ?string $client = null ): void {
 		if ( ! $this->audit instanceof AuditLogger ) {
 			return;
 		}
 
-		$entry = new AuditEntry( $tool, $args, self::AUDIT_PREFIX );
+		$entry = new AuditEntry( $tool, $args, $client ?? self::AUDIT_PREFIX );
 		$entry->complete( $status );
 		$this->audit->record( $entry );
 	}
