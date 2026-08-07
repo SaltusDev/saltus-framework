@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [Unreleased]
+
+### Added
+	- `docs/guides/webmcp.md`, with a tool reference generated from the tool classes by `composer docs:webmcp`. Registered in the docs nav and sidebar.
+	- `ResultBudget` clamps a serialized WebMCP result to the 1500-character agent output budget, dropping entries from the longest list before clipping strings and setting `truncated` when it does. Sibling `count` values are corrected so they never overstate what shipped.
+	- `ClientIdentity` resolves the caller behind a WebMCP tool call: logged-in callers by user id, everyone else by a salted hash of `REMOTE_ADDR`. No raw visitor IP reaches the audit table.
+	- Filters: `saltus/framework/webmcp/output_budget` to raise or lower the result budget, and `saltus/framework/webmcp/client_identifier` to resolve the real client behind a proxy or CDN.
+	- First JavaScript test suite: 13 `node:test` cases covering `bridge.js`, including the silent no-op on browsers without a WebMCP surface. Run with `npm test`; no npm dependencies required.
+
+### Changed
+	- `/webmcp/execute` is now rate-limited per client instead of on a single shared key. Previously one visitor's agent working through a multi-step task could exhaust the 60-call window for every other visitor on the site.
+	- WebMCP audit rows now record the resolved client identifier rather than a constant, so browser traffic is attributable per client while staying distinguishable from WordPress-native ability calls.
+
+### Security
+	- Caller-supplied forwarding headers are deliberately ignored when identifying a WebMCP client. Honoring `X-Forwarded-For` by default would let an agent reset its own rate limit by varying one header; sites behind a trusted edge opt in through the `client_identifier` filter.
+
 ## [1.7.0]
 
 ### Added
