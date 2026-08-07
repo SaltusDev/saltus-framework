@@ -1,11 +1,12 @@
 # Current: Live Working State
 
 ## Working
+- Define Phase 8 scope and next-cycle theme @since 2026-08-07
 - Docs accuracy review: counts, config keys, and route pages reconciled against source @since 2026-08-07
 - Reconcile the historical `v1.4.2`/`v2.0.0` tag relationship with the current version line (package.json now at 1.6.0) @since 2026-08-07
 
 ## Next
-- Phase 8 scope definition pending
+- Author the Phase 8 delivery plan on the roadmap
 
 ## Blocked
 - None
