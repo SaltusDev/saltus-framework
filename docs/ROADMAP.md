@@ -1,7 +1,7 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: unresolved — `package.json` is at 1.4.2 while the `v2.0.0` tag exists; see Known Issues in [CURRENT.md](CURRENT.md)
+- Version: `package.json` bumped to 1.5.0 (2026-08-07); `CHANGELOG.md` reconciliation and relationship to the `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
 - Phases 1–7 delivered. Phase 8 scope is not yet defined.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance
 - WordPress-native MCP/Abilities surface with 20 tools
@@ -398,7 +398,7 @@ frontend:
 - Continue maintaining automated testing suites (347 tests, 934 assertions as of 2026-08-07).
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 - ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
-- Reconcile version numbering across `package.json`, `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- Reconcile version numbering across `package.json` (now 1.5.0), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
 - Define Phase 8 scope.
 
 ### Long-term Vision

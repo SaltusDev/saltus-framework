@@ -1,17 +1,17 @@
 # Current: Live Working State
 
 ## Working
-- Docs accuracy pass complete: counts, config keys, and generated pages reconciled against source @since 2026-08-07
+- Docs accuracy review: counts, config keys, and route pages reconciled against source @since 2026-08-07
+- Reconcile `CHANGELOG.md` and tag relationship with the version line (package.json now at 1.5.0) @since 2026-08-07
 
 ## Next
-- Version bump (owner: Pedro) — `package.json` is at 1.4.2 while ROADMAP.md claims 2.0.0 and both `v1.4.2` and `v2.0.0` tags exist; pick the correct line and reconcile `CHANGELOG.md`'s `[Unreleased]` section
 - Phase 8 scope definition pending
 
 ## Blocked
 - None
 
 ## Recent Changes
-- Fixed an order-dependent test flake: `DuplicateControllerTest::testCreateItemReturnsErrorWhenDuplicatedPostCannotBeRetrieved` set the `$wp_insert_post_without_storage` stub flag and never reset it, so under some random seeds later tests silently skipped post storage and failed on fixed post IDs (`WpCliFeatureTest` and `EditorialReviewTest`). Now reset in a `finally` block. @since 2026-08-07
+- Version bumped 1.4.2 → 1.5.0 (minor) via the automated version cycle; annotated `v1.5.0` tag created. `DuplicateControllerTest` flake fix (storage flag now reset in a `finally` block) included in the cycle commit. @since 2026-08-07
 - Documented three REST/MCP gating behaviors that the docs previously described incorrectly: capability config sections live at the top level of the model array (not under a `config` key), an array section without a `show_in_rest`/`show_in_mcp` key resolves to **enabled** and overrides the master option rather than falling back to it, and the reorder capability is gated from `features.drag_and_drop` while the admin UI is enabled via `features.draganddrop`. Verified against `ModelRestPolicy`/`McpPolicy`. @since 2026-08-07
 - Docs accuracy pass: ability count corrected to 20 across index.md, mcp/index.md, MCP.md, architecture.md, and skill.md; `get_context` added to the generated ability reference via `composer docs:mcp`; REST route count corrected from 9 to 17 with a full route table in architecture.md; feature service count corrected from 10 to 16; Phase 6 AI governance services documented in architecture.md; dead `saltus_rest` config key replaced with `options.show_in_rest` / `options.mcp_tools` in README; wrong `composer phpstan`/`phpcs` script names corrected to `test:phpstan`/`test:phpcs`; missing `docs/public/logo.png` and `favicon.ico` generated from brand icon; duplicate BUILD.md and MCP-CLIENTS.md reduced to pointers; stale TESTING_HANDOFF.md and HANDOFF.md rewritten to record delivered state @since 2026-08-07
 - Phase 6B delivered: persistent proposals for all eight mutating Saltus abilities, permission-checked MCP queueing, before/after review payloads, REST approval/rejection endpoints, admin review dashboard, proposal audit events, and lifecycle tests. Full suite green: 336 tests, 904 assertions. @since 2026-08-06
@@ -132,7 +132,7 @@
 - `composer test` passes (347 tests, 934 assertions); Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer test:phpcs` passes. Note the script names are `test:phpstan` and `test:phpcs` — bare `composer phpstan` / `composer phpcs` do not exist.
 - PHPStan: Level 7 clean across the configured analysis set; use `--debug` when the sandbox prevents PHPStan's local TCP worker server from binding.
-- Version numbering is unresolved: `package.json` says 1.4.2, `docs/ROADMAP.md` says 2.0.0, and both tags exist. `CHANGELOG.md` still holds 2026-07-02 entries under `[Unreleased]`.
+- Version numbering is partially resolved: `package.json` is now 1.5.0 with a matching `v1.5.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v2.0.0` still exists. `CHANGELOG.md` still holds 2026-07-02 entries under `[Unreleased]`.
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
