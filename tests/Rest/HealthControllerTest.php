@@ -83,6 +83,8 @@ class HealthControllerTest extends TestCase {
 		$this->assertSame( 'degraded', $data['status'] );
 		$this->assertSame( '2.0.0', $data['version'] );
 		$this->assertTrue( $data['abilities']['native_api_available'] );
+		$this->assertIsBool( $data['ai']['client_available'] );
+		$this->assertIsBool( $data['ai']['connectors_available'] );
 		$this->assertSame( 5, $data['audit']['sample_size'] );
 		$this->assertSame( 1, $data['audit']['error_count'] );
 		$this->assertSame( 1 / 5, $data['audit']['error_rate'] );

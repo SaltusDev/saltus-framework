@@ -2,6 +2,7 @@
 
 namespace Saltus\WP\Framework\Rest;
 
+use Saltus\WP\Framework\Features\AiAssistant\AiClient;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\MCPConfig;
 use WP_Error;
@@ -82,6 +83,10 @@ class HealthController extends WP_REST_Controller {
 				'generated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
 				'abilities'    => [
 					'native_api_available' => function_exists( 'wp_register_ability' ),
+				],
+				'ai'           => [
+					'client_available'     => AiClient::is_available(),
+					'connectors_available' => function_exists( 'wp_get_connectors' ),
 				],
 				'audit'        => $audit,
 				'rate_limit'   => [
