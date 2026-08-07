@@ -667,7 +667,24 @@ if ( ! function_exists( 'register_taxonomy_for_object_type' ) ) {
 
 if ( ! function_exists( 'get_object_taxonomies' ) ) {
 	function get_object_taxonomies( $object, string $output = 'names' ): array {
-		return [];
+		global $wp_object_taxonomies, $wp_taxonomy_objects;
+		$post_type  = is_object( $object ) ? (string) ( $object->post_type ?? '' ) : (string) $object;
+		$taxonomies = is_array( $wp_object_taxonomies ?? null ) ? ( $wp_object_taxonomies[ $post_type ] ?? [] ) : [];
+
+		if ( $output !== 'objects' ) {
+			return array_values( (array) $taxonomies );
+		}
+
+		$objects = [];
+		foreach ( (array) $taxonomies as $taxonomy ) {
+			$objects[ $taxonomy ] = $wp_taxonomy_objects[ $taxonomy ] ?? (object) [
+				'name'      => $taxonomy,
+				'rest_base' => $taxonomy,
+				'public'    => true,
+			];
+		}
+
+		return $objects;
 	}
 }
 
@@ -720,8 +737,10 @@ if ( ! function_exists( 'get_post_type_object' ) ) {
 		$cap->edit_posts   = 'edit_posts';
 		$cap->create_posts = 'edit_posts';
 		return (object) [
-			'name' => $post_type,
-			'cap'  => $cap,
+			'name'               => $post_type,
+			'cap'                => $cap,
+			'public'             => true,
+			'publicly_queryable' => true,
 		];
 	}
 }
