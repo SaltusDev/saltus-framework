@@ -177,10 +177,16 @@ class DuplicateControllerTest extends TestCase {
 			'post_status' => 'publish',
 		] );
 
-		$result = $this->controller->create_item( new WP_REST_Request( [ 'post_id' => 42 ] ) );
+		try {
+			$result = $this->controller->create_item( new WP_REST_Request( [ 'post_id' => 42 ] ) );
 
-		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertSame( 'rest_duplicate_failed', $result->get_error_code() );
+			$this->assertInstanceOf( WP_Error::class, $result );
+			$this->assertSame( 'rest_duplicate_failed', $result->get_error_code() );
+		} finally {
+			// Reset the storage-suppression flag so later tests still get posts
+			// written to $wp_posts under random execution order.
+			$wp_insert_post_without_storage = false;
+		}
 	}
 
 	/**
