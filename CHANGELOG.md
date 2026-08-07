@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [1.7.0]
+
+### Added
+	- Phase 8A WebMCP browser surface: model content exposed to in-browser AI agents through read-only WebMCP tools (list content models, search content, get content, list taxonomy terms, filter content).
+	- `WebMcp` feature service registers the bridge script and localizes the tool manifest on public frontend views for models that opt in with `webmcp: { enabled: true, frontend: true }`.
+	- `ManifestBuilder` projects Saltus tool definitions into WebMCP descriptors with JSON Schema parameter objects and character budget enforcement.
+	- Per-model policy gating via `PublicFieldFilter` that narrows frontend output to public/model-declared fields.
+	- Filters: `saltus/framework/webmcp/tools`, `saltus/framework/webmcp/manifest`, and the per-model public field allowlist.
+	- Bridge script at `assets/Feature/WebMcp/bridge.js`; no-op on browsers without a WebMCP surface.
+
 ## [1.6.0]
 
 ### Added
