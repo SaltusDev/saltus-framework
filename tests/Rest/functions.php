@@ -912,6 +912,24 @@ if ( ! function_exists( 'wp_delete_post' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	function wp_strip_all_tags( string $text, bool $remove_breaks = false ): string {
+		return trim( preg_replace( '/<[^>]*>/', ' ', $text ) );
+	}
+}
+
+if ( ! function_exists( 'get_post_type_archive_link' ) ) {
+	function get_post_type_archive_link( string $post_type ): string {
+		return 'http://example.com/' . $post_type . '/';
+	}
+}
+
+if ( ! function_exists( 'get_term_link' ) ) {
+	function get_term_link( $term, $taxonomy = null ): string {
+		return 'http://example.com/' . $taxonomy . '/' . $term . '/';
+	}
+}
+
 if ( ! function_exists( 'wp_verify_nonce' ) ) {
 	function wp_verify_nonce( $nonce, string $action = '' ) {
 		global $wp_nonce_valid;

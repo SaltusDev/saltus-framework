@@ -12,6 +12,10 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\WebMcpController;
 use Saltus\WP\Framework\WebMcp\ManifestBuilder;
 use Saltus\WP\Framework\WebMcp\ToolDescriptor;
+use Saltus\WP\Framework\WebMcp\Tools\FilterContent;
+use Saltus\WP\Framework\WebMcp\Tools\GetContent;
+use Saltus\WP\Framework\WebMcp\Tools\ListContentModels;
+use Saltus\WP\Framework\WebMcp\Tools\ListTaxonomyTerms;
 use Saltus\WP\Framework\WebMcp\Tools\SearchContent;
 
 require_once dirname( __DIR__ ) . '/Rest/functions.php';
@@ -27,13 +31,17 @@ require_once dirname( __DIR__ ) . '/Rest/functions.php';
 class WebMcpFeatureTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_rest_routes_registered, $wp_scripts_enqueued, $wp_scripts_localized, $wp_object_taxonomies, $wp_filters_registered, $wp_post_type_objects;
+		global $wp_rest_routes_registered, $wp_scripts_enqueued, $wp_scripts_localized, $wp_object_taxonomies, $wp_filters_registered, $wp_post_type_objects, $wp_posts, $wp_post_meta, $wp_query_posts, $wp_terms;
 		$wp_rest_routes_registered = [];
 		$wp_scripts_enqueued       = [];
 		$wp_scripts_localized      = [];
 		$wp_object_taxonomies      = [];
 		$wp_filters_registered     = [];
 		$wp_post_type_objects      = [];
+		$wp_posts                  = [];
+		$wp_post_meta              = [];
+		$wp_query_posts            = [];
+		$wp_terms                  = [];
 	}
 
 	public function testPolicyNormalizesConfigAndAllowsFrontendModels(): void {
@@ -251,9 +259,131 @@ class WebMcpFeatureTest extends TestCase {
 		$this->assertSame( 'search_content', $data['tool'] );
 	}
 
+	public function testListContentModelsListsEnabledModelsWithTaxonomiesAndFields(): void {
+		global $wp_object_taxonomies;
+
+		$wp_object_taxonomies['book'] = [ 'category' ];
+
+		$modeler = $this->modeler_with_meta(
+			[
+				'box' => [
+					'fields'            => [ 'public_field' => [ 'type' => 'text', 'title' => 'Public' ] ],
+					'register_rest_api' => true,
+				],
+			]
+		);
+
+		$tool   = new ListContentModels( $modeler, new WebMcpPolicy( $modeler ) );
+		$result = $tool->execute( [] );
+
+		$this->assertSame( 1, $result['count'] );
+		$this->assertSame( 'book', $result['models'][0]['post_type'] );
+		$this->assertSame( [ 'category' ], $result['models'][0]['taxonomies'] );
+		$this->assertSame( 'public_field', $result['models'][0]['fields'][0]['path'] );
+	}
+
+	public function testGetContentReturnsPublicPostWithFieldsAndSkipsNonPublic(): void {
+		global $wp_posts, $wp_post_meta, $wp_object_taxonomies;
+
+		$wp_object_taxonomies['book'] = [ 'category' ];
+
+		$wp_posts[5] = new \WP_Post(
+			[
+				'ID'           => 5,
+				'post_type'    => 'book',
+				'post_status'  => 'publish',
+				'post_password' => '',
+				'post_title'   => 'A public book',
+				'post_content' => '<p>Body.</p>',
+				'post_excerpt' => 'The excerpt',
+				'post_date'    => '2026-08-01 10:00:00',
+			]
+		);
+		$wp_posts[6] = new \WP_Post(
+			[
+				'ID'           => 6,
+				'post_type'    => 'book',
+				'post_status'  => 'draft',
+				'post_password' => '',
+				'post_title'   => 'A draft',
+			]
+		);
+
+		$wp_post_meta[5] = [ 'public_field' => [ 'secret-value' ] ];
+
+		$modeler = $this->modeler_with_meta(
+			[
+				'box' => [
+					'fields'            => [
+						'public_field' => [ 'type' => 'text', 'title' => 'Public' ],
+						'api_key'      => [ 'type' => 'text', 'title' => 'Key' ],
+					],
+					'register_rest_api' => true,
+				],
+			]
+		);
+
+		$tool   = new GetContent( $modeler, new WebMcpPolicy( $modeler ) );
+		$result = $tool->execute( [ 'id' => 5 ] );
+
+		$this->assertTrue( $result['found'] );
+		$this->assertSame( 'A public book', $result['entry']['title'] );
+		$this->assertSame( 'Body.', $result['entry']['content'] );
+		$this->assertSame( 'The excerpt', $result['entry']['excerpt'] );
+		$this->assertSame( [ 'public_field' => 'secret-value' ], $result['entry']['fields'] );
+
+		$missing = $tool->execute( [ 'id' => 6 ] );
+		$this->assertFalse( $missing['found'], 'Draft posts must not surface.' );
+	}
+
+	public function testFilterContentListsPostsAndRespectsOrderbyWhitelist(): void {
+		global $wp_query_posts, $wp_object_taxonomies;
+
+		$wp_object_taxonomies['book'] = [ 'category' ];
+		$wp_query_posts               = [
+			new \WP_Post( [ 'ID' => 1, 'post_type' => 'book', 'post_status' => 'publish', 'post_title' => 'One', 'post_date' => '2026-08-01 10:00:00' ] ),
+		];
+
+		$modeler = $this->modeler( [ 'webmcp' => true ] );
+		$tool    = new FilterContent( $modeler, new WebMcpPolicy( $modeler ) );
+
+		$result = $tool->execute( [ 'post_type' => 'book', 'orderby' => 'date' ] );
+
+		$this->assertSame( 'book', $result['post_type'] );
+		$this->assertSame( 1, $result['count'] );
+		$this->assertSame( 'One', $result['results'][0]['title'] );
+		$this->assertSame( 'http://example.com/book/', $result['page_url'] );
+
+		$unknown = $tool->execute( [ 'post_type' => 'book', 'orderby' => 'rand;drop' ] );
+		$this->assertSame( 'book', $unknown['post_type'], 'Invalid orderby must not break the filter.' );
+		$this->assertSame( 1, $unknown['count'] );
+	}
+
+	public function testListTaxonomyTermsCapsResultsAndRejectsUnknownTaxonomy(): void {
+		global $wp_object_taxonomies, $wp_terms;
+
+		$wp_object_taxonomies['book'] = [ 'category' ];
+		$wp_terms                     = [
+			new \WP_Term( [ 'term_id' => 1, 'name' => 'Fiction', 'slug' => 'fiction', 'count' => 3 ] ),
+			new \WP_Term( [ 'term_id' => 2, 'name' => 'Classics', 'slug' => 'classics', 'count' => 1 ] ),
+		];
+
+		$modeler = $this->modeler( [ 'webmcp' => true ] );
+		$tool    = new ListTaxonomyTerms( $modeler, new WebMcpPolicy( $modeler ) );
+
+		$result = $tool->execute( [ 'post_type' => 'book' ] );
+
+		$this->assertSame( 1, $result['count'] );
+		$this->assertSame( 'category', $result['taxonomies'][0]['taxonomy'] );
+		$this->assertCount( 2, $result['taxonomies'][0]['terms'] );
+		$this->assertSame( 'Fiction', $result['taxonomies'][0]['terms'][0]['name'] );
+
+		$unknown = $tool->execute( [ 'post_type' => 'book', 'taxonomy' => 'nope' ] );
+		$this->assertSame( 0, $unknown['count'], 'Unknown taxonomies must be rejected.' );
+	}
+
 	private function modeler( array $config ): Modeler {
 		global $wp_post_type_objects;
-
 		$model = $this->createStub( Model::class );
 		$model->method( 'get_name' )->willReturn( 'book' );
 		$model->method( 'get_type' )->willReturn( 'post_type' );
@@ -266,6 +396,8 @@ class WebMcpFeatureTest extends TestCase {
 			'name'               => 'book',
 			'publicly_queryable' => true,
 			'public'             => true,
+			'label'              => 'Book',
+			'labels'             => (object) [ 'name' => 'Books' ],
 		];
 
 		$modeler = $this->createStub( Modeler::class );
