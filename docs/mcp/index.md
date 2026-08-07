@@ -32,6 +32,8 @@ Install and activate the plugin that uses Saltus Framework on a WordPress versio
 | `list_meta_fields` | Discover Saltus meta field definitions across all registered CPTs |
 | `get_meta_fields` | Get Saltus meta field definitions for a post type |
 | `update_meta_fields` | Update meta field values for a post |
+| `list_block_models` | List post type models with their registered list and single blocks |
+| `get_context` | Get the AI governance context for a model |
 
 ## Requirements
 

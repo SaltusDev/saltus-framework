@@ -10,12 +10,13 @@ Features are configured under the CPT model's `features` key. Each value must be
 |---|---|---|
 | `admin_cols` | Customize the post list columns | Column IDs mapped to native columns or custom column definitions |
 | `admin_filters` | Filter the post list | Filter IDs mapped to taxonomy, meta, date, or author definitions |
-| `draganddrop` | Reorder posts by `menu_order` | `true`; `show_in_rest: true` also opts into Saltus reorder routes |
+| `draganddrop` | Reorder posts by `menu_order` | `true` |
 | `duplicate` | Duplicate a post from its row actions | `label`, `attr_title`, and optional `show_in_rest` |
 | `quick_edit` | Edit text meta from Quick Edit | Meta keys mapped to `title` and `column_name` |
 | `remember_tabs` | Restore the active Codestar tab | `true` |
 | `single_export` | Export one post as WXR | `label` and optional `show_in_rest` |
-| `frontend` | Render CPT content with shortcodes | `shortcode`, `shortcode_alias`, and template paths |
+
+`frontend`, `meta`, `settings`, `blocks`, and `ai_context` are top-level model keys, not entries under `features`.
 
 ## Frontend Rendering
 
@@ -84,7 +85,17 @@ features:
   draganddrop: true
 ```
 
-To expose batch reordering through Saltus REST/MCP, use an array with `show_in_rest: true` and allow the corresponding MCP tool if model-level MCP policy is restricted.
+Batch reordering over REST/MCP is gated from a separate `drag_and_drop` section, not from the `draganddrop` key above:
+
+```yaml
+features:
+  draganddrop: true          # admin reordering UI
+  drag_and_drop:             # REST/MCP reorder capability
+    show_in_rest: true
+    show_in_mcp: true
+```
+
+The two keys are not interchangeable. See [Permissions](../MCP.md#permissions) for the full resolution rules.
 
 ## Duplicate Post
 

@@ -8,7 +8,7 @@ Saltus Framework follows a service-oriented architecture with a dependency injec
 Core (Plugin interface)
   |
   |- ServiceContainer (DI container)
-  |    |- Registers 10 feature services
+  |    |- Registers 16 feature services
   |    |- Two-pass registration: unconditional for routes/tools,
   |    |   gated via is_needed() for hooks/assets
   |
@@ -18,11 +18,11 @@ Core (Plugin interface)
   |    |- Exposes get_models(), REST routes, and MCP tools
   |
   |- RestServer
-  |    |- Registers 9 REST routes in saltus-framework/v1/
+  |    |- Registers 17 REST routes in saltus-framework/v1/
   |    |- Uses ModelRestPolicy + CapabilityPolicy for gating
   |
   |- MCP/Abilities
-       |- 18 MCP tools registered as saltus/* abilities
+       |- 20 MCP tools registered as saltus/* abilities
        |- Middleware pipeline (permission, validation, audit, cache, rate-limit)
        |- Backed by REST controllers
 ```
@@ -56,10 +56,41 @@ Services registered in `ServiceContainer` or `GenericContainer` may use normal c
 If no value can be resolved, the container throws `FailedToMakeInstance` with the unresolved parameter and target class. Existing services using a single `array $dependencies` constructor continue to receive the complete dependency bag.
 
 ### REST API (`src/Rest/`)
-Nine REST controllers registered under the `saltus-framework/v1/` namespace, covering models, posts, settings, meta, and more.
+
+Eleven REST controllers register 17 routes under the `saltus-framework/v1/` namespace:
+
+| Route | Methods | Controller |
+|---|---|---|
+| `/models` | GET | `ModelsController` |
+| `/models/{post_type}` | GET | `ModelsController` |
+| `/meta` | GET | `MetaController` |
+| `/meta/{post_type}` | GET | `MetaController` |
+| `/meta/{post_type}/{post_id}` | PUT | `MetaController` |
+| `/settings/{post_type}` | GET, PUT | `SettingsController` |
+| `/duplicate/{post_id}` | POST | `DuplicateController` |
+| `/export/{post_id}` | GET | `ExportController` |
+| `/reorder` | POST | `ReorderController` |
+| `/blocks` | GET | `BlocksController` |
+| `/health` | GET | `HealthController` |
+| `/context/{post_type}` | GET | `AiContextController` |
+| `/ai-assistant/{post_type}/{post_id}/{action}` | POST | `AiAssistantController` |
+| `/proposals` | GET | `EditorialReviewController` |
+| `/proposals/{id}` | GET | `EditorialReviewController` |
+| `/proposals/{id}/approve` | POST | `EditorialReviewController` |
+| `/proposals/{id}/reject` | POST | `EditorialReviewController` |
+
+Model-scoped routes are gated by `ModelRestPolicy`. `/health` and the `/proposals` routes are framework-scoped and do not require per-model opt-in.
 
 ### MCP/Abilities (`src/MCP/`)
-WordPress-native MCP/Abilities integration exposing 19 tools through a middleware pipeline with caching, rate limiting, audit logging, and permission gating.
+WordPress-native MCP/Abilities integration exposing 20 tools through a middleware pipeline with caching, rate limiting, audit logging, and permission gating.
+
+### AI Governance (`src/Features/AiContext/`, `src/Features/EditorialReview/`, `src/Features/AiAssistant/`)
+
+Three services layer governance over the MCP surface:
+
+- `AiContextProvider` normalizes each model's `ai_context` config and validates mutations before REST dispatch, rejecting forbidden actions and disallowed statuses.
+- `ProposalService` and `ProposalStore` queue mutating tool calls as pending proposals when a model requires human review; a reviewer applies or discards them through the REST review API or the AI Review Queue admin page.
+- `AiAssistantProvider` exposes model-scoped editor actions. The framework owns permissions and validation; consuming plugins supply the provider credentials and network calls through a filter.
 
 ## Design Decisions
 
