@@ -15,13 +15,17 @@ final class AiAssistantProvider {
 	private $modeler_resolver;
 	private AiContextProvider $context_provider;
 	private MetaFieldProvider $meta_fields;
+	private AiClient $client;
+	private ActionPrompts $prompts;
 
 	/** @param Modeler|callable|null $modeler */
-	public function __construct( $modeler = null, ?AiContextProvider $context_provider = null, ?MetaFieldProvider $meta_fields = null ) {
+	public function __construct( $modeler = null, ?AiContextProvider $context_provider = null, ?MetaFieldProvider $meta_fields = null, ?AiClient $client = null, ?ActionPrompts $prompts = null ) {
 		$this->modeler          = $modeler instanceof Modeler ? $modeler : null;
 		$this->modeler_resolver = is_callable( $modeler ) ? $modeler : null;
 		$this->context_provider = $context_provider ?? new AiContextProvider( $modeler );
 		$this->meta_fields      = $meta_fields ?? new MetaFieldProvider();
+		$this->client           = $client ?? new AiClient();
+		$this->prompts          = $prompts ?? new ActionPrompts();
 	}
 
 	/** @return array<string, mixed>|null */
@@ -73,10 +77,73 @@ final class AiAssistantProvider {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
-		if ( ! is_array( $result ) ) {
+		if ( is_array( $result ) ) {
+			return $this->normalize_result( $action, $result );
+		}
+
+		// No consuming plugin handled the action, so generate through the WordPress AI Client.
+		if ( ! AiClient::is_available() ) {
 			return new \WP_Error( 'ai_assistant_no_provider', __( 'No AI assistant provider handled this action.', 'saltus-framework' ), [ 'status' => 501 ] );
 		}
-		return $this->normalize_result( $action, $result );
+
+		$generated = $this->generate( $action, $this->prompt_payload( $payload, $post ), $definition['context'], $post_type );
+		if ( is_wp_error( $generated ) ) {
+			return $generated;
+		}
+		return $this->normalize_result( $action, $generated );
+	}
+
+	/**
+	 * Generate a result for an action through the AI client.
+	 *
+	 * @param array<string, mixed> $payload
+	 * @param array<string, mixed> $context
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	private function generate( string $action, array $payload, array $context, string $post_type ) {
+		$prompt = $this->prompts->prompt( $action, $payload );
+		if ( $prompt === '' ) {
+			return new \WP_Error( 'ai_assistant_action_invalid', __( 'The requested AI assistant action is not available.', 'saltus-framework' ), [ 'status' => 400 ] );
+		}
+
+		if ( $this->prompts->mode( $action ) === ActionPrompts::MODE_JSON ) {
+			$list = $this->client->generate_json( $prompt, $context, $this->prompts->schema(), $action, $post_type );
+			if ( is_wp_error( $list ) ) {
+				return $list;
+			}
+			return [ $this->prompts->result_key( $action ) => $list ];
+		}
+
+		$text = $this->client->generate_text( $prompt, $context, $action, $post_type );
+		if ( is_wp_error( $text ) ) {
+			return $text;
+		}
+		return [ 'value' => $text ];
+	}
+
+	/**
+	 * Fill missing prompt input from the post being edited.
+	 *
+	 * @param array<string, mixed> $payload
+	 * @param \WP_Post|null $post
+	 * @return array<string, mixed>
+	 */
+	private function prompt_payload( array $payload, ?\WP_Post $post ): array {
+		if ( ! $post instanceof \WP_Post ) {
+			return $payload;
+		}
+		$fallbacks = [
+			'title'   => (string) $post->post_title,
+			'content' => (string) $post->post_content,
+			'excerpt' => (string) $post->post_excerpt,
+		];
+		foreach ( $fallbacks as $key => $value ) {
+			$current = $payload[ $key ] ?? '';
+			if ( ! is_scalar( $current ) || trim( (string) $current ) === '' ) {
+				$payload[ $key ] = $value;
+			}
+		}
+		return $payload;
 	}
 
 	/** @return list<array{name: string, label: string, target: string}> */

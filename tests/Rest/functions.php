@@ -1003,3 +1003,84 @@ if ( ! function_exists( 'wp_set_object_terms' ) ) {
 		return [];
 	}
 }
+
+/*
+ * WordPress AI Client stubs.
+ *
+ * `function_exists()` cannot be toggled once these are declared, so availability is
+ * driven by $wp_ai_supported (read by wp_supports_ai) to let tests exercise both the
+ * WordPress 7.0 path and the pre-7.0 contract.
+ */
+if ( ! function_exists( 'wp_supports_ai' ) ) {
+	function wp_supports_ai(): bool {
+		global $wp_ai_supported;
+		return (bool) $wp_ai_supported;
+	}
+}
+
+if ( ! class_exists( 'WP_AI_Client_Prompt_Builder' ) ) {
+	class WP_AI_Client_Prompt_Builder {
+		public string $prompt;
+
+		/** @var array<string, mixed> */
+		public array $config = [];
+
+		public function __construct( string $prompt = '' ) {
+			$this->prompt = $prompt;
+		}
+
+		public function using_temperature( float $temperature ): self {
+			$this->config['temperature'] = $temperature;
+			return $this;
+		}
+
+		public function using_system_instruction( string $instruction ): self {
+			$this->config['system_instruction'] = $instruction;
+			return $this;
+		}
+
+		public function using_model_preference( ...$models ): self {
+			$this->config['model_preference'] = $models;
+			return $this;
+		}
+
+		public function using_provider( string $provider ): self {
+			$this->config['provider'] = $provider;
+			return $this;
+		}
+
+		public function as_json_response( ?array $schema = null ): self {
+			$this->config['schema'] = $schema;
+			return $this;
+		}
+
+		public function is_supported_for_text_generation(): bool {
+			global $wp_ai_supported_for_text;
+			return null === $wp_ai_supported_for_text ? true : (bool) $wp_ai_supported_for_text;
+		}
+
+		/** @return string|WP_Error */
+		public function generate_text() {
+			global $wp_ai_text_result, $wp_ai_generated;
+			$wp_ai_generated   = is_array( $wp_ai_generated ) ? $wp_ai_generated : [];
+			$wp_ai_generated[] = [
+				'prompt' => $this->prompt,
+				'config' => $this->config,
+			];
+			return $wp_ai_text_result ?? '';
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+	function wp_ai_client_prompt( $prompt = null ): WP_AI_Client_Prompt_Builder {
+		return new WP_AI_Client_Prompt_Builder( is_string( $prompt ) ? $prompt : '' );
+	}
+}
+
+if ( ! function_exists( 'wp_get_connectors' ) ) {
+	function wp_get_connectors(): array {
+		global $wp_connectors;
+		return is_array( $wp_connectors ) ? $wp_connectors : [];
+	}
+}
