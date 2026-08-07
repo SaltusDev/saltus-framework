@@ -2,7 +2,7 @@
 
 ## Working
 - Docs accuracy review: counts, config keys, and route pages reconciled against source @since 2026-08-07
-- Reconcile `CHANGELOG.md` and tag relationship with the version line (package.json now at 1.5.0) @since 2026-08-07
+- Reconcile the historical `v1.4.2`/`v2.0.0` tag relationship with the current version line (package.json now at 1.6.0) @since 2026-08-07
 
 ## Next
 - Phase 8 scope definition pending
@@ -11,6 +11,7 @@
 - None
 
 ## Recent Changes
+- Version bumped 1.5.0 → 1.6.0 (minor) via the automated version cycle; annotated `v1.6.0` tag created. `AiAssistantProvider` now generates unhandled assistant actions through the WordPress AI Client (`AiClient` + `ActionPrompts`), composes model `ai_context` into the system instruction, fills missing title/content/excerpt from the post, and adds the `saltus/framework/ai/prompt_builder` filter. Health (`ai.client_available`, `ai.connectors_available`) and `wp saltus` report AI availability. Regression coverage added across AiAssistantTest + functions.php stubs and a health-payload assertion. Full suite green: 355 tests, 956 assertions. @since 2026-08-07
 - Version bumped 1.4.2 → 1.5.0 (minor) via the automated version cycle; annotated `v1.5.0` tag created. `DuplicateControllerTest` flake fix (storage flag now reset in a `finally` block) included in the cycle commit. @since 2026-08-07
 - Documented three REST/MCP gating behaviors that the docs previously described incorrectly: capability config sections live at the top level of the model array (not under a `config` key), an array section without a `show_in_rest`/`show_in_mcp` key resolves to **enabled** and overrides the master option rather than falling back to it, and the reorder capability is gated from `features.drag_and_drop` while the admin UI is enabled via `features.draganddrop`. Verified against `ModelRestPolicy`/`McpPolicy`. @since 2026-08-07
 - Docs accuracy pass: ability count corrected to 20 across index.md, mcp/index.md, MCP.md, architecture.md, and skill.md; `get_context` added to the generated ability reference via `composer docs:mcp`; REST route count corrected from 9 to 17 with a full route table in architecture.md; feature service count corrected from 10 to 16; Phase 6 AI governance services documented in architecture.md; dead `saltus_rest` config key replaced with `options.show_in_rest` / `options.mcp_tools` in README; wrong `composer phpstan`/`phpcs` script names corrected to `test:phpstan`/`test:phpcs`; missing `docs/public/logo.png` and `favicon.ico` generated from brand icon; duplicate BUILD.md and MCP-CLIENTS.md reduced to pointers; stale TESTING_HANDOFF.md and HANDOFF.md rewritten to record delivered state @since 2026-08-07
@@ -129,10 +130,10 @@
 - Version bump to v1.1.0: `phpdocumentor/phpdocumentor` added to require-dev, composer dev platform pinned to PHP 8.4 (runtime still targets 7.4+), brand assets added to `docs/assets/`, BUILD.md notes the docs tooling @since 2026-07-31
 
 ## Known Issues
-- `composer test` passes (347 tests, 934 assertions); Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
+- `composer test` passes (355 tests, 956 assertions); Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer test:phpcs` passes. Note the script names are `test:phpstan` and `test:phpcs` — bare `composer phpstan` / `composer phpcs` do not exist.
 - PHPStan: Level 7 clean across the configured analysis set; use `--debug` when the sandbox prevents PHPStan's local TCP worker server from binding.
-- Version numbering is partially resolved: `package.json` is now 1.5.0 with a matching `v1.5.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v2.0.0` still exists. `CHANGELOG.md` still holds 2026-07-02 entries under `[Unreleased]`.
+- Version numbering is partially resolved: `package.json` is now 1.6.0 with a matching `v1.6.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v1.4.2`/`v2.0.0` tags still exist. `CHANGELOG.md` now carries a 1.6.0 release section.
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
@@ -141,5 +142,5 @@
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
 - Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
-- Current verification: full `composer test` (347 tests, 934 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check`.
+- Current verification: full `composer test` (355 tests, 956 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check`.
 - Generated docs must be refreshed with `composer docs:all` whenever a tool or WP-CLI command is added, renamed, or has its schema changed. `docs/mcp/abilities.md` and `docs/guides/wp-cli.md` are generated; do not hand-edit them.

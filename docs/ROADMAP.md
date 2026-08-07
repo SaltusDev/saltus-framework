@@ -1,7 +1,7 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` bumped to 1.5.0 (2026-08-07); `CHANGELOG.md` reconciliation and relationship to the `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
+- Version: `package.json` bumped to 1.6.0 (2026-08-07); `CHANGELOG.md` carries a 1.6.0 release section; relationship to the historical `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
 - Phases 1–7 delivered. Phase 8 scope is not yet defined.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance
 - WordPress-native MCP/Abilities surface with 20 tools
@@ -12,7 +12,7 @@
 - MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from the old saltus_rest array to a per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
-- 347 PHPUnit tests passing (934 assertions), PHPStan Level 7 clean across the configured analysis set
+- 355 PHPUnit tests passing (956 assertions), PHPStan Level 7 clean across the configured analysis set
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
 
@@ -395,10 +395,11 @@ frontend:
 - ✓ Address remaining PHPStan errors (2 pre-existing in ResourceProvider) — resolved 2026-07-01.
 - ✓ Code-review hardening pass — export isolation, lifecycle hook file registration, fail-closed MCP permissions, structured settings sanitization, JSON fallback, and AssetLoader PHPStan coverage resolved 2026-07-02.
 - ✓ Service extraction — inline REST controller logic (WXR export, meta field normalization, post reorder, settings CRUD) moved into dedicated shared service classes and wired into both REST controllers and MCP tools; defensive guards for null post, private property access, taxonomy object, and asset data types — resolved 2026-07-03.
-- Continue maintaining automated testing suites (347 tests, 934 assertions as of 2026-08-07).
+- Continue maintaining automated testing suites (355 tests, 956 assertions as of 2026-08-07).
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 - ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
-- Reconcile version numbering across `package.json` (now 1.5.0), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- ✓ **Phase 6C AI client generation** — unhandled assistant actions generate through the WordPress AI Client; `saltus/framework/ai/prompt_builder` filter; AI availability reported in health + `wp saltus` — delivered 2026-08-07.
+- Reconcile version numbering across `package.json` (now 1.6.0), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
 - Define Phase 8 scope.
 
 ### Long-term Vision
@@ -487,9 +488,12 @@ AI write -> draft/pending/revision -> human approval -> publish
 | Brand rule validation button for post content | ✓ Done |
 | REST endpoints for assistant actions (reuse existing permission checks) | ✓ Done |
 | Filter: `saltus/framework/ai/assistant_actions` | ✓ Done |
+| Built-in generation through the WordPress AI Client (`AiClient` + `ActionPrompts`) | ✓ Done |
+| Filter: `saltus/framework/ai/prompt_builder` (pin provider/model on the builder) | ✓ Done |
+| Health + `wp saltus` report AI client availability | ✓ Done |
 | PHPUnit tests for assistant REST endpoints | ✓ Done |
 
-**Exit criteria:** Models with `config.ai_context` show AI assistant buttons in the admin. Clicking "Improve title" or "Summarize" calls a REST endpoint and updates the field. Brand rule validation highlights content that violates configured rules. ✓ Done 2026-08-06
+**Exit criteria:** Models with `config.ai_context` show AI assistant buttons in the admin. Clicking "Improve title" or "Summarize" calls a REST endpoint and updates the field. Brand rule validation highlights content that violates configured rules. Unhandled actions generate through the WordPress AI Client with provider credentials from Settings > Connectors. ✓ Done 2026-08-07
 
 ---
 
