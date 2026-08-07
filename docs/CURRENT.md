@@ -2,15 +2,18 @@
 
 ## Working
 - Docs accuracy review: counts, config keys, and route pages reconciled against source @since 2026-08-07
-- Reconcile the historical `v1.4.2`/`v2.0.0` tag relationship with the current version line (package.json now at 1.6.0) @since 2026-08-07
+- Reconcile the historical `v1.4.2`/`v2.0.0` tag relationship with the current version line (package.json now at 1.7.0) @since 2026-08-07
+- Phase 8B implementation: admin surface and proposal-queue-governed writes @since 2026-08-07
 
 ## Next
-- Phase 8A implementation: `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools, `WebMcpController` manifest/execute routes, and `assets/Feature/WebMcp/bridge.js`
+- Generate `docs/guides/webmcp.md` + `composer docs:webmcp` tool reference (remaining 8A item)
 
 ## Blocked
 - None
 
 ## Recent Changes
+- Phase 8A delivered: WebMCP frontend read-only tool surface. `WebMcp` feature service, `WebMcpPolicy` per-model gating, `ManifestBuilder` projecting existing `ToolInterface` definitions into JSON Schema descriptors, `PublicFieldFilter` for public meta field resolution, five read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe. Every invocation re-validates server-side, is rate-limited, and audit-logged; only published posts of publicly-queryable models surface. Component-based PHPUnit coverage added for policy, manifest, each tool, execute permissions, and the absent-API no-op. Full suite green: 372 tests, 1015 assertions. @since 2026-08-07
+- Version bumped 1.6.0 → 1.7.0 (minor) via the automated version cycle; annotated `v1.7.0` tag created. This cycle delivered Phase 8A (see above). @since 2026-08-07
 - Phase 8 scoped: WebMCP browser surface. Research recorded in `docs/discovery/webmcp.md` (standards status pulled from the Chrome Status API, Cloudflare's dual consumer/producer implementation, Shopify's 11-tool storefront rollout, the WebMCP Bridge plugin's cache/leakage findings, and the 0%-adoption survey data). Roadmap Phase 8 added with 8A frontend read-only tools and 8B admin surface plus proposal-queue-governed writes. Three scope decisions: project tool descriptors from the existing `ToolInterface` registry rather than hand-authoring a parallel set, ship read-only first because all 20 current abilities gate on `edit_posts` and give an anonymous visitor nothing, and route all future writes through Phase 6B's `ProposalService::should_queue()` since WebMCP has no settled confirmation or auth model. @since 2026-08-07
 - Version bumped 1.5.0 → 1.6.0 (minor) via the automated version cycle; annotated `v1.6.0` tag created. `AiAssistantProvider` now generates unhandled assistant actions through the WordPress AI Client (`AiClient` + `ActionPrompts`), composes model `ai_context` into the system instruction, fills missing title/content/excerpt from the post, and adds the `saltus/framework/ai/prompt_builder` filter. Health (`ai.client_available`, `ai.connectors_available`) and `wp saltus` report AI availability. Regression coverage added across AiAssistantTest + functions.php stubs and a health-payload assertion. Full suite green: 355 tests, 956 assertions. @since 2026-08-07
 - Version bumped 1.4.2 → 1.5.0 (minor) via the automated version cycle; annotated `v1.5.0` tag created. `DuplicateControllerTest` flake fix (storage flag now reset in a `finally` block) included in the cycle commit. @since 2026-08-07
@@ -131,10 +134,10 @@
 - Version bump to v1.1.0: `phpdocumentor/phpdocumentor` added to require-dev, composer dev platform pinned to PHP 8.4 (runtime still targets 7.4+), brand assets added to `docs/assets/`, BUILD.md notes the docs tooling @since 2026-07-31
 
 ## Known Issues
-- `composer test` passes (355 tests, 956 assertions); Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
+- `composer test` passes (372 tests, 1015 assertions); Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
 - `composer test:phpcs` passes. Note the script names are `test:phpstan` and `test:phpcs` — bare `composer phpstan` / `composer phpcs` do not exist.
 - PHPStan: Level 7 clean across the configured analysis set; use `--debug` when the sandbox prevents PHPStan's local TCP worker server from binding.
-- Version numbering is partially resolved: `package.json` is now 1.6.0 with a matching `v1.6.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v1.4.2`/`v2.0.0` tags still exist. `CHANGELOG.md` now carries a 1.6.0 release section.
+- Version numbering is partially resolved: `package.json` is now 1.7.0 with a matching `v1.7.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v1.4.2`/`v2.0.0` tags still exist. `CHANGELOG.md` now carries a 1.7.0 release section.
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
@@ -143,5 +146,5 @@
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
 - Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
-- Current verification: full `composer test` (355 tests, 956 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check`.
+- Current verification: full `composer test` (372 tests, 1015 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check`.
 - Generated docs must be refreshed with `composer docs:all` whenever a tool or WP-CLI command is added, renamed, or has its schema changed. `docs/mcp/abilities.md` and `docs/guides/wp-cli.md` are generated; do not hand-edit them.
