@@ -69,8 +69,10 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 
 ### 11. Inside-Admin AI Assistants
 - **Purpose:** Provide contextual AI suggestions and brand-rule validation inside configured post editors.
-- **Decision:** `AiAssistantProvider` exposes fixed, model-scoped actions through `saltus/framework/ai/assistant_actions`. The framework owns permissions, context normalization, REST validation, and editor controls; consuming plugins own provider credentials and network calls.
-- **Scope:** Post editor screens only. Existing posts use `edit_post`; new posts use `edit_posts`. Suggestions require explicit editor confirmation before changing fields.
+- **Decision:** `AiAssistantProvider` exposes fixed, model-scoped actions through `saltus/framework/ai/assistant_actions`. `AiAssistantProvider` first lets a consuming plugin handle an action via that filter; if none does, it generates content through the WordPress AI Client (`AiClient` + `ActionPrompts`) using credentials configured under Settings > Connectors. Saltus never reads, stores, or transmits API keys and hardcodes no provider or model. The `saltus/framework/ai/prompt_builder` filter lets consumers pin a provider or model.
+- **Model Context:** `brand_voice`, `audiences`, and `field_rules` are composed into the AI client's system instruction, so prompts are model-scoped. Missing title/content/excerpt are filled from the post being edited.
+- **Availability:** `GET /saltus-framework/v1/health` reports `ai.client_available` and `ai.connectors_available`; `wp saltus` reports AI availability.
+- **Scope:** Post editor screens only. Existing posts use `edit_post`; new posts use `edit_posts`. Suggestions require explicit editor confirmation before changing fields. On WordPress versions without the AI client, only the filter path applies.
 
 ### 12. Reflection-Based Dependency Injection
 - **Purpose:** Let framework consumers register services with ordinary typed and positional constructors.
