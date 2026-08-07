@@ -12,7 +12,7 @@
 - MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from the old saltus_rest array to a per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
-- 372 PHPUnit tests passing (1015 assertions), PHPStan Level 7 clean across the configured analysis set
+- 394 PHPUnit tests passing (1072 assertions) plus 13 `bridge.js` tests via `npm test`, PHPStan Level 7 clean across the configured analysis set
 - WebMCP Phase 8A delivers a third consumer of the tool registry (alongside MCP/Abilities and WP-CLI): read-only tools projected into the visitor's browser for models that opt in with `webmcp: { enabled: true, frontend: true }`.
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
@@ -403,6 +403,7 @@ frontend:
 - Reconcile version numbering across `package.json` (now 1.7.0), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
 - ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B; research recorded in [Discovery: WebMCP](discovery/webmcp.md) — scoped 2026-08-07.
 - ✓ **Phase 8A implementation** — `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `PublicFieldFilter`, `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe — delivered 2026-08-07.
+- ✓ **Phase 8A hardening and docs** — per-client rate limiting via `ClientIdentity`, `ResultBudget` output clamping, `bridge.js` test coverage, and the generated `docs/guides/webmcp.md` reference — delivered 2026-08-08.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -575,19 +576,30 @@ Each carries `readOnlyHint: true` and `untrustedContentHint: true` — post cont
 
 | File | Purpose |
 |------|---------|
-| `src/Features/WebMcp/WebMcp.php` | Service class (Service, Conditional, Registerable, RestRouteProvider, ToolContributor) |
-| `src/Features/WebMcp/SaltusWebMcp.php` | Processable — resolves enabled models, enqueues the bridge, localizes the manifest |
+Paths below record what shipped. Two differ from the original plan: the separate `SaltusWebMcp`
+processable was folded into `WebMcp` (the bridge enqueue was the only work it would have owned), and
+the public tools live under `src/WebMcp/Tools/` beside the rest of the WebMCP projection rather than
+under `src/MCP/Tools/Public/`.
+
+| File | Purpose |
+|------|---------|
+| `src/Features/WebMcp/WebMcp.php` | Service class (Service, Conditional, Registerable, RestRouteProvider); also enqueues the bridge and localizes the manifest |
 | `src/Features/WebMcp/WebMcpPolicy.php` | Per-model gating: `webmcp.enabled`, `webmcp.frontend`, tool allowlist |
 | `src/Features/WebMcp/PublicFieldFilter.php` | Resolves which meta fields are safe to expose publicly |
 | `src/WebMcp/ManifestBuilder.php` | Serializes `ToolInterface` definitions into WebMCP descriptors |
 | `src/WebMcp/ToolDescriptor.php` | Value object — name, description, `inputSchema`, annotations |
-| `src/MCP/Tools/Public/SearchContent.php` | `search_content` |
-| `src/MCP/Tools/Public/GetContent.php` | `get_content` |
-| `src/MCP/Tools/Public/ListContentModels.php` | `list_content_models` |
-| `src/MCP/Tools/Public/ListTaxonomyTerms.php` | `list_taxonomy_terms` |
-| `src/MCP/Tools/Public/FilterContent.php` | `filter_content` |
+| `src/WebMcp/WebMcpAnnotated.php` | Contract for tools declaring their own agent annotations |
+| `src/WebMcp/ClientIdentity.php` | Resolves the calling client for per-client rate limiting and audit |
+| `src/WebMcp/ResultBudget.php` | Clamps a serialized result to the agent output budget |
+| `src/WebMcp/Tools/PublicTool.php` | Base class — published-only queries, public field filtering, read-only annotations |
+| `src/WebMcp/Tools/SearchContent.php` | `search_content` |
+| `src/WebMcp/Tools/GetContent.php` | `get_content` |
+| `src/WebMcp/Tools/ListContentModels.php` | `list_content_models` |
+| `src/WebMcp/Tools/ListTaxonomyTerms.php` | `list_taxonomy_terms` |
+| `src/WebMcp/Tools/FilterContent.php` | `filter_content` |
 | `src/Rest/WebMcpController.php` | `GET /webmcp/manifest`, `POST /webmcp/execute` |
 | `assets/Feature/WebMcp/bridge.js` | Namespace probe, tool registration, same-origin fetch proxy |
+| `bin/generate-webmcp-docs.php` | Generates the tool reference in `docs/guides/webmcp.md` |
 
 **REST routes (namespace `saltus-framework/v1/`):**
 
@@ -613,7 +625,7 @@ Each carries `readOnlyHint: true` and `untrustedContentHint: true` — post cont
 
 | Item | Status |
 |------|--------|
-| `WebMcp` feature service + `SaltusWebMcp` processable | ✓ Done |
+| `WebMcp` feature service (absorbed the planned `SaltusWebMcp` processable) | ✓ Done |
 | `WebMcpPolicy` per-model gating with tool allowlist | ✓ Done |
 | `ManifestBuilder` + `ToolDescriptor` projection from `ToolInterface` | ✓ Done |
 | JSON Schema wrapping of `get_parameters()` output | ✓ Done |
@@ -622,19 +634,20 @@ Each carries `readOnlyHint: true` and `untrustedContentHint: true` — post cont
 | `WebMcpController` manifest + execute routes | ✓ Done |
 | Server-side arg re-validation through `src/MCP/Validation` | ✓ Done |
 | `bridge.js` with single-point namespace probe and no-op fallback | ✓ Done |
-| Asset registration through `AssetLoadingService` | ✓ Done |
 | Page-scoped tool registration (archive vs single vs taxonomy) | ✓ Done |
 | Audit logging for WebMCP invocations, distinguished from ability calls | ✓ Done |
-| Rate limiting on `/webmcp/execute`, global rather than per-IP | ✓ Done |
-| Cache-safe discovery (`wp_head` output, not `send_headers` only) | ✓ Done |
-| Character-budget assertions on descriptions and output | ✓ Done |
-| PHPUnit coverage: policy, manifest, each tool, execute permissions, absent-API no-op | ✓ Done |
+| Rate limiting on `/webmcp/execute`, per client via `ClientIdentity` | ✓ Done 2026-08-08 |
+| Character budgets on names, descriptions, and serialized output | ✓ Done 2026-08-08 |
+| PHPUnit coverage: policy, manifest, each tool, execute permissions | ✓ Done |
+| `bridge.js` coverage including the absent-API no-op (`npm test`) | ✓ Done 2026-08-08 |
 | PHPStan Level 7 clean across `src/Features/WebMcp/` and `src/WebMcp/` | ✓ Done |
-| `docs/guides/webmcp.md` + `composer docs:webmcp` generated tool reference | ○ |
+| `docs/guides/webmcp.md` + `composer docs:webmcp` generated tool reference | ✓ Done 2026-08-08 |
+| Cache-safe discovery (in the page body, not `send_headers` only) | ✓ Done — the manifest is localized into the page HTML, so it survives full-page caching |
+| Asset registration through `AssetLoadingService` | ○ Enqueued directly on `wp_enqueue_scripts`, matching how `AiAssistant` loads its editor script |
 
 **Explicitly out of scope for 8A:** write tools, admin-screen registration, cross-origin `exposedTo` delegation, the declarative forms API, and any authenticated-data tool.
 
-**Exit criteria:** A model with `webmcp: { enabled: true, frontend: true }` registers its read tools on public views in a WebMCP-capable browser. `search_content` and `get_content` return only published, publicly-visible data with public meta fields. Browsers without the API register nothing and log nothing. Every invocation re-validates args server-side, is rate-limited, and is audit-logged. Tools are page-scoped, not a single uniform set. Full suite green, PHPStan Level 7 clean. ✓ Done 2026-08-07 (remaining: generated `docs/guides/webmcp.md` tool reference)
+**Exit criteria:** A model with `webmcp: { enabled: true, frontend: true }` registers its read tools on public views in a WebMCP-capable browser. `search_content` and `get_content` return only published, publicly-visible data with public meta fields. Browsers without the API register nothing and log nothing. Every invocation re-validates args server-side, is rate-limited per client, and is audit-logged. Results are clamped to the agent output budget. Tools are page-scoped, not a single uniform set. Full suite green, PHPStan Level 7 clean. ✓ Done 2026-08-08
 
 ---
 
