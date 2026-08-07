@@ -4,14 +4,14 @@ Saltus Framework exposes its AI-facing tool surface through the WordPress-native
 
 This document is written as the source page for the future Saltus documentation site.
 
-For client implementation guidance, see [MCP-CLIENTS.md](MCP-CLIENTS.md). For the generated ability reference, see [Abilities Reference](/mcp/abilities).
+For client implementation guidance, see [Client Integration](/mcp/clients). For the generated ability reference, see [Abilities Reference](/mcp/abilities).
 
 ## Status
 
 - Supported path: WordPress-native MCP/Abilities
 - Standalone stdio server: removed
 - SSE transport: out of scope
-- Current ability count: 18
+- Current ability count: 20
 - REST namespace: `saltus-framework/v1`
 - Ability namespace: `saltus/*`
 
@@ -113,32 +113,68 @@ REST routes and MCP tools are gated by model configuration.
 
 ### Master Options (Model Level)
 
-At the model level, two master options in the `options` array control access:
-- **`show_in_rest`**: Controls whether model-scoped REST routes are registered. If explicitly set to `false`, all model-scoped REST capabilities for the model are disabled. It does not control whether the model's MCP tools are generated/shown (which is managed by `mcp_tools` and `show_in_mcp`), although calling those MCP tools will fail if the underlying REST route is disabled. Defaults to `true` (if omitted or not `false`).
-- **`mcp_tools`**: Must be set and truthy (e.g., `true`) in model options to enable any MCP tools for that model.
+At the model level, two master options in the `options` array set the default for capabilities that do not configure themselves:
 
-The framework-scoped health capability (`health` ability / REST route) is independent of per-model opt-in and is always available. The `models` capability is always enabled for a model as long as its `show_in_rest` is not `false` (or always, for MCP, if `mcp_tools` is enabled).
+- **`show_in_rest`**: the fallback for model-scoped REST routes. Defaults to `true` when omitted.
+- **`mcp_tools`**: the fallback for MCP tools. Defaults to `false` when omitted, so a model exposes no MCP tools until this is truthy.
+
+These are defaults, not overrides. A capability whose config section is present as an array without a gate key resolves to enabled regardless of the master option — see [Resolution Rules](#resolution-rules). The `models` capability is the exception: it reads only the master option and cannot be configured per-feature.
+
+The framework-scoped health capability (`health` ability / REST route) is independent of per-model opt-in and is always available.
 
 ### Feature-Level Gating
 
-Each individual framework capability can be gated in the model's `config` array. They map to specific configuration sections:
-- **Meta (`meta`):** `'meta'` key (root level of `config`)
-- **Settings (`settings`):** `'settings'` key (root level of `config`)
-- **Duplicate (`duplicate`):** `'duplicate'` key (nested under `config.features.duplicate`)
-- **Export (`export`):** `'single_export'` key (nested under `config.features.single_export`)
-- **Reorder (`reorder`):** `'drag_and_drop'` key (nested under `config.features.drag_and_drop`)
+Each individual framework capability is gated from its own section of the model configuration. These sections sit at the top level of the model array — the same level as `name`, `options`, and `features`. There is no wrapping `config` key.
+
+| Capability | Configuration section |
+|---|---|
+| `meta` | `meta` (top level) |
+| `settings` | `settings` (top level) |
+| `blocks` | `blocks` (top level) |
+| `duplicate` | `features.duplicate` |
+| `export` | `features.single_export` |
+| `reorder` | `features.drag_and_drop` |
+
+The `reorder` gate reads `features.drag_and_drop`, while the feature itself is enabled under `features.draganddrop`. The two keys are not interchangeable: `draganddrop` turns the admin reordering UI on, and `drag_and_drop` is the section the REST/MCP policy inspects.
 
 ### Resolution Rules
 
-For each feature/capability configuration section:
-1. **Omitted (Null):** If a capability config section is omitted from the model configuration, the feature's availability defaults to the master model option:
-   - For **REST API**: falls back to `show_in_rest` (which itself defaults to `true`).
-   - For **MCP Tools**: falls back to `mcp_tools` (which itself defaults to `false` if omitted).
-   - If the respective master option is omitted/false, the feature is **disabled**. If the master option is `true`, the feature is **enabled**.
-2. **Boolean Value:** If defined as a simple boolean (e.g., `'meta' => false` or `'features' => ['duplicate' => false]`), it acts as a joint gate. A value of `false` disables both REST and MCP for that capability; a value of `true` enables both.
-3. **Array Value:** If defined as an array, REST and MCP gating can be configured independently:
-   - **REST Route Gating:** Governed by the `show_in_rest` key in the section array. If present, it resolves to its boolean value. If omitted, it falls back to matching the master model `show_in_rest` option.
-   - **MCP Tool Gating:** Governed by the `show_in_mcp` key in the section array. If present, it resolves to its boolean value. If omitted, it falls back to matching the master model `mcp_tools` option.
+Each capability resolves in this order:
+
+1. **Section omitted.** The capability falls back to the master option — `show_in_rest` for REST (defaults to `true`), `mcp_tools` for MCP (defaults to `false`). This is the only case that consults the master option.
+2. **Section is a boolean.** It acts as a joint gate for both surfaces: `'meta' => false` disables REST and MCP for meta, `true` enables both.
+3. **Section is an array with the gate key.** `show_in_rest` in the section governs REST; `show_in_mcp` governs MCP. The two are independent.
+4. **Section is an array without the gate key.** The capability is **enabled**, regardless of the master option.
+
+Rule 4 is the case that surprises people. A `meta` section holding metabox definitions, a `settings` section holding a settings page, or a `features.duplicate` section holding a label are all arrays without a gate key, so they resolve to enabled even when the model sets `show_in_rest => false` and `mcp_tools => false`:
+
+```php
+return [
+	'type'    => 'cpt',
+	'name'    => 'book',
+	'options' => [
+		'show_in_rest' => false,  // intent: keep this model off the Saltus REST surface
+		'mcp_tools'    => false,  // intent: keep this model out of MCP
+	],
+	'meta'    => [
+		'book_details' => [ 'title' => 'Book Details', 'fields' => [] ],
+	],
+];
+```
+
+Here `meta` is still reachable over REST **and** MCP, because the `meta` array carries no `show_in_rest` / `show_in_mcp` key. The `models` capability does honor the master options, so the model itself is not listed — only its meta capability is exposed.
+
+To actually close a capability, gate it explicitly rather than relying on the master option:
+
+```php
+'meta' => [
+	'show_in_rest' => false,
+	'show_in_mcp'  => false,
+	'book_details' => [ 'title' => 'Book Details', 'fields' => [] ],
+],
+```
+
+The `models` capability behaves differently from the rest: it reads only the master option (`show_in_rest !== false` for REST, `mcp_tools === true` for MCP) and has no per-feature section.
 
 Enable all Saltus REST-backed and MCP capabilities for a model:
 
@@ -153,45 +189,52 @@ return [
 ];
 ```
 
-Example showing various feature-level configurations:
+Example showing each gating style. Note that the capability sections sit at the top level of the model array, not inside a `config` key:
 
 ```php
 return [
-	'type'    => 'cpt',
-	'name'    => 'book',
-	'options' => [
+	'type'     => 'cpt',
+	'name'     => 'book',
+	'options'  => [
 		'show_in_rest' => true,
 		'mcp_tools'    => true,
 	],
-	'config'  => [
-		// 1. Array style: enabled for REST but disabled for MCP
-		'meta'     => [
-			'show_in_rest' => true,
-			'show_in_mcp'  => false,
-		],
-		// 2. Boolean style: disabled for both REST and MCP
-		'settings' => false,
 
-		'features' => [
-			// 3. Array style: enabled for REST, and defaults to matching master options (enabled) for MCP
-			'duplicate'     => [
-				'show_in_rest' => true,
-			],
-			// 4. Omitted config for single_export and drag_and_drop:
-			// both default to matching the master options (enabled here because show_in_rest & mcp_tools are true)
+	// 1. Array with both gate keys: enabled for REST, disabled for MCP.
+	'meta'     => [
+		'show_in_rest' => true,
+		'show_in_mcp'  => false,
+		'book_details' => [ 'title' => 'Book Details', 'fields' => [] ],
+	],
+
+	// 2. Boolean: disabled for both REST and MCP.
+	'settings' => false,
+
+	'features' => [
+		// 3. Array with one gate key: REST explicit, MCP enabled by rule 4.
+		'duplicate'     => [
+			'show_in_rest' => true,
+			'label'        => 'Duplicate book',
 		],
+
+		// 4. Array without gate keys: enabled on both surfaces by rule 4.
+		'single_export' => [ 'label' => 'Export book' ],
+
+		// The admin reordering UI. The reorder capability is gated from
+		// 'drag_and_drop', not from this key.
+		'draganddrop'   => true,
 	],
 ];
 ```
 
-If `show_in_rest` is explicitly `false`, Saltus does not register the model-scoped REST routes. The `mcp_tools` option controls whether MCP tools are exposed. The health ability is framework-scoped and remains independent of per-model opt-in.
+If `show_in_rest` is explicitly `false`, Saltus does not register the model-scoped REST routes for capabilities that fall back to it — but see rule 4 above, since a present config section overrides that fallback. The health ability is framework-scoped and remains independent of per-model opt-in.
 
 ## Available Abilities
 
 <!-- BEGIN AUTO-GENERATED MCP ABILITIES -->
 <!-- This section is auto-generated by `composer docs:mcp`. Do not edit by hand. -->
 
-Saltus Framework exposes 19 WordPress-native MCP/Abilities tools.
+Saltus Framework exposes 20 WordPress-native MCP/Abilities tools.
 
 For full details including parameters, see [Abilities Reference](/mcp/abilities).
 <!-- END AUTO-GENERATED MCP ABILITIES -->
@@ -301,8 +344,8 @@ Audit retention cleanup runs through the daily `saltus_framework_mcp_audit_clean
 |-------------|----------|
 | WordPress with Abilities API | Saltus registers `saltus/*` abilities |
 | WordPress without Abilities API | Saltus skips native ability registration |
-| `mcp_tools` not set or `false` | No MCP tools are generated for that model |
-| `show_in_rest` set to `false` | Model-scoped Saltus REST routes are disabled (calling any corresponding MCP tools will fail) |
+| `mcp_tools` not set or `false` | No MCP tools for that model, except capabilities whose config section is an array without a `show_in_mcp` key |
+| `show_in_rest` set to `false` | Model-scoped Saltus REST routes are disabled, except capabilities whose config section is an array without a `show_in_rest` key |
 | No WordPress-native MCP client | Saltus abilities are registered, but no client consumes them |
 
 ## Troubleshooting
@@ -310,7 +353,9 @@ Audit retention cleanup runs through the daily `saltus_framework_mcp_audit_clean
 | Symptom | Check |
 |---------|-------|
 | No `saltus/*` abilities appear | Confirm the WordPress build provides the Abilities API and the plugin is active |
-| A model is missing from MCP results | Confirm the model has `mcp_tools` enabled, and required feature-level `show_in_mcp` flags |
+| A model is missing from MCP results | Confirm the model has `options.mcp_tools` enabled, and required feature-level `show_in_mcp` flags |
+| A capability is exposed after opting out | A config section present as an array without a gate key resolves to enabled; add an explicit `show_in_rest`/`show_in_mcp` to close it |
+| Reorder is not exposed | The REST/MCP gate reads `features.drag_and_drop`, not `features.draganddrop` |
 | A write operation fails | Confirm the current WordPress user has the needed post, taxonomy, or settings capability |
 | Calls are throttled | Check `saltus/framework/mcp/rate_limit/*` filters |
 | Results look stale | Clear transients or disable MCP cache while testing |

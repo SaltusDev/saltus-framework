@@ -1,19 +1,18 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: 2.0.0 (released 2026-06-30)
-- Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
+- Version: unresolved — `package.json` is at 1.4.2 while the `v2.0.0` tag exists; see Known Issues in [CURRENT.md](CURRENT.md)
+- Phases 1–7 delivered. Phase 8 scope is not yet defined.
+- Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance
 - WordPress-native MCP/Abilities surface with 20 tools
-- Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
+- REST API: 17 routes registered in `saltus-framework/v1/` across 11 controllers
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
-- PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
 - MCP namespace/category/prefix now filterable via MCPConfig utility class (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix)
-- MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from saltus_rest array to per-feature config-section model (using show_in_rest and show_in_mcp gates)
+- MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from the old saltus_rest array to a per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
-- 250 PHPUnit tests passing (669 assertions), PHPStan Level 7 clean across the configured analysis set
-- **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
+- 347 PHPUnit tests passing (934 assertions), PHPStan Level 7 clean across the configured analysis set
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
 
@@ -396,9 +395,11 @@ frontend:
 - ✓ Address remaining PHPStan errors (2 pre-existing in ResourceProvider) — resolved 2026-07-01.
 - ✓ Code-review hardening pass — export isolation, lifecycle hook file registration, fail-closed MCP permissions, structured settings sanitization, JSON fallback, and AssetLoader PHPStan coverage resolved 2026-07-02.
 - ✓ Service extraction — inline REST controller logic (WXR export, meta field normalization, post reorder, settings CRUD) moved into dedicated shared service classes and wired into both REST controllers and MCP tools; defensive guards for null post, private property access, taxonomy object, and asset data types — resolved 2026-07-03.
-- Continue maintaining automated testing suites (208 tests, 598 assertions as of 2026-07-05).
+- Continue maintaining automated testing suites (347 tests, 934 assertions as of 2026-08-07).
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
-- **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion.
+- ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
+- Reconcile version numbering across `package.json`, `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- Define Phase 8 scope.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -424,7 +425,7 @@ Saltus already has model-defined CPTs, REST routes, MCP/Abilities tools, capabil
 
 **Goal:** A Saltus model config area where a plugin defines AI governance rules that MCP tools receive before executing.
 
-**Config shape:**
+**Config shape as planned** (shipped without the `config:` wrapper — `ai_context` is a top-level model key; see [AI Context Guide](guides/ai-context.md)):
 ```yaml
 config:
   ai_context:

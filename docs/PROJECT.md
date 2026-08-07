@@ -1,5 +1,5 @@
 ---
-name: Saltus Framework 1
+name: Saltus Framework
 description: Saltus Framework helps you develop WordPress plugins that are based on Custom Post Types.
 type: project
 homepage: https://saltus.dev/
@@ -15,7 +15,7 @@ Saltus Framework is designed to make things easier and faster for developers wit
 - **Package Name:** `saltus/framework`
 - **Requires:** PHP >= 7.4
 - **License:** GPL-3.0-only
-- **Authors:** Saltus Plugin Framework (web@saltus.dev)
+- **Authors:** Saltus Plugin Framework (web@goodomens.studio)
 
 ## Core Capabilities & Features
 - **Rapid Custom Post Type (CPT) Creation**: Define robust CPTs via simple array or YAML configurations.
@@ -30,7 +30,9 @@ Saltus Framework is designed to make things easier and faster for developers wit
   - Built-in drag-and-drop reordering
 - **Extensibility**: Provides a robust set of hooks (`actions` and `filters`) to customize the framework's behavior (e.g., duplicate post data, admin filter queries, modeler priorities).
 - **Block Editor**: Generates dynamic list and single blocks from CPT model configuration and metadata.
-- **Operational Tooling**: Exposes all 19 WordPress-native abilities through equivalent `wp saltus` commands.
+- **Frontend Rendering**: Renders model-driven list and single views through the `[saltus_cpt]` shortcode.
+- **AI Governance**: Per-model `ai_context` rules, an editorial review queue for agent-proposed changes, and in-admin AI assistants.
+- **Operational Tooling**: Exposes all 20 WordPress-native abilities through equivalent `wp saltus` commands.
 
 ## Core Concepts
 
