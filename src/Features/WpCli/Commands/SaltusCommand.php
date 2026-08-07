@@ -39,6 +39,7 @@ final class SaltusCommand extends AbstractCommand {
 			'latency_p95'  => $data['audit']['latency_ms']['p95'] ?? null,
 			'cache'        => ! empty( $data['cache']['enabled'] ) ? 'enabled' : 'disabled',
 			'rate_limit'   => ! empty( $data['rate_limit']['enabled'] ) ? 'enabled' : 'disabled',
+			'ai'           => ! empty( $data['ai']['client_available'] ) ? 'available' : 'unavailable',
 		];
 	}
 }
