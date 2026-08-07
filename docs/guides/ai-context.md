@@ -19,6 +19,8 @@ The normalized context is available through the `saltus/get-context` ability and
 
 `allowed_statuses` applies to create and update operations. The default create status is `draft`. `forbidden_actions` can block `create`, `update`, or `delete`; `publish` blocks create/update requests whose status is `publish`. Violations are rejected before the WordPress REST request is dispatched.
 
-`field_rules` and `require_human_review` are exposed as agent guidance in Phase 6A. Editorial review workflow enforcement is part of Phase 6B.
+`brand_voice`, `audiences`, and `field_rules` also shape the system instruction the AI assistant sends when generating content. See [AI Assistants](ai-assistants.md).
+
+`require_human_review` is exposed as agent guidance and queues mutating MCP tools for editorial review. Note that the `saltus/framework/editorial_review/require_human_review` filter receives only the tool name, so it cannot currently vary the decision per model.
 
 Malformed values are ignored in favor of typed defaults. Defaults can be customized with the `saltus/framework/ai_context/defaults` filter, which receives the defaults array and model name.

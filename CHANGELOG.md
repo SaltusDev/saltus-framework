@@ -1,7 +1,13 @@
 # Changelog
 
 
-## [Unreleased]
+## [1.6.0]
+
+### Added
+	- AI assistant actions now generate content through the WordPress AI Client, using provider credentials configured under Settings > Connectors. The framework stores no API keys and hardcodes no provider or model.
+	- Model `ai_context` (`brand_voice`, `audiences`, `field_rules`) is composed into the system instruction, so prompts are model-scoped.
+	- Added the `saltus/framework/ai/prompt_builder` filter to pin a provider or model, or to apply any other builder option before generation.
+	- Health output and `wp saltus` now report AI client availability.
 
 ### Fixed
 	- Fixed single-post REST export so `/saltus-framework/v1/export/{post_id}` returns WXR for only the requested post instead of the entire post type.
