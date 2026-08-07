@@ -8,13 +8,14 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\Duplicate\SaltusDuplicate;
+use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for duplicating posts.
+ * @api
  */
 class DuplicateController extends WP_REST_Controller {
 
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 
 	/**
@@ -22,7 +23,7 @@ class DuplicateController extends WP_REST_Controller {
 	 */
 	public function __construct( ?ModelRestPolicy $policy = null ) {
 		$this->policy    = $policy;
-		$this->namespace = self::ROUTE_NAMESPACE;
+		$this->namespace = MCPConfig::get_namespace();
 		$this->rest_base = 'duplicate';
 	}
 
@@ -30,8 +31,10 @@ class DuplicateController extends WP_REST_Controller {
 	 * Register the REST route for post duplication.
 	 */
 	public function register_routes(): void {
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_id>\d+)',
 			[
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -98,7 +101,7 @@ class DuplicateController extends WP_REST_Controller {
 					'status' => 403,
 					'hint'   => sprintf(
 						/* translators: %s: post type slug */
-						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'duplicate' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						__( "Add 'show_in_rest' => true under 'features' => [ 'duplicate' => ... ] in the model config for '%s' in src/models/.", 'saltus-framework' ),
 						$post->post_type
 					),
 				]

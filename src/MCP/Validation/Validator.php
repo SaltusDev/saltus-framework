@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\MCP\Validation;
 
 /**
  * Static argument validator against JSON Schema-like rule definitions.
+ * @api
  */
 class Validator {
 

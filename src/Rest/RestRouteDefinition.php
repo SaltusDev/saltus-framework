@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Rest;
 
 /**
  * Value object binding a capability, controller, and optional model type to a REST route.
+ * @api
  */
 class RestRouteDefinition {
 

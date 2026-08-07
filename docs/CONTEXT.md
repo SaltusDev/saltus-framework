@@ -49,6 +49,39 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 - **Decision:** Refactoring these paths is debt reduction around runtime-critical behavior, not cosmetic cleanup. The goal is to reduce regression risk, improve standards compliance, and prepare the code for focused unit and integration tests.
 - **Compatibility:** Existing Saltus plugins should continue working while internals become safer to maintain, easier to type-check, and easier to test.
 
+### 7. Model-Driven Blocks
+- **Purpose:** Provide editor-native list and single views without duplicating post data into block content.
+- **Decision:** Blocks use runtime Block API v3 metadata arrays and one shared unbundled editor script. Model metadata supplies selectable field paths; dynamic PHP rendering reads current post values.
+- **Templates:** Resolution order is consuming-plugin config, active theme override, then framework defaults under `templates/blocks/`.
+
+### 8. WP-CLI Parity
+- **Purpose:** Make the WordPress-native ability surface available to operators and scripts without HTTP dispatch.
+- **Decision:** Eight `wp saltus` command groups call WordPress APIs and shared framework services directly. `CommandCatalog` is the authoritative 20-command parity map and generates `docs/guides/wp-cli.md`.
+
+### 9. Model-Scoped AI Governance Context
+- **Purpose:** Expose normalized, per-model AI governance context (brand voice, audiences, field rules, allowed statuses, forbidden actions, human-review flag) to AI clients via REST and MCP.
+- **Decision:** `AiContextProvider` normalizes raw model `ai_context` config against registered defaults (overridable via `saltus/framework/ai_context/defaults`). Mutating MCP tools are validated through `validate_mutation()` before REST dispatch, rejecting forbidden actions and disallowed statuses.
+- **Surface:** `GetContext` MCP tool (`saltus/get-context`) + `GET /saltus-framework/v1/context/{post_type}` and the `wp saltus context get <post-type>` WP-CLI command.
+
+### 10. Model-Driven Frontend Shortcodes
+- **Purpose:** Render model-driven list and single views without writing template code, using a shared `FrontendRenderer` and configurable templates.
+- **Decision:** `SaltusFrontend` registers the `[saltus_cpt]` shortcode (plus optional aliases) per model. Arguments are strictly validated/sanitized (limit clamp, allowlisted orderby/order, sanitized taxonomy and terms, path-traversal-guarded template resolution). Default templates ship under `templates/`.
+
+### 11. Inside-Admin AI Assistants
+- **Purpose:** Provide contextual AI suggestions and brand-rule validation inside configured post editors.
+- **Decision:** `AiAssistantProvider` exposes fixed, model-scoped actions through `saltus/framework/ai/assistant_actions`. The framework owns permissions, context normalization, REST validation, and editor controls; consuming plugins own provider credentials and network calls.
+- **Scope:** Post editor screens only. Existing posts use `edit_post`; new posts use `edit_posts`. Suggestions require explicit editor confirmation before changing fields.
+
+### 12. Reflection-Based Dependency Injection
+- **Purpose:** Let framework consumers register services with ordinary typed and positional constructors.
+- **Decision:** `ReflectionInstantiator` is the default instantiator for both `ServiceContainer` and `GenericContainer`. It resolves named dependencies first, then positional values, compatible typed objects, defaults, and nullable parameters.
+- **Compatibility:** Services that accept one `array $dependencies` parameter continue to receive the full dependency bag. Unresolvable required parameters fail with `FailedToMakeInstance::UNRESOLVED_ARGUMENT`.
+
+### 13. AI Editorial Review Queue
+- **Purpose:** Queue mutating AI/MCP changes for human approval before they are applied, enforcing the `human-review` governance flag end-to-end.
+- **Decision:** `AbilityRuntime` gates every mutating tool behind `has_permission()` before governance, rate-limit, or dispatch work. When `ProposalService::should_queue()` matches a mutating tool, the runtime stores the change as a `pending` proposal via `ProposalStore` instead of dispatching it. A reviewer then approves or rejects the proposal through the REST review API or the "AI Review Queue" admin page; `approve()` applies the stored mutation and records the resulting post id.
+- **Surface:** `EditorialReview` service, `EditorialReviewController` routes (`/proposals`, `/proposals/{id}`, `/proposals/{id}/approve`, `/proposals/{id}/reject`), and the `saltus-ai-review` admin management page.
+
 ## Naming & Standards
 - **Quality Assurance:** PHP CodeSniffer (PHPCS) ensures adherence to WordPress coding standards, while PHPStan handles static analysis to catch type errors and logical bugs early.
 - **Testing:** Automated tests are powered by PHPUnit, ensuring framework stability across different WordPress and PHP versions.

@@ -19,6 +19,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  * Class SingleExport
  *
  * Enable an option to export single entry
+ * @api
  */
 class SingleExport implements Service, Conditional, Assembly, RestRouteProvider, ToolContributor {
 

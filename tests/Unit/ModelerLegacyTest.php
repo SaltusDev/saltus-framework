@@ -213,4 +213,8 @@ class NamedModel implements Model {
 	public function get_args(): array {
 		return [];
 	}
+
+	public function get_config(): array {
+		return [];
+	}
 }

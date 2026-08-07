@@ -28,6 +28,7 @@ use Saltus\WP\Framework\Infrastructure\Services\Assets\HasAssets;
  * Can trigger service registration proccess with CanRegister.
  *
  * @extends ArrayObject<string, mixed>
+ * @api
  */
 class ServiceContainer
 	extends ArrayObject
@@ -232,18 +233,6 @@ class ServiceContainer
 	 * @return Instantiator Simplistic fallback instantiator.
 	 */
 	private function get_fallback_instantiator(): Instantiator {
-		return new class() implements Instantiator {
-
-			/**
-			 * Make an object instance out of an interface or class.
-			 *
-				 * @param class-string $service_class Class to make an object instance out of.
-				 * @param array<mixed> $dependencies  Optional. Dependencies of the class.
-				 * @return object Instantiated object.
-				 */
-			public function instantiate( string $service_class, array $dependencies = [] ): object {
-				return new $service_class( $dependencies );
-			}
-		};
+		return new ReflectionInstantiator();
 	}
 }

@@ -7,11 +7,16 @@ use Saltus\WP\Framework\Infrastructure\Plugin\Registerable;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\MCP\Abilities\AbilityRegistrar;
+use Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory;
+use Saltus\WP\Framework\MCP\Abilities\AbilityRuntime;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\Cache\TransientCache;
+use Saltus\WP\Framework\MCP\McpPolicy;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
+use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 
 /**
  * Enables Saltus MCP support.
@@ -19,6 +24,7 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
  * WordPress-native abilities are registered when the host WordPress version
  * exposes the Abilities API. Older WordPress versions skip native ability
  * registration.
+ * @api
  */
 class MCP implements Service, Registerable, Activateable, Deactivateable {
 
@@ -31,6 +37,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 	/** @var callable|null */
 	private $modeler_resolver;
 	private ?ModelRestPolicy $policy;
+	private ?McpPolicy $mcp_policy;
 
 	/**
 	 * @param array<string, mixed> $dependencies Framework dependencies injected by the service container.
@@ -42,6 +49,7 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 		$this->modeler           = $modeler instanceof Modeler ? $modeler : null;
 		$this->modeler_resolver  = is_callable( $dependencies['modeler_resolver'] ?? null ) ? $dependencies['modeler_resolver'] : null;
 		$this->policy            = null;
+		$this->mcp_policy        = null;
 	}
 
 	public function register(): void {
@@ -106,7 +114,10 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 			return $this->ability_registrar;
 		}
 
-		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), null, $this->policy() );
+		$modeler                 = $this->modeler();
+		$provider                = new AiContextProvider( $modeler );
+		$runtime                 = new AbilityRuntime( null, null, null, null, $provider, new ProposalService() );
+		$this->ability_registrar = new AbilityRegistrar( $this->tool_provider(), new AbilityDefinitionFactory( $runtime ), $this->mcp_policy() );
 
 		return $this->ability_registrar;
 	}
@@ -194,5 +205,18 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 		}
 
 		return $this->policy;
+	}
+
+	private function mcp_policy(): ?McpPolicy {
+		$modeler = $this->modeler();
+		if ( ! $modeler instanceof Modeler ) {
+			return null;
+		}
+
+		if ( ! $this->mcp_policy instanceof McpPolicy ) {
+			$this->mcp_policy = new McpPolicy( $modeler );
+		}
+
+		return $this->mcp_policy;
 	}
 }

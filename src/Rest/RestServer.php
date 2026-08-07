@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Rest;
 
 /**
  * Registers REST routes filtered by ModelRestPolicy capability checks.
+ * @api
  */
 class RestServer {
 

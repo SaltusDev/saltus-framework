@@ -2,8 +2,11 @@
 
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\MCP\MCPConfig;
+
 /**
  * Abstract base for MCP tools that dispatch via the WordPress REST API.
+ * @api
  */
 abstract class RestTool implements RestBackedToolInterface {
 
@@ -32,6 +35,16 @@ abstract class RestTool implements RestBackedToolInterface {
 	 */
 	public function cache_ttl(): int {
 		return 300;
+	}
+
+	/**
+	 * Build a full REST route string from a path fragment using the configured MCP namespace.
+	 *
+	 * @param string $path  Path fragment starting with '/' (e.g. '/models').
+	 * @return string  Full route (e.g. '/saltus-framework/v1/models').
+	 */
+	protected function mcp_route( string $path ): string {
+		return '/' . trim( MCPConfig::get_namespace(), '/' ) . '/' . ltrim( $path, '/' );
 	}
 
 	/**

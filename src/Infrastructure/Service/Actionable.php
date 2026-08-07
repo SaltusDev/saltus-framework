@@ -10,6 +10,7 @@ namespace Saltus\WP\Framework\Infrastructure\Service;
  *
  * This allows for a more systematic and automated optimization of how the
  * different parts of the plugin are enabled or disabled.
+ * @api
  */
 interface Actionable {
 

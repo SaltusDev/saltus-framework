@@ -1,18 +1,30 @@
 # Current: Live Working State
 
 ## Working
-- Phase 5A: Block Editor integration — Blocks feature service, per-CPT block registration, default templates @since 2026-07-06
-- Phase 5D: Documentation — fill README placeholders, add model examples @since 2026-07-05
+- Docs accuracy review: counts, config keys, and route pages reconciled against source @since 2026-08-07
+- Reconcile `CHANGELOG.md` and tag relationship with the version line (package.json now at 1.5.0) @since 2026-08-07
 
 ## Next
-- Phase 5B: WP-CLI tools — 7 grouped command classes mapping every MCP tool
-- Phase 5C: Frontend rendering — shortcodes, templates, meta field exposure
-- Phase 5D: New doc files (BLOCKS.md, WPCLI.md, FRONTEND.md, FEATURES.md)
+- Phase 8 scope definition pending
 
 ## Blocked
 - None
 
 ## Recent Changes
+- Version bumped 1.4.2 → 1.5.0 (minor) via the automated version cycle; annotated `v1.5.0` tag created. `DuplicateControllerTest` flake fix (storage flag now reset in a `finally` block) included in the cycle commit. @since 2026-08-07
+- Documented three REST/MCP gating behaviors that the docs previously described incorrectly: capability config sections live at the top level of the model array (not under a `config` key), an array section without a `show_in_rest`/`show_in_mcp` key resolves to **enabled** and overrides the master option rather than falling back to it, and the reorder capability is gated from `features.drag_and_drop` while the admin UI is enabled via `features.draganddrop`. Verified against `ModelRestPolicy`/`McpPolicy`. @since 2026-08-07
+- Docs accuracy pass: ability count corrected to 20 across index.md, mcp/index.md, MCP.md, architecture.md, and skill.md; `get_context` added to the generated ability reference via `composer docs:mcp`; REST route count corrected from 9 to 17 with a full route table in architecture.md; feature service count corrected from 10 to 16; Phase 6 AI governance services documented in architecture.md; dead `saltus_rest` config key replaced with `options.show_in_rest` / `options.mcp_tools` in README; wrong `composer phpstan`/`phpcs` script names corrected to `test:phpstan`/`test:phpcs`; missing `docs/public/logo.png` and `favicon.ico` generated from brand icon; duplicate BUILD.md and MCP-CLIENTS.md reduced to pointers; stale TESTING_HANDOFF.md and HANDOFF.md rewritten to record delivered state @since 2026-08-07
+- Phase 6B delivered: persistent proposals for all eight mutating Saltus abilities, permission-checked MCP queueing, before/after review payloads, REST approval/rejection endpoints, admin review dashboard, proposal audit events, and lifecycle tests. Full suite green: 336 tests, 904 assertions. @since 2026-08-06
+- Phase 6C delivered: model-scoped admin assistant actions, provider filter contract, authenticated REST endpoint, post editor controls, field-rule validation output, and PHPUnit coverage. @since 2026-08-06
+- Phase 7 delivered: ReflectionInstantiator autowiring for named, positional, typed, default, nullable, variadic, and legacy dependency-bag constructor parameters, with container tests and documentation. @since 2026-08-06
+- Version bumped to 1.2.1. `get_context` MCP tool + `GET /saltus-framework/v1/context/{post_type}` + `wp saltus context get` command added; AI governance now enforced at runtime via `AiContextProvider` in `AbilityRuntime`; command catalog is the authoritative 20-ability parity map. Frontend and AiContext features documented in CONTEXT.md. Full suite green: 329 tests, 872 assertions. @since 2026-08-06
+- Phase 6A delivered: normalized per-model ai_context, defaults filter, get_context MCP/REST discovery, and hard mutation governance for statuses and forbidden actions @since 2026-08-06
+- Phase 5C delivered: model-driven frontend shortcodes, list/single templates, safe query attribute parsing, taxonomy filtering, meta field exposure, config/theme/default template overrides, tests, and frontend feature documentation @since 2026-08-06
+- Phase 5A delivered: runtime Block API v3 list/single blocks, shared editor assets, dynamic render templates, REST discovery, and `list_block_models` MCP ability @since 2026-07-31
+- Phase 5B delivered: eight `wp saltus` command groups provide parity with all 19 abilities, direct shared-service execution, table/JSON/YAML output, JSON file input, tests, and generated command docs @since 2026-07-31
+- Phase 5D delivered for implemented features: README placeholders replaced, model/feature references corrected, Blocks, Frontend, and WP-CLI guides added to VitePress, and MCP/WP-CLI docs regenerated for 19 tools @since 2026-07-31
+- Docs infrastructure: VitePress site scaffolded at `docs/.vitepress/`, phpDocumentor config at `phpdoc.dist.xml`, `.github/workflows/docs.yml` for auto-build + GH Pages deploy to `docs.saltus.dev`, `docs/public/CNAME` for custom domain, 6 doc content pages (getting-started, features, architecture, build, MCP overview, API index), `composer docs:all` script (`docs:mcp` + `docs:api`), @api annotations on 84 public classes/interfaces across all namespaces, README updated with docs.saltus.dev links, ROADMAP.md Phase 5D progress tracked @since 2026-07-21
+- AbilityRuntime middleware pipeline integration: backward-compatible `execute_via_pipeline()` delegated from `execute()`, `execute_legacy()` preserved as fallback, optional `MiddlewarePipeline` constructor injection — resolves Phase 4F/4G strip-cache/strip-rate-limit items @since 2026-07-21
 - Code review feedback: replaced wp_die with RuntimeException in single_export_query to avoid HTML death pages in REST/MCP contexts; added catch clause in export_post to return structured WP_Error; replaced unsafe property_exists with get_object_vars in ModelRestPolicy to avoid fatal errors on non-public properties; added explicit edit_posts permission checks for list_models/get_model/list_meta_fields/get_meta_fields in AbilityDefinitionFactory; changed AuditLogger created_at column from varchar(32) to datetime(3) — 2 commits @since 2026-07-04
 - Export query hardening: replaced fragile string-equality check in single_export_query with structural regex detection via is_fake_date_export_query; added wp_die fallback for unrecognized fake-date query shapes; added esc_html__ and wp_die test stubs — 1 commit @since 2026-07-04
 - Code review feedback: deferred RestServer instantiation inside rest_api_init to avoid overhead on non-REST requests; replaced wp_next_scheduled/wp_unschedule_event with wp_clear_scheduled_hook in MCP deactivation; gated ensure_table() behind DB version option to avoid unnecessary CREATE TABLE queries on every audit write; added wp_clear_scheduled_hook test stub — 3 commits @since 2026-07-04
@@ -111,11 +123,16 @@
 - MetaController PUT route: `update_item` + `update_item_permissions_check` at `PUT /saltus-framework/v1/meta/{post_type}/{post_id}` with serialized meta merging; UpdateMetaFields MCP tool and MetaControllerTest + UpdateMetaFieldsTest added — 1 commit @since 2026-07-07
 - Test suite: 226 tests, 639 assertions (bumped from 214/605 by +12 tests, +34 assertions for new MCP tool, MetaController PUT, and count updates) @since 2026-07-07
 - ModelsController: use `check_method` for description property access to prevent PHP 8.2+ dynamic property deprecation notices @since 2026-07-07
+- MCP namespace config filterability: added MCPConfig utility class with 3 WordPress filters (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix); added mcp_route() helper to RestTool base; refactored 21 source files from hardcoded strings to MCPConfig calls; added MCPConfigTest with 13 test cases — 6 commits, 236 tests, 655 assertions @since 2026-07-08
+- MCP/REST capability gating refactored: added get_config() to Model interface; added McpPolicy class with 14 test cases for MCP-specific mcp_tools/show_in_mcp gating; refactored ModelRestPolicy from saltus_rest array to per-feature config-section model; updated REST controller error hints; updated all existing tests for new config-section pattern — 7 commits, 250 tests, 669 assertions @since 2026-07-08
+
+- Version bump to v1.1.0: `phpdocumentor/phpdocumentor` added to require-dev, composer dev platform pinned to PHP 8.4 (runtime still targets 7.4+), brand assets added to `docs/assets/`, BUILD.md notes the docs tooling @since 2026-07-31
 
 ## Known Issues
-- `composer test` passes; Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
-- `composer phpcs` passes.
-- PHPStan: Level 7 clean across the configured analysis set (new service classes ReorderPostsService, MetaFieldProvider, SettingsManager added).
+- `composer test` passes (347 tests, 934 assertions); Composer still prints a dependency deprecation notice from `justinrainbow/json-schema` under PHP 8.5.4.
+- `composer test:phpcs` passes. Note the script names are `test:phpstan` and `test:phpcs` — bare `composer phpstan` / `composer phpcs` do not exist.
+- PHPStan: Level 7 clean across the configured analysis set; use `--debug` when the sandbox prevents PHPStan's local TCP worker server from binding.
+- Version numbering is partially resolved: `package.json` is now 1.5.0 with a matching `v1.5.0` tag, but `docs/ROADMAP.md` historically referenced 2.0.0 and `v2.0.0` still exists. `CHANGELOG.md` still holds 2026-07-02 entries under `[Unreleased]`.
 
 ## Handoff
 - WP7 Abilities is the MCP direction. Local stdio server was removed; SSE transport and standalone packaging are skipped.
@@ -124,4 +141,5 @@
 - `list_meta_fields` calls `GET /saltus-framework/v1/meta` and returns `post_types`.
 - `get_meta_fields` calls `GET /saltus-framework/v1/meta/{post_type}` and returns one CPT's raw `meta` plus normalized field paths and REST meta keys.
 - Service extraction completed 2026-07-03: SaltusSingleExport, MetaFieldProvider, ReorderPostsService, and SettingsManager are now shared between REST controllers and MCP tools via constructor injection. Feature classes (DragAndDrop, Meta, Settings, SingleExport) own the service instances and pass them to both paths, eliminating code duplication.
-- Current verification: full `composer test` (208 tests, 598 assertions), `composer phpstan`, `composer phpcs`, and `git diff --check` pass after the service extraction pass.
+- Current verification: full `composer test` (347 tests, 934 assertions), PHPStan Level 7 (`--debug` in the sandbox), `composer test:phpcs`, `npm run docs:build`, and `git diff --check`.
+- Generated docs must be refreshed with `composer docs:all` whenever a tool or WP-CLI command is added, renamed, or has its schema changed. `docs/mcp/abilities.md` and `docs/guides/wp-cli.md` are generated; do not hand-edit them.

@@ -1,5 +1,11 @@
 # dev
 vendor/
+node_modules/
+
+# docs
+docs/public/api/
+docs/.vitepress/dist/
+build/phpdoc-cache/
 
 # editor/OS files
 .DS_Store

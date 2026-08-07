@@ -9,6 +9,7 @@ namespace Saltus\WP\Framework\Infrastructure\Plugin;
  *
  * This way, we can just add the simple interface marker and not worry about how
  * to wire up the code to reach that part during the static deactivation hook.
+ * @api
  */
 interface Deactivateable {
 

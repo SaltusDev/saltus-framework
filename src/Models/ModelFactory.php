@@ -5,7 +5,11 @@ namespace Saltus\WP\Framework\Models;
 use Noodlehaus\AbstractConfig;
 use Saltus\WP\Framework\Infrastructure\Container\Container;
 use Saltus\WP\Framework\Infrastructure\Service\Processable;
+use Saltus\WP\Framework\Features\Frontend\SaltusFrontend;
 
+/**
+ * @api
+ */
 class ModelFactory {
 
 	/** @var Container<string, mixed> */
@@ -81,15 +85,22 @@ class ModelFactory {
 	}
 
 	private function process_services( PostType $cpt, AbstractConfig $config ): void {
-		$services = [ 'meta', 'settings' ];
+		$services = [ 'frontend', 'meta', 'settings' ];
 		foreach ( $services as $service_name ) {
 			if ( ! $config->has( $service_name ) || ! $this->app->has( $service_name ) ) {
 				continue;
 			}
 
 			$config_value = $config->get( $service_name );
+			if ( $service_name === 'frontend' && ! $config_value ) {
+				continue;
+			}
+			$config_value = is_array( $config_value ) ? $config_value : [];
 			$service      = $this->app->get( $service_name );
 			$service_imp  = $service::make( $cpt->get_registration_name(), $this->project, $config_value );
+			if ( $service_imp instanceof SaltusFrontend ) {
+				$service_imp->set_model( $cpt );
+			}
 
 			if ( $service_imp instanceof Processable ) {
 				$service_imp->process();

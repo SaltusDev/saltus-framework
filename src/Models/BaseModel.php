@@ -3,6 +3,9 @@ namespace Saltus\WP\Framework\Models;
 
 use Noodlehaus\AbstractConfig;
 
+/**
+ * @api
+ */
 abstract class BaseModel {
 
 	/**
@@ -538,6 +541,15 @@ abstract class BaseModel {
 	 */
 	public function get_args(): array {
 		return $this->args;
+	}
+
+	/**
+	 * Return the full raw model configuration.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_config(): array {
+		return $this->data;
 	}
 
 	public function get_rest_base(): string {

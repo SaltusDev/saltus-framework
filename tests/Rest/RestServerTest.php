@@ -40,7 +40,25 @@ class RestServerTest extends TestCase {
 					'post_type',
 					[
 						'show_in_rest' => true,
-						'saltus_rest'  => true,
+					],
+					[
+						'meta'      => [
+							'show_in_rest' => true,
+						],
+						'settings'  => [
+							'show_in_rest' => true,
+						],
+						'features'  => [
+							'duplicate'     => [
+								'show_in_rest' => true,
+							],
+							'single_export' => [
+								'show_in_rest' => true,
+							],
+							'drag_and_drop' => [
+								'show_in_rest' => true,
+							],
+						],
 					]
 				),
 			]
@@ -76,9 +94,10 @@ class RestServerTest extends TestCase {
 					'post_type',
 					[
 						'show_in_rest' => true,
-						'saltus_rest'  => [
-							'models'   => true,
-							'settings' => true,
+					],
+					[
+						'settings' => [
+							'show_in_rest' => true,
 						],
 					]
 				),
@@ -90,7 +109,7 @@ class RestServerTest extends TestCase {
 		$this->assertGreaterThan( 1, count( $wp_rest_routes_registered ) );
 	}
 
-	public function testRegisterRoutesRegistersOnlyHealthWithoutOptIn(): void {
+	public function testRegisterRoutesRegistersAllRoutesByDefault(): void {
 		global $wp_rest_routes_registered;
 
 		$this->modeler->method( 'get_models' )->willReturn(
@@ -101,7 +120,7 @@ class RestServerTest extends TestCase {
 
 		$this->createServer()->register_routes();
 
-		$this->assertCount( 1, $wp_rest_routes_registered );
+		$this->assertCount( 10, $wp_rest_routes_registered );
 		$this->assertSame( '/health', $wp_rest_routes_registered[0]['route'] );
 	}
 
@@ -114,7 +133,6 @@ class RestServerTest extends TestCase {
 					'post_type',
 					[
 						'show_in_rest' => false,
-						'saltus_rest'  => true,
 					]
 				),
 			]
@@ -129,18 +147,22 @@ class RestServerTest extends TestCase {
 	/**
 	 * @return Model&object{options: array<string, mixed>}
 	 */
-	private function createModelMock( string $type, array $options ) {
-		return new class( $type, $options ) implements Model {
+	private function createModelMock( string $type, array $options, array $config = [] ) {
+		return new class( $type, $options, $config ) implements Model {
 			private string $type;
 			/** @var array<string, mixed> */
 			public array $options;
+			/** @var array<string, mixed> */
+			public array $config;
 
 			/**
 			 * @param array<string, mixed> $options
+			 * @param array<string, mixed> $config
 			 */
-			public function __construct( string $type, array $options ) {
+			public function __construct( string $type, array $options, array $config = [] ) {
 				$this->type    = $type;
 				$this->options = $options;
+				$this->config  = $config;
 			}
 
 			public function setup(): void {}
@@ -159,6 +181,10 @@ class RestServerTest extends TestCase {
 
 			public function get_args(): array {
 				return [];
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 		};
 	}

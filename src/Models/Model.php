@@ -2,6 +2,9 @@
 
 namespace Saltus\WP\Framework\Models;
 
+/**
+ * @api
+ */
 interface Model {
 
 	/**
@@ -37,4 +40,11 @@ interface Model {
 	 * @return array<string, mixed>
 	 */
 	public function get_args(): array;
+
+	/**
+	 * Get the full raw model configuration.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_config(): array;
 }

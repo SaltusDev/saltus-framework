@@ -165,22 +165,9 @@ class ModelsControllerTest extends TestCase {
 			[
 				'public'       => true,
 				'show_in_rest' => true,
-				'saltus_rest'  => [ 'models' => true ],
 			]
 		);
 		$model2 = $this->createModelMock(
-			'post_type',
-			'Movies',
-			'Movies',
-			'movie',
-			'post_type',
-			[
-				'public'       => true,
-				'show_in_rest' => true,
-				'saltus_rest'  => [ 'models' => false ],
-			]
-		);
-		$model3 = $this->createModelMock(
 			'post_type',
 			'Hidden',
 			'Hidden',
@@ -189,15 +176,13 @@ class ModelsControllerTest extends TestCase {
 			[
 				'public'       => true,
 				'show_in_rest' => false,
-				'saltus_rest'  => true,
 			]
 		);
 
 		$this->modeler->method( 'get_models' )->willReturn(
 			[
 				'book'   => $model1,
-				'movie'  => $model2,
-				'hidden' => $model3,
+				'hidden' => $model2,
 			]
 		);
 		$this->controller = new ModelsController( $this->modeler, new ModelRestPolicy( $this->modeler ) );
@@ -257,6 +242,10 @@ class ModelsControllerTest extends TestCase {
 			public function get_args(): array {
 				return [];
 			}
+
+			public function get_config(): array {
+				return [];
+			}
 		};
 
 		$this->modeler->method( 'get_models' )->willReturn( [ 'book' => $model ] );
@@ -307,9 +296,10 @@ class ModelsControllerTest extends TestCase {
 		string $getType = 'post_type',
 		array $options = [],
 		string $description = '',
-		bool $featuredImage = true
+		bool $featuredImage = true,
+		array $config = []
 	) {
-		return new class( $type, $one, $many, $name, $getType, $options, $description, $featuredImage ) implements Model {
+		return new class( $type, $one, $many, $name, $getType, $options, $description, $featuredImage, $config ) implements Model {
 			public string $type;
 			public string $one;
 			public string $many;
@@ -318,10 +308,13 @@ class ModelsControllerTest extends TestCase {
 			public bool $featured_image;
 			/** @var array<string, mixed> */
 			public array $options;
+			/** @var array<string, mixed> */
+			public array $config;
 			private string $getType;
 
 			/**
 			 * @param array<string, mixed> $options
+			 * @param array<string, mixed> $config
 			 */
 			public function __construct(
 				string $type,
@@ -331,7 +324,8 @@ class ModelsControllerTest extends TestCase {
 				string $getType,
 				array $options,
 				string $description,
-				bool $featuredImage
+				bool $featuredImage,
+				array $config = []
 			) {
 				$this->type           = $type;
 				$this->one            = $one;
@@ -341,6 +335,7 @@ class ModelsControllerTest extends TestCase {
 				$this->options        = $options;
 				$this->description    = $description;
 				$this->featured_image = $featuredImage;
+				$this->config         = $config;
 			}
 
 			public function setup(): void {}
@@ -359,6 +354,10 @@ class ModelsControllerTest extends TestCase {
 
 			public function get_args(): array {
 				return [];
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 		};
 	}

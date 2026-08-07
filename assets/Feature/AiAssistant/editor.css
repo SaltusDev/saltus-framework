@@ -1,0 +1,22 @@
+.saltus-ai-assistant-toolbar,
+.saltus-ai-assistant-field-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.saltus-ai-assistant-field-toolbar {
+  display: inline-flex;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.saltus-ai-assistant-invalid {
+  border-color: #d63638 !important;
+  box-shadow: 0 0 0 1px #d63638;
+}
+
+.saltus-ai-assistant-validation {
+  margin: 8px 0;
+}

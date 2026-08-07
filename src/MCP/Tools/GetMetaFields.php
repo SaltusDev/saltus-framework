@@ -68,7 +68,7 @@ class GetMetaFields extends RestTool {
 	 * @return \WP_REST_Request|null
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
-		return $this->request( 'GET', '/saltus-framework/v1/meta/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) );
+		return $this->request( 'GET', $this->mcp_route( '/meta/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) ) );
 	}
 
 	/**

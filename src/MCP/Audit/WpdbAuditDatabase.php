@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\MCP\Audit;
 
 /**
  * wpdb adapter implementing the AuditDatabase interface.
+ * @api
  */
 class WpdbAuditDatabase implements AuditDatabase {
 	private \wpdb $wpdb;

@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\MCP\Audit;
 
 /**
  * Persists MCP audit entries to a custom database table.
+ * @api
  */
 class AuditLogger {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;

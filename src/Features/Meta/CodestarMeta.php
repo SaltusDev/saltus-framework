@@ -9,6 +9,7 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 
 /**
  * @phpstan-type MetaConfig array<string|int, mixed>
+ * @api
  */
 final class CodestarMeta implements Processable {
 

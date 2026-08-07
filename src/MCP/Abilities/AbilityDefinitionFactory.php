@@ -1,6 +1,7 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Abilities;
 
+use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 
@@ -19,6 +20,7 @@ use Saltus\WP\Framework\MCP\Tools\ToolProvider;
  *     callback: callable,
  *     meta: array<string, mixed>
  * }
+ * @api
  */
 class AbilityDefinitionFactory {
 
@@ -60,7 +62,7 @@ class AbilityDefinitionFactory {
 			'name'                => $this->ability_name( $tool->get_name() ),
 			'label'               => $this->label_from_tool_name( $tool->get_name() ),
 			'description'         => $tool->get_description(),
-			'category'            => 'saltus-framework',
+			'category'            => MCPConfig::get_ability_category()['id'],
 			'input_schema'        => $schema,
 			'inputSchema'         => $schema,
 			'execute_callback'    => function ( array $args = [] ) use ( $tool ) {
@@ -74,7 +76,7 @@ class AbilityDefinitionFactory {
 			},
 			'meta'                => [
 				'mcp_tool'     => $tool->get_name(),
-				'namespace'    => 'saltus-framework/v1',
+				'namespace'    => MCPConfig::get_namespace(),
 				'transport'    => 'wordpress-rest',
 				'show_in_rest' => true,
 			],
@@ -122,7 +124,8 @@ class AbilityDefinitionFactory {
 	 * @return lowercase-string&non-falsy-string
 	 */
 	private function ability_name( string $tool_name ): string {
-		return strtolower( 'saltus/' . str_replace( '_', '-', $tool_name ) );
+		/** @var lowercase-string&non-falsy-string */
+		return strtolower( MCPConfig::get_ability_prefix() . str_replace( '_', '-', $tool_name ) );
 	}
 
 	/**

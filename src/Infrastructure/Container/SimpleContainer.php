@@ -16,6 +16,7 @@ use Saltus\WP\Framework\Infrastructure\{
  * array access.
  *
  * @extends ArrayObject<string, mixed>
+ * @api
  */
 class SimpleContainer extends ArrayObject implements Container {
 

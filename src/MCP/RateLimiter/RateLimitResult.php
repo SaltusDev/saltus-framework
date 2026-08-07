@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\MCP\RateLimiter;
 
 /**
  * Value object representing the outcome of a rate limit check.
+ * @api
  */
 class RateLimitResult {
 

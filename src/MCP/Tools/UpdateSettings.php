@@ -74,7 +74,7 @@ class UpdateSettings extends RestTool {
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
 		$body = is_array( $args['settings'] ?? null ) ? $args['settings'] : [];
 
-		return $this->request( 'PUT', '/saltus-framework/v1/settings/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ), [], $body );
+		return $this->request( 'PUT', $this->mcp_route( '/settings/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) ), [], $body );
 	}
 
 	/**

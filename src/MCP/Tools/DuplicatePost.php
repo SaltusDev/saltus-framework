@@ -57,7 +57,7 @@ class DuplicatePost extends RestTool {
 	 * @return \WP_REST_Request|null
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
-		return $this->request( 'POST', '/saltus-framework/v1/duplicate/' . (int) ( $args['post_id'] ?? 0 ) );
+		return $this->request( 'POST', $this->mcp_route( '/duplicate/' . (int) ( $args['post_id'] ?? 0 ) ) );
 	}
 
 	/**

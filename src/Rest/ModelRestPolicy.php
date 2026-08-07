@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Rest;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Model;
 
+/**
+ * @api
+ */
 class ModelRestPolicy {
 
 	public const CAPABILITY_MODELS    = 'models';
@@ -14,6 +17,7 @@ class ModelRestPolicy {
 	public const CAPABILITY_EXPORT    = 'export';
 	public const CAPABILITY_REORDER   = 'reorder';
 	public const CAPABILITY_HEALTH    = 'health';
+	public const CAPABILITY_BLOCKS    = 'blocks';
 
 	private Modeler $modeler;
 
@@ -40,22 +44,83 @@ class ModelRestPolicy {
 	}
 
 	public function is_enabled( Model $model, string $capability ): bool {
-		$options = $this->get_model_options( $model );
-
-		if ( array_key_exists( 'show_in_rest', $options ) && $options['show_in_rest'] === false ) {
-			return false;
+		$options    = $this->get_model_options( $model );
+		$global_val = null;
+		if ( array_key_exists( 'show_in_rest', $options ) ) {
+			$global_val = (bool) $options['show_in_rest'];
 		}
 
-		$saltus_rest = $options['saltus_rest'] ?? false;
-		if ( $saltus_rest === true ) {
+		if ( $capability === self::CAPABILITY_HEALTH ) {
 			return true;
 		}
 
-		if ( ! is_array( $saltus_rest ) ) {
-			return false;
+		if ( $capability === self::CAPABILITY_MODELS ) {
+			return $global_val !== false;
 		}
 
-		return ! empty( $saltus_rest[ $capability ] );
+		$config      = $model->get_config();
+		$feature_val = $this->resolve_feature_value( $config, $capability );
+
+		if ( $feature_val !== null ) {
+			return $feature_val;
+		}
+
+		return $global_val === true;
+	}
+
+	/**
+	 * Get the configuration section for a specific capability.
+	 *
+	 * @param array<string, mixed> $config     The model configuration.
+	 * @param string               $capability The capability.
+	 * @return mixed
+	 */
+	private function get_capability_config( array $config, string $capability ) {
+		if ( in_array( $capability, [ self::CAPABILITY_META, self::CAPABILITY_SETTINGS, self::CAPABILITY_BLOCKS ], true ) ) {
+			return $config[ $capability ] ?? null;
+		}
+
+		$features = $config['features'] ?? [];
+		if ( ! is_array( $features ) ) {
+			return null;
+		}
+
+		$feature_keys = [
+			self::CAPABILITY_DUPLICATE => 'duplicate',
+			self::CAPABILITY_EXPORT    => 'single_export',
+			self::CAPABILITY_REORDER   => 'drag_and_drop',
+		];
+
+		$key = $feature_keys[ $capability ] ?? null;
+		if ( $key === null ) {
+			return null;
+		}
+
+		return $features[ $key ] ?? null;
+	}
+
+	/**
+	 * Resolve the capability value from the feature configuration.
+	 *
+	 * @param array<string, mixed> $config
+	 * @param string               $capability
+	 * @return bool|null
+	 */
+	private function resolve_feature_value( array $config, string $capability ): ?bool {
+		$section = $this->get_capability_config( $config, $capability );
+		if ( $section === null ) {
+			return null;
+		}
+
+		if ( ! is_array( $section ) ) {
+			return (bool) $section;
+		}
+
+		if ( ! array_key_exists( 'show_in_rest', $section ) ) {
+			return true;
+		}
+
+		return (bool) $section['show_in_rest'];
 	}
 
 	public function is_post_type_enabled( string $post_type, string $capability ): bool {

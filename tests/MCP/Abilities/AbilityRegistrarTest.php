@@ -18,6 +18,7 @@ use Saltus\WP\Framework\MCP\Tools\ToolProvider;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\ModelFactory;
+use Saltus\WP\Framework\MCP\McpPolicy;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
@@ -74,17 +75,20 @@ class AbilityRegistrarTest extends TestCase {
 			[
 				'book' => $this->createModelMock(
 					[
-						'show_in_rest' => true,
-						'saltus_rest'  => [
-							'models' => true,
-							'meta'   => true,
+						'mcp_tools' => true,
+					],
+					[
+						'meta'     => [],
+						'settings' => false,
+						'features' => [
+							'duplicate' => false,
 						],
 					]
 				),
 			]
 		);
 
-		$registered = ( new AbilityRegistrar( $this->defaultToolProvider( $modeler ), null, new ModelRestPolicy( $modeler ) ) )->register();
+		$registered = ( new AbilityRegistrar( $this->defaultToolProvider( $modeler ), null, new McpPolicy( $modeler ) ) )->register();
 
 		$this->assertContains( 'saltus/get-health', $registered );
 		$this->assertContains( 'saltus/list-models', $registered );
@@ -416,16 +420,25 @@ class AbilityRegistrarTest extends TestCase {
 	 * @param array<string, mixed> $options
 	 * @return Model&object{options: array<string, mixed>}
 	 */
-	private function createModelMock( array $options ) {
-		return new class( $options ) implements Model {
+	/**
+	 * @param array<string, mixed> $options
+	 * @param array<string, mixed> $config
+	 * @return Model&object{options: array<string, mixed>}
+	 */
+	private function createModelMock( array $options, array $config = [] ) {
+		return new class( $options, $config ) implements Model {
 			/** @var array<string, mixed> */
 			public array $options;
+			/** @var array<string, mixed> */
+			public array $config;
 
 			/**
 			 * @param array<string, mixed> $options
+			 * @param array<string, mixed> $config
 			 */
-			public function __construct( array $options ) {
+			public function __construct( array $options, array $config = [] ) {
 				$this->options = $options;
+				$this->config  = $config;
 			}
 
 			public function setup(): void {}
@@ -444,6 +457,10 @@ class AbilityRegistrarTest extends TestCase {
 
 			public function get_args(): array {
 				return [];
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 		};
 	}

@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\Infrastructure\Plugin;
 
 /**
  * The Project class, where data is defined.
+ * @api
  */
 class Project {
 

@@ -8,14 +8,14 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
+use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\Modeler;
 
 /**
  * REST controller exposing meta field configuration per post type.
+ * @api
  */
 class MetaController extends WP_REST_Controller {
-
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 
 	protected Modeler $modeler;
 	private ?ModelRestPolicy $policy;
@@ -30,7 +30,7 @@ class MetaController extends WP_REST_Controller {
 		$this->modeler             = $modeler;
 		$this->policy              = $policy;
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
-		$this->namespace           = self::ROUTE_NAMESPACE;
+		$this->namespace           = MCPConfig::get_namespace();
 		$this->rest_base           = 'meta';
 	}
 
@@ -42,8 +42,10 @@ class MetaController extends WP_REST_Controller {
 			return;
 		}
 
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -53,7 +55,7 @@ class MetaController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -70,7 +72,7 @@ class MetaController extends WP_REST_Controller {
 		);
 
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_type>[a-z0-9_-]+)/(?P<post_id>\d+)',
 			[
 				'methods'             => WP_REST_Server::EDITABLE,
@@ -115,7 +117,7 @@ class MetaController extends WP_REST_Controller {
 				__( 'You do not have permission to view meta fields.', 'saltus-framework' ),
 				[
 					'status' => 403,
-					'hint'   => __( "Assign edit_posts to your user, or ensure the model has 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] in its config.", 'saltus-framework' ),
+					'hint'   => __( "Assign edit_posts to your user, or add 'show_in_rest' => true under the 'meta' section in the model config.", 'saltus-framework' ),
 				]
 			);
 		}
@@ -172,7 +174,7 @@ class MetaController extends WP_REST_Controller {
 					'status' => 404,
 					'hint'   => sprintf(
 						/* translators: %s: post type slug */
-						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'meta' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						__( "Add 'show_in_rest' => true under the 'meta' section in the model config for '%s' in src/models/.", 'saltus-framework' ),
 						$post_type
 					),
 				]

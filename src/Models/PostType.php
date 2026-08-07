@@ -7,6 +7,7 @@ namespace Saltus\WP\Framework\Models;
  * This model is used to register a custom post type
  *
  * @see https://developer.wordpress.org/reference/functions/register_post_type/
+ * @api
  */
 class PostType extends BaseModel implements Model {
 
@@ -84,8 +85,8 @@ class PostType extends BaseModel implements Model {
 	 */
 	protected function get_default_labels(): array {
 
-		$many_lower = strtolower( $this->many );
-		$one_lower  = strtolower( $this->one );
+		$many_lower = $this->many_low;
+		$one_lower  = $this->one_low;
 
 		$labels = [
 			'name'                  => $this->many,

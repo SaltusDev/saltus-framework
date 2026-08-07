@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\MCP\Cache;
 
 /**
  * Transient-backed cache implementing CacheInterface.
+ * @api
  */
 class TransientCache implements CacheInterface {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;

@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\MCP\Tools;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
+/**
+ * @api
+ */
 interface ToolContributor {
 
 	/**

@@ -7,13 +7,14 @@ use WP_REST_Server;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\SingleExport\SaltusSingleExport;
+use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for exporting posts as WXR.
+ * @api
  */
 class ExportController extends WP_REST_Controller {
 
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 	private SaltusSingleExport $exporter;
 
@@ -24,7 +25,7 @@ class ExportController extends WP_REST_Controller {
 	public function __construct( ?ModelRestPolicy $policy = null, ?SaltusSingleExport $exporter = null ) {
 		$this->policy    = $policy;
 		$this->exporter  = $exporter ?? new SaltusSingleExport( '', [] );
-		$this->namespace = self::ROUTE_NAMESPACE;
+		$this->namespace = MCPConfig::get_namespace();
 		$this->rest_base = 'export';
 	}
 
@@ -32,8 +33,10 @@ class ExportController extends WP_REST_Controller {
 	 * Register the REST route for post export.
 	 */
 	public function register_routes(): void {
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		\register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$namespace,
 			'/' . $this->rest_base . '/(?P<post_id>\d+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -96,7 +99,7 @@ class ExportController extends WP_REST_Controller {
 					'status' => 403,
 					'hint'   => sprintf(
 						/* translators: %s: post type slug */
-						__( "Add 'saltus_rest' => [ 'capabilities' => [ 'export' => true ] ] to the model config for '%s' in src/models/.", 'saltus-framework' ),
+						__( "Add 'show_in_rest' => true under 'features' => [ 'single_export' => ... ] in the model config for '%s' in src/models/.", 'saltus-framework' ),
 						$post->post_type
 					),
 				]

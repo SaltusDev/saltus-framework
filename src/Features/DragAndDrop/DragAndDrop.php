@@ -21,6 +21,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  * Class DragAndDrop
  *
  * Enable an option to manage drag and drop functionality in the admin area.
+ * @api
  */
 class DragAndDrop implements Service, Conditional, Actionable, Assembly, RestRouteProvider, ToolContributor {
 

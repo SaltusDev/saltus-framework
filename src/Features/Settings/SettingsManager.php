@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\Features\Settings;
 
 /**
  * Shared feature-layer access to Saltus per-post-type settings.
+ * @api
  */
 class SettingsManager {
 

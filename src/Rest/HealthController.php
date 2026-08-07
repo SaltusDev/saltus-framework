@@ -3,6 +3,7 @@
 namespace Saltus\WP\Framework\Rest;
 
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
+use Saltus\WP\Framework\MCP\MCPConfig;
 use WP_Error;
 use WP_REST_Controller;
 use WP_REST_Response;
@@ -10,11 +11,10 @@ use WP_REST_Server;
 
 /**
  * REST controller exposing framework health and MCP runtime metrics.
+ * @api
  */
 class HealthController extends WP_REST_Controller {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
-
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 
 	private string $version;
 	private AuditLogger $audit_logger;
@@ -22,7 +22,7 @@ class HealthController extends WP_REST_Controller {
 	public function __construct( string $version, ?AuditLogger $audit_logger = null ) {
 		$this->version      = $version;
 		$this->audit_logger = $audit_logger ?? new AuditLogger();
-		$this->namespace    = self::ROUTE_NAMESPACE;
+		$this->namespace    = MCPConfig::get_namespace();
 		$this->rest_base    = 'health';
 	}
 
@@ -30,8 +30,10 @@ class HealthController extends WP_REST_Controller {
 	 * Register the health route.
 	 */
 	public function register_routes(): void {
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::READABLE,

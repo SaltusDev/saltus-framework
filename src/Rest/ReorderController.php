@@ -8,13 +8,14 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Saltus\WP\Framework\Features\DragAndDrop\ReorderPostsService;
+use Saltus\WP\Framework\MCP\MCPConfig;
 
 /**
  * REST controller for reordering posts via menu_order updates.
+ * @api
  */
 class ReorderController extends WP_REST_Controller {
 
-	private const ROUTE_NAMESPACE = 'saltus-framework/v1';
 	private ?ModelRestPolicy $policy;
 	private ReorderPostsService $reorder_service;
 
@@ -25,7 +26,7 @@ class ReorderController extends WP_REST_Controller {
 	public function __construct( ?ModelRestPolicy $policy = null, ?ReorderPostsService $reorder_service = null ) {
 		$this->policy          = $policy;
 		$this->reorder_service = $reorder_service ?? new ReorderPostsService();
-		$this->namespace       = self::ROUTE_NAMESPACE;
+		$this->namespace       = MCPConfig::get_namespace();
 		$this->rest_base       = 'reorder';
 	}
 
@@ -33,8 +34,10 @@ class ReorderController extends WP_REST_Controller {
 	 * Register the REST route for reordering posts.
 	 */
 	public function register_routes(): void {
+		/** @var non-falsy-string $namespace */
+		$namespace = $this->namespace;
 		register_rest_route(
-			self::ROUTE_NAMESPACE,
+			$namespace,
 			'/' . $this->rest_base,
 			[
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -83,7 +86,7 @@ class ReorderController extends WP_REST_Controller {
 				__( 'You do not have permission to reorder posts.', 'saltus-framework' ),
 				[
 					'status' => 403,
-					'hint'   => __( "Assign edit_posts to your user, or ensure all requested posts are editable by the current user. Check that each post's post type has 'saltus_rest' configured.", 'saltus-framework' ),
+					'hint'   => __( "Assign edit_posts to your user, or ensure all requested posts are editable by the current user. Check that each post's post type has 'show_in_rest' configured under 'features' => [ 'drag_and_drop' => [ 'show_in_rest' => true ] ].", 'saltus-framework' ),
 				]
 			);
 		}

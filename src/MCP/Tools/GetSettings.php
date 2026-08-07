@@ -67,7 +67,7 @@ class GetSettings extends RestTool {
 	 * @return \WP_REST_Request|null
 	 */
 	public function build_rest_request( array $args ): ?\WP_REST_Request {
-		return $this->request( 'GET', '/saltus-framework/v1/settings/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) );
+		return $this->request( 'GET', $this->mcp_route( '/settings/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) ) );
 	}
 
 	/**

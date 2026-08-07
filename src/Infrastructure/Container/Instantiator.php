@@ -6,6 +6,7 @@ namespace Saltus\WP\Framework\Infrastructure\Container;
  *
  * This way, a more elaborate mechanism can be plugged in, like using
  * ProxyManager to instantiate proxies instead of actual objects.
+ * @api
  */
 interface Instantiator {
 

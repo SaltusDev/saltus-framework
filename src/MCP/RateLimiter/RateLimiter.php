@@ -3,6 +3,7 @@ namespace Saltus\WP\Framework\MCP\RateLimiter;
 
 /**
  * Sliding-window rate limiter backed by WordPress transients.
+ * @api
  */
 class RateLimiter {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;

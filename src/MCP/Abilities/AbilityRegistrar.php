@@ -1,31 +1,33 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Abilities;
 
+use Saltus\WP\Framework\MCP\MCPConfig;
+use Saltus\WP\Framework\MCP\McpPolicy;
 use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
-use Saltus\WP\Framework\Rest\ModelRestPolicy;
 
 /**
  * Registers MCP abilities with the WordPress native wp_register_ability API.
  *
  * @phpstan-import-type AbilityDefinition from \Saltus\WP\Framework\MCP\Abilities\AbilityDefinitionFactory
+ * @api
  */
 class AbilityRegistrar {
 
 	private ToolProvider $tool_provider;
 	private AbilityDefinitionFactory $definition_factory;
-	private ?ModelRestPolicy $policy;
+	private ?McpPolicy $mcp_policy;
 
 	/**
 	 * @param ToolProvider|null $tool_provider  Optional injected tool provider.
 	 * @param AbilityDefinitionFactory|null $definition_factory  Optional definition factory.
-	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
+	 * @param McpPolicy|null $mcp_policy  Optional MCP policy for capability gating.
 	 */
-	public function __construct( ?ToolProvider $tool_provider = null, ?AbilityDefinitionFactory $definition_factory = null, ?ModelRestPolicy $policy = null ) {
+	public function __construct( ?ToolProvider $tool_provider = null, ?AbilityDefinitionFactory $definition_factory = null, ?McpPolicy $mcp_policy = null ) {
 		$this->tool_provider      = $tool_provider ?? new ToolProvider();
 		$this->definition_factory = $definition_factory ?? new AbilityDefinitionFactory();
-		$this->policy             = $policy;
+		$this->mcp_policy         = $mcp_policy;
 	}
 
 	/**
@@ -45,11 +47,13 @@ class AbilityRegistrar {
 			return;
 		}
 
+		$category = MCPConfig::get_ability_category();
+
 		\wp_register_ability_category(
-			'saltus-framework',
+			$category['id'],
 			[
-				'label'       => 'Saltus Framework',
-				'description' => 'Saltus Framework content modeling and administration abilities.',
+				'label'       => $category['label'],
+				'description' => $category['description'],
 			]
 		);
 	}
@@ -84,13 +88,13 @@ class AbilityRegistrar {
 	}
 
 	/**
-	 * Check whether a tool is enabled based on the model REST policy.
+	 * Check whether a tool is enabled based on the MCP policy.
 	 *
 	 * @param ToolInterface $tool  The tool to check.
 	 * @return bool
 	 */
 	private function is_enabled_tool( ToolInterface $tool ): bool {
-		if ( ! $this->policy ) {
+		if ( ! $this->mcp_policy ) {
 			return true;
 		}
 
@@ -103,6 +107,6 @@ class AbilityRegistrar {
 			return true;
 		}
 
-		return $this->policy->has_capability( $requirement->get_capability(), $requirement->get_model_type() );
+		return $this->mcp_policy->has_capability( $requirement->get_capability(), $requirement->get_model_type() );
 	}
 }

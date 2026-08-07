@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Infrastructure\Services\Assets;
 
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 
+/**
+ * @api
+ */
 class Asset implements Service {
 
 	/**

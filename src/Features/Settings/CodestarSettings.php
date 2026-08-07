@@ -8,8 +8,9 @@ use Saltus\WP\Framework\Infrastructure\Service\{
 final class CodestarSettings implements Processable {
 
 	/**
-	 * @var string $name The name of the custom post type (CPT)
-	 */
+ * @var string $name The name of the custom post type (CPT)
+ * @api
+ */
 	private $name;
 
 	/**

@@ -1,17 +1,18 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: 2.0.0 (released 2026-06-30)
-- Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering.
-- WordPress-native MCP/Abilities surface with 18 tools (9 Phase 1 + 8 Phase 2 + health)
-- Phase 2 REST API complete: 9 routes registered in `saltus-framework/v1/`
+- Version: `package.json` bumped to 1.5.0 (2026-08-07); `CHANGELOG.md` reconciliation and relationship to the `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
+- Phases 1–7 delivered. Phase 8 scope is not yet defined.
+- Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance
+- WordPress-native MCP/Abilities surface with 20 tools
+- REST API: 17 routes registered in `saltus-framework/v1/` across 11 controllers
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
-- PHPStan Level 7 clean across the configured analysis set as of 2026-07-02, including the asset loading helper path
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
+- MCP namespace/category/prefix now filterable via MCPConfig utility class (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix)
+- MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from the old saltus_rest array to a per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
-- 226 PHPUnit tests passing (639 assertions), PHPStan Level 7 clean across the configured analysis set
-- **v2.0.0 released 2026-06-30** — MCP, REST API, and Phase 3 shipped
+- 347 PHPUnit tests passing (934 assertions), PHPStan Level 7 clean across the configured analysis set
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
 
@@ -150,7 +151,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 | **Docker image** | Skipped with standalone server path |
 | **GitHub Action** | Skipped with standalone server path |
 | **VS Code extension** | Future WordPress-native MCP client integration |
-| **Documentation site** | Source pages added at `docs/MCP.md`, `docs/MCP-CLIENTS.md`, and generated `docs/MCP-ABILITIES.md` for future `docs.saltus.dev/mcp` |
+| **Documentation site** | VitePress site live at `docs.saltus.dev`, phpDocumentor API docs, GitHub Actions auto-deploy, MCP docs integrated |
 | **MCP Registry listing** | Reassess for WordPress-native abilities |
 | **Support & SLA model** | Paid support contracts, custom tool development |
 
@@ -170,7 +171,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 
 ---
 
-#### 5A — Block Editor Integration (block.json tied to models)
+#### 5A — Block Editor Integration (runtime metadata tied to models)
 
 **Goal:** Auto-register Gutenberg blocks from CPT model config, using the model's meta fields as block attributes. One named block per CPT (e.g., `saltus/movie-list`, `saltus/book-list`).
 
@@ -190,14 +191,14 @@ blocks:
 | `src/Features/Blocks/Blocks.php` | Service class (Service, Conditional, Assembly, ToolContributor) |
 | `src/Features/Blocks/SaltusBlocks.php` | Processable — iterates models, register_block_type() per CPT |
 | `src/Features/Blocks/BlockRenderer.php` | Shared render_callback for list and single blocks |
-| `templates/block-list.php` | Default list block template |
-| `templates/block-single.php` | Default single block template |
+| `templates/blocks/list.php` | Default list block template |
+| `templates/blocks/single.php` | Default single block template |
 | `assets/Feature/Blocks/editor.js` | Editor script (InspectorControls) |
 | `assets/Feature/Blocks/style.css` | Block styles |
 
 **How it wires in:**
 - `Core::get_service_classes()` adds `'blocks' => Blocks::class`
-- `ModelFactory::process_services()` reads `config['blocks']` → `Blocks::make()` → `process()`
+- `Blocks` reads all post type models from `Modeler` and registers enabled definitions on `init`
 - Each call to `register_block_type()` uses a metadata array (no static block.json needed)
 - Meta fields from model `meta` config auto-mapped as block attributes via `MetaFieldProvider`
 - Dedicated MCP tool `list_block_models` contributed by `Blocks::get_mcp_tools()`
@@ -205,13 +206,13 @@ blocks:
 
 | Item | Status |
 |------|--------|
-| Blocks feature service + SaltusBlocks implementation | ○ Pending |
-| BlockRenderer with default render callbacks | ○ Pending |
-| Default list/single block templates | ○ Pending |
-| Editor script and styles | ○ Pending |
-| MCP tool for block model discovery | ○ Pending |
-| PHPUnit tests for block registration | ○ Pending |
-| Integration with existing ModelRestPolicy | ○ Pending |
+| Blocks feature service + SaltusBlocks implementation | ✓ Done |
+| BlockRenderer with default render callbacks | ✓ Done |
+| Default list/single block templates | ✓ Done |
+| Editor script and styles | ✓ Done |
+| MCP tool for block model discovery | ✓ Done |
+| PHPUnit tests for block registration | ✓ Done |
+| Integration with existing ModelRestPolicy | ✓ Done |
 
 **Exit criteria:** `saltus/{cpt_name}-list` and `saltus/{cpt_name}-single` blocks are registered for every CPT with `blocks: true`. Block attributes reflect the model's meta field config. List block queries and renders posts; single block renders a post with all meta.
 
@@ -221,7 +222,7 @@ blocks:
 
 **Goal:** `wp saltus <command>` mapping every MCP tool to a WP-CLI command, using the same shared service classes.
 
-**Command tree (7 grouped command classes):**
+**Command tree (8 grouped command classes):**
 
 | Command | MCP Tool | Shared Service |
 |---------|----------|----------------|
@@ -241,6 +242,8 @@ blocks:
 | `wp saltus settings update <post_type> <json>` | `update_settings` | `SettingsManager` |
 | `wp saltus reorder <json>` | `reorder_posts` | `ReorderPostsService` |
 | `wp saltus meta list [<post_type>]` | `list_meta_fields` / `get_meta_fields` | `MetaFieldProvider` |
+| `wp saltus meta update <post_type> <post_id> <json>` | `update_meta_fields` | `MetaFieldProvider` |
+| `wp saltus block list` | `list_block_models` | `SaltusBlocks` |
 
 **Files:**
 
@@ -254,6 +257,7 @@ blocks:
 | `src/Features/WpCli/Commands/SettingsCommand.php` | `wp saltus settings {get\|update}` |
 | `src/Features/WpCli/Commands/MetaCommand.php` | `wp saltus meta {list\|get}` |
 | `src/Features/WpCli/Commands/ReorderCommand.php` | `wp saltus reorder` |
+| `src/Features/WpCli/Commands/BlockCommand.php` | `wp saltus block list` |
 
 **Output formatting:** `--format=table|json|yaml` flag on all list/detail commands. Table is default for interactive, JSON for scripting.
 
@@ -261,16 +265,17 @@ blocks:
 
 | Item | Status |
 |------|--------|
-| WpCli feature service | ○ Pending |
-| SaltusCommand (health + help) | ○ Pending |
-| ModelCommand (list, get) | ○ Pending |
-| PostCommand (list, get, create, update, delete, duplicate, export) | ○ Pending |
-| TermCommand (list, create) | ○ Pending |
-| SettingsCommand (get, update) | ○ Pending |
-| MetaCommand (list, get) | ○ Pending |
-| ReorderCommand | ○ Pending |
-| `composer docs:wpcli` script | ○ Pending |
-| PHPUnit tests with WP_CLI stubs | ○ Pending |
+| WpCli feature service | ✓ Done |
+| SaltusCommand (health + help) | ✓ Done |
+| ModelCommand (list, get) | ✓ Done |
+| PostCommand (list, get, create, update, delete, duplicate, export) | ✓ Done |
+| TermCommand (list, create) | ✓ Done |
+| SettingsCommand (get, update) | ✓ Done |
+| MetaCommand (list, get, update) | ✓ Done |
+| ReorderCommand | ✓ Done |
+| BlockCommand | ✓ Done |
+| `composer docs:wpcli` script | ✓ Done |
+| PHPUnit tests with WP_CLI stubs | ✓ Done |
 
 **Exit criteria:** Every MCP tool has a corresponding `wp saltus` subcommand. Commands use shared service classes (not REST dispatch). Output formatting supports `--format=table|json|yaml`. Test suite covers all command groups.
 
@@ -318,13 +323,13 @@ frontend:
 
 | Item | Status |
 |------|--------|
-| Frontend feature service | ○ Pending |
-| SaltusFrontend shortcode registration | ○ Pending |
-| Default list template | ○ Pending |
-| Default single template | ○ Pending |
-| Shortcode attribute parsing (limit, orderby, taxonomy, terms, etc.) | ○ Pending |
-| Template override resolution (config → theme → default) | ○ Pending |
-| PHPUnit tests for shortcode rendering | ○ Pending |
+| Frontend feature service | ✓ Done |
+| SaltusFrontend shortcode registration | ✓ Done |
+| Default list template | ✓ Done |
+| Default single template | ✓ Done |
+| Shortcode attribute parsing (limit, orderby, taxonomy, terms, etc.) | ✓ Done |
+| Template override resolution (config → theme → default) | ✓ Done |
+| PHPUnit tests for shortcode rendering | ✓ Done |
 
 **Exit criteria:** `[saltus_cpt type="movie"]` renders a styled list of posts. `[saltus_cpt type="movie" view="single" id="123"]` renders a single post with meta. Templates are overridable per model. Output is escaped and safe.
 
@@ -338,43 +343,51 @@ frontend:
 
 | Section | Current State | Target |
 |---------|---------------|--------|
-| `features` parameter table | `(More Info Soon)` | Complete table of all 7 features with config keys and one-liners |
-| `labels` parameter table | `(More Info Soon)` | Full reference: `has_one`, `has_many`, `text_domain`, `featured_image`, `overrides.ui`, `overrides.messages`, `overrides.bulk_messages`, `overrides.labels` |
-| `meta` parameter table | `(More Info Soon)` | Metabox structure: sections, fields, Codestar field types, REST API registration |
-| `settings` parameter table | `(More Info Soon)` | Settings page structure: page args, sections, fields, parent menu, tabs |
-| CPT example file | `(Soon)` | Complete YAML + PHP model with all common parameters |
-| Taxonomy example file | `(Soon)` | Complete YAML + PHP taxonomy model with associations |
+| `features` parameter table | Complete | Table of all 7 features with config keys and one-liners |
+| `labels` parameter table | Complete | Full reference: `has_one`, `has_many`, `text_domain`, `featured_image`, and overrides |
+| `meta` parameter table | Complete | Metabox structure: sections, fields, Codestar field types, REST API registration |
+| `settings` parameter table | Complete | Settings page structure: page args, sections, fields, parent menu, tabs |
+| CPT example file | Complete | Complete PHP model with all common parameters |
+| Taxonomy example file | Complete | Complete PHP taxonomy model with associations |
 
 **New doc files:**
 
 | File | Content |
 |------|---------|
-| `docs/BLOCKS.md` | Block config reference, template customization, attributes guide, editor integration |
-| `docs/WPCLI.md` | Full command reference with examples (auto-generated marker from `composer docs:wpcli`) |
-| `docs/FRONTEND.md` | Shortcode API, template variables, customization guide, attribute reference |
-| `docs/FEATURES.md` | Deep feature reference extracted from README: admin_cols, admin_filters, draganddrop, duplicate, quick_edit, remember_tabs, single_export |
+| `docs/guides/blocks.md` | Block config reference, template customization, attributes guide, editor integration |
+| `docs/guides/wp-cli.md` | Full command reference with examples, auto-generated by `composer docs:wpcli` |
+| `docs/guides/frontend.md` | Shortcode API, template variables, and customization guide |
+| `docs/guides/features.md` | Deep feature and model reference |
 
 **Auto-generation:** `composer docs:wpcli` script in `bin/generate-wpcli-docs.php` to generate WP-CLI command tables (parallel to `bin/generate-mcp-docs.php`).
 
+**Docs site infrastructure (new):** VitePress static site at `docs.saltus.dev` + phpDocumentor API docs + GitHub Actions auto-deploy.
+
 | Item | Status |
 |------|--------|
-| README features table | ○ Pending |
-| README labels reference | ○ Pending |
-| README meta structure | ○ Pending |
-| README settings structure | ○ Pending |
-| README CPT example | ○ Pending |
-| README taxonomy example | ○ Pending |
-| docs/BLOCKS.md | ○ Pending |
-| docs/WPCLI.md (auto-generated) | ○ Pending |
-| docs/FRONTEND.md | ○ Pending |
-| docs/FEATURES.md | ○ Pending |
-| bin/generate-wpcli-docs.php | ○ Pending |
+| VitePress site config + landing page | ✓ Done |
+| phpDocumentor config (phpdoc.dist.xml) | ✓ Done |
+| @api annotations on 84 public classes/interfaces | ✓ Done |
+| GitHub Actions workflow (build + deploy to Pages) | ✓ Done |
+| Docs content: getting-started, architecture, build, features, MCP | ✓ Done |
+| `composer docs:all` script (MCP + WP-CLI + API) | ✓ Done |
+| README features table | ✓ Done |
+| README labels reference | ✓ Done |
+| README meta structure | ✓ Done |
+| README settings structure | ✓ Done |
+| README CPT example | ✓ Done |
+| README taxonomy example | ✓ Done |
+| docs/guides/blocks.md | ✓ Done |
+| docs/guides/wp-cli.md (auto-generated) | ✓ Done |
+| docs/guides/frontend.md | ✓ Done |
+| docs/guides/features.md | ✓ Done |
+| bin/generate-wpcli-docs.php | ✓ Done |
 
-**Exit criteria:** Zero `(More Info Soon)` or `(Soon)` placeholders in README. All four new features have dedicated doc files. Feature reference is extracted to `docs/FEATURES.md`. WP-CLI docs are auto-generated.
+**Exit criteria:** README placeholders filled, docs.saltus.dev backed by VitePress + API docs and GitHub Actions deployment, Blocks and Features guides published, and WP-CLI docs auto-generated. Frontend documentation ships with 5C.
 
 ---
 
-*Plugin Generator moved to its own repository — see [docs/PLUGIN_GENERATOR_ROADMAP.md](./PLUGIN_GENERATOR_ROADMAP.md).*
+*Plugin Generator moved to its own repository — see the [framework-demo repository](https://github.com/SaltusDev/framework-demo).*
 
 ## Framework Core Roadmap
 
@@ -382,9 +395,11 @@ frontend:
 - ✓ Address remaining PHPStan errors (2 pre-existing in ResourceProvider) — resolved 2026-07-01.
 - ✓ Code-review hardening pass — export isolation, lifecycle hook file registration, fail-closed MCP permissions, structured settings sanitization, JSON fallback, and AssetLoader PHPStan coverage resolved 2026-07-02.
 - ✓ Service extraction — inline REST controller logic (WXR export, meta field normalization, post reorder, settings CRUD) moved into dedicated shared service classes and wired into both REST controllers and MCP tools; defensive guards for null post, private property access, taxonomy object, and asset data types — resolved 2026-07-03.
-- Continue maintaining automated testing suites (208 tests, 598 assertions as of 2026-07-05).
+- Continue maintaining automated testing suites (347 tests, 934 assertions as of 2026-08-07).
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
-- **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion.
+- ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
+- Reconcile version numbering across `package.json` (now 1.5.0), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- Define Phase 8 scope.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -395,3 +410,105 @@ frontend:
 ## Tracking
 - Check GitHub Issues for active sprint items.
 - Active development on `feature/mcp-v1` branch.
+
+
+
+### Phase 6: AI Governance & Editorial Review (v2.2+)
+
+**Theme:** Add a first-class AI governance layer — context control, editorial review queues, and inside-admin AI assistants — on top of the existing MCP/Abilities foundation.
+
+Saltus already has model-defined CPTs, REST routes, MCP/Abilities tools, capability checks, audit logging, rate limits, health checks, and per-model `mcp_tools`/`show_in_mcp` gates. Phase 6 adds the higher-level product layer.
+
+---
+
+#### 6A — Context Control Center
+
+**Goal:** A Saltus model config area where a plugin defines AI governance rules that MCP tools receive before executing.
+
+**Config shape as planned** (shipped without the `config:` wrapper — `ai_context` is a top-level model key; see [AI Context Guide](guides/ai-context.md)):
+```yaml
+config:
+  ai_context:
+    brand_voice: 'Clear, practical, expert, no hype.'
+    audiences: ['developers', 'site editors']
+    field_rules:
+      post_content:
+        - 'Maintain technical accuracy'
+        - 'Never include affiliate links'
+    allowed_statuses: ['draft', 'pending']
+    forbidden_actions: ['delete', 'publish']
+    require_human_review: true
+```
+
+| Item | Status |
+|------|--------|
+| `ai_context` config schema definition and validation | ✓ Done |
+| `AiContextProvider` service — parses and serves ai_context per model | ✓ Done |
+| MCP tool `get_context` — exposes ai_context to external agents | ✓ Done |
+| Context injection into mutating MCP tools (create/update/delete) | ✓ Done |
+| Filter: `saltus/framework/ai_context/defaults` | ✓ Done |
+| PHPUnit tests for context validation and injection | ✓ Done |
+
+**Exit criteria:** Models with `config.ai_context` expose a `saltus/get-context` MCP tool. Mutating MCP tools receive context rules and can reject operations that violate them.
+
+---
+
+#### 6B — Editorial Review Queue
+
+**Theme:** Agent-proposed changes go through a human approval workflow instead of publishing directly.
+
+**Flow:**
+```
+AI write -> draft/pending/revision -> human approval -> publish
+```
+
+| Item | Status |
+|------|--------|
+| `ProposalService` (AI change proposals) — stores agent writes as pending change records | ✓ Done |
+| `EditorialReviewController` — REST endpoints for listing/reviewing/approving/rejecting proposals | ✓ Done |
+| Review dashboard UI (admin screen with diff view) | ✓ Done |
+| Audit log integration — full chain from proposal to approval/rejection | ✓ Done |
+| Default all mutating MCP tools to draft/pending (configurable) | ✓ Done |
+| PHPUnit tests for proposal lifecycle | ✓ Done |
+
+**Exit criteria:** Mutating MCP tools create pending change records by default. A review admin screen lists proposals with diff view. Approved proposals are published; rejected ones are discarded. Audit log records the full chain.
+
+---
+
+#### 6C — Inside-Admin AI Assistants
+
+**Theme:** AI operates from inside WordPress admin — buttons beside metabox fields, inline suggestions, and validation.
+
+| Item | Status |
+|------|--------|
+| `AiAssistantProvider` service — registers meta box assistants per model | ✓ Done |
+| Admin JS entry point (`assets/Feature/AiAssistant/editor.js`) | ✓ Done |
+| Assistant actions: improve title, summarize, generate excerpt, suggest terms | ✓ Done |
+| Brand rule validation button for post content | ✓ Done |
+| REST endpoints for assistant actions (reuse existing permission checks) | ✓ Done |
+| Filter: `saltus/framework/ai/assistant_actions` | ✓ Done |
+| PHPUnit tests for assistant REST endpoints | ✓ Done |
+
+**Exit criteria:** Models with `config.ai_context` show AI assistant buttons in the admin. Clicking "Improve title" or "Summarize" calls a REST endpoint and updates the field. Brand rule validation highlights content that violates configured rules. ✓ Done 2026-08-06
+
+---
+
+**Exit criteria (Phase 6 overall):** AI governance is configurable per model via `ai_context`. Mutating MCP tools respect context rules and default to review-queue creation. Inside-admin assistants are operational for configured models. All features are tested. ✓ Done 2026-08-06
+
+---
+
+### Phase 7: Advanced Dependency Injection & Container Hardening (v2.3+)
+
+**Theme:** Upgrade the framework's dependency injection container to support reflection-based parameter resolution (autowiring) for third-party services, avoiding standard constructor mapping errors.
+
+| Item | Status |
+|------|--------|
+| `ReflectionInstantiator` class implementing `Instantiator` | ✓ Done |
+| Positional constructor parameter resolution and dependency matching | ✓ Done |
+| Constructor parameter default value fallbacks | ✓ Done |
+| Clean validation and exception flow for unresolved parameters | ✓ Done |
+| Remove requirement for `Assembly::make` boilerplate on custom services | ✓ Done |
+| Container autowiring unit tests (`tests/Unit/Infrastructure/Container/`) | ✓ Done |
+| Developer documentation update for custom service constructors | ✓ Done |
+
+**Exit criteria:** Developers can register custom services in the container with standard typed/positional constructor arguments. The container uses PHP Reflection to map parameter names to container keys, falling back to default arguments or throwing descriptive runtime exceptions when dependencies cannot be resolved. ✓ Done 2026-08-06

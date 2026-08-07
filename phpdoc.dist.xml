@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdocumentor
+    configVersion="3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://www.phpdoc.org"
+>
+    <title>Saltus Framework</title>
+    <paths>
+        <output>docs/public/api</output>
+        <cache>build/phpdoc-cache</cache>
+    </paths>
+    <version number="latest">
+        <api>
+            <source dsn=".">
+                <path>src</path>
+            </source>
+            <markers>
+                <marker>TODO</marker>
+                <marker>FIXME</marker>
+            </markers>
+            <default-package-name>Saltus Framework</default-package-name>
+            <include-source>true</include-source>
+            <visibility>public</visibility>
+        </api>
+    </version>
+</phpdocumentor>

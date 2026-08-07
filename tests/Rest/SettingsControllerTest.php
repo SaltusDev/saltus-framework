@@ -116,7 +116,9 @@ class SettingsControllerTest extends TestCase {
 				'book' => $this->createModelMock(
 					[
 						'show_in_rest' => true,
-						'saltus_rest'  => [ 'settings' => false ],
+					],
+					[
+						'settings' => [ 'show_in_rest' => false ],
 					]
 				),
 			]
@@ -267,16 +269,16 @@ class SettingsControllerTest extends TestCase {
 	 * @param array<string, mixed> $options
 	 * @return Model&object{options: array<string, mixed>}
 	 */
-	private function createModelMock( array $options ) {
-		return new class( $options ) implements Model {
+	private function createModelMock( array $options, array $config = [] ) {
+		return new class( $options, $config ) implements Model {
 			/** @var array<string, mixed> */
 			public array $options;
+			/** @var array<string, mixed> */
+			public array $config;
 
-			/**
-			 * @param array<string, mixed> $options
-			 */
-			public function __construct( array $options ) {
+			public function __construct( array $options, array $config = [] ) {
 				$this->options = $options;
+				$this->config  = $config;
 			}
 
 			public function setup(): void {}
@@ -295,6 +297,10 @@ class SettingsControllerTest extends TestCase {
 
 			public function get_args(): array {
 				return [];
+			}
+
+			public function get_config(): array {
+				return $this->config;
 			}
 		};
 	}

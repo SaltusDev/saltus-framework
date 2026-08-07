@@ -85,7 +85,7 @@ class UpdateMetaFields extends RestTool {
 
 		return $this->request(
 			'PUT',
-			'/saltus-framework/v1/meta/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) . '/' . (int) ( $args['post_id'] ?? 0 ),
+			$this->mcp_route( '/meta/' . rawurlencode( (string) ( $args['post_type'] ?? '' ) ) . '/' . (int) ( $args['post_id'] ?? 0 ) ),
 			[],
 			$body
 		);

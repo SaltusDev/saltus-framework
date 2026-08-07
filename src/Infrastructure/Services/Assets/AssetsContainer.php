@@ -5,6 +5,9 @@ namespace Saltus\WP\Framework\Infrastructure\Services\Assets;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\Infrastructure\Container\SimpleContainer;
 
+/**
+ * @api
+ */
 class AssetsContainer extends SimpleContainer implements Service {
 
 	/**

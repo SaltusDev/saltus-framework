@@ -15,6 +15,7 @@ use Saltus\WP\Framework\Infrastructure\Container\{
  * array access.
  *
  * @deprecated 0.1.1 Use Infrastructure/Container
+ * @api
  */
 final class App
 	extends ServiceContainer

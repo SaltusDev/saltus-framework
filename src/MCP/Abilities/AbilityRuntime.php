@@ -4,13 +4,21 @@ namespace Saltus\WP\Framework\MCP\Abilities;
 use Saltus\WP\Framework\MCP\Audit\AuditEntry;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\Cache\TransientCache;
+use Saltus\WP\Framework\MCP\Middleware\MiddlewarePipeline;
+use Saltus\WP\Framework\MCP\Middleware\RequestContext;
 use Saltus\WP\Framework\MCP\RateLimiter\RateLimiter;
 use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Validation\Validator;
+use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
+use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 
 /**
  * Coordinates validation, rate limiting, REST dispatch, caching, and audit logging for MCP tool execution.
+ *
+ * Now delegates to the middleware pipeline when available; falls back to
+ * the original inline orchestration for backward compatibility.
+ * @api
  */
 class AbilityRuntime {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
@@ -18,31 +26,162 @@ class AbilityRuntime {
 	private AuditLogger $audit_logger;
 	private RateLimiter $rate_limiter;
 	private TransientCache $cache;
+	private ?MiddlewarePipeline $pipeline;
+	private ?AiContextProvider $ai_context;
+	private ?ProposalService $proposals;
 
 	/**
 	 * @param AuditLogger|null $audit_logger  Optional audit logger.
 	 * @param RateLimiter|null $rate_limiter  Optional rate limiter.
 	 * @param TransientCache|null $cache  Optional cache backend.
+	 * @param MiddlewarePipeline|null $pipeline  Optional middleware pipeline.
 	 */
 	public function __construct(
 		?AuditLogger $audit_logger = null,
 		?RateLimiter $rate_limiter = null,
-		?TransientCache $cache = null
+		?TransientCache $cache = null,
+		?MiddlewarePipeline $pipeline = null,
+		?AiContextProvider $ai_context = null,
+		?ProposalService $proposals = null
 	) {
 		$this->audit_logger = $audit_logger ?? new AuditLogger();
 		$this->rate_limiter = $rate_limiter ?? new RateLimiter();
 		$this->cache        = $cache ?? new TransientCache();
+		$this->pipeline     = $pipeline;
+		$this->ai_context   = $ai_context;
+		$this->proposals    = $proposals;
 	}
 
 	/**
 	 * Validate, rate-limit, dispatch, cache, and audit an MCP tool execution.
 	 *
+	 * When a middleware pipeline is configured, delegates to it. Otherwise
+	 * falls back to the original sequential orchestration.
+	 *
 	 * @param ToolInterface $tool  The tool to execute.
 	 * @param array<string, mixed> $args  Arguments to pass to the tool.
 	 * @return array<string, mixed>|\WP_Error  Tool result or error.
 	 */
-	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Runtime coordinates validation, rate limiting, dispatch, cache, and audit.
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh
 	public function execute( ToolInterface $tool, array $args ) {
+		if ( $this->pipeline !== null ) {
+			return $this->execute_via_pipeline( $tool, $args );
+		}
+
+		return $this->execute_legacy( $tool, $args );
+	}
+
+	/**
+	 * Execute the tool via the middleware pipeline.
+	 *
+	 * @param ToolInterface $tool
+	 * @param array<string, mixed> $args
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh -- Pipeline setup, dispatch, and result handling.
+	private function execute_via_pipeline( ToolInterface $tool, array $args ) {
+		$context = new RequestContext();
+		$context->set_args( $args );
+		$context->set_tool_metadata( [
+			'name'           => $tool->get_name(),
+			'parameters'     => $tool->get_parameters(),
+			'has_permission' => [ $tool, 'has_permission' ],
+			'capability'     => $tool instanceof RestBackedToolInterface && $tool->get_rest_capability() !== null
+				? $tool->get_rest_capability()->get_capability()
+				: 'edit_posts',
+		] );
+
+		$cache_ttl = $tool instanceof RestBackedToolInterface ? $tool->cache_ttl() : 300;
+		$context->set_attribute( 'cache_ttl', $cache_ttl );
+
+		$result = $this->pipeline->execute(
+			$context,
+			function ( RequestContext $ctx ) use ( $tool, $args ) {
+				if ( ! $tool->has_permission( $args ) ) {
+					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::forbidden(
+						'edit_posts',
+						\__( 'You do not have permission to use this tool.', 'saltus-framework' )
+					);
+				}
+				if ( $this->ai_context !== null ) {
+					$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
+					if ( $governance_error instanceof \WP_Error ) {
+						return $governance_error;
+					}
+				}
+				if ( $this->proposals !== null && $this->proposals->should_queue( $tool->get_name() ) ) {
+					return $this->proposals->propose( $tool->get_name(), $args );
+				}
+				if ( ! $tool instanceof RestBackedToolInterface ) {
+					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::internal_error(
+						\__( 'This tool does not support REST dispatch.', 'saltus-framework' )
+					);
+				}
+
+				$request = $tool->build_rest_request( $args );
+				if ( $request === null ) {
+					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::internal_error(
+						\__( 'This Saltus ability is registered for discovery only until a native dispatcher is available.', 'saltus-framework' )
+					);
+				}
+
+				if ( ! \function_exists( 'rest_do_request' ) ) {
+					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::internal_error(
+						\__( 'WordPress REST dispatch is not available.', 'saltus-framework' )
+					);
+				}
+
+				$ctx->set_rest_request( $request );
+
+				try {
+					$response = \rest_do_request( $request );
+
+					/** @phpstan-ignore-next-line rest_do_request can return WP_Error (WordPress stubs may not include it in the return type) */
+					if ( \is_wp_error( $response ) ) {
+						return \Saltus\WP\Framework\MCP\Error\ErrorResponse::dispatch_error( $response );
+					}
+
+					$status = (int) $response->get_status();
+					$data   = $response->get_data();
+					$result = \is_array( $data ) ? $data : [ 'result' => $data ];
+
+					if ( $status >= 400 ) {
+						$error_code = \is_array( $data ) ? (string) ( $data['code'] ?? 'rest_error' ) : 'rest_error';
+						$error_msg  = \is_array( $data ) ? (string) ( $data['message'] ?? 'REST error' ) : 'REST error';
+
+						return new \WP_Error( $error_code, $error_msg, [ 'status' => $status ] );
+					}
+
+					$ctx->set_response( $response );
+
+					return $result;
+				} catch ( \Throwable $e ) {
+					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::internal_error(
+						$e->getMessage(),
+						\__( 'An unexpected error occurred during tool execution.', 'saltus-framework' )
+					);
+				}
+			}
+		);
+
+		if ( $result instanceof \WP_REST_Response ) {
+			$data = $result->get_data();
+			return \is_array( $data ) ? $data : [ 'result' => $data ];
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Original sequential execution (backward compatibility path).
+	 *
+	 * @param ToolInterface $tool
+	 * @param array<string, mixed> $args
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.TooHigh
+	// phpcs:ignore Generic.Metrics.CyclomaticComplexity.MaxExceeded
+	private function execute_legacy( ToolInterface $tool, array $args ) {
 		$entry = new AuditEntry( $tool->get_name(), $args, $this->identifier() );
 
 		$valid = Validator::validate( $args, $tool->get_parameters() );
@@ -52,6 +191,19 @@ class AbilityRuntime {
 			return $error;
 		}
 
+		if ( ! $tool->has_permission( $args ) ) {
+			$error = $this->error( 'forbidden', 'You do not have permission to use this tool.', 403 );
+			$this->record_error( $entry, 'error', $error );
+			return $error;
+		}
+
+		if ( $this->ai_context !== null ) {
+			$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
+			if ( $governance_error instanceof \WP_Error ) {
+				$this->record_error( $entry, 'error', $governance_error );
+				return $governance_error;
+			}
+		}
 		$rate_limit = $this->rate_limiter->check( $this->identifier() );
 		if ( ! $rate_limit->allowed ) {
 			$error = $this->error(
@@ -66,6 +218,10 @@ class AbilityRuntime {
 			);
 			$this->record_error( $entry, 'rate_limited', $error );
 			return $error;
+		}
+
+		if ( $this->proposals !== null && $this->proposals->should_queue( $tool->get_name() ) ) {
+			return $this->proposals->propose( $tool->get_name(), $args );
 		}
 
 		if ( ! $tool instanceof RestBackedToolInterface ) {

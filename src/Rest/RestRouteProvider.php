@@ -4,6 +4,9 @@ namespace Saltus\WP\Framework\Rest;
 
 use Saltus\WP\Framework\Modeler;
 
+/**
+ * @api
+ */
 interface RestRouteProvider {
 
 	/**
