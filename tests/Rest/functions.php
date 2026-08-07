@@ -633,8 +633,13 @@ if ( ! function_exists( 'export_wp' ) ) {
 }
 
 if ( ! function_exists( 'get_current_user_id' ) ) {
+	/**
+	 * Defaults to 1 so existing tests keep their authenticated context. Set
+	 * $wp_current_user_id to 0 to exercise an anonymous visitor.
+	 */
 	function get_current_user_id(): int {
-		return 1;
+		global $wp_current_user_id;
+		return $wp_current_user_id === null ? 1 : (int) $wp_current_user_id;
 	}
 }
 
