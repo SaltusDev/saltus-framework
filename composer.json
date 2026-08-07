@@ -70,9 +70,11 @@
 		"docs:mcp": "php bin/generate-mcp-docs.php",
 		"docs:api": "php phpDocumentor.phar -c phpdoc.dist.xml",
 		"docs:wpcli": "php bin/generate-wpcli-docs.php",
+		"docs:webmcp": "php bin/generate-webmcp-docs.php",
 		"docs:all": [
 			"@docs:mcp",
 			"@docs:wpcli",
+			"@docs:webmcp",
 			"@docs:api"
 		]
 	},
