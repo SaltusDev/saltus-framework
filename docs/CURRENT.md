@@ -1,17 +1,17 @@
 # Current: Live Working State
 
 ## Working
-- Define Phase 8 scope and next-cycle theme @since 2026-08-07
 - Docs accuracy review: counts, config keys, and route pages reconciled against source @since 2026-08-07
 - Reconcile the historical `v1.4.2`/`v2.0.0` tag relationship with the current version line (package.json now at 1.6.0) @since 2026-08-07
 
 ## Next
-- Author the Phase 8 delivery plan on the roadmap
+- Phase 8A implementation: `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools, `WebMcpController` manifest/execute routes, and `assets/Feature/WebMcp/bridge.js`
 
 ## Blocked
 - None
 
 ## Recent Changes
+- Phase 8 scoped: WebMCP browser surface. Research recorded in `docs/discovery/webmcp.md` (standards status pulled from the Chrome Status API, Cloudflare's dual consumer/producer implementation, Shopify's 11-tool storefront rollout, the WebMCP Bridge plugin's cache/leakage findings, and the 0%-adoption survey data). Roadmap Phase 8 added with 8A frontend read-only tools and 8B admin surface plus proposal-queue-governed writes. Three scope decisions: project tool descriptors from the existing `ToolInterface` registry rather than hand-authoring a parallel set, ship read-only first because all 20 current abilities gate on `edit_posts` and give an anonymous visitor nothing, and route all future writes through Phase 6B's `ProposalService::should_queue()` since WebMCP has no settled confirmation or auth model. @since 2026-08-07
 - Version bumped 1.5.0 → 1.6.0 (minor) via the automated version cycle; annotated `v1.6.0` tag created. `AiAssistantProvider` now generates unhandled assistant actions through the WordPress AI Client (`AiClient` + `ActionPrompts`), composes model `ai_context` into the system instruction, fills missing title/content/excerpt from the post, and adds the `saltus/framework/ai/prompt_builder` filter. Health (`ai.client_available`, `ai.connectors_available`) and `wp saltus` report AI availability. Regression coverage added across AiAssistantTest + functions.php stubs and a health-payload assertion. Full suite green: 355 tests, 956 assertions. @since 2026-08-07
 - Version bumped 1.4.2 → 1.5.0 (minor) via the automated version cycle; annotated `v1.5.0` tag created. `DuplicateControllerTest` flake fix (storage flag now reset in a `finally` block) included in the cycle commit. @since 2026-08-07
 - Documented three REST/MCP gating behaviors that the docs previously described incorrectly: capability config sections live at the top level of the model array (not under a `config` key), an array section without a `show_in_rest`/`show_in_mcp` key resolves to **enabled** and overrides the master option rather than falling back to it, and the reorder capability is gated from `features.drag_and_drop` while the admin UI is enabled via `features.draganddrop`. Verified against `ModelRestPolicy`/`McpPolicy`. @since 2026-08-07

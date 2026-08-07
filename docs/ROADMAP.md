@@ -2,7 +2,7 @@
 
 ## Current Status
 - Version: `package.json` bumped to 1.6.0 (2026-08-07); `CHANGELOG.md` carries a 1.6.0 release section; relationship to the historical `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
-- Phases 1–7 delivered. Phase 8 scope is not yet defined.
+- Phases 1–7 delivered. Phase 8 (WebMCP browser surface) scoped 2026-08-07; implementation not started. See [Discovery: WebMCP](discovery/webmcp.md).
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance
 - WordPress-native MCP/Abilities surface with 20 tools
 - REST API: 17 routes registered in `saltus-framework/v1/` across 11 controllers
@@ -400,7 +400,8 @@ frontend:
 - ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
 - ✓ **Phase 6C AI client generation** — unhandled assistant actions generate through the WordPress AI Client; `saltus/framework/ai/prompt_builder` filter; AI availability reported in health + `wp saltus` — delivered 2026-08-07.
 - Reconcile version numbering across `package.json` (now 1.6.0), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
-- Define Phase 8 scope.
+- ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B; research recorded in [Discovery: WebMCP](discovery/webmcp.md) — scoped 2026-08-07.
+- **Phase 8A implementation** — `WebMcp` feature service, `ManifestBuilder` projection from the existing tool registry, five public read tools, and the `bridge.js` namespace-probing loader.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -516,3 +517,153 @@ AI write -> draft/pending/revision -> human approval -> publish
 | Developer documentation update for custom service constructors | ✓ Done |
 
 **Exit criteria:** Developers can register custom services in the container with standard typed/positional constructor arguments. The container uses PHP Reflection to map parameter names to container keys, falling back to default arguments or throwing descriptive runtime exceptions when dependencies cannot be resolved. ✓ Done 2026-08-06
+
+---
+
+### Phase 8: WebMCP Browser Surface (v2.4+)
+
+**Theme:** Project the existing Saltus tool registry into the visitor's browser as WebMCP tools, so an in-browser AI agent can call typed functions instead of scraping model-rendered markup.
+
+Research and rationale: [Discovery: WebMCP](discovery/webmcp.md). Read that first — it records the standards status, the Cloudflare and Shopify implementation patterns this phase borrows from, and the adoption data that bounds the scope.
+
+**Premise:** WebMCP is a *third consumer* of tool definitions Saltus already owns, alongside WordPress-native MCP/Abilities and WP-CLI. The 20 abilities already resolve to 17 REST routes through `RestBackedToolInterface`. This phase adds a browser-side projection of the same definitions plus a small public-safe read tool set — it does not add a parallel tool system.
+
+**Design constraints:**
+- **Degrade to nothing.** Chrome ships no earlier than 157; Safari and Firefox have registered no position. Absence of `document.modelContext` is the common case and must be a silent no-op, not a console error.
+- **One namespace probe.** `document.modelContext` first, `navigator.modelContext` as deprecated fallback, in exactly one place in the bridge. Chrome 149 exposes only the latter; 150+ warns on it.
+- **The browser is an untrusted client.** Every WebMCP invocation re-validates server-side through the existing `src/MCP/Validation` path and the same capability gates as an ability call. `readOnlyHint` is a hint to the agent, never an enforcement mechanism.
+- **No parallel execution path.** Tools dispatch through the existing shared service classes (`MetaFieldProvider`, `SettingsManager`, `ReorderPostsService`, `SaltusSingleExport`) exactly as REST controllers and `wp saltus` commands do.
+- **Follow existing patterns:** `Service`, `Conditional`, `Registerable`, `RestRouteProvider`, `ToolContributor`, `AssetLoadingService`.
+- **Opt-in per model.** Default off. No Saltus site gains a public agent surface without explicit config.
+
+**Config shape (planned):**
+```yaml
+webmcp:
+  enabled: true
+  frontend: true          # register tools on public model views
+  admin: false            # 8B — register tools on wp-admin screens
+  tools:                  # optional allowlist; omit for all public-safe tools
+    - search_content
+    - get_content
+    - list_taxonomy_terms
+```
+
+---
+
+#### 8A — Frontend Read-Only Tool Surface
+
+**Goal:** A visitor's in-browser agent can discover and call read tools for published content on any Saltus model with `webmcp.frontend: true`. No writes, no authenticated data, no admin exposure.
+
+**Why frontend first:** admin agents are already served by MCP/Abilities and WP-CLI. Public visitor-agent access to model content is the net-new capability, and it is the surface with no authentication story to invent.
+
+**Why a new tool set is required:** all 20 existing abilities gate on `edit_posts` or narrower, so projecting them verbatim yields an empty list for an anonymous visitor. 8A ships both the projection mechanism and public-safe read tools scoped to published content.
+
+**New public read tools:**
+
+| Tool | Returns | Backed by |
+|------|---------|-----------|
+| `search_content` | Published posts across WebMCP-enabled post type models, with model, title, excerpt, permalink | `WP_Query`, published + public post status only |
+| `get_content` | One published post with public meta fields resolved | `get_post()` + `MetaFieldProvider` filtered to public fields |
+| `list_content_models` | WebMCP-enabled models with labels and available taxonomies | `Modeler`, filtered by `WebMcpPolicy` |
+| `list_taxonomy_terms` | Terms for a model's public taxonomies, with counts | `get_terms()`, public taxonomies only |
+| `filter_content` | Published posts filtered by taxonomy term, plus page navigation | `WP_Query` + archive permalink |
+
+Each carries `readOnlyHint: true` and `untrustedContentHint: true` — post content is user-generated and must be labelled as such. Descriptions stay inside the agent character budgets recorded in the discovery doc (500 tool description, 150 per parameter, 30 per name, 1.5K output).
+
+**Files:**
+
+| File | Purpose |
+|------|---------|
+| `src/Features/WebMcp/WebMcp.php` | Service class (Service, Conditional, Registerable, RestRouteProvider, ToolContributor) |
+| `src/Features/WebMcp/SaltusWebMcp.php` | Processable — resolves enabled models, enqueues the bridge, localizes the manifest |
+| `src/Features/WebMcp/WebMcpPolicy.php` | Per-model gating: `webmcp.enabled`, `webmcp.frontend`, tool allowlist |
+| `src/Features/WebMcp/PublicFieldFilter.php` | Resolves which meta fields are safe to expose publicly |
+| `src/WebMcp/ManifestBuilder.php` | Serializes `ToolInterface` definitions into WebMCP descriptors |
+| `src/WebMcp/ToolDescriptor.php` | Value object — name, description, `inputSchema`, annotations |
+| `src/MCP/Tools/Public/SearchContent.php` | `search_content` |
+| `src/MCP/Tools/Public/GetContent.php` | `get_content` |
+| `src/MCP/Tools/Public/ListContentModels.php` | `list_content_models` |
+| `src/MCP/Tools/Public/ListTaxonomyTerms.php` | `list_taxonomy_terms` |
+| `src/MCP/Tools/Public/FilterContent.php` | `filter_content` |
+| `src/Rest/WebMcpController.php` | `GET /webmcp/manifest`, `POST /webmcp/execute` |
+| `assets/Feature/WebMcp/bridge.js` | Namespace probe, tool registration, same-origin fetch proxy |
+
+**REST routes (namespace `saltus-framework/v1/`):**
+
+| Route | Method | Purpose | Permission |
+|-------|--------|---------|------------|
+| `/webmcp/manifest` | GET | Tool descriptors for the current request context | Public when a model enables frontend WebMCP; otherwise 404 |
+| `/webmcp/execute` | POST | Invoke one tool by name with validated args | Public for read tools; per-tool capability check |
+
+**The bridge (mirrors Cloudflare's Site MCP Server pack):**
+1. Probe `document.modelContext`, then `navigator.modelContext`. Neither present → return immediately, no console output.
+2. Read the localized manifest (no network round trip needed for discovery).
+3. `registerTool()` per descriptor, each `execute` posting to `/webmcp/execute` with `credentials: 'same-origin'`.
+4. Hold one `AbortController` so tools unregister on teardown.
+
+**How it wires in:**
+- `Core::get_service_classes()` adds `'webmcp' => WebMcp::class`
+- `WebMcp::is_needed()` returns `! is_admin()` for 8A
+- `WebMcpPolicy` resolves enabled models from the top-level `webmcp` model key, consistent with how `ai_context` is read (not nested under `config`)
+- `ManifestBuilder` consumes `ToolInterface::get_parameters()` and wraps it in a JSON Schema `object` with `properties`/`required` — our tools return bare property maps today, so the wrapping happens in one place
+- Filter `saltus/framework/webmcp/tools` to add or remove descriptors
+- Filter `saltus/framework/webmcp/public_fields` to control which meta fields a public tool may return
+- Filter `saltus/framework/webmcp/manifest` for the final descriptor list
+
+| Item | Status |
+|------|--------|
+| `WebMcp` feature service + `SaltusWebMcp` processable | ○ |
+| `WebMcpPolicy` per-model gating with tool allowlist | ○ |
+| `ManifestBuilder` + `ToolDescriptor` projection from `ToolInterface` | ○ |
+| JSON Schema wrapping of `get_parameters()` output | ○ |
+| Five public read tools with `readOnlyHint` / `untrustedContentHint` | ○ |
+| `PublicFieldFilter` — public meta field resolution | ○ |
+| `WebMcpController` manifest + execute routes | ○ |
+| Server-side arg re-validation through `src/MCP/Validation` | ○ |
+| `bridge.js` with single-point namespace probe and no-op fallback | ○ |
+| Asset registration through `AssetLoadingService` | ○ |
+| Page-scoped tool registration (archive vs single vs taxonomy) | ○ |
+| Audit logging for WebMCP invocations, distinguished from ability calls | ○ |
+| Rate limiting on `/webmcp/execute`, global rather than per-IP | ○ |
+| Cache-safe discovery (`wp_head` output, not `send_headers` only) | ○ |
+| Character-budget assertions on descriptions and output | ○ |
+| PHPUnit coverage: policy, manifest, each tool, execute permissions, absent-API no-op | ○ |
+| PHPStan Level 7 clean across `src/Features/WebMcp/` and `src/WebMcp/` | ○ |
+| `docs/guides/webmcp.md` + `composer docs:webmcp` generated tool reference | ○ |
+
+**Explicitly out of scope for 8A:** write tools, admin-screen registration, cross-origin `exposedTo` delegation, the declarative forms API, and any authenticated-data tool.
+
+**Exit criteria:** A model with `webmcp: { enabled: true, frontend: true }` registers its read tools on public views in a WebMCP-capable browser. `search_content` and `get_content` return only published, publicly-visible data with public meta fields. Browsers without the API register nothing and log nothing. Every invocation re-validates args server-side, is rate-limited, and is audit-logged. Tools are page-scoped, not a single uniform set. Full suite green, PHPStan Level 7 clean.
+
+---
+
+#### 8B — Admin Surface and Governed Writes
+
+**Theme:** Extend registration to wp-admin screens, and let mutating WebMCP calls flow through the Phase 6B editorial review queue.
+
+**Why this ordering:** WebMCP has no settled confirmation or elicitation model — `requestUserInteraction()` is in the spec draft but unresolved, and authentication at the WebMCP layer is undefined. Saltus already answered this for MCP/Abilities: `ProposalService::should_queue()` converts a mutating tool call into a `pending` proposal awaiting human approval. Routing WebMCP writes down that same path makes the spec's gap a framework feature rather than something we invent around.
+
+**Write posture:** no WebMCP write tool ever mutates directly. Every one creates a proposal, returns the proposal id and a review URL to the agent, and waits. This mirrors Shopify shipping zero money-moving tools while still exposing page-steering writes.
+
+| Item | Status |
+|------|--------|
+| `WebMcp::is_needed()` extended to admin screens with `webmcp.admin: true` | ○ |
+| Admin-context tool projection of existing capability-gated abilities | ○ |
+| Write tools route through `ProposalService::should_queue()` — never direct mutation | ○ |
+| Proposal id + review URL returned in the tool result | ○ |
+| Nonce handling for authenticated invocations, refreshable without a page reload | ○ |
+| Per-screen tool scoping (post editor, settings page, review queue) | ○ |
+| Declarative forms API evaluation for Codestar metabox and settings markup | ○ |
+| Accessibility pass on metabox/settings labels feeding declarative schema derivation | ○ |
+| `toolchange` emission when model state alters the available tool set | ○ |
+| Health output reports WebMCP registration state and enabled model count | ○ |
+| `wp saltus webmcp {manifest\|validate}` for offline manifest inspection | ○ |
+| PHPUnit coverage: admin gating, proposal creation from WebMCP writes, nonce failure paths | ○ |
+
+**Exit criteria:** Models with `webmcp.admin: true` register capability-gated tools on their admin screens. Every mutating WebMCP call creates a `pending` proposal and returns its id and review URL — no direct writes exist. Nonce refresh works without reload. Health and `wp saltus` report WebMCP state. The declarative forms evaluation is documented with a go/no-go recommendation.
+
+---
+
+**Exit criteria (Phase 8 overall):** Saltus models can expose read tools to in-browser agents on the frontend and capability-gated tools in the admin, all projected from the existing tool registry rather than hand-authored. Writes are governed by the editorial review queue. The surface is opt-in per model, degrades silently on unsupported browsers, and re-validates every argument server-side.
+
+**Non-goals for Phase 8:** shipping our own agent or browser extension, cross-origin tool sharing via `exposedTo`, a `/.well-known/` WebMCP manifest convention (not canonical yet), and any expectation of inbound agent traffic this cycle — no observed deployment has recorded an external agent call.
