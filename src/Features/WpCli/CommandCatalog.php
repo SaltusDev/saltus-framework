@@ -106,6 +106,31 @@ final class CommandCatalog {
 				'command'     => 'wp saltus block list',
 				'description' => 'List model-driven blocks.',
 			],
+			[
+				'ability'     => 'list_relationships',
+				'command'     => 'wp saltus relationship list <post-type>',
+				'description' => 'List relationships declared by a model.',
+			],
+			[
+				'ability'     => 'get_related',
+				'command'     => 'wp saltus relationship get <post-id> <relationship>',
+				'description' => 'Show posts related to one post.',
+			],
+			[
+				'ability'     => 'attach_related',
+				'command'     => 'wp saltus relationship attach <post-id> <relationship> <related-id>',
+				'description' => 'Attach a related post.',
+			],
+			[
+				'ability'     => 'detach_related',
+				'command'     => 'wp saltus relationship detach <post-id> <relationship> <related-id>',
+				'description' => 'Detach a related post.',
+			],
+			[
+				'ability'     => 'sync_related',
+				'command'     => 'wp saltus relationship sync <post-id> <relationship> <json|@file>',
+				'description' => 'Replace the related set for one post.',
+			],
 		];
 	}
 

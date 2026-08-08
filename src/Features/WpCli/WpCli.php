@@ -6,6 +6,7 @@ use Saltus\WP\Framework\Features\WpCli\Commands\ContextCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\MetaCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\ModelCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\PostCommand;
+use Saltus\WP\Framework\Features\WpCli\Commands\RelationshipCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\ReorderCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\SaltusCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\SettingsCommand;
@@ -48,6 +49,7 @@ final class WpCli implements Service, Conditional, Registerable {
 		$this->cli->add_command( 'saltus meta', new MetaCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus reorder', new ReorderCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus block', new BlockCommand( $this->cli, $resolver ) );
+		$this->cli->add_command( 'saltus relationship', new RelationshipCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus context', new ContextCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus webmcp', new WebMcpCommand( $this->cli, $resolver ) );
 	}
