@@ -4,8 +4,8 @@
 - Version: `package.json` bumped to 1.8.1 (2026-08-08); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08. See [Discovery: WebMCP](discovery/webmcp.md).
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
-- WordPress-native MCP/Abilities surface with 20 tools
-- REST API: 17 routes registered in `saltus-framework/v1/` across 11 controllers
+- WordPress-native MCP/Abilities surface with 25 tools
+- REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
 - MCP v1 refactoring complete: per-tool REST dispatch, RestBackedToolInterface, ToolContributor, @phpstan-type AbilityDefinition
 - MCP namespace/category/prefix now filterable via MCPConfig utility class (saltus/framework/mcp/namespace, saltus/framework/mcp/ability_category, saltus/framework/mcp/ability_prefix)
@@ -702,3 +702,48 @@ under `src/MCP/Tools/Public/`.
 **Exit criteria (Phase 8 overall):** Saltus models can expose read tools to in-browser agents on the frontend and capability-gated tools in the admin, all projected from the existing tool registry rather than hand-authored. Writes are governed by the editorial review queue. The surface is opt-in per model, degrades silently on unsupported browsers, and re-validates every argument server-side. ✓ Done 2026-08-08
 
 **Non-goals for Phase 8:** shipping our own agent or browser extension, cross-origin tool sharing via `exposedTo`, a `/.well-known/` WebMCP manifest convention (not canonical yet), and any expectation of inbound agent traffic this cycle — no observed deployment has recorded an external agent call.
+
+---
+
+### Phase 10A: Content Relationships (v2.5+)
+
+**Theme:** Relate posts to other posts from model config, with one declaration serving reads and writes from both sides across REST, MCP, and WP-CLI.
+
+Planning documents: [Phase 10 Highway](PHASE-10-HIGHWAY.md) and [docs/phase10/](phase10/README.md). Those were written before implementation and describe a `src/Migrations/` system and a `src/MCP/Tools/Relationships/` subdirectory that this phase deliberately did not build — see the design notes below.
+
+**Premise:** relationships are a *fourth* surface over one storage model, not a new subsystem. A definition declared on one model resolves to a single row shared with its reciprocal, so the two sides cannot drift.
+
+| Item | Status |
+|------|--------|
+| `relationships` config section parsed into `RelationshipDefinition` value objects | ✓ Done 2026-08-08 |
+| Reciprocal definitions synthesized on the target model, sharing one storage key | ✓ Done 2026-08-08 |
+| Four cardinalities: `has_one`, `has_many`, `belongs_to`, `many_to_many` | ✓ Done 2026-08-08 |
+| Dedicated `{prefix}saltus_relationships` table with in-process fallback | ✓ Done 2026-08-08 |
+| Pivot payload per relationship row, filtered to declared fields | ✓ Done 2026-08-08 |
+| Eager loading: one query resolves a relationship for a whole result set | ✓ Done 2026-08-08 |
+| Cardinality enforced from both directions, including through the reciprocal | ✓ Done 2026-08-08 |
+| `attach` / `detach` / `sync` with ordering, capped at 200 ids per sync | ✓ Done 2026-08-08 |
+| `cascade_delete` on the declaring side, sparing shared targets | ✓ Done 2026-08-08 |
+| REST: 3 routes covering discovery, read, attach, sync, and detach | ✓ Done 2026-08-08 |
+| MCP: `list_relationships`, `get_related`, `attach_related`, `detach_related`, `sync_related` | ✓ Done 2026-08-08 |
+| Relationship writes routed through `ProposalService` review queue | ✓ Done 2026-08-08 |
+| WP-CLI parity: `wp saltus relationship {list\|get\|attach\|detach\|sync}` | ✓ Done 2026-08-08 |
+| Author guide at [guides/relationships.md](guides/relationships.md) | ✓ Done 2026-08-08 |
+| PHPUnit coverage across registry, store, manager, REST, tools, CLI, and governance | ✓ Done 2026-08-08 |
+
+**Design notes from implementation:**
+- **No migration system was added.** The planning docs specified `src/Migrations/` with `up()`/`down()` classes; the repo already creates tables lazily via `ensure_table()` in `ProposalStore` and `AuditLogger`. `RelationshipStore` follows that existing pattern rather than introducing a second, parallel schema mechanism for one table.
+- **Tools live in the flat `src/MCP/Tools/`** alongside the other 20, not the nested `Relationships/` subdirectory the docs proposed. `WpCliFeatureTest` enumerates that directory to enforce MCP↔CLI parity, and the flat layout keeps every tool subject to that check.
+- **One row, two directions.** The reciprocal flips `own_column()`/`related_column()` instead of writing a second row. A shared storage key is derived by sorting both endpoint names, so it is identical regardless of model load order, and pairs the relationship names too so two relationships between the same models cannot collide.
+- **Cardinality is checked on both sides.** A `has_one` declared on one model is enforced when the write arrives through the reciprocal, otherwise the far end becomes a hole in the constraint.
+- **Cascade does not inherit.** The reciprocal is built with `cascade_delete: false` unconditionally: inheriting it would delete the declaring posts when a target is removed, inverting the author's intent.
+- **`sync` validates before it clears.** Every target is checked first, so a rejected call leaves the existing set intact instead of half-written. Re-attaching an existing pair updates it, and a reorder preserves stored pivot values rather than blanking them.
+- **Undeclared pivot keys are discarded**, so the payload cannot become an unbounded, unvalidated bucket written through the API.
+- **Post ids are filtered on `> 0`, not truthiness.** A negative id is truthy and would otherwise reach a query as a real post reference; `PostIdListTrait` makes the rule shared between store and manager.
+- **Cleanup hooks `before_delete_post`**, not `deleted_post` — resolving which rows to cascade needs the post type, which is gone once the post row is deleted.
+
+**Verification:** 505 tests, 1469 assertions; PHPStan Level 7 and PHPCS clean; 21 JS tests unaffected. Six guards were mutation-tested — removing reciprocal-side cardinality enforcement, allowing undeclared pivot keys, validating sync after clearing, dropping relationship writes from the review queue, cascading into a shared target, or letting the reciprocal inherit cascade each fail at least one test.
+
+**Exit criteria:** A model declares a relationship in config and both sides become readable and writable through REST, MCP, and WP-CLI, with cardinality enforced from either direction, one query per relationship per result set, and all writes governed by the review queue. ✓ Done 2026-08-08
+
+**Non-goals for Phase 10A:** the admin metabox UI (Select2 picker), migration scripts from ACF/Toolset/Pods, a query-builder facade (`Relations::for()->with()`), and relationships to taxonomy terms or users. Storage and the three programmatic surfaces come first; the UI is worth building once the data model has settled.
