@@ -2,30 +2,38 @@
 
 namespace Saltus\WP\Framework\Features\WebMcp;
 
+use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 use Saltus\WP\Framework\Infrastructure\Plugin\Registerable;
 use Saltus\WP\Framework\Infrastructure\Service\Conditional;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\MCPConfig;
+use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
 use Saltus\WP\Framework\Rest\RestRouteProvider;
 use Saltus\WP\Framework\Rest\WebMcpController;
 use Saltus\WP\Framework\WebMcp\ManifestBuilder;
+use Saltus\WP\Framework\WebMcp\Tools\AdminTool;
 use Saltus\WP\Framework\WebMcp\Tools\FilterContent;
 use Saltus\WP\Framework\WebMcp\Tools\GetContent;
 use Saltus\WP\Framework\WebMcp\Tools\ListContentModels;
 use Saltus\WP\Framework\WebMcp\Tools\ListTaxonomyTerms;
 use Saltus\WP\Framework\WebMcp\Tools\PublicTool;
 use Saltus\WP\Framework\WebMcp\Tools\SearchContent;
+use Saltus\WP\Framework\WebMcp\WebMcpTool;
 
 /**
  * Exposes model content to in-browser AI agents through WebMCP.
  *
- * Phase 8A registers read-only tools on public frontend views for models that
- * opt in with `webmcp: { enabled: true, frontend: true }`. Browsers without a
- * WebMCP surface receive the bridge script, which returns immediately.
+ * Read-only tools register on public frontend views for models that opt in with
+ * `webmcp: { enabled: true, frontend: true }`. Models adding `admin: true` also
+ * expose their capability-gated abilities on the relevant wp-admin screens,
+ * where every mutating call is queued for human review rather than applied.
+ * Browsers without a WebMCP surface receive the bridge script, which returns
+ * immediately.
  * @api
  */
 final class WebMcp implements Service, Conditional, Registerable, RestRouteProvider {
@@ -34,24 +42,37 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 	private array $project;
 	/** @var callable|null */
 	private $modeler_resolver;
+	/** @var callable|null */
+	private $contributor_resolver;
 	private WebMcpPolicy $policy;
 	private PublicFieldFilter $fields;
+	private AdminToolSet $admin_tools;
+	private ProposalService $proposals;
 
 	/**
 	 * @param array<string, mixed> $dependencies Framework dependencies.
+	 * @param ProposalService|null $proposals    Review queue, defaulted when null.
 	 */
-	public function __construct( array $dependencies = [] ) {
-		$this->project          = is_array( $dependencies['project'] ?? null ) ? $dependencies['project'] : [];
-		$this->modeler_resolver = is_callable( $dependencies['modeler_resolver'] ?? null ) ? $dependencies['modeler_resolver'] : null;
-		$this->policy           = new WebMcpPolicy( $dependencies['modeler_resolver'] ?? $dependencies['modeler'] ?? null );
-		$this->fields           = new PublicFieldFilter();
+	public function __construct( array $dependencies = [], ?ProposalService $proposals = null ) {
+		$this->project              = is_array( $dependencies['project'] ?? null ) ? $dependencies['project'] : [];
+		$this->modeler_resolver     = is_callable( $dependencies['modeler_resolver'] ?? null ) ? $dependencies['modeler_resolver'] : null;
+		$this->contributor_resolver = is_callable( $dependencies['tool_contributors'] ?? null ) ? $dependencies['tool_contributors'] : null;
+		$this->policy               = new WebMcpPolicy( $dependencies['modeler_resolver'] ?? $dependencies['modeler'] ?? null );
+		$this->fields               = new PublicFieldFilter();
+		$this->admin_tools          = new AdminToolSet();
+		$this->proposals            = $proposals ?? new ProposalService();
 	}
 
 	/**
-	 * Phase 8A is frontend-only. Admin registration arrives in 8B.
+	 * Needed on the frontend always, and in the admin for the governed surface.
+	 *
+	 * The admin branch is not gated on `has_admin_surface()` here: models are not
+	 * yet registered when the service container runs `is_needed()`, so the policy
+	 * would report no surface for every site. The check happens at enqueue time,
+	 * when the modeler is populated.
 	 */
 	public static function is_needed(): bool {
-		return ! is_admin();
+		return true;
 	}
 
 	/** @return list<RestRouteDefinition> */
@@ -59,7 +80,12 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 		return [
 			new RestRouteDefinition(
 				ModelRestPolicy::CAPABILITY_MODELS,
-				new WebMcpController( $this->policy, $this->build_tools( $modeler ), new ManifestBuilder(), new AuditLogger() ),
+				new WebMcpController(
+					$this->policy,
+					array_merge( $this->build_tools( $modeler ), $this->build_admin_tools( $modeler ) ),
+					new ManifestBuilder(),
+					new AuditLogger()
+				),
 				'post_type'
 			),
 		];
@@ -67,10 +93,11 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 
 	public function register(): void {
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_bridge' ] );
+		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_bridge' ] );
 	}
 
 	/**
-	 * Enqueue the bridge script with the manifest for the current view.
+	 * Enqueue the bridge script with the manifest for the current public view.
 	 *
 	 * The manifest is localized rather than fetched so tool discovery costs
 	 * no network round trip, matching Cloudflare's bridge behavior.
@@ -81,8 +108,42 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 			return;
 		}
 
-		$post_type   = $this->current_post_type();
-		$descriptors = ( new ManifestBuilder() )->build( $this->context_tools( $modeler, $post_type ), $post_type );
+		$post_type = $this->current_post_type();
+
+		$this->localize_bridge( $this->context_tools( $modeler, $post_type ), $post_type, false );
+	}
+
+	/**
+	 * Enqueue the bridge on an admin screen that exposes tools.
+	 *
+	 * Admin tools act as the logged-in user, so the localized payload carries a
+	 * REST nonce and the endpoint for refreshing it.
+	 */
+	public function enqueue_admin_bridge(): void {
+		$modeler = $this->resolve_modeler();
+		if ( ! $modeler instanceof Modeler || ! $this->policy->has_admin_surface() ) {
+			return;
+		}
+
+		$screen = new AdminScreen();
+		$tools  = $this->screen_tools( $modeler, $screen );
+		if ( $tools === [] ) {
+			return;
+		}
+
+		$this->localize_bridge( $tools, $screen->post_type(), true );
+	}
+
+	/**
+	 * Register the bridge script and hand it the descriptors for this request.
+	 *
+	 * @param list<WebMcpTool> $tools         Tools to project.
+	 * @param string|null      $post_type     Post type context, if any.
+	 * @param bool             $authenticated Whether to include a REST nonce.
+	 */
+	private function localize_bridge( array $tools, ?string $post_type, bool $authenticated ): void {
+		$builder     = new ManifestBuilder();
+		$descriptors = $builder->build( $tools, $post_type );
 		if ( $descriptors === [] ) {
 			return;
 		}
@@ -95,14 +156,23 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 			\Saltus\WP\Framework\Core::VERSION,
 			true
 		);
-		wp_localize_script(
-			'saltus-webmcp-bridge',
-			'saltusWebMcp',
-			[
-				'endpoint' => rest_url( MCPConfig::get_namespace() . '/webmcp/execute' ),
-				'tools'    => ( new ManifestBuilder() )->to_array( $descriptors ),
-			]
-		);
+
+		$namespace = MCPConfig::get_namespace();
+		$payload   = [
+			'endpoint' => rest_url( $namespace . '/webmcp/execute' ),
+			'tools'    => $builder->to_array( $descriptors ),
+		];
+
+		if ( $authenticated ) {
+			// The nonce endpoint lets the bridge recover from a nonce that expired
+			// while the screen sat open, which is the common case for an admin tab
+			// left running beside an agent conversation.
+			$payload['nonce']         = wp_create_nonce( 'wp_rest' );
+			$payload['nonceEndpoint'] = rest_url( $namespace . '/webmcp/nonce' );
+			$payload['surface']       = WebMcpTool::SURFACE_ADMIN;
+		}
+
+		wp_localize_script( 'saltus-webmcp-bridge', 'saltusWebMcp', $payload );
 	}
 
 	/**
@@ -133,6 +203,138 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 		 * @param list<PublicTool> $tools Tool instances.
 		 */
 		return $this->accept_tools( apply_filters( 'saltus/framework/webmcp/tools', $tools ), $tools );
+	}
+
+	/**
+	 * Build the admin tool set by projecting existing abilities.
+	 *
+	 * Abilities come from the same `ToolContributor` registry MCP/Abilities and
+	 * `wp saltus` read, so the browser surface is a projection of tools already
+	 * maintained rather than a parallel set. Each is wrapped in `AdminTool`,
+	 * which adds the nonce requirement and the review-queue write posture.
+	 *
+	 * @param Modeler $modeler Model registry.
+	 * @return list<AdminTool>
+	 */
+	public function build_admin_tools( Modeler $modeler ): array {
+		$names = [];
+		foreach ( $this->admin_tools->screens() as $screen ) {
+			foreach ( $this->admin_tools->for_screen( $screen ) as $name ) {
+				$names[ $name ] = true;
+			}
+		}
+
+		$tools = [];
+		foreach ( $this->contributed_tools( $modeler ) as $tool ) {
+			if ( isset( $names[ $tool->get_name() ] ) ) {
+				$tools[] = new AdminTool( $tool, $this->proposals );
+			}
+		}
+
+		return $tools;
+	}
+
+	/**
+	 * Collect every ability contributed by the framework's feature services.
+	 *
+	 * @param Modeler $modeler Model registry.
+	 * @return list<ToolInterface>
+	 */
+	private function contributed_tools( Modeler $modeler ): array {
+		// The modeler contributes the model-derived tools itself, and the resolver
+		// supplies the feature services' own.
+		$contributors = [ $modeler ];
+
+		if ( is_callable( $this->contributor_resolver ) ) {
+			$resolved = ( $this->contributor_resolver )();
+			if ( is_array( $resolved ) ) {
+				foreach ( $resolved as $contributor ) {
+					if ( $contributor instanceof ToolContributor ) {
+						$contributors[] = $contributor;
+					}
+				}
+			}
+		}
+
+		$tools = [];
+		foreach ( $contributors as $contributor ) {
+			foreach ( $contributor->get_mcp_tools( $modeler ) as $tool ) {
+				// Keyed by name so two contributors offering the same ability
+				// yield one tool rather than a duplicate registration.
+				$tools[ $tool->get_name() ] = $tool;
+			}
+		}
+
+		return array_values( $tools );
+	}
+
+	/**
+	 * Resolve the admin tools available on the current screen.
+	 *
+	 * Two gates apply. The screen map decides which tools are meaningful here,
+	 * and the user's capabilities decide which they may see at all — an editor
+	 * and an administrator on the same screen get different sets.
+	 *
+	 * @param Modeler     $modeler Model registry.
+	 * @param AdminScreen $screen  Current screen resolver.
+	 * @return list<WebMcpTool>
+	 */
+	private function screen_tools( Modeler $modeler, AdminScreen $screen ): array {
+		$allowed = $this->admin_tools->for_screen( $screen->resolve() );
+		if ( $allowed === [] ) {
+			return [];
+		}
+
+		$post_type = $screen->post_type();
+		$scoped    = [];
+
+		foreach ( $this->build_admin_tools( $modeler ) as $tool ) {
+			$name = $tool->get_name();
+
+			if ( ! in_array( $name, $allowed, true ) ) {
+				continue;
+			}
+
+			if ( ! $this->model_allows( $name, $post_type ) ) {
+				continue;
+			}
+
+			if ( ! $this->user_can_discover( $tool ) ) {
+				continue;
+			}
+
+			$scoped[] = $tool;
+		}
+
+		return $scoped;
+	}
+
+	/**
+	 * Whether the model in context permits a tool on the admin surface.
+	 *
+	 * @param string      $tool_name Tool name.
+	 * @param string|null $post_type Post type context, or null screen-wide.
+	 */
+	private function model_allows( string $tool_name, ?string $post_type ): bool {
+		if ( $post_type !== null && in_array( $post_type, $this->policy->admin_models(), true ) ) {
+			return $this->policy->allows_tool( $post_type, $tool_name );
+		}
+
+		return $this->policy->allowed_by_any_model( $tool_name, WebMcpTool::SURFACE_ADMIN );
+	}
+
+	/**
+	 * Whether the current user may be offered a tool.
+	 *
+	 * @param WebMcpTool $tool Tool to check.
+	 */
+	private function user_can_discover( WebMcpTool $tool ): bool {
+		$capability = $tool->get_discovery_capability();
+		if ( $capability === null ) {
+			return true;
+		}
+
+		return function_exists( 'current_user_can' ) && current_user_can( $capability );
 	}
 
 	/**
@@ -181,7 +383,7 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 				continue;
 			}
 
-			if ( $post_type === null && ! $this->allowed_by_any_model( $name ) ) {
+			if ( $post_type === null && ! $this->policy->allowed_by_any_model( $name ) ) {
 				continue;
 			}
 
@@ -208,21 +410,6 @@ final class WebMcp implements Service, Conditional, Registerable, RestRouteProvi
 		}
 
 		return true;
-	}
-
-	/**
-	 * Whether any frontend-enabled model permits a tool.
-	 *
-	 * @param string $tool_name Tool name.
-	 */
-	private function allowed_by_any_model( string $tool_name ): bool {
-		foreach ( $this->policy->frontend_models() as $model ) {
-			if ( $this->policy->allows_tool( $model, $tool_name ) ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	/**
