@@ -11,7 +11,7 @@ use Saltus\WP\Framework\MCP\Validation\Validator;
 use Saltus\WP\Framework\WebMcp\ClientIdentity;
 use Saltus\WP\Framework\WebMcp\ManifestBuilder;
 use Saltus\WP\Framework\WebMcp\ResultBudget;
-use Saltus\WP\Framework\WebMcp\Tools\PublicTool;
+use Saltus\WP\Framework\WebMcp\WebMcpTool;
 use WP_Error;
 use WP_REST_Controller;
 use WP_REST_Response;
@@ -38,7 +38,7 @@ final class WebMcpController extends WP_REST_Controller {
 
 	private WebMcpPolicy $policy;
 	private ManifestBuilder $manifest_builder;
-	/** @var list<PublicTool> */
+	/** @var list<WebMcpTool> */
 	private array $tools;
 	private ?AuditLogger $audit;
 	private RateLimiter $rate_limiter;
@@ -47,7 +47,7 @@ final class WebMcpController extends WP_REST_Controller {
 
 	/**
 	 * @param WebMcpPolicy     $policy           Model gating policy.
-	 * @param list<PublicTool> $tools            Public tools available to the browser.
+	 * @param list<WebMcpTool> $tools            Tools available to the browser.
 	 * @param ManifestBuilder|null $manifest_builder Descriptor projector.
 	 * @param AuditLogger|null $audit            Audit logger, or null to skip logging.
 	 * @param RateLimiter|null $rate_limiter     Rate limiter for the execute route.
@@ -97,16 +97,26 @@ final class WebMcpController extends WP_REST_Controller {
 				'permission_callback' => [ $this, 'execute_permissions_check' ],
 			]
 		);
+
+		register_rest_route(
+			$namespace,
+			'/' . $this->rest_base . '/nonce',
+			[
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => [ $this, 'get_nonce' ],
+				'permission_callback' => [ $this, 'nonce_permissions_check' ],
+			]
+		);
 	}
 
 	/**
-	 * The manifest is public, but only where a model opted in.
+	 * The manifest is public where a model opted into either surface.
 	 *
 	 * @param mixed $request Unused.
 	 * @return bool|WP_Error
 	 */
 	public function manifest_permissions_check( $request ) {
-		if ( ! $this->policy->has_frontend_surface() ) {
+		if ( ! $this->policy->has_frontend_surface() && ! $this->policy->has_admin_surface() ) {
 			return new WP_Error(
 				'saltus_webmcp_disabled',
 				__( 'No content type exposes WebMCP tools.', 'saltus-framework' ),
@@ -118,13 +128,52 @@ final class WebMcpController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Execution is public for read tools, gated on the surface existing.
+	 * Execution is gated on the surface existing; per-tool checks run inside.
+	 *
+	 * The nonce and capability checks deliberately live in the callback rather
+	 * than here: they are per-tool, and the requested tool is in the body, which
+	 * a permission callback should not be reaching into to decide a 401.
 	 *
 	 * @param mixed $request Unused.
 	 * @return bool|WP_Error
 	 */
 	public function execute_permissions_check( $request ) {
 		return $this->manifest_permissions_check( $request );
+	}
+
+	/**
+	 * Issuing a nonce requires an existing session to issue it for.
+	 *
+	 * @param mixed $request Unused.
+	 * @return bool|WP_Error
+	 */
+	public function nonce_permissions_check( $request ) {
+		if ( ! function_exists( 'is_user_logged_in' ) || ! is_user_logged_in() ) {
+			return new WP_Error(
+				'saltus_webmcp_not_logged_in',
+				__( 'A WebMCP nonce is only issued to a logged-in user.', 'saltus-framework' ),
+				[ 'status' => 401 ]
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Issue a fresh REST nonce for the current session.
+	 *
+	 * An admin screen left open beside an agent conversation will outlive its
+	 * nonce. Without this the agent's next write fails and the user has to
+	 * reload; with it the bridge re-fetches and retries once, invisibly.
+	 *
+	 * @param mixed $request Unused.
+	 */
+	public function get_nonce( $request ): WP_REST_Response {
+		return rest_ensure_response(
+			[
+				'nonce' => function_exists( 'wp_create_nonce' ) ? wp_create_nonce( 'wp_rest' ) : '',
+			]
+		);
 	}
 
 	/**
@@ -160,7 +209,7 @@ final class WebMcpController extends WP_REST_Controller {
 		$client = $this->client->resolve();
 
 		$tool = $this->find_tool( $name );
-		if ( ! $tool instanceof PublicTool ) {
+		if ( ! $tool instanceof WebMcpTool ) {
 			return new WP_Error(
 				'saltus_webmcp_unknown_tool',
 				__( 'The requested tool is not available.', 'saltus-framework' ),
@@ -180,6 +229,16 @@ final class WebMcpController extends WP_REST_Controller {
 					'retry_after' => $limit->retry_after,
 				]
 			);
+		}
+
+		// Checked before validation so an expired nonce is reported as an expired
+		// nonce. The bridge keys its silent refresh-and-retry on this code, and
+		// would have no way to tell a stale session from bad arguments.
+		$authenticated = $this->check_authentication( $tool, $request );
+		if ( $authenticated instanceof WP_Error ) {
+			$this->record( $name, $args, 'error', $client );
+
+			return $authenticated;
 		}
 
 		// The browser is untrusted: re-validate against the tool's own schema
@@ -205,9 +264,21 @@ final class WebMcpController extends WP_REST_Controller {
 			);
 		}
 
+		$result = $tool->execute( $args );
+
+		// A tool reporting a failed dispatch keeps its own status rather than
+		// being handed to the agent as a successful call whose payload happens to
+		// contain an error.
+		$failure = $this->tool_error( $result );
+		if ( $failure instanceof WP_Error ) {
+			$this->record( $name, $args, 'error', $client );
+
+			return $failure;
+		}
+
 		// Clamped before it leaves the server: an oversized payload is cut
 		// mid-token by the agent's own limit, which corrupts the JSON it reads.
-		$result = $this->budget->apply( $tool->execute( $args ) );
+		$result = $this->budget->apply( $result );
 		$this->record( $name, $args, 'success', $client );
 
 		return rest_ensure_response(
@@ -219,20 +290,120 @@ final class WebMcpController extends WP_REST_Controller {
 	}
 
 	/**
+	 * Enforce nonce authentication for tools that require it.
+	 *
+	 * A read tool on a public view needs nothing. Anything acting as the
+	 * logged-in user needs a valid `wp_rest` nonce, or a cross-site page could
+	 * drive the admin surface using the visitor's cookies.
+	 *
+	 * @param WebMcpTool $tool    Tool being invoked.
+	 * @param mixed      $request REST request.
+	 * @return true|WP_Error
+	 */
+	private function check_authentication( WebMcpTool $tool, $request ) {
+		if ( ! $tool->requires_authentication() ) {
+			return true;
+		}
+
+		if ( ! function_exists( 'is_user_logged_in' ) || ! is_user_logged_in() ) {
+			return new WP_Error(
+				'saltus_webmcp_not_logged_in',
+				__( 'This tool requires a logged-in user.', 'saltus-framework' ),
+				[ 'status' => 401 ]
+			);
+		}
+
+		if ( ! $this->has_valid_nonce( $request ) ) {
+			return new WP_Error(
+				'saltus_webmcp_invalid_nonce',
+				__( 'The security token is missing or expired. Request a new one and retry.', 'saltus-framework' ),
+				[
+					'status'  => 403,
+					'refresh' => true,
+				]
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Whether the request carries a valid REST nonce.
+	 *
+	 * @param mixed $request REST request.
+	 */
+	private function has_valid_nonce( $request ): bool {
+		if ( ! function_exists( 'wp_verify_nonce' ) ) {
+			return false;
+		}
+
+		return (bool) wp_verify_nonce( $this->request_nonce( $request ), 'wp_rest' );
+	}
+
+	/**
+	 * Read the nonce from the request header, falling back to a parameter.
+	 *
+	 * @param mixed $request REST request.
+	 */
+	private function request_nonce( $request ): string {
+		if ( is_object( $request ) && method_exists( $request, 'get_header' ) ) {
+			$header = $request->get_header( 'x_wp_nonce' );
+			if ( is_string( $header ) && $header !== '' ) {
+				return $header;
+			}
+		}
+
+		$params = $this->request_params( $request );
+		$nonce  = $params['_wpnonce'] ?? '';
+
+		return is_string( $nonce ) ? $nonce : '';
+	}
+
+	/**
+	 * Convert a tool's error payload into a REST error.
+	 *
+	 * @param array<string, mixed> $result Tool result.
+	 * @return WP_Error|null
+	 */
+	private function tool_error( array $result ): ?WP_Error {
+		$error = $result['error'] ?? null;
+		if ( ! is_array( $error ) ) {
+			return null;
+		}
+
+		$status = isset( $error['status'] ) ? (int) $error['status'] : 500;
+
+		return new WP_Error(
+			isset( $error['code'] ) ? (string) $error['code'] : 'saltus_webmcp_tool_failed',
+			isset( $error['message'] ) ? (string) $error['message'] : __( 'The tool call failed.', 'saltus-framework' ),
+			[ 'status' => $status > 0 ? $status : 500 ]
+		);
+	}
+
+	/**
 	 * Resolve the tools available for a post type context.
 	 *
+	 * Admin tools are listed only to a user who could actually call them, so an
+	 * agent is never handed a tool that will refuse every invocation.
+	 *
 	 * @param string|null $post_type Post type context, or null for site-wide.
-	 * @return list<PublicTool>
+	 * @return list<WebMcpTool>
 	 */
 	private function available_tools( ?string $post_type ): array {
 		$available = [];
 
 		foreach ( $this->tools as $tool ) {
+			$surface = $tool->get_surface();
+
+			if ( $surface === WebMcpTool::SURFACE_ADMIN && ! $this->can_discover( $tool ) ) {
+				continue;
+			}
+
 			if ( $post_type !== null && ! $this->policy->allows_tool( $post_type, $tool->get_name() ) ) {
 				continue;
 			}
 
-			if ( $post_type === null && ! $this->allowed_by_any_model( $tool->get_name() ) ) {
+			if ( $post_type === null && ! $this->policy->allowed_by_any_model( $tool->get_name(), $surface ) ) {
 				continue;
 			}
 
@@ -243,18 +414,17 @@ final class WebMcpController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Whether any frontend-enabled model permits a tool.
+	 * Whether the current user may see an admin tool.
 	 *
-	 * @param string $tool_name Tool name.
+	 * @param WebMcpTool $tool Tool to check.
 	 */
-	private function allowed_by_any_model( string $tool_name ): bool {
-		foreach ( $this->policy->frontend_models() as $model ) {
-			if ( $this->policy->allows_tool( $model, $tool_name ) ) {
-				return true;
-			}
+	private function can_discover( WebMcpTool $tool ): bool {
+		$capability = $tool->get_discovery_capability();
+		if ( $capability === null ) {
+			return true;
 		}
 
-		return false;
+		return function_exists( 'current_user_can' ) && current_user_can( $capability );
 	}
 
 	/**
@@ -262,7 +432,7 @@ final class WebMcpController extends WP_REST_Controller {
 	 *
 	 * @param string $name Tool name.
 	 */
-	private function find_tool( string $name ): ?PublicTool {
+	private function find_tool( string $name ): ?WebMcpTool {
 		if ( $name === '' ) {
 			return null;
 		}
