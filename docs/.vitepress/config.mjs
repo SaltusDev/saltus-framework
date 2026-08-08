@@ -44,6 +44,7 @@ export default defineConfig({
         text: 'Discovery',
         items: [
           { text: 'WebMCP', link: '/discovery/webmcp' },
+          { text: 'Declarative Forms', link: '/discovery/webmcp-declarative-forms' },
         ],
       },
       {
@@ -93,6 +94,7 @@ export default defineConfig({
           text: 'Discovery',
           items: [
             { text: 'WebMCP', link: '/discovery/webmcp' },
+            { text: 'Declarative Forms', link: '/discovery/webmcp-declarative-forms' },
           ],
         },
       ],
