@@ -4,9 +4,9 @@ namespace Saltus\WP\Framework\WebMcp\Tools;
 
 use Saltus\WP\Framework\Features\WebMcp\PublicFieldFilter;
 use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
-use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\WebMcp\WebMcpAnnotated;
+use Saltus\WP\Framework\WebMcp\WebMcpTool;
 
 /**
  * Base class for public, read-only WebMCP tools.
@@ -24,7 +24,7 @@ use Saltus\WP\Framework\WebMcp\WebMcpAnnotated;
  * policy and by the query guards below, not by a capability.
  * @api
  */
-abstract class PublicTool implements ToolInterface, WebMcpAnnotated {
+abstract class PublicTool implements WebMcpTool, WebMcpAnnotated {
 
 	/** Maximum posts returned by any single call. */
 	protected const MAX_RESULTS = 20;
@@ -69,6 +69,31 @@ abstract class PublicTool implements ToolInterface, WebMcpAnnotated {
 	 */
 	public function has_permission( array $args ): bool {
 		return true;
+	}
+
+	/**
+	 * These tools serve public frontend views.
+	 */
+	public function get_surface(): string {
+		return self::SURFACE_FRONTEND;
+	}
+
+	/**
+	 * Anonymous visitors call these, so there is no nonce to require.
+	 *
+	 * A nonce for an unauthenticated caller would be security theater: it is
+	 * tied to a session the visitor does not have, and every one of these tools
+	 * returns data already reachable by browsing the site.
+	 */
+	public function requires_authentication(): bool {
+		return false;
+	}
+
+	/**
+	 * No capability gates discovery of published content.
+	 */
+	public function get_discovery_capability(): ?string {
+		return null;
 	}
 
 	/**
