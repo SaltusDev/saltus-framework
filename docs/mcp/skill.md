@@ -19,7 +19,7 @@ curl -L -o saltus-mcp-SKILL.md \
 
 ## Why use it
 
-Saltus exposes 20 `saltus/*` abilities over WordPress-native MCP/Abilities. Clients that treat them as raw REST calls tend to:
+Saltus exposes 25 `saltus/*` abilities over WordPress-native MCP/Abilities. Clients that treat them as raw REST calls tend to:
 
 - guess post type slugs instead of discovering them with `list_models`
 - write meta before checking the normalized field paths from `list_meta_fields`

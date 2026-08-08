@@ -32,6 +32,11 @@ List and detail commands support `--format=table|json|yaml`; table is the defaul
 | `update_meta_fields` | `wp saltus meta update <post-type> <post-id> <json\|@file>` | Update registered post meta. |
 | `reorder_posts` | `wp saltus reorder <json\|@file>` | Update post menu order. |
 | `list_block_models` | `wp saltus block list` | List model-driven blocks. |
+| `list_relationships` | `wp saltus relationship list <post-type>` | List relationships declared by a model. |
+| `get_related` | `wp saltus relationship get <post-id> <relationship>` | Show posts related to one post. |
+| `attach_related` | `wp saltus relationship attach <post-id> <relationship> <related-id>` | Attach a related post. |
+| `detach_related` | `wp saltus relationship detach <post-id> <relationship> <related-id>` | Detach a related post. |
+| `sync_related` | `wp saltus relationship sync <post-id> <relationship> <json\|@file>` | Replace the related set for one post. |
 
 ## Examples
 

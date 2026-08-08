@@ -23,9 +23,9 @@ features:
   - title: Admin Tooling
     details: Add admin columns, filters, drag-and-drop reordering, cloning, single-export, and quick-edit fields in minutes.
   - title: REST API
-    details: 17 REST routes registered in saltus-framework/v1/ covering models, posts, settings, meta, duplicate, export, reorder, blocks, health, AI context, and editorial review.
+    details: 23 REST routes registered in saltus-framework/v1/ covering models, posts, settings, meta, relationships, duplicate, export, reorder, blocks, health, AI context, and editorial review.
   - title: MCP/Abilities
-    details: WordPress-native MCP/Abilities surface with 20 tools - models, posts, terms, settings, meta, blocks, context, health, and reorder.
+    details: WordPress-native MCP/Abilities surface with 25 tools - models, posts, terms, settings, meta, relationships, blocks, context, health, and reorder.
   - title: Meta Boxes & Settings
     details: Powered by Codestar Framework — build complex meta boxes and settings pages with 40+ field types.
   - title: WordPress-native AI
