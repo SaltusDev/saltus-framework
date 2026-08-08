@@ -275,3 +275,198 @@ test( 'tools unregister on pagehide so a restored page holds no stale tools', ()
 
 	assert.deepStrictEqual( aborted, [ true ] );
 } );
+
+/**
+ * The payload an admin screen localizes: nonce-bearing, with a refresh endpoint.
+ *
+ * @return {object} Admin bridge config.
+ */
+function adminConfig() {
+	return {
+		endpoint: 'https://example.test/wp-json/saltus-framework/v1/webmcp/execute',
+		nonce: 'nonce-one',
+		nonceEndpoint: 'https://example.test/wp-json/saltus-framework/v1/webmcp/nonce',
+		surface: 'admin',
+		tools: [
+			{
+				name: 'update_post',
+				description: 'Update an entry. Queues the change for human review.',
+				inputSchema: { type: 'object', properties: { post_id: { type: 'number' } } },
+				annotations: { readOnlyHint: false, untrustedContentHint: true },
+			},
+		],
+	};
+}
+
+/** Endpoint name from a URL, for asserting call order. */
+function endpointOf( url ) {
+	return url.split( '/' ).pop();
+}
+
+test( 'sends the nonce as a header when the payload carries one', async () => {
+	const { registered, fetchCalls } = runBridge( { config: adminConfig() } );
+
+	await registered[ 0 ].definition.execute( { post_id: 9 } );
+
+	assert.strictEqual( fetchCalls[ 0 ].init.headers[ 'x-wp-nonce' ], 'nonce-one' );
+	assert.strictEqual( fetchCalls[ 0 ].init.credentials, 'same-origin' );
+} );
+
+test( 'a frontend payload sends no nonce header', async () => {
+	const { registered, fetchCalls } = runBridge();
+
+	await registered[ 0 ].definition.execute( {} );
+
+	assert.ok(
+		! ( 'x-wp-nonce' in fetchCalls[ 0 ].init.headers ),
+		'An anonymous visitor has no session to bind a nonce to.'
+	);
+} );
+
+test( 'an expired nonce is refreshed and the call retried once, invisibly', async () => {
+	const calls = [];
+
+	const { registered } = runBridge( {
+		config: adminConfig(),
+		fetch: ( url, init ) => {
+			calls.push( { endpoint: endpointOf( url ), nonce: init.headers && init.headers[ 'x-wp-nonce' ] } );
+
+			if ( endpointOf( url ) === 'nonce' ) {
+				return Promise.resolve( { ok: true, json: () => Promise.resolve( { nonce: 'nonce-two' } ) } );
+			}
+
+			// The first execute fails on a stale nonce; the retry succeeds.
+			if ( calls.filter( ( call ) => call.endpoint === 'execute' ).length === 1 ) {
+				return Promise.resolve( {
+					ok: false,
+					json: () =>
+						Promise.resolve( {
+							code: 'saltus_webmcp_invalid_nonce',
+							message: 'The security token is missing or expired.',
+							data: { status: 403, refresh: true },
+						} ),
+				} );
+			}
+
+			return Promise.resolve( {
+				ok: true,
+				json: () => Promise.resolve( { tool: 'update_post', result: { requires_review: true } } ),
+			} );
+		},
+	} );
+
+	const result = await registered[ 0 ].definition.execute( { post_id: 9 } );
+
+	assert.deepStrictEqual(
+		calls.map( ( call ) => call.endpoint ),
+		[ 'execute', 'nonce', 'execute' ],
+		'A stale nonce should trigger exactly one refresh and one retry.'
+	);
+	assert.strictEqual( calls[ 2 ].nonce, 'nonce-two', 'The retry must use the refreshed nonce.' );
+	assert.ok( ! result.isError, 'The user should never see the expiry.' );
+	assert.deepStrictEqual( JSON.parse( result.content[ 0 ].text ), { requires_review: true } );
+} );
+
+test( 'a genuine permission failure is not retried', async () => {
+	const calls = [];
+
+	const { registered } = runBridge( {
+		config: adminConfig(),
+		fetch: ( url ) => {
+			calls.push( endpointOf( url ) );
+
+			return Promise.resolve( {
+				ok: false,
+				json: () =>
+					Promise.resolve( {
+						code: 'saltus_webmcp_forbidden',
+						message: 'You do not have permission to call this tool.',
+						data: { status: 403 },
+					} ),
+			} );
+		},
+	} );
+
+	const result = await registered[ 0 ].definition.execute( {} );
+
+	assert.deepStrictEqual( calls, [ 'execute' ], 'Retrying a capability failure just burns a request.' );
+	assert.strictEqual( result.isError, true );
+	assert.strictEqual( result.content[ 0 ].text, 'You do not have permission to call this tool.' );
+} );
+
+test( 'a failed nonce refresh reports the original error', async () => {
+	const { registered } = runBridge( {
+		config: adminConfig(),
+		fetch: ( url ) => {
+			if ( endpointOf( url ) === 'nonce' ) {
+				return Promise.resolve( { ok: false, json: () => Promise.resolve( {} ) } );
+			}
+
+			return Promise.resolve( {
+				ok: false,
+				json: () =>
+					Promise.resolve( {
+						code: 'saltus_webmcp_invalid_nonce',
+						message: 'The security token is missing or expired.',
+						data: { status: 403, refresh: true },
+					} ),
+			} );
+		},
+	} );
+
+	const result = await registered[ 0 ].definition.execute( {} );
+
+	assert.strictEqual( result.isError, true );
+	assert.strictEqual( result.content[ 0 ].text, 'The security token is missing or expired.' );
+} );
+
+test( 'a toolchange event re-registers the tool set against a fresh signal', () => {
+	const { registered, listeners, aborted } = runBridge( { config: adminConfig() } );
+
+	assert.strictEqual( registered.length, 1 );
+	assert.strictEqual( typeof listeners[ 'saltus-webmcp-toolchange' ], 'function' );
+
+	listeners[ 'saltus-webmcp-toolchange' ]( {
+		detail: {
+			tools: [
+				{
+					name: 'get_post',
+					description: 'Read one entry.',
+					inputSchema: { type: 'object', properties: {} },
+					annotations: { readOnlyHint: true },
+				},
+			],
+		},
+	} );
+
+	// The old set is unregistered before the new one lands, so an agent never
+	// sees both generations at once.
+	assert.deepStrictEqual( aborted, [ true ] );
+	assert.strictEqual( registered.length, 2 );
+	assert.strictEqual( registered[ 1 ].definition.name, 'get_post' );
+} );
+
+test( 'a toolchange without a payload re-registers the current set', () => {
+	const { registered, listeners } = runBridge( { config: adminConfig() } );
+
+	listeners[ 'saltus-webmcp-toolchange' ]();
+
+	assert.strictEqual( registered.length, 2 );
+	assert.strictEqual( registered[ 1 ].definition.name, 'update_post' );
+} );
+
+test( 'tools registered after a toolchange still unregister on pagehide', () => {
+	const { listeners, aborted, registered } = runBridge( { config: adminConfig() } );
+
+	listeners[ 'saltus-webmcp-toolchange' ]();
+	listeners.pagehide();
+
+	// Two aborts: one retiring the old generation, one tearing down the new. A
+	// stale controller here would leave the replacement tools registered.
+	assert.deepStrictEqual( aborted, [ true, true ] );
+	assert.notStrictEqual(
+		registered[ 1 ].opts.signal,
+		registered[ 0 ].opts.signal,
+		'The replacement generation needs its own signal.'
+	);
+} );
