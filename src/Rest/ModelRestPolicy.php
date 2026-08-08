@@ -19,6 +19,8 @@ class ModelRestPolicy {
 	public const CAPABILITY_HEALTH    = 'health';
 	public const CAPABILITY_BLOCKS    = 'blocks';
 
+	public const CAPABILITY_RELATIONSHIPS = 'relationships';
+
 	private Modeler $modeler;
 
 	public function __construct( Modeler $modeler ) {
@@ -76,7 +78,7 @@ class ModelRestPolicy {
 	 * @return mixed
 	 */
 	private function get_capability_config( array $config, string $capability ) {
-		if ( in_array( $capability, [ self::CAPABILITY_META, self::CAPABILITY_SETTINGS, self::CAPABILITY_BLOCKS ], true ) ) {
+		if ( in_array( $capability, [ self::CAPABILITY_META, self::CAPABILITY_SETTINGS, self::CAPABILITY_BLOCKS, self::CAPABILITY_RELATIONSHIPS ], true ) ) {
 			return $config[ $capability ] ?? null;
 		}
 

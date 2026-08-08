@@ -4,9 +4,12 @@ namespace Saltus\WP\Framework\Features\EditorialReview;
 
 use Saltus\WP\Framework\MCP\Audit\AuditEntry;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
+use Saltus\WP\Framework\MCP\Tools\AttachRelated;
 use Saltus\WP\Framework\MCP\Tools\CreateTerm;
+use Saltus\WP\Framework\MCP\Tools\DetachRelated;
 use Saltus\WP\Framework\MCP\Tools\DuplicatePost;
 use Saltus\WP\Framework\MCP\Tools\ReorderPosts;
+use Saltus\WP\Framework\MCP\Tools\SyncRelated;
 use Saltus\WP\Framework\MCP\Tools\RestTool;
 use Saltus\WP\Framework\MCP\Tools\UpdateMetaFields;
 use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
@@ -42,6 +45,9 @@ final class ProposalService {
 				'update_meta_fields',
 				'update_settings',
 				'reorder_posts',
+				'attach_related',
+				'detach_related',
+				'sync_related',
 			],
 			true
 		);
@@ -71,6 +77,9 @@ final class ProposalService {
 			'update_meta_fields' => 'update_meta',
 			'update_settings'    => 'update_settings',
 			'reorder_posts'      => 'reorder',
+			'attach_related'     => 'attach_related',
+			'detach_related'     => 'detach_related',
+			'sync_related'       => 'sync_related',
 		];
 		$action  = $actions[ $tool ] ?? '';
 		$model   = (string) ( $args['post_type'] ?? 'posts' );
@@ -261,7 +270,7 @@ final class ProposalService {
 			}
 			return new \WP_Error( 'proposal_apply_failed', __( 'The proposed deletion could not be applied.', 'saltus-framework' ), [ 'status' => 500 ] );
 		}
-		if ( in_array( $action, [ 'create_term', 'duplicate', 'update_meta', 'update_settings', 'reorder' ], true ) ) {
+		if ( in_array( $action, [ 'create_term', 'duplicate', 'update_meta', 'update_settings', 'reorder', 'attach_related', 'detach_related', 'sync_related' ], true ) ) {
 			return $this->apply_rest_mutation( $action, $args );
 		}
 		return new \WP_Error( 'proposal_action_invalid', __( 'The proposal action is invalid.', 'saltus-framework' ), [ 'status' => 400 ] );
@@ -310,6 +319,9 @@ final class ProposalService {
 			'update_meta'     => new UpdateMetaFields(),
 			'update_settings' => new UpdateSettings(),
 			'reorder'         => new ReorderPosts(),
+			'attach_related'  => new AttachRelated(),
+			'detach_related'  => new DetachRelated(),
+			'sync_related'    => new SyncRelated(),
 		][ $action ] ?? null;
 	}
 

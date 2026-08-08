@@ -38,6 +38,7 @@ use Saltus\WP\Framework\Features\Frontend\Frontend;
 use Saltus\WP\Framework\Features\AiContext\AiContext;
 use Saltus\WP\Framework\Features\AiAssistant\AiAssistant;
 use Saltus\WP\Framework\Features\EditorialReview\EditorialReview;
+use Saltus\WP\Framework\Features\Relationships\Relationships;
 use Saltus\WP\Framework\Features\WebMcp\WebMcp;
 use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
@@ -365,6 +366,7 @@ class Core implements Plugin {
 			'meta'             => Meta::class,
 			'mcp'              => MCP::class,
 			'quick_edit'       => QuickEdit::class,
+			'relationships'    => Relationships::class,
 			'remember_tabs'    => RememberTabs::class,
 			'settings'         => Settings::class,
 			'single_export'    => SingleExport::class,
