@@ -266,14 +266,10 @@ function placeholder_value( string $name, string $type ) {
 }
 
 function normalize_route_placeholders( string $route ): string {
-	$replacements = [
-		'%7Bpost_type%7D'          => '{post_type}',
-		'%7Btaxonomy_rest_base%7D' => '{taxonomy_rest_base}',
-		'%7Bname%7D'               => '{name}',
-		'%7Bslug%7D'               => '{slug}',
-	];
-
-	return str_replace( array_keys( $replacements ), array_values( $replacements ), $route );
+	// Tools build routes with rawurlencode(), which escapes the braces of a
+	// placeholder value. Decode any encoded placeholder back to {name} so the
+	// generated docs stay readable without listing each parameter here.
+	return (string) preg_replace( '/%7B([A-Za-z0-9_]+)%7D/', '{$1}', $route );
 }
 
 /**
