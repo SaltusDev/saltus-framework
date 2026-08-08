@@ -39,6 +39,7 @@ use Saltus\WP\Framework\Features\AiContext\AiContext;
 use Saltus\WP\Framework\Features\AiAssistant\AiAssistant;
 use Saltus\WP\Framework\Features\EditorialReview\EditorialReview;
 use Saltus\WP\Framework\Features\WebMcp\WebMcp;
+use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
@@ -187,7 +188,7 @@ class Core implements Plugin {
 		$routes = [
 			new RestRouteDefinition(
 				ModelRestPolicy::CAPABILITY_HEALTH,
-				new HealthController( self::VERSION )
+				new HealthController( self::VERSION, null, new WebMcpPolicy( $this->modeler ) )
 			),
 		];
 

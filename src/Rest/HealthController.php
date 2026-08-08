@@ -3,6 +3,7 @@
 namespace Saltus\WP\Framework\Rest;
 
 use Saltus\WP\Framework\Features\AiAssistant\AiClient;
+use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\MCP\MCPConfig;
 use WP_Error;
@@ -19,10 +20,12 @@ class HealthController extends WP_REST_Controller {
 
 	private string $version;
 	private AuditLogger $audit_logger;
+	private ?WebMcpPolicy $webmcp;
 
-	public function __construct( string $version, ?AuditLogger $audit_logger = null ) {
+	public function __construct( string $version, ?AuditLogger $audit_logger = null, ?WebMcpPolicy $webmcp = null ) {
 		$this->version      = $version;
 		$this->audit_logger = $audit_logger ?? new AuditLogger();
+		$this->webmcp       = $webmcp;
 		$this->namespace    = MCPConfig::get_namespace();
 		$this->rest_base    = 'health';
 	}
@@ -89,6 +92,7 @@ class HealthController extends WP_REST_Controller {
 					'connectors_available' => function_exists( 'wp_get_connectors' ),
 				],
 				'audit'        => $audit,
+				'webmcp'       => $this->webmcp_stats(),
 				'rate_limit'   => [
 					'enabled' => (bool) $this->filter( 'saltus/framework/mcp/rate_limit/enabled', true ),
 				],
@@ -97,6 +101,44 @@ class HealthController extends WP_REST_Controller {
 				],
 			]
 		);
+	}
+
+	/**
+	 * Report the WebMCP browser surface state.
+	 *
+	 * Registration is opt-in per model and silent when unsupported, which makes
+	 * "is it on?" genuinely hard to answer from the outside — the absence of tools
+	 * in a browser looks identical whether no model opted in or the browser has no
+	 * WebMCP API. This reports the server's half of that so an operator can tell
+	 * the two apart.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function webmcp_stats(): array {
+		if ( ! $this->webmcp instanceof WebMcpPolicy ) {
+			return [
+				'available'     => false,
+				'frontend'      => false,
+				'admin'         => false,
+				'enabled_count' => 0,
+				'models'        => [],
+			];
+		}
+
+		$frontend = $this->webmcp->frontend_models();
+		$admin    = $this->webmcp->admin_models();
+		$enabled  = $this->webmcp->enabled_models();
+
+		return [
+			'available'     => $enabled !== [],
+			'frontend'      => $frontend !== [],
+			'admin'         => $admin !== [],
+			'enabled_count' => count( $enabled ),
+			'models'        => [
+				'frontend' => $frontend,
+				'admin'    => $admin,
+			],
+		];
 	}
 
 	/**
