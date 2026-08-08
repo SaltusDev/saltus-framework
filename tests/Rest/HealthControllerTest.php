@@ -142,6 +142,55 @@ class HealthControllerTest extends TestCase {
 		$this->assertNull( $data['audit']['latency_ms']['p95'] );
 	}
 
+	public function testWebMcpStateReportsUnavailableWithoutAPolicy(): void {
+		$data = $this->controller->get_item( null )->get_data();
+
+		$this->assertFalse( $data['webmcp']['available'] );
+		$this->assertFalse( $data['webmcp']['frontend'] );
+		$this->assertFalse( $data['webmcp']['admin'] );
+		$this->assertSame( 0, $data['webmcp']['enabled_count'] );
+	}
+
+	public function testWebMcpStateReportsEnabledModelsPerSurface(): void {
+		global $wp_post_type_objects;
+
+		$logger = $this->createStub( AuditLogger::class );
+		$logger->method( 'get_recent_entries' )->willReturn( [] );
+
+		$public = $this->model( 'book', [ 'webmcp' => [ 'enabled' => true, 'frontend' => true, 'admin' => true ] ] );
+		$hidden = $this->model( 'note', [ 'webmcp' => [ 'enabled' => true, 'admin' => true ] ] );
+
+		$wp_post_type_objects['book'] = (object) [ 'name' => 'book', 'publicly_queryable' => true ];
+		$wp_post_type_objects['note'] = (object) [ 'name' => 'note', 'publicly_queryable' => false ];
+
+		$modeler = $this->createStub( \Saltus\WP\Framework\Modeler::class );
+		$modeler->method( 'get_models' )->willReturn( [ 'book' => $public, 'note' => $hidden ] );
+
+		$data = ( new HealthController( '2.0.0', $logger, new \Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy( $modeler ) ) )
+			->get_item( null )
+			->get_data();
+
+		// The two surfaces are reported separately: a private post type is a
+		// legitimate admin target but must never appear on the frontend list.
+		$this->assertTrue( $data['webmcp']['available'] );
+		$this->assertSame( [ 'book' ], $data['webmcp']['models']['frontend'] );
+		$this->assertSame( [ 'book', 'note' ], $data['webmcp']['models']['admin'] );
+		$this->assertSame( 2, $data['webmcp']['enabled_count'] );
+	}
+
+	/**
+	 * @param array<string, mixed> $config Model configuration.
+	 */
+	private function model( string $name, array $config ): \Saltus\WP\Framework\Models\Model {
+		$model = $this->createStub( \Saltus\WP\Framework\Models\Model::class );
+		$model->method( 'get_name' )->willReturn( $name );
+		$model->method( 'get_type' )->willReturn( 'post_type' );
+		$model->method( 'get_config' )->willReturn( $config );
+		$model->method( 'get_args' )->willReturn( [ 'public' => true, 'publicly_queryable' => true ] );
+
+		return $model;
+	}
+
 	private function getProtectedProperty( object $object, string $property ) {
 		$reflection = new \ReflectionProperty( $object, $property );
 		$reflection->setAccessible( true );

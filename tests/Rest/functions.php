@@ -77,6 +77,7 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 	class WP_REST_Request {
 		private array $params      = [];
 		private array $json_params = [];
+		private array $headers     = [];
 		private string $method     = 'GET';
 		private string $route      = '';
 
@@ -125,6 +126,14 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
 
 		public function get_attributes(): array {
 			return [];
+		}
+
+		public function set_header( string $key, $value ): void {
+			$this->headers[ strtolower( str_replace( '-', '_', $key ) ) ] = $value;
+		}
+
+		public function get_header( string $key ) {
+			return $this->headers[ strtolower( str_replace( '-', '_', $key ) ) ] ?? null;
 		}
 	}
 }
@@ -1124,5 +1133,25 @@ if ( ! function_exists( 'wp_get_connectors' ) ) {
 	function wp_get_connectors(): array {
 		global $wp_connectors;
 		return is_array( $wp_connectors ) ? $wp_connectors : [];
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	function rest_url( string $path = '' ): string {
+		return 'http://example.com/wp-json/' . ltrim( $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	function is_user_logged_in(): bool {
+		global $wp_current_user_id;
+		return (int) $wp_current_user_id > 0;
+	}
+}
+
+if ( ! function_exists( 'get_current_screen' ) ) {
+	function get_current_screen(): ?object {
+		global $wp_current_screen;
+		return is_object( $wp_current_screen ) ? $wp_current_screen : null;
 	}
 }

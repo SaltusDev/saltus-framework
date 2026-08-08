@@ -54,6 +54,7 @@ class WpCliFeatureTest extends TestCase {
 			'saltus reorder',
 			'saltus block',
 			'saltus context',
+			'saltus webmcp',
 		], array_keys( $this->cli->commands ) );
 	}
 
