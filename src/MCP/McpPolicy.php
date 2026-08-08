@@ -92,7 +92,7 @@ class McpPolicy {
 	 * @return mixed
 	 */
 	private function get_capability_config( array $config, string $capability ) {
-		if ( in_array( $capability, [ ModelRestPolicy::CAPABILITY_META, ModelRestPolicy::CAPABILITY_SETTINGS, ModelRestPolicy::CAPABILITY_BLOCKS ], true ) ) {
+		if ( in_array( $capability, [ ModelRestPolicy::CAPABILITY_META, ModelRestPolicy::CAPABILITY_SETTINGS, ModelRestPolicy::CAPABILITY_BLOCKS, ModelRestPolicy::CAPABILITY_RELATIONSHIPS ], true ) ) {
 			return $config[ $capability ] ?? null;
 		}
 
