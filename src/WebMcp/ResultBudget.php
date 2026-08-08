@@ -35,6 +35,9 @@ final class ResultBudget {
 	/** Bound on string-clipping passes, so no payload can loop indefinitely. */
 	private const MAX_PASSES = 20;
 
+	/** Bound on list-shrinking passes, so no payload can loop indefinitely. */
+	private const MAX_LIST_PASSES = 50;
+
 	/** Marker appended to a clipped string. */
 	private const ELLIPSIS = '…';
 
@@ -119,7 +122,11 @@ final class ResultBudget {
 	 * @return array<string, mixed>
 	 */
 	private function shrink_lists( array $result, int $allowance ): array {
-		while ( $this->measure( $result ) > $allowance ) {
+		for ( $pass = 0; $pass < self::MAX_LIST_PASSES; $pass++ ) {
+			if ( $this->measure( $result ) <= $allowance ) {
+				return $result;
+			}
+
 			$key = $this->longest_list_key( $result );
 			if ( $key === null ) {
 				return $result;
