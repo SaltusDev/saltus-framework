@@ -39,8 +39,8 @@ The shorthand `webmcp: true` means the same thing.
 | Key | Default | Effect |
 |---|---|---|
 | `enabled` | `false` | Master switch for the model |
-| `frontend` | `false` | Register tools on public model views |
-| `admin` | `false` | Reserved for 8B — admin screens, not yet implemented |
+| `frontend` | `false` | Register read tools on public model views |
+| `admin` | `false` | Register capability-gated tools on wp-admin screens |
 | `tools` | all | Optional allowlist of tool names |
 
 To narrow the surface to specific tools:
@@ -54,8 +54,17 @@ webmcp:
     - get_content
 ```
 
-A model is only eligible if its post type is publicly queryable. A non-public post type with
-`webmcp.enabled: true` registers nothing — the policy filters it out before the manifest is built.
+The two surfaces are independent. `frontend: true` opens a public, anonymous, read-only surface;
+`admin: true` opens an authenticated, capability-gated one on wp-admin screens. Enabling one does
+not enable the other.
+
+For the **frontend** surface a model is only eligible if its post type is publicly queryable. A
+non-public post type with `frontend: true` registers nothing — the policy filters it out before the
+manifest is built.
+
+The **admin** surface does not require public queryability. An agent there acts as a logged-in user
+who can already reach the screen, so a private post type is a legitimate target; the gate is
+capability, checked per tool and again per call.
 
 ## Tool reference
 
@@ -126,6 +135,113 @@ Search published content on this site by keyword. Returns matching entries with 
 | Parameter description | 150 characters | `ManifestBuilder` — truncated on a word boundary |
 | Serialized result | 1500 characters | `ResultBudget` — entries dropped, then strings clipped |
 <!-- END AUTO-GENERATED WEBMCP TOOLS -->
+
+## The admin surface
+
+With `admin: true`, the abilities Saltus already registers for MCP/Abilities and `wp saltus` are
+projected onto the relevant wp-admin screens. Nothing new is authored: the same tool definitions gain
+a third consumer, so the browser surface cannot drift from the other two.
+
+```yaml
+name: Book
+webmcp:
+  enabled: true
+  admin: true
+```
+
+### Writes never apply directly
+
+**No WebMCP write tool mutates anything.** Every mutating call creates a `pending` proposal in the
+editorial review queue and returns its id and review URL to the agent:
+
+```json
+{
+  "proposal_id": 42,
+  "status": "pending",
+  "requires_review": true,
+  "review_url": "https://example.com/wp-admin/tools.php?page=saltus-ai-review&proposal=42",
+  "message": "The change was queued for editorial review."
+}
+```
+
+The agent hands that link to the human, who approves or rejects it. This is the same
+`ProposalService` path Phase 6B built for MCP/Abilities, and it exists because WebMCP has no settled
+confirmation model — `requestUserInteraction()` is in the spec draft but unresolved, and
+authentication at the WebMCP layer is undefined. Rather than invent a confirmation flow, Saltus routes
+writes to the one it already has.
+
+Write tools are deliberately **not** annotated `readOnlyHint`. A queued write still changes state, and
+`readOnlyHint` is the only signal that makes an agent pause to confirm. Each write tool's description
+also states that it queues rather than applies, because the agent plans against that text.
+
+If the review queue is unavailable, a mutating tool returns `503` rather than falling back to a direct
+write. A missing dependency must not silently become an unreviewed change.
+
+### Per-screen tool scoping
+
+Tools are scoped to the screen being viewed, not registered uniformly. An agent cannot tell a tool
+that is wrong for the current screen from one that is right, so the wrong ones are not offered.
+
+| Screen | Tools |
+|---|---|
+| Post editor | `get_post`, `get_model`, `get_context`, `get_meta_fields`, `list_terms`, `update_post`, `update_meta_fields`, `create_term` |
+| Post list | `list_posts`, `list_models`, `get_model`, `get_context`, `list_terms`, `create_post`, `duplicate_post`, `reorder_posts` |
+| Settings | `get_settings`, `get_model`, `list_models`, `update_settings` |
+| Review queue | `get_post`, `get_model`, `get_health` — reads only |
+
+The review queue gets no write tools on purpose: an agent proposing changes from the screen where a
+human reviews proposals would be arguing with itself.
+
+Adjust a screen's set with `saltus/framework/webmcp/admin_tools`:
+
+```php
+add_filter(
+	'saltus/framework/webmcp/admin_tools',
+	function ( array $tools, string $screen ): array {
+		if ( $screen === 'post_editor' ) {
+			return array_values( array_diff( $tools, [ 'create_term' ] ) );
+		}
+
+		return $tools;
+	},
+	10,
+	2
+);
+```
+
+### Capability gating
+
+Two checks apply, and they answer different questions. Discovery asks "should this user see the tool
+at all" and uses the ability's own capability requirement — a tool the current user could never call
+is never advertised, so an agent is not handed options that will refuse every invocation. Invocation
+then asks "may this call proceed with these arguments" through the ability's own
+`has_permission()`, which usually needs a target id the manifest has no way to supply.
+
+### Nonce handling
+
+Admin calls act as the logged-in user, so each one carries an `X-WP-Nonce` header. A missing or
+expired nonce is rejected with `403` and `refresh: true`.
+
+An admin screen left open beside an agent conversation will outlive its nonce. The bridge handles
+that without the user noticing: on seeing `refresh: true` it fetches a replacement from
+`/webmcp/nonce` and retries the call once. Exactly once — a loop would hammer the endpoint when the
+session has genuinely ended rather than merely aged out. A real permission failure returns `403`
+*without* the flag and is not retried.
+
+### Announcing a changed tool set
+
+When a model's state changes what an agent can do, dispatch a `saltus-webmcp-toolchange` event. The
+bridge unregisters the previous generation against a fresh `AbortController` and registers the
+replacement, which causes the browser to fire its own `toolchange` event so a listening agent
+re-reads the list instead of planning against tools that no longer exist:
+
+```js
+window.dispatchEvent(
+	new CustomEvent( 'saltus-webmcp-toolchange', { detail: { tools: nextDescriptors } } )
+);
+```
+
+Omit `detail.tools` to re-register the current set.
 
 ## What the browser can and cannot reach
 
@@ -217,8 +333,9 @@ The manifest route (`GET /webmcp/manifest`) is page-scoped: it accepts `?post_ty
 
 | Route | Method | Purpose | Permission |
 |---|---|---|---|
-| `/saltus-framework/v1/webmcp/manifest` | GET | Tool descriptors for the current context | Public when a model enables frontend WebMCP; otherwise 404 |
-| `/saltus-framework/v1/webmcp/execute` | POST | Invoke one tool by name with validated args | Public for read tools, rate-limited per client |
+| `/saltus-framework/v1/webmcp/manifest` | GET | Tool descriptors for the current context | Public when a model enables either surface; otherwise 404 |
+| `/saltus-framework/v1/webmcp/execute` | POST | Invoke one tool by name with validated args | Public for read tools; admin tools require a logged-in user and a valid nonce. Rate-limited per client |
+| `/saltus-framework/v1/webmcp/nonce` | GET | Issue a replacement REST nonce | Logged-in users only; 401 otherwise |
 
 The bridge does not call `/manifest` on page load. Descriptors are localized into the page, so
 discovery costs no network round trip.
@@ -227,11 +344,19 @@ discovery costs no network round trip.
 
 | Filter | Purpose |
 |---|---|
-| `saltus/framework/webmcp/tools` | Add or remove tool instances before projection |
+| `saltus/framework/webmcp/tools` | Add or remove public tool instances before projection |
+| `saltus/framework/webmcp/admin_tools` | Adjust the tool names offered on one admin screen |
 | `saltus/framework/webmcp/manifest` | Adjust the final descriptor list, per post type |
 | `saltus/framework/webmcp/public_fields` | Control which meta fields a public tool may return |
 | `saltus/framework/webmcp/client_identifier` | Resolve the real client behind a proxy or CDN |
 | `saltus/framework/webmcp/output_budget` | Raise or lower the result character budget |
+| `saltus/framework/editorial_review/require_human_review` | Whether a mutating tool queues for review |
+
+::: danger Disabling review
+Setting `require_human_review` to `false` makes WebMCP writes apply immediately, with no human in the
+loop and no confirmation model in the browser to fall back on. The proposal queue is the only thing
+standing between a language model's mistake and your content.
+:::
 
 Restricting the public field set:
 
@@ -266,10 +391,41 @@ composer docs:webmcp
 Run it whenever a tool is added, renamed, or has its parameters changed. The section between the
 `AUTO-GENERATED` markers is overwritten; the prose around it is not.
 
+## Inspecting the surface offline
+
+The surface is otherwise only observable from inside a browser that implements an API Chrome ships no
+earlier than 157, which makes a misconfiguration and an unsupported browser look identical. Two
+commands render what the bridge would receive, without one:
+
+```bash
+wp saltus webmcp manifest                                  # frontend descriptors
+wp saltus webmcp manifest --surface=admin                  # admin descriptors
+wp saltus webmcp manifest --surface=admin --screen=settings # scoped to one screen
+wp saltus webmcp validate                                  # check the config is coherent
+```
+
+`validate` exits non-zero and reports four classes of problem: a tool name over the 30-character
+budget (silently truncated by the agent, so uncallable), a model with `frontend: true` whose post type
+is not publicly queryable (configured for a surface it can never serve), an allowlist naming a tool
+that does not exist (a typo that fails open, exposing everything you meant to narrow), and a model
+enabled for neither surface.
+
+Health output reports the same state for monitoring:
+
+```bash
+wp saltus health
+curl https://example.com/wp-json/saltus-framework/v1/health
+```
+
+The `webmcp` block reports `available`, `frontend`, `admin`, `enabled_count`, and the enabled models
+per surface.
+
 ## Not in this release
 
-Write tools, admin-screen registration, cross-origin `exposedTo` delegation, and the declarative
-forms API are all out of scope for the frontend surface. When writes arrive they will not mutate
-directly — each one will create a proposal through the editorial review queue described in
-[Architecture](/guides/architecture), returning its id and review URL to the agent, because WebMCP
-has no settled confirmation or authentication model to build against.
+Cross-origin `exposedTo` delegation and the declarative forms API remain out of scope. The
+declarative evaluation is recorded in
+[Evaluation: Declarative Forms](/discovery/webmcp-declarative-forms) — the short version is that
+Codestar renders field titles as `<h4>` rather than `<label>`, emits no `id` on inputs and no ARIA
+attributes across all 45 field types, and composes bracketed field names, so a derived schema would
+carry no property descriptions. That is an accessibility defect worth fixing on its own merits, and
+the evaluation recommends doing so before revisiting the API.

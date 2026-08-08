@@ -8,7 +8,7 @@ Saltus Framework follows a service-oriented architecture with a dependency injec
 Core (Plugin interface)
   |
   |- ServiceContainer (DI container)
-  |    |- Registers 16 feature services
+  |    |- Registers 17 feature services
   |    |- Two-pass registration: unconditional for routes/tools,
   |    |   gated via is_needed() for hooks/assets
   |
@@ -18,7 +18,7 @@ Core (Plugin interface)
   |    |- Exposes get_models(), REST routes, and MCP tools
   |
   |- RestServer
-  |    |- Registers 17 REST routes in saltus-framework/v1/
+  |    |- Registers 20 REST routes in saltus-framework/v1/
   |    |- Uses ModelRestPolicy + CapabilityPolicy for gating
   |
   |- MCP/Abilities
@@ -57,7 +57,7 @@ If no value can be resolved, the container throws `FailedToMakeInstance` with th
 
 ### REST API (`src/Rest/`)
 
-Eleven REST controllers register 17 routes under the `saltus-framework/v1/` namespace:
+Twelve REST controllers register 20 routes under the `saltus-framework/v1/` namespace:
 
 | Route | Methods | Controller |
 |---|---|---|
@@ -78,8 +78,13 @@ Eleven REST controllers register 17 routes under the `saltus-framework/v1/` name
 | `/proposals/{id}` | GET | `EditorialReviewController` |
 | `/proposals/{id}/approve` | POST | `EditorialReviewController` |
 | `/proposals/{id}/reject` | POST | `EditorialReviewController` |
+| `/webmcp/manifest` | GET | `WebMcpController` |
+| `/webmcp/execute` | POST | `WebMcpController` |
+| `/webmcp/nonce` | GET | `WebMcpController` |
 
 Model-scoped routes are gated by `ModelRestPolicy`. `/health` and the `/proposals` routes are framework-scoped and do not require per-model opt-in.
+
+The `/webmcp/` routes are gated on a model having opted into a WebMCP surface, and return 404 when none has. `/webmcp/execute` additionally requires a logged-in user and a valid `wp_rest` nonce for any admin-surface tool.
 
 ### MCP/Abilities (`src/MCP/`)
 WordPress-native MCP/Abilities integration exposing 20 tools through a middleware pipeline with caching, rate limiting, audit logging, and permission gating.
