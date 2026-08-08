@@ -1,7 +1,7 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` bumped to 1.8.0 (2026-08-08); `CHANGELOG.md` carries a 1.8.0 release section; relationship to the historical `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
+- Version: `package.json` bumped to 1.8.1 (2026-08-08); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08. See [Discovery: WebMCP](discovery/webmcp.md).
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 20 tools
@@ -400,7 +400,8 @@ frontend:
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 - ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
 - ✓ **Phase 6C AI client generation** — unhandled assistant actions generate through the WordPress AI Client; `saltus/framework/ai/prompt_builder` filter; AI availability reported in health + `wp saltus` — delivered 2026-08-07.
-- Reconcile version numbering across `package.json` (now 1.8.0), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- Reconcile version numbering across `package.json` (now 1.8.1), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- ✓ **Phase 8B implementation** — admin WebMCP surface and proposal-queue-governed writes: `AdminScreen`/`AdminToolSet` per-screen scoping, `AdminTool` decorating existing abilities with the review-queue write posture, nonce-authenticated execute + refresh route, `saltus-webmcp-toolchange` re-registration in the bridge, `wp saltus webmcp manifest|validate`, health/`wp saltus health` WebMCP stats, and the declarative forms no-go evaluation in [Discovery: Declarative Forms](discovery/webmcp-declarative-forms.md) — delivered 2026-08-08.
 - ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B; research recorded in [Discovery: WebMCP](discovery/webmcp.md) — scoped 2026-08-07.
 - ✓ **Phase 8A implementation** — `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `PublicFieldFilter`, `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe — delivered 2026-08-07.
 - ✓ **Phase 8A hardening and docs** — per-client rate limiting via `ClientIdentity`, `ResultBudget` output clamping, `bridge.js` test coverage, and the generated `docs/guides/webmcp.md` reference — delivered 2026-08-08.
