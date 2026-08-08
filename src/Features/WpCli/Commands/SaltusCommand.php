@@ -2,6 +2,7 @@
 namespace Saltus\WP\Framework\Features\WpCli\Commands;
 
 use Saltus\WP\Framework\Core;
+use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
 use Saltus\WP\Framework\Features\WpCli\CliGateway;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\Rest\HealthController;
@@ -20,7 +21,7 @@ final class SaltusCommand extends AbstractCommand {
 	 * @param array<string, mixed> $assoc_args Associative arguments.
 	 */
 	public function health( array $args, array $assoc_args ): void {
-		$response = ( new HealthController( Core::VERSION, new AuditLogger() ) )->get_item( null );
+		$response = ( new HealthController( Core::VERSION, new AuditLogger(), new WebMcpPolicy( $this->modeler() ) ) )->get_item( null );
 		$data     = $response->get_data();
 		$row      = is_array( $data ) ? $data : [ 'result' => $data ];
 		$this->cli->format_items( $this->format( $assoc_args ), [ $this->flatten( $row ) ], array_keys( $this->flatten( $row ) ) );

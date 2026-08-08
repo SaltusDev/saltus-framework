@@ -10,6 +10,7 @@ use Saltus\WP\Framework\Features\WpCli\Commands\ReorderCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\SaltusCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\SettingsCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\TermCommand;
+use Saltus\WP\Framework\Features\WpCli\Commands\WebMcpCommand;
 use Saltus\WP\Framework\Infrastructure\Plugin\Registerable;
 use Saltus\WP\Framework\Infrastructure\Service\Conditional;
 use Saltus\WP\Framework\Infrastructure\Service\Service;
@@ -48,5 +49,6 @@ final class WpCli implements Service, Conditional, Registerable {
 		$this->cli->add_command( 'saltus reorder', new ReorderCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus block', new BlockCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus context', new ContextCommand( $this->cli, $resolver ) );
+		$this->cli->add_command( 'saltus webmcp', new WebMcpCommand( $this->cli, $resolver ) );
 	}
 }
