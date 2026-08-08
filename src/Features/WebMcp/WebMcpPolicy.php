@@ -106,8 +106,6 @@ final class WebMcpPolicy {
 	/**
 	 * Whether a model exposes WebMCP tools on admin screens.
 	 *
-	 * Reserved for Phase 8B. Frontend registration never consults this.
-	 *
 	 * @param string $model_name Post type slug.
 	 */
 	public function is_admin_enabled( string $model_name ): bool {
@@ -135,6 +133,28 @@ final class WebMcpPolicy {
 		}
 
 		return in_array( $tool_name, $config['tools'], true );
+	}
+
+	/**
+	 * Whether any model with the given surface enabled permits a tool.
+	 *
+	 * Used where no single model is in context — a site-wide manifest request, or
+	 * an execute call that names only a tool. Without this, a tool allowed by one
+	 * model would be refused because another model's allowlist omits it.
+	 *
+	 * @param string $tool_name Tool name.
+	 * @param string $surface   `frontend` or `admin`.
+	 */
+	public function allowed_by_any_model( string $tool_name, string $surface = 'frontend' ): bool {
+		$models = $surface === 'admin' ? $this->admin_models() : $this->frontend_models();
+
+		foreach ( $models as $model ) {
+			if ( $this->allows_tool( $model, $tool_name ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -168,10 +188,53 @@ final class WebMcpPolicy {
 	}
 
 	/**
+	 * Get every post type model with admin WebMCP enabled.
+	 *
+	 * Public queryability is deliberately not required here: an admin agent acts
+	 * as a capable, authenticated user, so a private post type is legitimately in
+	 * scope. Gating is by capability instead, checked per tool and per call.
+	 *
+	 * @return list<string> Post type slugs.
+	 */
+	public function admin_models(): array {
+		$models = [];
+
+		foreach ( $this->models() as $name => $model ) {
+			if ( $model->get_type() !== self::SUPPORTED_MODEL_TYPE ) {
+				continue;
+			}
+
+			if ( ! $this->is_admin_enabled( (string) $name ) ) {
+				continue;
+			}
+
+			$models[] = (string) $name;
+		}
+
+		return $models;
+	}
+
+	/**
 	 * Whether any model exposes a frontend WebMCP surface.
 	 */
 	public function has_frontend_surface(): bool {
 		return $this->frontend_models() !== [];
+	}
+
+	/**
+	 * Whether any model exposes an admin WebMCP surface.
+	 */
+	public function has_admin_surface(): bool {
+		return $this->admin_models() !== [];
+	}
+
+	/**
+	 * Models exposing a WebMCP surface of either kind.
+	 *
+	 * @return list<string> Post type slugs, deduplicated.
+	 */
+	public function enabled_models(): array {
+		return array_values( array_unique( array_merge( $this->frontend_models(), $this->admin_models() ) ) );
 	}
 
 	/**

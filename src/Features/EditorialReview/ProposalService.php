@@ -22,8 +22,16 @@ final class ProposalService {
 		$this->audit = $audit ?? new AuditLogger();
 	}
 
-	public function should_queue( string $tool ): bool {
-		if ( ! in_array(
+	/**
+	 * Whether a tool changes state.
+	 *
+	 * Separate from should_queue() because the two answer different questions:
+	 * this one is a fact about the tool, that one is a site's policy choice about
+	 * it. Callers needing to label a tool — a `readOnlyHint` for an agent, say —
+	 * must not have the answer flip because a site disabled review.
+	 */
+	public function is_mutating( string $tool ): bool {
+		return in_array(
 			$tool,
 			[
 				'create_post',
@@ -36,7 +44,11 @@ final class ProposalService {
 				'reorder_posts',
 			],
 			true
-		) ) {
+		);
+	}
+
+	public function should_queue( string $tool ): bool {
+		if ( ! $this->is_mutating( $tool ) ) {
 			return false;
 		}
 		if ( function_exists( 'apply_filters' ) ) {
