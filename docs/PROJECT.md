@@ -32,7 +32,7 @@ Saltus Framework is designed to make things easier and faster for developers wit
 - **Block Editor**: Generates dynamic list and single blocks from CPT model configuration and metadata.
 - **Frontend Rendering**: Renders model-driven list and single views through the `[saltus_cpt]` shortcode.
 - **AI Governance**: Per-model `ai_context` rules, an editorial review queue for agent-proposed changes, and in-admin AI assistants.
-- **Operational Tooling**: Exposes all 20 WordPress-native abilities through equivalent `wp saltus` commands.
+- **Operational Tooling**: Exposes all WordPress-native abilities through equivalent `wp saltus` commands.
 
 ## Core Concepts
 
