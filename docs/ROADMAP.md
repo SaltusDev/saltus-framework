@@ -2,7 +2,7 @@
 
 ## Current Status
 - Version: `package.json` bumped to 1.8.0 (2026-08-08); `CHANGELOG.md` carries a 1.8.0 release section; relationship to the historical `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
-- Phases 1–7 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) remains. See [Discovery: WebMCP](discovery/webmcp.md).
+- Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08. See [Discovery: WebMCP](discovery/webmcp.md).
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 20 tools
 - REST API: 17 routes registered in `saltus-framework/v1/` across 11 controllers
@@ -404,6 +404,8 @@ frontend:
 - ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B; research recorded in [Discovery: WebMCP](discovery/webmcp.md) — scoped 2026-08-07.
 - ✓ **Phase 8A implementation** — `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `PublicFieldFilter`, `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe — delivered 2026-08-07.
 - ✓ **Phase 8A hardening and docs** — per-client rate limiting via `ClientIdentity`, `ResultBudget` output clamping, `bridge.js` test coverage, and the generated `docs/guides/webmcp.md` reference — delivered 2026-08-08.
+- ✓ **Phase 8B implementation** — admin surface and proposal-queue-governed writes: `WebMcpTool` contract, `AdminTool` ability projection, `AdminScreen`/`AdminToolSet` per-screen scoping, `/webmcp/nonce` route with silent bridge refresh-and-retry, `saltus-webmcp-toolchange` re-registration, WebMCP state in health output, and `wp saltus webmcp manifest|validate` — delivered 2026-08-08.
+- ✓ **Declarative forms evaluation** — no-go for 8B; Codestar emits `<h4>` titles, no input `id`, and no ARIA across 45 field types, so a derived schema would carry no property descriptions. Four accessibility defects documented for separate scoped work in [Evaluation](discovery/webmcp-declarative-forms.md) — evaluated 2026-08-08.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -659,25 +661,43 @@ under `src/MCP/Tools/Public/`.
 
 **Write posture:** no WebMCP write tool ever mutates directly. Every one creates a proposal, returns the proposal id and a review URL to the agent, and waits. This mirrors Shopify shipping zero money-moving tools while still exposing page-steering writes.
 
+**Files:**
+
+| File | Purpose |
+|------|---------|
+| `src/WebMcp/WebMcpTool.php` | Contract adding surface, authentication, and discovery-capability to `ToolInterface` |
+| `src/WebMcp/Tools/AdminTool.php` | Decorator projecting an existing ability onto the admin surface, queueing its writes |
+| `src/Features/WebMcp/AdminScreen.php` | Resolves the current admin screen and its post type context |
+| `src/Features/WebMcp/AdminToolSet.php` | Maps a screen to the tool names meaningful on it |
+| `src/Features/WpCli/Commands/WebMcpCommand.php` | `wp saltus webmcp manifest\|validate` |
+
 | Item | Status |
 |------|--------|
-| `WebMcp::is_needed()` extended to admin screens with `webmcp.admin: true` | ○ |
-| Admin-context tool projection of existing capability-gated abilities | ○ |
-| Write tools route through `ProposalService::should_queue()` — never direct mutation | ○ |
-| Proposal id + review URL returned in the tool result | ○ |
-| Nonce handling for authenticated invocations, refreshable without a page reload | ○ |
-| Per-screen tool scoping (post editor, settings page, review queue) | ○ |
-| Declarative forms API evaluation for Codestar metabox and settings markup | ○ |
-| Accessibility pass on metabox/settings labels feeding declarative schema derivation | ○ |
-| `toolchange` emission when model state alters the available tool set | ○ |
-| Health output reports WebMCP registration state and enabled model count | ○ |
-| `wp saltus webmcp {manifest\|validate}` for offline manifest inspection | ○ |
-| PHPUnit coverage: admin gating, proposal creation from WebMCP writes, nonce failure paths | ○ |
+| `WebMcp::is_needed()` extended to admin screens with `webmcp.admin: true` | ✓ Done 2026-08-08 |
+| Admin-context tool projection of existing capability-gated abilities | ✓ Done 2026-08-08 |
+| Write tools route through `ProposalService::should_queue()` — never direct mutation | ✓ Done 2026-08-08 |
+| Proposal id + review URL returned in the tool result | ✓ Done 2026-08-08 |
+| Nonce handling for authenticated invocations, refreshable without a page reload | ✓ Done 2026-08-08 |
+| Per-screen tool scoping (post editor, settings page, review queue) | ✓ Done 2026-08-08 |
+| Declarative forms API evaluation for Codestar metabox and settings markup | ✓ Done 2026-08-08 — **no-go**, recorded in [Evaluation](discovery/webmcp-declarative-forms.md) |
+| Accessibility pass on metabox/settings labels feeding declarative schema derivation | ✓ Audited 2026-08-08 — four defects documented; the fix is vendored-code work deliberately left outside this phase |
+| `toolchange` emission when model state alters the available tool set | ✓ Done 2026-08-08 |
+| Health output reports WebMCP registration state and enabled model count | ✓ Done 2026-08-08 |
+| `wp saltus webmcp {manifest\|validate}` for offline manifest inspection | ✓ Done 2026-08-08 |
+| PHPUnit coverage: admin gating, proposal creation from WebMCP writes, nonce failure paths | ✓ Done 2026-08-08 |
 
-**Exit criteria:** Models with `webmcp.admin: true` register capability-gated tools on their admin screens. Every mutating WebMCP call creates a `pending` proposal and returns its id and review URL — no direct writes exist. Nonce refresh works without reload. Health and `wp saltus` report WebMCP state. The declarative forms evaluation is documented with a go/no-go recommendation.
+**Design notes from implementation:**
+- `is_needed()` returns `true` unconditionally rather than branching on `has_admin_surface()`. Models are not registered when the service container evaluates the gate, so the policy would report no surface on every site. The real check happens at enqueue time, when the modeler is populated.
+- Discovery capability is separate from `has_permission()`. The latter answers "may this call proceed with these arguments" and usually needs a target id the manifest cannot supply, so listing a tool would otherwise depend on inventing arguments for it.
+- `ProposalService::is_mutating()` was extracted from `should_queue()`. The two answer different questions — one is a fact about the tool, the other a site's policy choice — and a `readOnlyHint` must not flip because a site disabled review.
+- A mutating tool with no review queue returns `503`, never a direct write. A missing dependency must not silently become an unreviewed change.
+- The bridge retries a stale nonce exactly once, keyed on the server's `refresh` flag rather than the 403 status, since a genuine capability failure arrives as a 403 too.
+- The frontend payload carries no nonce. One bound to a session an anonymous visitor does not have would imply an authentication story the public surface lacks.
+
+**Exit criteria:** Models with `webmcp.admin: true` register capability-gated tools on their admin screens. Every mutating WebMCP call creates a `pending` proposal and returns its id and review URL — no direct writes exist. Nonce refresh works without reload. Health and `wp saltus` report WebMCP state. The declarative forms evaluation is documented with a go/no-go recommendation. ✓ Done 2026-08-08
 
 ---
 
-**Exit criteria (Phase 8 overall):** Saltus models can expose read tools to in-browser agents on the frontend and capability-gated tools in the admin, all projected from the existing tool registry rather than hand-authored. Writes are governed by the editorial review queue. The surface is opt-in per model, degrades silently on unsupported browsers, and re-validates every argument server-side.
+**Exit criteria (Phase 8 overall):** Saltus models can expose read tools to in-browser agents on the frontend and capability-gated tools in the admin, all projected from the existing tool registry rather than hand-authored. Writes are governed by the editorial review queue. The surface is opt-in per model, degrades silently on unsupported browsers, and re-validates every argument server-side. ✓ Done 2026-08-08
 
 **Non-goals for Phase 8:** shipping our own agent or browser extension, cross-origin tool sharing via `exposedTo`, a `/.well-known/` WebMCP manifest convention (not canonical yet), and any expectation of inbound agent traffic this cycle — no observed deployment has recorded an external agent call.
