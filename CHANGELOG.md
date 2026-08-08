@@ -4,6 +4,16 @@
 ## [Unreleased]
 
 ### Added
+	- Phase 8B WebMCP admin surface: models adding `webmcp: { admin: true }` expose their capability-gated abilities as tools on the relevant wp-admin screens. Nothing new is authored — `AdminTool` decorates the abilities already registered for MCP/Abilities and `wp saltus`, so the browser surface cannot drift from the other two consumers.
+	- **Every mutating WebMCP call is queued for human review, never applied.** Writes route through `ProposalService` to the Phase 6B review queue and the agent receives the proposal id plus a review URL to hand to a person. WebMCP has no settled confirmation model and no authentication story, so writes take the path Saltus already built rather than a new one.
+	- Per-screen tool scoping: post editor, post list, settings, and review queue each get a distinct tool set, because an agent cannot distinguish a tool that is wrong for the current screen from one that is right. The review queue gets reads only.
+	- `GET /saltus-framework/v1/webmcp/nonce` issues a replacement REST nonce, and the bridge retries a stale one once without the user noticing — an admin screen left open beside an agent conversation will outlive its nonce.
+	- `saltus-webmcp-toolchange` window event re-registers the tool set against a fresh `AbortController`, so the browser fires its own `toolchange` and a listening agent re-reads the list instead of planning against tools that no longer exist.
+	- `wp saltus webmcp manifest|validate` inspects the surface offline. The surface is otherwise only observable inside a browser implementing an API Chrome ships no earlier than 157, which makes a misconfiguration and an unsupported browser look identical. `validate` catches over-long tool names, `frontend: true` on a non-publicly-queryable model, allowlist typos that fail open, and models enabled for neither surface.
+	- Health output and `wp saltus health` report WebMCP registration state and the enabled model count per surface.
+	- Filter `saltus/framework/webmcp/admin_tools` adjusts the tool names offered on one admin screen.
+	- `ProposalService::is_mutating()` reports whether a tool changes state, separately from `should_queue()`, which reports whether a site's policy requires review for it.
+	- `docs/discovery/webmcp-declarative-forms.md` — the declarative forms evaluation, with a no-go recommendation and four documented Codestar accessibility defects.
 	- `docs/guides/webmcp.md`, with a tool reference generated from the tool classes by `composer docs:webmcp`. Registered in the docs nav and sidebar.
 	- `ResultBudget` clamps a serialized WebMCP result to the 1500-character agent output budget, dropping entries from the longest list before clipping strings and setting `truncated` when it does. Sibling `count` values are corrected so they never overstate what shipped.
 	- `ClientIdentity` resolves the caller behind a WebMCP tool call: logged-in callers by user id, everyone else by a salted hash of `REMOTE_ADDR`. No raw visitor IP reaches the audit table.
@@ -11,10 +21,15 @@
 	- First JavaScript test suite: 13 `node:test` cases covering `bridge.js`, including the silent no-op on browsers without a WebMCP surface. Run with `npm test`; no npm dependencies required.
 
 ### Changed
+	- `WebMcp::is_needed()` now returns true in the admin as well as the frontend. The admin bridge is gated at enqueue time instead, because models are not yet registered when the service container evaluates the gate.
+	- `/webmcp/manifest` lists a tool only if the current user could actually call it, so an agent is never handed options that will refuse every invocation.
 	- `/webmcp/execute` is now rate-limited per client instead of on a single shared key. Previously one visitor's agent working through a multi-step task could exhaust the 60-call window for every other visitor on the site.
 	- WebMCP audit rows now record the resolved client identifier rather than a constant, so browser traffic is attributable per client while staying distinguishable from WordPress-native ability calls.
 
 ### Security
+	- Admin-surface WebMCP tools require a logged-in user and a valid `wp_rest` nonce. Without the nonce a cross-site page could drive the admin surface using the visitor's own cookies.
+	- A mutating WebMCP tool returns 503 when the review queue is unavailable, rather than falling back to a direct write. A missing dependency must not silently become an unreviewed change.
+	- Write tools are deliberately not annotated `readOnlyHint`. A queued write still changes state, and that annotation is the only signal that makes an agent pause to confirm with a human.
 	- Caller-supplied forwarding headers are deliberately ignored when identifying a WebMCP client. Honoring `X-Forwarded-For` by default would let an agent reset its own rate limit by varying one header; sites behind a trusted edge opt in through the `client_identifier` filter.
 
 ## [1.7.0]
