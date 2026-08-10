@@ -188,7 +188,7 @@ final class WebMcpController extends WP_REST_Controller {
 		return rest_ensure_response(
 			[
 				'tools'  => $this->manifest_builder->to_array( $descriptors ),
-				'models' => $this->policy->frontend_models(),
+				'models' => $this->policy->enabled_models(),
 			]
 		);
 	}

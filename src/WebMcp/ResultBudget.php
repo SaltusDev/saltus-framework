@@ -117,6 +117,9 @@ final class ResultBudget {
 	 * result set and a short one loses entries from the set that is actually
 	 * costing the budget.
 	 *
+	 * If the pass bound is reached without fitting, drops all remaining list
+	 * entries to guarantee the result fits the allowance.
+	 *
 	 * @param array<string, mixed> $result    Payload to shrink.
 	 * @param int                  $allowance Character allowance.
 	 * @return array<string, mixed>
@@ -137,6 +140,18 @@ final class ResultBudget {
 			array_pop( $list );
 			$result[ $key ] = $list;
 			$result         = $this->recount( $result, $key, count( $list ) );
+		}
+
+		// Pass bound reached but payload still doesn't fit: drop all remaining
+		// list entries to guarantee fit. This handles payloads with many short
+		// entries across multiple lists where incremental removal is too slow.
+		if ( $this->measure( $result ) > $allowance ) {
+			foreach ( $result as $key => $value ) {
+				if ( is_array( $value ) && $value !== [] && $this->is_list( $value ) ) {
+					$result[ $key ] = [];
+					$result         = $this->recount( $result, (string) $key, 0 );
+				}
+			}
 		}
 
 		return $result;
