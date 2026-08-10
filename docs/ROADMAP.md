@@ -757,6 +757,14 @@ The internal planning documents were written before implementation and describe 
 
 | Item | Status |
 |------|--------|
-| `ResultBudget::shrink_lists()` docstring overclaims "guarantee the result fits the allowance" — a payload dominated by short scalar strings can still exceed the allowance after lists are dropped. Re-word to match reality. | [ ] |
-| `WebMcpController::get_manifest()` lists admin-only post type slugs in a public manifest (`enabled_models()`), disclosing private post types to anonymous visitors. Confirm the slug-only disclosure is acceptable, or narrow the public route. | [ ] |
-| `AuditLogger::ensure_db()` runs `CREATE TABLE IF NOT EXISTS` DDL on every read path per request (health endpoint, retention cron). Deliberate and guarded per request; consider a low-traffic guard or async creation for high-traffic sites. | [ ] |
+| `ResultBudget::shrink_lists()` docstring overclaims "guarantee the result fits the allowance" — a payload dominated by short scalar strings can still exceed the allowance after lists are dropped. Re-word to match reality. | [x] |
+| `WebMcpController::get_manifest()` lists admin-only post type slugs in a public manifest (`enabled_models()`), disclosing private post types to anonymous visitors. Confirm the slug-only disclosure is acceptable, or narrow the public route. | [x] |
+| `AuditLogger::ensure_db()` runs `CREATE TABLE IF NOT EXISTS` DDL on every read path per request (health endpoint, retention cron). Deliberate and guarded per request; consider a low-traffic guard or async creation for high-traffic sites. | [x] |
+
+**Resolution:**
+
+- **`shrink_lists()` docstring** — re-worded rather than made true. The sweep reclaims list cost only; a payload whose scalar keys alone exceed the allowance stays over it, and `clip_strings()` takes the next pass. `apply()` already withheld `truncated` in that case, which is the signal an agent needs. Pinned by `testScalarOnlyPayloadCannotBeTrimmedToFit`.
+- **Manifest disclosure** — narrowed rather than accepted. `get_manifest()` now reports `visible_models()`: `frontend_models()` for anonymous and under-capability callers, `enabled_models()` for callers clearing `edit_posts`, the same floor `AdminTool` uses for tool discovery. The `models` and `tools` keys now agree about who is asking. The 1.8.3 change that widened this (`867ae10`) had also locked it into a test, so that test's contract was corrected alongside.
+- **Audit DDL** — gated on a one-hour `saltus_mcp_audit_table_verified` transient storing `DB_VERSION`, filterable via `saltus/framework/mcp/audit/table_check_ttl` (`0` restores per-request DDL). Creation still is not gated on the version option, so a dropped table still comes back — within the TTL rather than on the next read. A bumped `DB_VERSION` invalidates every marker without an upgrade step.
+
+**Verification:** 520 tests, 1502 assertions; PHPStan Level 7 and PHPCS clean. Confirmed stable across six random orderings — the first run surfaced a pre-existing harness fragility, where `get_current_user_id()` reads a null `$wp_current_user_id` as user 1 but `0` as anonymous, so a teardown restoring `0` poisons the default for any later class that seeds a user id without setting it first. ✓ Done 2026-08-10

@@ -25,12 +25,17 @@
 	- `/webmcp/manifest` lists a tool only if the current user could actually call it, so an agent is never handed options that will refuse every invocation.
 	- `/webmcp/execute` is now rate-limited per client instead of on a single shared key. Previously one visitor's agent working through a multi-step task could exhaust the 60-call window for every other visitor on the site.
 	- WebMCP audit rows now record the resolved client identifier rather than a constant, so browser traffic is attributable per client while staying distinguishable from WordPress-native ability calls.
+	- The audit table existence check is gated on a one-hour transient instead of running `CREATE TABLE IF NOT EXISTS` on every request that touches the log. A busy site was sending DDL against the same table from every worker to learn something it already knew. Creation is still not gated on the stored schema version, so a dropped table comes back on its own — within the hour rather than on the very next read. Filter `saltus/framework/mcp/audit/table_check_ttl`; `0` restores the per-request check.
+
+### Fixed
+	- `ResultBudget::shrink_lists()` documented a guarantee it does not make. Dropping every remaining list entry reclaims the list cost, not the whole payload: a result whose scalar keys alone exceed the allowance stays over it, and `clip_strings()` takes the next pass. Behavior is unchanged and was already correct — `apply()` withholds `truncated` when it finds nothing to trim, which is what tells an agent the result is whole rather than silently short.
 
 ### Security
 	- Admin-surface WebMCP tools require a logged-in user and a valid `wp_rest` nonce. Without the nonce a cross-site page could drive the admin surface using the visitor's own cookies.
 	- A mutating WebMCP tool returns 503 when the review queue is unavailable, rather than falling back to a direct write. A missing dependency must not silently become an unreviewed change.
 	- Write tools are deliberately not annotated `readOnlyHint`. A queued write still changes state, and that annotation is the only signal that makes an agent pause to confirm with a human.
 	- Caller-supplied forwarding headers are deliberately ignored when identifying a WebMCP client. Honoring `X-Forwarded-For` by default would let an agent reset its own rate limit by varying one header; sites behind a trusted edge opt in through the `client_identifier` filter.
+	- The public `/webmcp/manifest` `models` key no longer names admin-only post types to callers who could not use them. `admin_models()` deliberately skips the publicly-queryable filter — an admin agent is a capable user, so a private type is legitimately in scope for it — which meant reporting every enabled model on a public route handed anonymous visitors the slug of every private type on the site. Admin slugs are now gated on the same `edit_posts` floor that gates admin tool discovery, so `models` and `tools` agree about who is asking.
 
 ## [1.7.0]
 
