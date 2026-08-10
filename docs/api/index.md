@@ -24,10 +24,17 @@ The API reference is generated from PHPDoc annotations using phpDocumentor. It c
 | `Saltus\WP\Framework\Infrastructure\Service` | Service framework interfaces |
 | `Saltus\WP\Framework\Features` | Feature service implementations |
 
+## Browse the Reference
+
+The full generated class reference — every class, interface, method, and property — is at
+[/api/reference/](/api/reference/).
+
 ## Generating the API Docs
 
 ```bash
 composer docs:api
 ```
 
-This requires phpDocumentor to be installed. See the [Build Guide](/guides/build) for setup instructions.
+This writes phpDocumentor's HTML to `build/docs/api/`, which the site build stages into
+`/api/reference/`. It requires phpDocumentor to be installed. See the
+[Build Guide](/guides/build) for setup instructions.

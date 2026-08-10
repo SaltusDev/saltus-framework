@@ -95,7 +95,7 @@ features:
     show_in_mcp: true
 ```
 
-The two keys are not interchangeable. See [Permissions](../MCP.md#permissions) for the full resolution rules.
+The two keys are not interchangeable. See [Permissions](/mcp/permissions) for the full resolution rules.
 
 ## Duplicate Post
 

@@ -56,7 +56,42 @@ composer docs:all
 npm run docs:build
 ```
 
-Two published pages are generated and must not be hand-edited: `docs/mcp/abilities.md` and `docs/guides/wp-cli.md`. `composer docs:mcp` also refreshes the ability-count block inside `docs/MCP.md`. Re-run `composer docs:all` whenever a tool or command is added, renamed, or has its schema changed.
+Two published pages are generated and must not be hand-edited: `docs/mcp/abilities.md` and `docs/guides/wp-cli.md`. `composer docs:mcp` also refreshes the ability-count block inside `docs/mcp/index.md`, and `composer docs:webmcp` the tool table inside `docs/guides/webmcp.md`. Re-run `composer docs:all` whenever a tool or command is added, renamed, or has its schema changed — CI fails the docs build if the generated output differs from what is committed.
+
+## Documentation Layout
+
+Docs are split into three tiers, and only one of them is authored by hand.
+
+| Tier | Location | Committed | Published |
+|---|---|---|---|
+| Private working notes | `notes/` | No (gitignored) | Never |
+| Authored source | `docs/` | Yes | Yes |
+| Generated output | `build/docs/` | No (gitignored) | Yes |
+
+`docs/` is the only tier a human edits. `build/docs/` is disposable and reproducible:
+
+```bash
+# Site -> build/docs/site via docs/.vitepress/dist, wiki -> build/docs/wiki
+npm run docs:build
+
+# Site only, including the private-content leak check
+npm run docs:site
+
+# Flattened GitHub Wiki mirror only
+npm run docs:wiki
+
+# Assert no private page or text reached the built site
+npm run docs:check
+```
+
+Private pages are listed in `srcExclude` in `docs/.vitepress/config.mjs`. VitePress publishes every
+`.md` under `docs/` unless excluded, so anything private belongs in `notes/` — not in `docs/` with a
+note asking people not to publish it. `bin/check-docs-leak.mjs` enforces this by asserting the built
+output contains no private route and no private text, including in the local search index. It runs as
+part of `npm run docs:site`, so a leak fails the build before anything is deployed.
+
+The class-level API reference is phpDocumentor HTML, generated to `build/docs/api/` and staged into
+the site at `/api/reference/`. The authored landing page at `docs/api/index.md` owns `/api/`.
 
 ## Patching Codestar Framework
 

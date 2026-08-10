@@ -21,7 +21,8 @@ is the common case, and the bridge treats it that way: when no WebMCP surface ex
 immediately, registers nothing, and logs nothing. There is no console noise on unsupported
 browsers, and no error for you to suppress.
 
-See [Discovery: WebMCP](/discovery/webmcp) for the standards status this design is built against.
+WebMCP is an emerging standard and still a draft. This design tracks it deliberately
+conservatively — see [Not in this release](#not-in-this-release) for what is held back and why.
 
 ## Enabling it
 
@@ -422,10 +423,8 @@ per surface.
 
 ## Not in this release
 
-Cross-origin `exposedTo` delegation and the declarative forms API remain out of scope. The
-declarative evaluation is recorded in
-[Evaluation: Declarative Forms](/discovery/webmcp-declarative-forms) — the short version is that
-Codestar renders field titles as `<h4>` rather than `<label>`, emits no `id` on inputs and no ARIA
+Cross-origin `exposedTo` delegation and the declarative forms API remain out of scope. On the
+declarative forms API: Codestar renders field titles as `<h4>` rather than `<label>`, emits no `id` on inputs and no ARIA
 attributes across all 45 field types, and composes bracketed field names, so a derived schema would
 carry no property descriptions. That is an accessibility defect worth fixing on its own merits, and
 the evaluation recommends doing so before revisiting the API.

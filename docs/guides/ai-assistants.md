@@ -28,7 +28,7 @@ On WordPress 7.0+ the assistant works with no plugin code. Add credentials for a
 
 The model's `ai_context` shapes each prompt. `brand_voice`, `audiences`, and `field_rules` become the system instruction, so the same action produces different results per model.
 
-Availability is reported by the health endpoint under `ai.client_available`, and by `wp saltus` in the `ai` column.
+Availability is reported by the health endpoint under `ai.client_available`, and by `wp saltus health` in the `ai` column.
 
 To pin a provider or model, filter the prompt builder:
 

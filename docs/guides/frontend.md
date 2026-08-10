@@ -13,7 +13,7 @@ frontend:
     single: templates/movie-single.php
 ```
 
-The framework registers `[saltus_cpt type="movie"]`. When `shortcode_alias` is configured, `[movies type="movie"]` is also available.
+The framework registers `[saltus_cpt type="movie"]`. When `shortcode_alias` is configured, `[movies]` is also available: the alias is bound to its own model, so it needs no `type`. Passing one explicitly still wins, so `[movies type="movie"]` behaves the same, and an unknown type renders nothing.
 
 ## List View
 

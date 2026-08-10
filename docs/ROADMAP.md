@@ -1,8 +1,8 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` bumped to 1.8.1 (2026-08-08); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending; see Known Issues in [CURRENT.md](CURRENT.md)
-- Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08. See [Discovery: WebMCP](discovery/webmcp.md).
+- Version: `package.json` bumped to 1.8.1 (2026-08-08); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending
+- Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 25 tools
 - REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
@@ -227,7 +227,7 @@ blocks:
 
 | Command | MCP Tool | Shared Service |
 |---------|----------|----------------|
-| `wp saltus` (no args) | health + help | `GetHealth` |
+| `wp saltus health` | health | `GetHealth` |
 | `wp saltus model list [--type]` | `list_models` | `Modeler::get_models()` |
 | `wp saltus model get <slug>` | `get_model` | `Modeler::get_models()` |
 | `wp saltus post list <post_type> [--status] [--search] ...` | `list_posts` | `WP_Query` |
@@ -251,7 +251,7 @@ blocks:
 | File | Purpose |
 |------|---------|
 | `src/Features/WpCli/WpCli.php` | Service class — hooks `WP_CLI::add_command()` on `cli_init` |
-| `src/Features/WpCli/Commands/SaltusCommand.php` | `wp saltus` — health + help summary |
+| `src/Features/WpCli/Commands/SaltusCommand.php` | `wp saltus health` — health summary; parent of the command tree, so it defines no `__invoke()` |
 | `src/Features/WpCli/Commands/ModelCommand.php` | `wp saltus model {list\|get}` |
 | `src/Features/WpCli/Commands/PostCommand.php` | `wp saltus post {list\|get\|create\|update\|delete\|duplicate\|export}` |
 | `src/Features/WpCli/Commands/TermCommand.php` | `wp saltus term {list\|create}` |
@@ -401,12 +401,12 @@ frontend:
 - ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
 - ✓ **Phase 6C AI client generation** — unhandled assistant actions generate through the WordPress AI Client; `saltus/framework/ai/prompt_builder` filter; AI availability reported in health + `wp saltus` — delivered 2026-08-07.
 - Reconcile version numbering across `package.json` (now 1.8.1), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
-- ✓ **Phase 8B implementation** — admin WebMCP surface and proposal-queue-governed writes: `AdminScreen`/`AdminToolSet` per-screen scoping, `AdminTool` decorating existing abilities with the review-queue write posture, nonce-authenticated execute + refresh route, `saltus-webmcp-toolchange` re-registration in the bridge, `wp saltus webmcp manifest|validate`, health/`wp saltus health` WebMCP stats, and the declarative forms no-go evaluation in [Discovery: Declarative Forms](discovery/webmcp-declarative-forms.md) — delivered 2026-08-08.
-- ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B; research recorded in [Discovery: WebMCP](discovery/webmcp.md) — scoped 2026-08-07.
+- ✓ **Phase 8B implementation** — admin WebMCP surface and proposal-queue-governed writes: `AdminScreen`/`AdminToolSet` per-screen scoping, `AdminTool` decorating existing abilities with the review-queue write posture, nonce-authenticated execute + refresh route, `saltus-webmcp-toolchange` re-registration in the bridge, `wp saltus webmcp manifest|validate`, health/`wp saltus health` WebMCP stats, and the declarative forms no-go evaluation — delivered 2026-08-08.
+- ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B — scoped 2026-08-07.
 - ✓ **Phase 8A implementation** — `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `PublicFieldFilter`, `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe — delivered 2026-08-07.
 - ✓ **Phase 8A hardening and docs** — per-client rate limiting via `ClientIdentity`, `ResultBudget` output clamping, `bridge.js` test coverage, and the generated `docs/guides/webmcp.md` reference — delivered 2026-08-08.
 - ✓ **Phase 8B implementation** — admin surface and proposal-queue-governed writes: `WebMcpTool` contract, `AdminTool` ability projection, `AdminScreen`/`AdminToolSet` per-screen scoping, `/webmcp/nonce` route with silent bridge refresh-and-retry, `saltus-webmcp-toolchange` re-registration, WebMCP state in health output, and `wp saltus webmcp manifest|validate` — delivered 2026-08-08.
-- ✓ **Declarative forms evaluation** — no-go for 8B; Codestar emits `<h4>` titles, no input `id`, and no ARIA across 45 field types, so a derived schema would carry no property descriptions. Four accessibility defects documented for separate scoped work in [Evaluation](discovery/webmcp-declarative-forms.md) — evaluated 2026-08-08.
+- ✓ **Declarative forms evaluation** — no-go for 8B; Codestar emits `<h4>` titles, no input `id`, and no ARIA across 45 field types, so a derived schema would carry no property descriptions. Four accessibility defects documented for separate scoped work — evaluated 2026-08-08.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -529,7 +529,7 @@ AI write -> draft/pending/revision -> human approval -> publish
 
 **Theme:** Project the existing Saltus tool registry into the visitor's browser as WebMCP tools, so an in-browser AI agent can call typed functions instead of scraping model-rendered markup.
 
-Research and rationale: [Discovery: WebMCP](discovery/webmcp.md). Read that first — it records the standards status, the Cloudflare and Shopify implementation patterns this phase borrows from, and the adoption data that bounds the scope.
+Research and rationale are recorded internally: the standards status, the Cloudflare and Shopify implementation patterns this phase borrows from, and the adoption data that bounds the scope.
 
 **Premise:** WebMCP is a *third consumer* of tool definitions Saltus already owns, alongside WordPress-native MCP/Abilities and WP-CLI. The 20 abilities already resolve to 17 REST routes through `RestBackedToolInterface`. This phase adds a browser-side projection of the same definitions plus a small public-safe read tool set — it does not add a parallel tool system.
 
@@ -680,7 +680,7 @@ under `src/MCP/Tools/Public/`.
 | Proposal id + review URL returned in the tool result | ✓ Done 2026-08-08 |
 | Nonce handling for authenticated invocations, refreshable without a page reload | ✓ Done 2026-08-08 |
 | Per-screen tool scoping (post editor, settings page, review queue) | ✓ Done 2026-08-08 |
-| Declarative forms API evaluation for Codestar metabox and settings markup | ✓ Done 2026-08-08 — **no-go**, recorded in [Evaluation](discovery/webmcp-declarative-forms.md) |
+| Declarative forms API evaluation for Codestar metabox and settings markup | ✓ Done 2026-08-08 — **no-go** |
 | Accessibility pass on metabox/settings labels feeding declarative schema derivation | ✓ Audited 2026-08-08 — four defects documented; the fix is vendored-code work deliberately left outside this phase |
 | `toolchange` emission when model state alters the available tool set | ✓ Done 2026-08-08 |
 | Health output reports WebMCP registration state and enabled model count | ✓ Done 2026-08-08 |
@@ -709,7 +709,7 @@ under `src/MCP/Tools/Public/`.
 
 **Theme:** Relate posts to other posts from model config, with one declaration serving reads and writes from both sides across REST, MCP, and WP-CLI.
 
-Planning documents: [Phase 10 Highway](PHASE-10-HIGHWAY.md) and [docs/phase10/](phase10/README.md). Those were written before implementation and describe a `src/Migrations/` system and a `src/MCP/Tools/Relationships/` subdirectory that this phase deliberately did not build — see the design notes below.
+The internal planning documents were written before implementation and describe a `src/Migrations/` system and a `src/MCP/Tools/Relationships/` subdirectory that this phase deliberately did not build — see the design notes below.
 
 **Premise:** relationships are a *fourth* surface over one storage model, not a new subsystem. A definition declared on one model resolves to a single row shared with its reciprocal, so the two sides cannot drift.
 
