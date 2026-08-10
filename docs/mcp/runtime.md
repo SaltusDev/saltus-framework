@@ -35,6 +35,7 @@ These controls are configured with WordPress filters.
 |--------|---------|---------|
 | `saltus/framework/mcp/audit/enabled` | Enable or disable audit writes | `true` |
 | `saltus/framework/mcp/audit/retention_days` | Days to keep audit rows | `30` |
+| `saltus/framework/mcp/audit/table_check_ttl` | Seconds a table-existence check is trusted before the DDL runs again; `0` restores a check on every request | `3600` |
 | `saltus/framework/mcp/rate_limit/enabled` | Enable or disable rate limiting | `true` |
 | `saltus/framework/mcp/rate_limit/max_requests` | Max calls per window | `60` |
 | `saltus/framework/mcp/rate_limit/window_seconds` | Rate-limit window size | `60` |
