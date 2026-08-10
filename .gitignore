@@ -2,10 +2,15 @@
 vendor/
 node_modules/
 
-# docs
-docs/public/api/
-docs/.vitepress/dist/
+# private working docs (tier 1) — never published, never committed
+notes/
+
+# generated docs (tier 3) — reproducible with `composer docs:all && npm run docs:build`
+build/docs/
 build/phpdoc-cache/
+docs/public/api/
+docs/public/downloads/
+docs/.vitepress/dist/
 
 # editor/OS files
 .DS_Store

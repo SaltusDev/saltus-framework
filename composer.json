@@ -76,7 +76,10 @@
 			"@docs:wpcli",
 			"@docs:webmcp",
 			"@docs:api"
-		]
+		],
+		"docs:site": "npm run docs:site",
+		"docs:wiki": "npm run docs:wiki",
+		"docs:check": "npm run docs:check"
 	},
 	"minimum-stability": "dev",
 	"prefer-stable": true,

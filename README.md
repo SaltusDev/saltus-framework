@@ -124,7 +124,7 @@ Currently there are 2 types of Model, one for **Custom Post Types** and another 
 | `ai_context` | `array` - per-model AI governance rules; see [AI Context Guide](docs/guides/ai-context.md) |
 | `frontend` | `boolean|array` - register list/single shortcodes; see [Frontend Guide](docs/guides/frontend.md) |
 
-Saltus REST and MCP visibility is controlled from inside `options`, not at the top level: `options.show_in_rest` gates the model-scoped Saltus REST routes (default `true`), and `options.mcp_tools` must be truthy to expose any MCP tools for the model (default off). Individual capabilities can then be narrowed per feature with `show_in_rest` / `show_in_mcp` keys in the relevant `config` section. See [Permissions](docs/MCP.md#permissions) for the full resolution rules.
+Saltus REST and MCP visibility is controlled from inside `options`, not at the top level: `options.show_in_rest` gates the model-scoped Saltus REST routes (default `true`), and `options.mcp_tools` must be truthy to expose any MCP tools for the model (default off). Individual capabilities can then be narrowed per feature with `show_in_rest` / `show_in_mcp` keys in the relevant `config` section. See [Permissions](docs/mcp/permissions.md) for the full resolution rules.
 
 The `labels` object supports `has_one`, `has_many`, `text_domain`, and `featured_image`. Use `overrides.ui.enter_title_here` for the editor title placeholder, `overrides.labels` for any WordPress registration label, `overrides.messages` for post-update messages, and `overrides.bulk_messages` for bulk-action messages. See the [features and model reference](docs/guides/features.md#labels) for the accepted message keys.
 
@@ -271,7 +271,7 @@ Includes support for [github-updater](https://github.com/afragen/github-updater)
 
 Saltus Framework exposes its AI-facing tool surface through the WordPress-native MCP/Abilities API. Native WordPress MCP clients can discover and call the `saltus/*` abilities directly from the active plugin.
 
-For full documentation, see [docs/MCP.md](docs/MCP.md) or the [MCP section](https://docs.saltus.dev/mcp/) of the documentation site. For client integration guidance, see [docs/mcp/clients.md](docs/mcp/clients.md) or the [client guide](https://docs.saltus.dev/mcp/clients).
+For full documentation, see [docs/mcp/index.md](docs/mcp/index.md) or the [MCP section](https://docs.saltus.dev/mcp/) of the documentation site. For client integration guidance, see [docs/mcp/clients.md](docs/mcp/clients.md) or the [client guide](https://docs.saltus.dev/mcp/clients).
 
 ### Quick Start
 
@@ -347,7 +347,7 @@ The detailed MCP ability reference is generated from the `src/MCP/Tools` source 
 composer docs:mcp
 ```
 
-This refreshes `docs/MCP-ABILITIES.md` and the generated ability table in `docs/MCP.md`.
+This refreshes `docs/mcp/abilities.md` and the generated ability-count block in `docs/mcp/index.md`.
 
 ## Building
 

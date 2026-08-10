@@ -6,7 +6,7 @@
 >
     <title>Saltus Framework</title>
     <paths>
-        <output>docs/public/api</output>
+        <output>build/docs/api</output>
         <cache>build/phpdoc-cache</cache>
     </paths>
     <version number="latest">
