@@ -24,15 +24,22 @@ require_once dirname( __DIR__ ) . '/Rest/functions.php';
 class WebMcpClaimValidationTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_filter_values, $wp_post_type_objects;
+		global $wp_filter_values, $wp_post_type_objects, $wp_current_user_id, $wp_current_user_can;
 		$wp_filter_values     = [];
 		$wp_post_type_objects = [];
+		$wp_current_user_id   = 0;
+		$wp_current_user_can  = [];
 	}
 
 	protected function tearDown(): void {
-		global $wp_filter_values, $wp_post_type_objects;
+		global $wp_filter_values, $wp_post_type_objects, $wp_current_user_id, $wp_current_user_can;
 		$wp_filter_values     = [];
 		$wp_post_type_objects = [];
+		// Restored to null, not 0: the harness reads null as "user 1" and 0 as a
+		// real anonymous visitor, and classes that seed a user id without setting
+		// this one first would otherwise inherit the anonymous value from here.
+		$wp_current_user_id   = null;
+		$wp_current_user_can  = [];
 	}
 
 	/**
@@ -81,19 +88,66 @@ class WebMcpClaimValidationTest extends TestCase {
 	}
 
 	/**
-	 * Claim 2: get_manifest() models key must include all enabled models.
+	 * Claim 2: get_manifest() models key must include all enabled models the
+	 * caller is cleared to know about.
 	 *
-	 * Before fix: models key contained only frontend_models(), excluding
-	 * admin-only models even when manifest_permissions_check() allowed
-	 * access based on has_admin_surface().
+	 * Originally the key reported only frontend_models(), hiding admin-only
+	 * models from an admin caller that manifest_permissions_check() had already
+	 * allowed. Reporting enabled_models() unconditionally overshot in the other
+	 * direction: admin_models() skips the publicly-queryable filter by design, so
+	 * a public route echoing it hands anonymous visitors every private slug.
 	 *
-	 * After fix: models key uses enabled_models(), which includes both
-	 * frontend and admin models.
+	 * The key is now capability-gated — admin slugs for callers who could be
+	 * offered admin tools, frontend slugs for everyone else.
 	 */
-	public function testGetManifestIncludesBothFrontendAndAdminModels(): void {
+	public function testGetManifestIncludesAdminModelsForCapableUser(): void {
+		global $wp_post_type_objects, $wp_current_user_id, $wp_current_user_can;
+
+		$wp_current_user_id  = 1;
+		$wp_current_user_can = [ 'edit_posts' => true ];
+
+		$data = $this->manifestData();
+
+		$this->assertArrayHasKey( 'models', $data );
+		$this->assertContains( 'article', $data['models'], 'Frontend model must be included.' );
+		$this->assertContains( 'internal', $data['models'], 'Admin model must reach a capable caller.' );
+		$this->assertCount( 2, $data['models'], 'Both models should be present.' );
+	}
+
+	/**
+	 * The manifest route takes anonymous callers, so the admin-only slug must not
+	 * be in the payload they receive. `internal` is registered with
+	 * `publicly_queryable => false`: naming it tells a visitor a private type
+	 * exists and what to guess at elsewhere.
+	 */
+	public function testGetManifestHidesAdminModelsFromAnonymousCaller(): void {
+		$data = $this->manifestData();
+
+		$this->assertSame( [ 'article' ], $data['models'], 'Only the public model may reach an anonymous caller.' );
+	}
+
+	/**
+	 * A logged-in user below the capability floor is treated as the public.
+	 */
+	public function testGetManifestHidesAdminModelsFromSubscriber(): void {
+		global $wp_current_user_id, $wp_current_user_can;
+
+		$wp_current_user_id  = 2;
+		$wp_current_user_can = [ 'read' => true ];
+
+		$data = $this->manifestData();
+
+		$this->assertSame( [ 'article' ], $data['models'] );
+	}
+
+	/**
+	 * Build a manifest response over one frontend model and one admin-only model.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function manifestData(): array {
 		global $wp_post_type_objects;
 
-		// Create two models: one frontend-only, one admin-only.
 		$frontend_model = $this->createStub( Model::class );
 		$frontend_model->method( 'get_name' )->willReturn( 'article' );
 		$frontend_model->method( 'get_type' )->willReturn( 'post_type' );
@@ -145,14 +199,10 @@ class WebMcpClaimValidationTest extends TestCase {
 
 		$controller = new WebMcpController( $policy, $feature->build_tools( $modeler ) );
 
-		$request  = (object) [];
-		$response = $controller->get_manifest( $request );
+		$response = $controller->get_manifest( (object) [] );
 		$data     = $response->get_data();
 
-		$this->assertArrayHasKey( 'models', $data );
-		$this->assertContains( 'article', $data['models'], 'Frontend model must be included.' );
-		$this->assertContains( 'internal', $data['models'], 'Admin model must also be included after fix.' );
-		$this->assertCount( 2, $data['models'], 'Both models should be present.' );
+		return is_array( $data ) ? $data : [];
 	}
 
 	/**

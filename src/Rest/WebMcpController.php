@@ -36,6 +36,14 @@ final class WebMcpController extends WP_REST_Controller {
 	/** Audit identifier prefix, so WebMCP calls are distinguishable from ability calls. */
 	private const AUDIT_PREFIX = ClientIdentity::PREFIX;
 
+	/**
+	 * Capability floor for learning that an admin-only model exists.
+	 *
+	 * Matches AdminTool's discovery fallback, so a caller who would be offered no
+	 * admin tool is not told which private types back them either.
+	 */
+	private const ADMIN_MODEL_CAPABILITY = 'edit_posts';
+
 	private WebMcpPolicy $policy;
 	private ManifestBuilder $manifest_builder;
 	/** @var list<WebMcpTool> */
@@ -188,9 +196,41 @@ final class WebMcpController extends WP_REST_Controller {
 		return rest_ensure_response(
 			[
 				'tools'  => $this->manifest_builder->to_array( $descriptors ),
-				'models' => $this->policy->enabled_models(),
+				'models' => $this->visible_models(),
 			]
 		);
+	}
+
+	/**
+	 * Model slugs the current caller is allowed to learn about.
+	 *
+	 * The route is public, so the two surfaces cannot report the same list.
+	 * `admin_models()` deliberately skips the publicly-queryable filter — an
+	 * admin agent is a capable user, so a private post type is in scope for it —
+	 * which means echoing `enabled_models()` unconditionally would hand an
+	 * anonymous visitor the slugs of every private type on the site. Admin slugs
+	 * are gated on the same capability floor that gates admin tool discovery, so
+	 * `models` and `tools` agree about who is looking.
+	 *
+	 * @return list<string> Post type slugs.
+	 */
+	private function visible_models(): array {
+		if ( ! $this->policy->has_admin_surface() || ! $this->can_see_admin_models() ) {
+			return $this->policy->frontend_models();
+		}
+
+		return $this->policy->enabled_models();
+	}
+
+	/**
+	 * Whether the caller is a logged-in user cleared for admin model slugs.
+	 */
+	private function can_see_admin_models(): bool {
+		if ( ! function_exists( 'is_user_logged_in' ) || ! is_user_logged_in() ) {
+			return false;
+		}
+
+		return function_exists( 'current_user_can' ) && current_user_can( self::ADMIN_MODEL_CAPABILITY );
 	}
 
 	/**
