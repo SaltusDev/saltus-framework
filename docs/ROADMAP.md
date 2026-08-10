@@ -1,7 +1,7 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` bumped to 1.8.3 (2026-08-10); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending
+- Version: `package.json` bumped to 1.8.4 (2026-08-10); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 25 tools
@@ -768,3 +768,13 @@ The internal planning documents were written before implementation and describe 
 - **Audit DDL** — gated on a one-hour `saltus_mcp_audit_table_verified` transient storing `DB_VERSION`, filterable via `saltus/framework/mcp/audit/table_check_ttl` (`0` restores per-request DDL). Creation still is not gated on the version option, so a dropped table still comes back — within the TTL rather than on the next read. A bumped `DB_VERSION` invalidates every marker without an upgrade step.
 
 **Verification:** 520 tests, 1502 assertions; PHPStan Level 7 and PHPCS clean. Confirmed stable across six random orderings — the first run surfaced a pre-existing harness fragility, where `get_current_user_id()` reads a null `$wp_current_user_id` as user 1 but `0` as anonymous, so a teardown restoring `0` poisons the default for any later class that seeds a user id without setting it first. ✓ Done 2026-08-10
+
+---
+
+### Phase 12: Bug Fixes v1.8.4 (v2.5+)
+
+**Theme:** Fix the medium-severity finding surfaced by the 1.8.4 version cycle code review.
+
+| Item | Status |
+|------|--------|
+| `AuditLogger::ensure_db()` marks the table verified even when the `CREATE TABLE IF NOT EXISTS` DDL fails (`ensure_table()` discards the query result), so a transient DB failure hides the missing table from every read for up to an hour. Only set the transient on successful DDL so a failed create retries next request. | [ ] |
