@@ -2,14 +2,24 @@ name: Docs
 
 on:
   push:
-    branches: [main]
+    # The docs tree currently lives on feature/mcp-v1, not on main. Deploying
+    # only from main published a stale site (it still advertised v2.0.0 and
+    # 404'd on pages that exist here). Keep both until docs/ lands on main,
+    # then drop the feature branch.
+    branches: [main, 'feature/mcp-v1']
     paths:
       - 'src/**'
       - 'docs/**'
       - 'bin/**'
       - 'phpdoc.dist.xml'
       - 'package.json'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
+    inputs:
+      publish_wiki:
+        description: 'Also push the flattened mirror to the GitHub wiki'
+        type: boolean
+        default: false
 
 concurrency:
   group: pages
@@ -46,17 +56,32 @@ jobs:
       - name: Install PHP dependencies
         run: composer install --no-interaction --no-progress
 
-      - name: Generate API docs
-        run: php phpDocumentor.phar -c phpdoc.dist.xml
-
-      - name: Generate MCP docs
-        run: composer docs:mcp
-
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Build VitePress site
-        run: npm run docs:build
+      # Regenerates the generated pages (abilities, wp-cli, webmcp) and the
+      # phpDocumentor HTML into build/docs/api.
+      - name: Generate reference docs
+        run: composer docs:all
+
+      # Fails the build if a generator's output is not committed, so the
+      # published site can never disagree with the source it was generated from.
+      - name: Verify generated docs are committed
+        run: |
+          if ! git diff --quiet -- docs/; then
+            echo "::error::Generated docs differ from the committed copy. Run 'composer docs:all' and commit the result."
+            git diff --stat -- docs/
+            exit 1
+          fi
+
+      # Stages generated assets, builds the site, then asserts no private
+      # (tier 1) page or text reached the output. The leak check is part of
+      # docs:site, so a leak fails the job before anything is published.
+      - name: Build site
+        run: npm run docs:site
+
+      - name: Build wiki mirror
+        run: npm run docs:wiki
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -69,3 +94,26 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # Opt-in: the wiki is a separate public surface, so it is only written on
+      # an explicit workflow_dispatch request rather than on every push.
+      - name: Publish wiki mirror
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_wiki
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki-repo
+          # Replace tracked content, preserving .git.
+          find wiki-repo -maxdepth 1 -name '*.md' -delete
+          cp build/docs/wiki/*.md wiki-repo/
+          cd wiki-repo
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet && git diff --cached --quiet && [ -z "$(git status --porcelain)" ]; then
+            echo 'Wiki already up to date.'
+            exit 0
+          fi
+          git add -A
+          git commit -m "docs: sync wiki from ${GITHUB_SHA::7}"
+          git push
