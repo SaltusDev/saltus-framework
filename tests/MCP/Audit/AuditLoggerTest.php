@@ -15,12 +15,16 @@ class AuditLoggerTest extends TestCase
 {
     protected function setUp(): void
     {
-        global $wpdb;
+        global $wpdb, $wp_transients;
         if ( ! is_object( $wpdb ) ) {
             $wpdb = $this->fakeWpdb();
         }
         $wpdb->inserts = [];
         $wpdb->queries = [];
+
+        // ensure_db() skips the DDL while its verification transient is live, so a
+        // marker left by an earlier test would make later ones see no CREATE.
+        $wp_transients = [];
     }
 
     public function testRecordStoresEntryInAuditTable(): void
@@ -107,6 +111,61 @@ class AuditLoggerTest extends TestCase
         (new AuditLogger())->get_recent_entries();
 
         $this->assertNotSame([], $this->createQueries($wpdb->queries));
+    }
+
+    /**
+     * The DDL is idempotent but not free: once the table is known to exist, a
+     * high-traffic site should not send CREATE TABLE from every worker on every
+     * request that touches the log.
+     */
+    public function testDdlIsSkippedWhileVerificationTransientIsLive(): void
+    {
+        global $wpdb;
+
+        (new AuditLogger())->get_recent_entries();
+        $this->assertNotSame([], $this->createQueries($wpdb->queries), 'first read must create the table');
+
+        $wpdb->queries = [];
+        (new AuditLogger())->get_recent_entries();
+
+        $this->assertSame([], $this->createQueries($wpdb->queries), 'a later request must reuse the verification');
+    }
+
+    /**
+     * Bounded, not permanent: a table dropped out from under the marker comes
+     * back once the transient lapses, so the log self-heals without the option
+     * gate that would suppress recreation forever.
+     */
+    public function testDdlRunsAgainAfterVerificationExpires(): void
+    {
+        global $wpdb, $wp_transients;
+
+        (new AuditLogger())->get_recent_entries();
+        $wpdb->queries = [];
+
+        $wp_transients = [];
+        (new AuditLogger())->get_recent_entries();
+
+        $this->assertNotSame([], $this->createQueries($wpdb->queries));
+    }
+
+    /**
+     * A site that would rather pay the DDL every request can switch the guard
+     * off, restoring the immediate self-healing behavior.
+     */
+    public function testZeroTtlFilterDisablesTheGuard(): void
+    {
+        global $wpdb, $wp_filter_values;
+
+        $wp_filter_values['saltus/framework/mcp/audit/table_check_ttl'] = 0;
+
+        (new AuditLogger())->get_recent_entries();
+        $wpdb->queries = [];
+        (new AuditLogger())->get_recent_entries();
+
+        $this->assertNotSame([], $this->createQueries($wpdb->queries));
+
+        $wp_filter_values = [];
     }
 
     /**

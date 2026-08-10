@@ -11,6 +11,12 @@ class AuditLogger {
 	private const TABLE_SUFFIX = 'saltus_mcp_audit';
 	private const DB_VERSION   = '1.0.0';
 
+	/** Transient recording that the DDL has run recently. */
+	private const VERIFIED_TRANSIENT = 'saltus_mcp_audit_table_verified';
+
+	/** Seconds a table verification is trusted before the DDL runs again. */
+	private const VERIFIED_TTL = 3600;
+
 	/** @var list<string> */
 	private const VALID_STATUSES = [
 		'started',
@@ -119,27 +125,73 @@ class AuditLogger {
 	}
 
 	/**
-	 * Ensure the audit table exists, running only once per request.
+	 * Ensure the audit table exists, at most once per request.
+	 *
+	 * Creation is not gated on the stored schema version: that would mean a table
+	 * dropped after the option was set is never recreated, and every read then
+	 * reports zero errors instead of a missing table. The option is kept as a
+	 * schema marker for future migrations.
+	 *
+	 * It is gated on a short-lived transient instead. A busy site would otherwise
+	 * send `CREATE TABLE IF NOT EXISTS` on every request that touches the log —
+	 * cheap individually, but it is DDL against the same table from every worker,
+	 * and it buys nothing once the table is known to exist. The transient keeps
+	 * the self-healing property with a bounded delay: a dropped table comes back
+	 * within the TTL rather than on the very next read.
 	 */
 	private function ensure_db(): void {
 		if ( $this->db_initialized ) {
 			return;
 		}
 
-		// The DDL is CREATE TABLE IF NOT EXISTS, so run it once per request rather
-		// than only when the stored version differs. Gating creation on the option
-		// means a table dropped after the option was set is never recreated, and
-		// every read then reports zero errors instead of a missing table. The
-		// option is kept as a schema marker for future migrations. This matches
-		// ProposalStore and RelationshipStore, which guard every read the same way.
+		// Set before the work, not after: a failed DDL should not have every
+		// subsequent call in this request retry it.
+		$this->db_initialized = true;
+
+		if ( $this->table_verified() ) {
+			return;
+		}
+
 		$this->ensure_table();
+		$this->mark_table_verified();
 
 		if ( function_exists( 'get_option' ) && function_exists( 'update_option' )
 			&& get_option( 'saltus_mcp_audit_db_version' ) !== self::DB_VERSION ) {
 			update_option( 'saltus_mcp_audit_db_version', self::DB_VERSION );
 		}
+	}
 
-		$this->db_initialized = true;
+	/**
+	 * Whether the table was confirmed to exist recently enough to trust.
+	 *
+	 * Absent transient support — unit tests, a very early boot — the answer is no,
+	 * which falls back to the previous behavior of running the DDL every request.
+	 */
+	private function table_verified(): bool {
+		if ( ! function_exists( 'get_transient' ) ) {
+			return false;
+		}
+
+		return get_transient( self::VERIFIED_TRANSIENT ) === self::DB_VERSION;
+	}
+
+	/**
+	 * Record that the table exists, so the next requests can skip the DDL.
+	 *
+	 * Stores the schema version rather than a bare flag, so bumping DB_VERSION
+	 * invalidates every site's marker without needing a separate upgrade step.
+	 */
+	private function mark_table_verified(): void {
+		if ( ! function_exists( 'set_transient' ) ) {
+			return;
+		}
+
+		$ttl = (int) $this->filter( 'saltus/framework/mcp/audit/table_check_ttl', self::VERIFIED_TTL );
+		if ( $ttl <= 0 ) {
+			return;
+		}
+
+		set_transient( self::VERIFIED_TRANSIENT, self::DB_VERSION, $ttl );
 	}
 
 	/**
