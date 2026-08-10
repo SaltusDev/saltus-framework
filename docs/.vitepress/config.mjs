@@ -1,14 +1,44 @@
 import { defineConfig } from 'vitepress'
 
+// Shared by the three project pages, which sit at the docs root rather than in
+// a directory, so they cannot be matched by a single sidebar path prefix.
+const PROJECT_SIDEBAR = [
+  {
+    text: 'Project',
+    items: [
+      { text: 'About', link: '/PROJECT' },
+      { text: 'Architecture & Decisions', link: '/CONTEXT' },
+      { text: 'Roadmap', link: '/ROADMAP' },
+    ],
+  },
+]
+
 export default defineConfig({
   title: 'Saltus Framework',
   description: 'WordPress plugin development framework for Custom Post Types',
   lang: 'en-US',
   base: '/',
 
+  // Private working docs. These live under notes/ and must never be published.
+  // Paths are kept here as a belt-and-braces guard: even if a stray copy lands
+  // back under docs/, VitePress will refuse to build a page for it.
+  // bin/check-docs-leak.mjs asserts every entry is absent from the built site
+  // and from the local search index.
+  srcExclude: [
+    'CURRENT.md',
+    'HANDOFF.md',
+    'TESTING_HANDOFF.md',
+    'PHASE-10-HIGHWAY.md',
+    'DOCS-SPLIT-PLAN.md',
+    'phase10/**',
+    'olddocs/**',
+    'discovery/**',
+    'planning/**',
+    'handoffs/**',
+    'notes/**',
+  ],
+
   ignoreDeadLinks: [
-    /^\/roadmap/,
-    /^\/current/,
     /^\/downloads\//,
   ],
 
@@ -42,10 +72,11 @@ export default defineConfig({
         link: '/mcp/index',
       },
       {
-        text: 'Discovery',
+        text: 'Project',
         items: [
-          { text: 'WebMCP', link: '/discovery/webmcp' },
-          { text: 'Declarative Forms', link: '/discovery/webmcp-declarative-forms' },
+          { text: 'About', link: '/PROJECT' },
+          { text: 'Architecture & Decisions', link: '/CONTEXT' },
+          { text: 'Roadmap', link: '/ROADMAP' },
         ],
       },
       {
@@ -85,21 +116,17 @@ export default defineConfig({
           text: 'MCP/Abilities',
           items: [
             { text: 'Overview', link: '/mcp/index' },
+            { text: 'Permissions', link: '/mcp/permissions' },
+            { text: 'Runtime & Operations', link: '/mcp/runtime' },
             { text: 'Abilities Reference', link: '/mcp/abilities' },
             { text: 'Client Integration', link: '/mcp/clients' },
             { text: 'Saltus MCP Skill', link: '/mcp/skill' },
           ],
         },
       ],
-      '/discovery/': [
-        {
-          text: 'Discovery',
-          items: [
-            { text: 'WebMCP', link: '/discovery/webmcp' },
-            { text: 'Declarative Forms', link: '/discovery/webmcp-declarative-forms' },
-          ],
-        },
-      ],
+      '/PROJECT': PROJECT_SIDEBAR,
+      '/CONTEXT': PROJECT_SIDEBAR,
+      '/ROADMAP': PROJECT_SIDEBAR,
     },
 
     editLink: {
