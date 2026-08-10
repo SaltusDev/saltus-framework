@@ -9,6 +9,7 @@ class AuditLogger {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
 	private const TABLE_SUFFIX = 'saltus_mcp_audit';
+	private const DB_VERSION   = '1.0.0';
 
 	/** @var list<string> */
 	private const VALID_STATUSES = [
@@ -65,6 +66,12 @@ class AuditLogger {
 	 * @return list<array<string, mixed>>
 	 */
 	public function get_recent_entries( int $limit = 100 ): array {
+		// Reads must create the table too. On an install that has only ever been
+		// read from — the health endpoint, the retention cron — record() has never
+		// run, so nothing else would have created it, and querying a missing table
+		// reports zero errors rather than a broken table.
+		$this->ensure_db();
+
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {
 			return [];
@@ -119,11 +126,17 @@ class AuditLogger {
 			return;
 		}
 
-		if ( function_exists( 'get_option' ) && get_option( 'saltus_mcp_audit_db_version' ) !== '1.0.0' ) {
-			$this->ensure_table();
-			if ( function_exists( 'update_option' ) ) {
-				update_option( 'saltus_mcp_audit_db_version', '1.0.0' );
-			}
+		// The DDL is CREATE TABLE IF NOT EXISTS, so run it once per request rather
+		// than only when the stored version differs. Gating creation on the option
+		// means a table dropped after the option was set is never recreated, and
+		// every read then reports zero errors instead of a missing table. The
+		// option is kept as a schema marker for future migrations. This matches
+		// ProposalStore and RelationshipStore, which guard every read the same way.
+		$this->ensure_table();
+
+		if ( function_exists( 'get_option' ) && function_exists( 'update_option' )
+			&& get_option( 'saltus_mcp_audit_db_version' ) !== self::DB_VERSION ) {
+			update_option( 'saltus_mcp_audit_db_version', self::DB_VERSION );
 		}
 
 		$this->db_initialized = true;
@@ -137,6 +150,8 @@ class AuditLogger {
 		if ( $days <= 0 ) {
 			return;
 		}
+
+		$this->ensure_db();
 
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {

@@ -65,6 +65,74 @@ class AuditLoggerTest extends TestCase
 		$this->assertStringStartsWith("DELETE FROM wp_saltus_mcp_audit WHERE created_at < '", $delete_queries[0]);
     }
 
+    /**
+     * An install that has only ever been read from — health endpoint, retention
+     * cron — never calls record(), so a read must create the table itself or it
+     * queries a table that does not exist and reports zero errors.
+     */
+    public function testGetRecentEntriesCreatesTableBeforeReading(): void
+    {
+        global $wpdb;
+
+        (new AuditLogger())->get_recent_entries();
+
+        $this->assertNotSame([], $this->createQueries($wpdb->queries));
+    }
+
+    public function testCleanupExpiredEntriesCreatesTableBeforeDeleting(): void
+    {
+        global $wpdb;
+
+        (new AuditLogger())->cleanup_expired_entries();
+
+        $create_index = $this->firstIndexMatching($wpdb->queries, 'CREATE TABLE IF NOT EXISTS');
+        $delete_index = $this->firstIndexMatching($wpdb->queries, 'DELETE FROM');
+
+        $this->assertNotNull($create_index, 'cleanup must ensure the table exists');
+        $this->assertNotNull($delete_index);
+        $this->assertLessThan($delete_index, $create_index, 'the table must be created before the delete runs');
+    }
+
+    /**
+     * Creation must not be gated on the stored schema version alone: a table
+     * dropped after the option was set would otherwise never come back.
+     */
+    public function testTableIsRecreatedWhenVersionOptionIsAlreadySet(): void
+    {
+        global $wpdb;
+
+        update_option('saltus_mcp_audit_db_version', '1.0.0');
+        $wpdb->queries = [];
+
+        (new AuditLogger())->get_recent_entries();
+
+        $this->assertNotSame([], $this->createQueries($wpdb->queries));
+    }
+
+    /**
+     * @param list<string> $queries
+     * @return list<string>
+     */
+    private function createQueries(array $queries): array
+    {
+        return array_values(array_filter(
+            $queries,
+            static fn(string $query): bool => strpos($query, 'CREATE TABLE IF NOT EXISTS') === 0
+        ));
+    }
+
+    /** @param list<string> $queries */
+    private function firstIndexMatching(array $queries, string $prefix): ?int
+    {
+        foreach ($queries as $index => $query) {
+            if (strpos($query, $prefix) === 0) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
     public function testRecordStoresErrors(): void
     {
         global $wpdb;
