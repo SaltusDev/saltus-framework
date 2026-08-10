@@ -7,15 +7,18 @@ use Saltus\WP\Framework\Features\WpCli\CliGateway;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
 use Saltus\WP\Framework\Rest\HealthController;
 
+/**
+ * Inspects the framework and its models.
+ *
+ * Deliberately defines no __invoke(): WP_CLI's CommandFactory reflects on that
+ * method to decide a command's kind, and a class that has one becomes a
+ * Subcommand, which cannot accept children. Since every other command nests
+ * beneath this one, adding __invoke() here throws "'wp saltus' can't have
+ * subcommands." from inside cli_init, which aborts WordPress bootstrap and
+ * breaks every wp command on the site, not just this one. The default action
+ * lives at `wp saltus health` instead.
+ */
 final class SaltusCommand extends AbstractCommand {
-	/**
-	 * @param list<string> $args Positional arguments.
-	 * @param array<string, mixed> $assoc_args Associative arguments.
-	 */
-	public function __invoke( array $args, array $assoc_args ): void {
-		$this->health( $args, $assoc_args );
-	}
-
 	/**
 	 * @param list<string> $args Positional arguments.
 	 * @param array<string, mixed> $assoc_args Associative arguments.

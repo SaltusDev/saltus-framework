@@ -59,6 +59,72 @@ class WpCliFeatureTest extends TestCase {
 		], array_keys( $this->cli->commands ) );
 	}
 
+	/**
+	 * WP_CLI's CommandFactory reflects on __invoke() to choose a command's kind: a
+	 * class that has one becomes a Subcommand, and Subcommands cannot accept
+	 * children. Registering anything beneath such a command throws from inside
+	 * cli_init, which aborts WordPress bootstrap and breaks every wp command on
+	 * the site. Nothing below exercises the real factory, so this is the guard.
+	 */
+	public function testNoParentCommandDefinesInvoke(): void {
+		$service = new WpCli( [ 'modeler_resolver' => function (): Modeler { return $this->modeler; } ], $this->cli );
+		$service->register_commands();
+
+		$names   = array_keys( $this->cli->commands );
+		$parents = [];
+		foreach ( $names as $name ) {
+			$parent = substr( $name, 0, (int) strrpos( $name, ' ' ) );
+			if ( strpos( $name, ' ' ) !== false && in_array( $parent, $names, true ) ) {
+				$parents[ $parent ] = true;
+			}
+		}
+
+		$this->assertArrayHasKey( 'saltus', $parents, 'saltus must still be a parent for this test to mean anything' );
+
+		foreach ( array_keys( $parents ) as $parent ) {
+			$handler = $this->cli->commands[ $parent ];
+			$this->assertFalse(
+				( new \ReflectionClass( $handler ) )->hasMethod( '__invoke' ),
+				sprintf( '"wp %s" has children, so its class must not define __invoke().', $parent )
+			);
+		}
+	}
+
+	/**
+	 * The same reflection rule silently hides methods: a Subcommand's own public
+	 * methods are never registered, so `wp saltus webmcp validate` would parse
+	 * "validate" as a positional argument and run __invoke() instead.
+	 */
+	public function testCommandsWithInvokeExposeNoOtherActions(): void {
+		$service = new WpCli( [ 'modeler_resolver' => function (): Modeler { return $this->modeler; } ], $this->cli );
+		$service->register_commands();
+
+		foreach ( $this->cli->commands as $name => $handler ) {
+			$reflection = new \ReflectionClass( $handler );
+			if ( ! $reflection->hasMethod( '__invoke' ) ) {
+				continue;
+			}
+
+			$actions = [];
+			foreach ( $reflection->getMethods( \ReflectionMethod::IS_PUBLIC ) as $method ) {
+				// Mirrors WP_CLI\Dispatcher\CommandFactory::is_good_method().
+				if ( ! $method->isStatic() && strpos( $method->getName(), '__' ) !== 0 ) {
+					$actions[] = $method->getName();
+				}
+			}
+
+			$this->assertSame(
+				[],
+				$actions,
+				sprintf(
+					'"wp %s" defines __invoke(), so WP_CLI registers it as a Subcommand and these methods are unreachable: %s.',
+					$name,
+					implode( ', ', $actions )
+				)
+			);
+		}
+	}
+
 	public function testCatalogMatchesEveryInstantiableMcpTool(): void {
 		$tool_names = [];
 		foreach ( glob( dirname( __DIR__, 2 ) . '/src/MCP/Tools/*.php' ) ?: [] as $file ) {

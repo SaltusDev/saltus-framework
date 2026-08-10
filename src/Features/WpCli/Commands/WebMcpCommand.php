@@ -17,18 +17,14 @@ use Saltus\WP\Framework\WebMcp\WebMcpTool;
  * an API Chrome ships no earlier than 157 — which makes a misconfiguration
  * indistinguishable from an unsupported browser. These commands render the same
  * descriptors the bridge would receive, without one.
+ *
+ * Defines no __invoke() on purpose. WP_CLI reflects on that method to decide a
+ * command's kind, and a class that has one becomes a Subcommand whose own public
+ * methods are never registered — `wp saltus webmcp validate` would parse
+ * "validate" as a positional argument and silently run the manifest instead,
+ * so the check that exits non-zero on a broken surface could never fail.
  */
 final class WebMcpCommand extends AbstractCommand {
-
-	/**
-	 * Default to the manifest, which is what "show me the surface" means.
-	 *
-	 * @param list<string>         $args       Positional arguments.
-	 * @param array<string, mixed> $assoc_args Associative arguments.
-	 */
-	public function __invoke( array $args, array $assoc_args ): void {
-		$this->manifest( $args, $assoc_args );
-	}
 
 	/**
 	 * Print the tool descriptors for a surface.
