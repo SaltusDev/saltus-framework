@@ -55,7 +55,22 @@ final class SaltusFrontend implements Processable {
 
 		$alias = $this->config['shortcode_alias'];
 		if ( $alias !== '' ) {
-			add_shortcode( $alias, [ self::class, 'shortcode' ] );
+			// The alias is registered per model, so it already knows its post type.
+			// Binding that name as the default type is what makes the alias worth
+			// having: sharing the generic callback would resolve the type from the
+			// attribute alone, so a bare [books] would render nothing and the alias
+			// would save the author nothing over [saltus_cpt type="book"].
+			$type = $this->name;
+			add_shortcode(
+				$alias,
+				static function ( array $attributes = [] ) use ( $type ): string {
+					if ( ! isset( $attributes['type'] ) || (string) $attributes['type'] === '' ) {
+						$attributes['type'] = $type;
+					}
+
+					return self::shortcode( $attributes );
+				}
+			);
 		}
 	}
 

@@ -69,6 +69,30 @@ class FrontendFeatureTest extends TestCase {
 		$this->assertSame( '', SaltusFrontend::shortcode( [ 'type' => 'missing' ] ) );
 	}
 
+	/** The alias knows its own model, so it must render without repeating the type. */
+	public function testAliasDefaultsToItsOwnModel(): void {
+		global $wp_query_posts, $wp_shortcodes_registered;
+		$post            = new WP_Post( [ 'ID' => 7, 'post_type' => 'book', 'post_status' => 'publish', 'post_title' => 'Dune', 'post_excerpt' => 'Sand' ] );
+		$post->post_date = '2026-07-31 12:00:00';
+		$wp_query_posts  = [ $post ];
+
+		$frontend = new SaltusFrontend( 'book', [], [ 'shortcode_alias' => 'books' ] );
+		$frontend->set_model( $this->model( 'book' ) );
+		$frontend->process();
+
+		$alias = $wp_shortcodes_registered['books'];
+
+		// [books] with no attributes.
+		$this->assertStringContainsString( 'Dune', call_user_func( $alias, [] ) );
+
+		// An explicit type still wins over the bound default.
+		$this->assertStringContainsString( 'Dune', call_user_func( $alias, [ 'type' => 'book' ] ) );
+		$this->assertSame( '', call_user_func( $alias, [ 'type' => 'missing' ] ) );
+
+		// The generic shortcode keeps requiring an explicit type.
+		$this->assertSame( '', SaltusFrontend::shortcode( [] ) );
+	}
+
 	private function model( string $name ): Model {
 		$model = $this->createStub( Model::class );
 		$model->method( 'get_name' )->willReturn( $name );
