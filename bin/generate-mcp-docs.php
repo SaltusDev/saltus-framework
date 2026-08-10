@@ -82,7 +82,7 @@ usort(
 $reference = build_reference_document( $tools );
 write_file_if_changed( $root . '/docs/mcp/abilities.md', $reference );
 replace_generated_section(
-	$root . '/docs/MCP.md',
+	$root . '/docs/mcp/index.md',
 	'<!-- BEGIN AUTO-GENERATED MCP ABILITIES -->',
 	'<!-- END AUTO-GENERATED MCP ABILITIES -->',
 	build_embedded_section( $tools )
