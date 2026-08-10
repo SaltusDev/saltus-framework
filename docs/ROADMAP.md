@@ -1,7 +1,7 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` bumped to 1.8.1 (2026-08-08); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending
+- Version: `package.json` bumped to 1.8.3 (2026-08-10); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 25 tools
@@ -400,13 +400,14 @@ frontend:
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 - ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
 - ✓ **Phase 6C AI client generation** — unhandled assistant actions generate through the WordPress AI Client; `saltus/framework/ai/prompt_builder` filter; AI availability reported in health + `wp saltus` — delivered 2026-08-07.
-- Reconcile version numbering across `package.json` (now 1.8.1), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- Reconcile version numbering across `package.json` (now 1.8.3), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
 - ✓ **Phase 8B implementation** — admin WebMCP surface and proposal-queue-governed writes: `AdminScreen`/`AdminToolSet` per-screen scoping, `AdminTool` decorating existing abilities with the review-queue write posture, nonce-authenticated execute + refresh route, `saltus-webmcp-toolchange` re-registration in the bridge, `wp saltus webmcp manifest|validate`, health/`wp saltus health` WebMCP stats, and the declarative forms no-go evaluation — delivered 2026-08-08.
 - ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B — scoped 2026-08-07.
 - ✓ **Phase 8A implementation** — `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `PublicFieldFilter`, `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe — delivered 2026-08-07.
 - ✓ **Phase 8A hardening and docs** — per-client rate limiting via `ClientIdentity`, `ResultBudget` output clamping, `bridge.js` test coverage, and the generated `docs/guides/webmcp.md` reference — delivered 2026-08-08.
 - ✓ **Phase 8B implementation** — admin surface and proposal-queue-governed writes: `WebMcpTool` contract, `AdminTool` ability projection, `AdminScreen`/`AdminToolSet` per-screen scoping, `/webmcp/nonce` route with silent bridge refresh-and-retry, `saltus-webmcp-toolchange` re-registration, WebMCP state in health output, and `wp saltus webmcp manifest|validate` — delivered 2026-08-08.
 - ✓ **Declarative forms evaluation** — no-go for 8B; Codestar emits `<h4>` titles, no input `id`, and no ARIA across 45 field types, so a derived schema would carry no property descriptions. Four accessibility defects documented for separate scoped work — evaluated 2026-08-08.
+- ✓ **Bug-fix pass 1.8.3** — shortcode alias bound to its own model (bare `[books]` renders), `__invoke()` removed from `wp saltus` parent commands so subcommands register, audit table created before reads, WebMCP manifest includes admin models via `enabled_models()`, and `ResultBudget` guarantees fit at the pass bound — delivered 2026-08-10.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -747,3 +748,15 @@ The internal planning documents were written before implementation and describe 
 **Exit criteria:** A model declares a relationship in config and both sides become readable and writable through REST, MCP, and WP-CLI, with cardinality enforced from either direction, one query per relationship per result set, and all writes governed by the review queue. ✓ Done 2026-08-08
 
 **Non-goals for Phase 10A:** the admin metabox UI (Select2 picker), migration scripts from ACF/Toolset/Pods, a query-builder facade (`Relations::for()->with()`), and relationships to taxonomy terms or users. Storage and the three programmatic surfaces come first; the UI is worth building once the data model has settled.
+
+---
+
+### Phase 11: Bug Fixes v1.8.3 (v2.5+)
+
+**Theme:** Fix the low-severity findings surfaced by the 1.8.3 version cycle code review. None blocked the release; each is tracked here so the next cycle can resolve it.
+
+| Item | Status |
+|------|--------|
+| `ResultBudget::shrink_lists()` docstring overclaims "guarantee the result fits the allowance" — a payload dominated by short scalar strings can still exceed the allowance after lists are dropped. Re-word to match reality. | [ ] |
+| `WebMcpController::get_manifest()` lists admin-only post type slugs in a public manifest (`enabled_models()`), disclosing private post types to anonymous visitors. Confirm the slug-only disclosure is acceptable, or narrow the public route. | [ ] |
+| `AuditLogger::ensure_db()` runs `CREATE TABLE IF NOT EXISTS` DDL on every read path per request (health endpoint, retention cron). Deliberate and guarded per request; consider a low-traffic guard or async creation for high-traffic sites. | [ ] |
