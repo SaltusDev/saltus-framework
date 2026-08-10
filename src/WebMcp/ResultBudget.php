@@ -117,8 +117,11 @@ final class ResultBudget {
 	 * result set and a short one loses entries from the set that is actually
 	 * costing the budget.
 	 *
-	 * If the pass bound is reached without fitting, drops all remaining list
-	 * entries to guarantee the result fits the allowance.
+	 * If the pass bound is reached without fitting, drops every remaining list
+	 * entry in one sweep. That reclaims the whole list cost rather than fitting
+	 * the allowance outright: a payload whose scalar keys alone exceed the
+	 * allowance still exceeds it afterwards, and clip_strings() takes the next
+	 * pass at it.
 	 *
 	 * @param array<string, mixed> $result    Payload to shrink.
 	 * @param int                  $allowance Character allowance.
@@ -142,9 +145,10 @@ final class ResultBudget {
 			$result         = $this->recount( $result, $key, count( $list ) );
 		}
 
-		// Pass bound reached but payload still doesn't fit: drop all remaining
-		// list entries to guarantee fit. This handles payloads with many short
-		// entries across multiple lists where incremental removal is too slow.
+		// Pass bound reached but payload still doesn't fit: drop every remaining
+		// list entry in one sweep, which is cheaper than continuing one at a time
+		// on payloads holding many short entries across several lists. Lists are
+		// all this can reclaim; scalar keys are left to clip_strings().
 		if ( $this->measure( $result ) > $allowance ) {
 			foreach ( $result as $key => $value ) {
 				if ( is_array( $value ) && $value !== [] && $this->is_list( $value ) ) {

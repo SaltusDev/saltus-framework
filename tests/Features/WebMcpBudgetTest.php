@@ -22,6 +22,34 @@ class WebMcpBudgetTest extends TestCase {
 		$wp_filter_values = [];
 	}
 
+	/**
+	 * Trimming reclaims list and string cost, and nothing else. A payload made of
+	 * many scalar keys whose strings already sit at the clip floor has neither, so
+	 * it comes back over budget rather than mangled — apply() leaves the
+	 * `truncated` flag off, which is what tells the agent the result is whole.
+	 *
+	 * Pinned because shrink_lists() once claimed to guarantee fit outright.
+	 */
+	public function testScalarOnlyPayloadCannotBeTrimmedToFit(): void {
+		global $wp_filter_values;
+
+		$wp_filter_values['saltus/framework/webmcp/output_budget'] = 200;
+
+		$budget  = new ResultBudget();
+		$payload = [];
+		for ( $i = 0; $i < 20; $i++ ) {
+			$payload[ 'field_' . $i ] = 'value';
+		}
+
+		$this->assertGreaterThan( 200, $budget->measure( $payload ), 'Fixture must start over budget.' );
+
+		$clamped = $budget->apply( $payload );
+
+		$this->assertSame( $payload, $clamped, 'Nothing here is a list or a clippable string.' );
+		$this->assertArrayNotHasKey( 'truncated', $clamped, 'Nothing was dropped, so nothing may be flagged.' );
+		$this->assertFalse( $budget->fits( $clamped ) );
+	}
+
 	public function testSmallResultPassesThroughUnchanged(): void {
 		$budget = new ResultBudget();
 		$result = [
