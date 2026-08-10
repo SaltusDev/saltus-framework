@@ -1,6 +1,6 @@
 {
   "name": "saltus-framework-git",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "Saltus Framework helps you develop WordPress plugins that are based on Custom Post Types.",
   "main": "index.js",
   "directories": {
@@ -11,7 +11,11 @@
   "scripts": {
     "test": "node --test \"tests/js/*.test.js\"",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
+    "docs:assemble": "node bin/assemble-docs.mjs",
+    "docs:site": "npm run docs:assemble && vitepress build docs && node bin/check-docs-leak.mjs",
+    "docs:wiki": "node bin/build-wiki-docs.mjs",
+    "docs:build": "npm run docs:site && npm run docs:wiki",
+    "docs:check": "node bin/check-docs-leak.mjs",
     "docs:preview": "vitepress preview docs"
   },
   "repository": {
