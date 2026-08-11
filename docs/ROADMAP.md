@@ -1,8 +1,11 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` bumped to 1.8.4 (2026-08-10); `CHANGELOG.md` carries a 1.8.1 release section; relationship to the historical `v2.0.0` tag still pending
+- Version: `package.json` bumped to 1.8.4 (2026-08-10); all 1.8.x work currently sits under `CHANGELOG.md`'s `[Unreleased]` heading with no `[1.8.x]` release sections cut; relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
+- Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
+- Phases 11–14 scoped 2026-08-11: Security & Compliance, Developer Experience, Enhanced UX, Observability. None started. There is no Phase 9 — see [Phase Numbering](#phase-numbering).
+- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 25 tools
 - REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
@@ -408,6 +411,9 @@ frontend:
 - ✓ **Phase 8B implementation** — admin surface and proposal-queue-governed writes: `WebMcpTool` contract, `AdminTool` ability projection, `AdminScreen`/`AdminToolSet` per-screen scoping, `/webmcp/nonce` route with silent bridge refresh-and-retry, `saltus-webmcp-toolchange` re-registration, WebMCP state in health output, and `wp saltus webmcp manifest|validate` — delivered 2026-08-08.
 - ✓ **Declarative forms evaluation** — no-go for 8B; Codestar emits `<h4>` titles, no input `id`, and no ARIA across 45 field types, so a derived schema would carry no property descriptions. Four accessibility defects documented for separate scoped work — evaluated 2026-08-08.
 - ✓ **Bug-fix pass 1.8.3** — shortcode alias bound to its own model (bare `[books]` renders), `__invoke()` removed from `wp saltus` parent commands so subcommands register, audit table created before reads, WebMCP manifest includes admin models via `enabled_models()`, and `ResultBudget` guarantees fit at the pass bound — delivered 2026-08-10.
+- ✓ **Maintenance pass 1.8.4** — `AuditLogger::ensure_table()` returns whether the DDL succeeded, so a failed create no longer marks the table verified and hides a missing audit table for the full TTL — delivered 2026-08-11.
+- ✓ **Phases 11–14 scoped** — Security & Compliance (field-level permissions, per-field encryption, GDPR hooks), Developer Experience (config-time validation), Enhanced UX (relationship picker plus the four documented Codestar accessibility defects), Observability (audit rollups and a metrics surface) — scoped 2026-08-11. The phase-numbering collision with the retired bug-fix buckets is resolved and recorded.
+- Next code work, in the order it unblocks: the Phase 10A follow-ups (metabox picker → query-builder facade → migration scripts). The picker and the Codestar accessibility fixes both now sit in [Phase 13](#phase-13-enhanced-ux-v29), which is where that work belongs.
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -751,7 +757,13 @@ The internal planning documents were written before implementation and describe 
 
 ---
 
-### Phase 11: Bug Fixes v1.8.3 (v2.5+)
+## Release Maintenance
+
+Findings from each version cycle's code review, tracked per release. These are **not** numbered phases: they carry no theme, no exit criteria, and no sequence position. They were briefly numbered 11 and 12, which collided with the strategic phase numbers reserved below — see [Phase Numbering](#phase-numbering).
+
+---
+
+### Maintenance: v1.8.3
 
 **Theme:** Fix the low-severity findings surfaced by the 1.8.3 version cycle code review. None blocked the release; each is tracked here so the next cycle can resolve it.
 
@@ -771,10 +783,202 @@ The internal planning documents were written before implementation and describe 
 
 ---
 
-### Phase 12: Bug Fixes v1.8.4 (v2.5+)
+### Maintenance: v1.8.4
 
 **Theme:** Fix the medium-severity finding surfaced by the 1.8.4 version cycle code review.
 
 | Item | Status |
 |------|--------|
-| `AuditLogger::ensure_db()` marks the table verified even when the `CREATE TABLE IF NOT EXISTS` DDL fails (`ensure_table()` discards the query result), so a transient DB failure hides the missing table from every read for up to an hour. Only set the transient on successful DDL so a failed create retries next request. | [ ] |
+| `AuditLogger::ensure_db()` marks the table verified even when the `CREATE TABLE IF NOT EXISTS` DDL fails (`ensure_table()` discards the query result), so a transient DB failure hides the missing table from every read for up to an hour. Only set the transient on successful DDL so a failed create retries next request. | [x] |
+
+**Resolution:**
+
+- **`ensure_table()` now returns `bool`** — `$wpdb->query()`'s result is compared against `false` rather than cast, so the affected-row count the `AuditDatabase` interface also permits is not misread as a rejected statement. `ensure_db()` returns early when the create failed, leaving both the verification transient and the `saltus_mcp_audit_db_version` option unwritten. The schema marker matters as much as the transient: written after a failed create, it would tell a future migration that this version's table exists.
+- **Per-request memoization is unchanged.** `db_initialized` is still set before the work, so a failed DDL is attempted once per request, not once per call. The retry window is the next request — which is the point: previously the failure was cached for the full hour TTL and every read in that window queried a missing table and reported zero errors, a broken log that looks like a healthy one.
+- **Two regression tests**, both mutation-tested: dropping the guard fails `testFailedDdlIsNotMarkedVerified` and `testFailedDdlDoesNotRecordSchemaVersion`. `AuditLoggerTest` gained a `tearDown()` restoring the shared `$wpdb` global, since the new tests swap in a double whose `query()` reports `false` and that must not leak into another class.
+
+**Verification:** 522 tests, 1506 assertions; 21 JS tests; PHPStan Level 7 and PHPCS clean; `git diff --check` clean. ✓ Done 2026-08-11
+
+---
+
+## Phase Numbering
+
+Two numbering schemes briefly disagreed. The internal Phase 10 planning documents reserved 11–14 for a strategic sequence, while this file spent 11 and 12 on version-cycle bug-fix buckets.
+
+The buckets lost the numbers: they are per-release maintenance with no theme or exit criteria, and they were the later, more casual use. They now live under [Release Maintenance](#release-maintenance) keyed by version.
+
+**Reserved:** 11 Security & Compliance · 12 Developer Experience · 13 Enhanced UX · 14 Observability.
+
+**Also note:** there is no Phase 9. The sequence runs 8 → 10A. Phase 9 was to be Performance (query optimization, background jobs) and appears only as a passing mention in the internal notes; it was never scoped here. The number stays unused rather than being recycled, so internal references to "Phase 9" keep resolving to the thing they meant.
+
+Phases 10B and 10C remain scoped only in the internal RFC and are summarized under [Phase 10 Remainder](#phase-10-remainder) below.
+
+---
+
+## Phase 10 Remainder
+
+The internal RFC — still at RFC status as of 2026-08-11 — split Phase 10 into three sub-phases. Only 10A shipped, and it shipped without two of its own scoped deliverables. Recorded here so the roadmap does not imply Phase 10 is closed.
+
+| Sub-phase | Scope | State |
+|-----------|-------|-------|
+| **10A** Relationships | Data model, storage, REST/MCP/WP-CLI surfaces | ✓ Done 2026-08-08 |
+| **10A** follow-ups | Admin metabox picker UI, query-builder facade (`Relations::for()->with()`), ACF/Toolset/Pods migration scripts | Not started — declared non-goals when 10A shipped |
+| **10B** Workflows | Custom approval states beyond draft/publish, transition validation, dashboard, notifications | Not scoped here; RFC only |
+| **10C** Scheduled Actions | Scheduled publish/unpublish, auto-archival rules, monitoring | Not scoped here; RFC only |
+| **10.5** Migration tools | ACF relationship field importer with dry-run preview | Optional; contingent on 10A adoption |
+
+**Where the RFC has drifted from the code:** it specifies a `src/Migrations/` system with `up()`/`down()` classes and a nested `src/MCP/Tools/Relationships/` directory. Neither exists — `RelationshipStore` follows the lazy `ensure_table()` pattern already used by `ProposalStore` and `AuditLogger`, and tools sit flat in `src/MCP/Tools/` so `WpCliFeatureTest`'s parity check covers them. The RFC's `README.md` still points at those uncreated paths. Read it for intent, not for structure.
+
+**Relevance to 10B:** the RFC's workflow engine overlaps Phase 6B's editorial review queue, which already has proposal states (`pending` → `approved`/`rejected`), a `ProposalStore`, a review dashboard at Tools → AI Review Queue, and audit events on every transition. 10B should generalize that state machine rather than build a second one beside it.
+
+---
+
+### Phase 11: Security & Compliance (v2.7+)
+
+**Theme:** Make Saltus deployable where content carries obligations — field-level access control, encryption at rest for designated fields, and the WordPress privacy hooks a site needs to answer a data subject request.
+
+**Premise:** Saltus already gates at the *surface* boundary. `CapabilityPolicy` decides whether a capability is reachable for a model; `ModelRestPolicy` and `McpPolicy` gate per feature section; `PublicFieldFilter` decides which meta fields an anonymous WebMCP caller may see. What no layer does is gate an *individual field* by role for authenticated callers — once a caller clears `edit_posts` for a model, every field in it is readable and writable across REST, MCP, WP-CLI, and WebMCP. This phase adds the missing axis, and it must add it in one place that all four surfaces consult, or the surfaces will disagree.
+
+**Design constraints:**
+- **One resolution point, four consumers.** Field permissions resolve in a single service that REST, MCP, WP-CLI, and WebMCP all call. A per-surface implementation is how a private field leaks through the surface someone forgot.
+- **Deny by omission is wrong here.** An array section with no `show_in_rest` key already resolves to *enabled* in `ModelRestPolicy` — a deliberate existing behavior. Field permissions must invert that: a field with no rule stays as accessible as it is today (no silent breakage for existing sites), but a field *with* a rule denies unless the rule matches.
+- **Encryption is opt-in per field and never covers the whole table.** Encrypted fields cannot be queried by value or sorted on. Declaring one must make that trade-off visible in config, not discovered at query time.
+- **Key material never lives in the database.** A key in `wp_options` beside the ciphertext is not encryption. Keys come from `wp-config.php` constants or a filter resolving to an external store.
+- **Privacy hooks are core's, not ours.** Register `wp_privacy_personal_data_exporters` and `..._erasers` and let core drive the request workflow. Nothing in `src/` currently touches either — grep confirms zero references.
+
+**Config shape (planned):**
+```yaml
+fields:
+  salary:
+    permissions:
+      read: ['manage_options']
+      write: ['manage_options']
+    encrypted: true          # implies unqueryable, unsortable
+  internal_notes:
+    permissions:
+      read: ['edit_others_posts']
+```
+
+| Item | Status |
+|------|--------|
+| `FieldPermissionPolicy` — resolves per-field read/write capability for a model, one point all four surfaces consult | [ ] |
+| REST enforcement: filter response fields and reject writes to denied fields in `MetaController` | [ ] |
+| MCP/WP-CLI enforcement through the same policy, verified by a parity test per surface | [ ] |
+| WebMCP enforcement: `PublicFieldFilter` composes with the policy rather than duplicating its rules | [ ] |
+| Encryption at rest for fields declaring `encrypted: true`, with key material from `wp-config.php` or a filter | [ ] |
+| Encrypted fields rejected from query, sort, and filter arguments with an actionable error hint | [ ] |
+| GDPR: `wp_privacy_personal_data_exporters` registration covering model meta fields | [ ] |
+| GDPR: `wp_privacy_personal_data_erasers` registration, honoring relationship cascade rules | [ ] |
+| Audit events for denied field access, distinguishable from a capability failure | [ ] |
+| Mutation-test every new guard: removing it must fail at least one test | [ ] |
+
+**Exit criteria:** A field declaring `permissions` is unreadable and unwritable through REST, MCP, WP-CLI, and WebMCP by a caller lacking the capability, with one policy resolving all four. A field declaring `encrypted: true` is stored as ciphertext and rejected from query arguments. A core privacy request exports and erases model meta.
+
+**Non-goals:** row-level (per-post) permissions beyond what WordPress capabilities already give, an audit-log UI, key rotation tooling, and compliance certification of any kind. Field-level access is the gap; the rest is scope creep.
+
+---
+
+### Phase 12: Developer Experience (v2.8+)
+
+**Theme:** Fail at config time instead of runtime. A model config typo currently produces silence, a half-registered post type, or a fatal deep in a feature service — never a message naming the key that was wrong.
+
+**Premise:** Saltus validates *tool arguments* thoroughly (`src/MCP/Validation/Validator.php`, JSON Schema on every ability call) and validates *model config* not at all — grep finds no config validator, no schema file, no `validate_config()`. That asymmetry is the whole phase. An agent calling a tool with a bad argument gets a structured error with a hint; a developer writing `relationships: { actors: { cardinality: has_meny } }` gets undefined behavior.
+
+**Design constraints:**
+- **Validation runs at registration, not on every request.** A config check on each page load is a tax on production for a mistake only the developer can make. Validate when models are processed, cache the verdict, and expose a WP-CLI command for CI.
+- **Errors name the file, the key path, and the accepted values.** "Invalid config" is not a deliverable. `books.yml: relationships.actors.cardinality — 'has_meny' is not one of has_one, has_many, belongs_to, many_to_many` is.
+- **Never fatal on a warning.** A deprecated key or an unknown-but-harmless one warns and continues; only a config that would corrupt data or half-register a post type refuses. Existing sites must not break on upgrade because a key they have used for two years is now spelled differently.
+- **The schema is generated from the code that consumes it**, not hand-maintained beside it. A hand-written schema drifts the moment someone adds a feature — the same failure mode `docs/mcp/abilities.md` avoids by being generated.
+- **Migrations stay lazy.** The Phase 10 RFC asked for `src/Migrations/` with `up()`/`down()`; 10A deliberately declined it, and three stores now share the `ensure_table()` pattern. If a real schema *change* (not creation) ever lands, that is when a migration mechanism earns its place — and the [v1.8.4 maintenance fix](#maintenance-v184) is the precedent for how a failed DDL must be handled: never record success you did not get.
+
+| Item | Status |
+|------|--------|
+| `ConfigValidator` — validates a model config against a schema derived from the feature services that consume each section | [ ] |
+| Structured `ConfigError` value objects carrying file, key path, found value, and accepted values | [ ] |
+| Error/warning severity split: warnings log and continue, errors refuse to register the model | [ ] |
+| `wp saltus config validate [--model=<name>] [--strict]` for CI, exiting non-zero on error | [ ] |
+| Validation verdict cached per config file, invalidated on file mtime change | [ ] |
+| Unknown-key detection with a nearest-match suggestion (`has_meny` → `has_many`) | [ ] |
+| Deprecated-key warnings for `features.draganddrop` vs `features.drag_and_drop` and the other known drift pairs | [ ] |
+| Health endpoint reports config validity per model, so a broken config is visible without CLI access | [ ] |
+| Generated config reference at `docs/guides/config-reference.md`, refreshed by `composer docs:all` | [ ] |
+| PHPUnit coverage per config section, including one fixture per known-bad shape | [ ] |
+
+**Exit criteria:** A malformed model config produces an error naming the file, key path, and accepted values, at registration time and via `wp saltus config validate`. A config with only unknown-but-harmless keys warns and still registers. Health reports per-model config validity. The config reference is generated, not authored.
+
+**Non-goals:** a GraphQL surface (the RFC listed it; REST + MCP + WP-CLI + WebMCP is already four surfaces to keep in parity, and nothing has asked for a fifth), an IDE plugin, config scaffolding or generators, and a migration system without a migration to run. `has_meny` suggestions are worth building; a fifth transport is not.
+
+---
+
+### Phase 13: Enhanced UX (v2.9+)
+
+**Theme:** The admin surfaces Saltus generates should be usable and accessible. Two debts land here: the relationship picker 10A deferred, and the Codestar accessibility defects that block both assistive technology and any future declarative-forms work.
+
+**Premise:** every programmatic surface is built and none of the UI is. A relationship is fully writable through REST, MCP, and WP-CLI, and completely invisible in the post editor — an editor cannot see, let alone set, what an agent can freely change. Meanwhile the four Codestar defects documented during the Phase 8B declarative-forms evaluation are live WCAG 2.1 findings (1.3.1 Info and Relationships, 4.1.2 Name Role Value) on **every** Saltus admin screen today, not hypothetical future problems.
+
+**Accessibility is the unblocker, so it goes first.** The declarative forms API derives its schema from `<label>` text, `aria-description`, and field `name`. Codestar renders titles as `<h4>` in a sibling div, emits no `id` on any of its 45 field types' inputs, and carries zero `aria-` attributes. Fixing that is what makes a derived schema viable *and* what makes the admin screens conformant — one piece of work paying two debts. It is vendored-code work in `lib/codestar-framework/`, scoped out of Phase 8B on purpose.
+
+**Design constraints:**
+- **Fix `field_attributes()` once, inherit 45 times.** All field types route through `CSF_Fields::field_attributes()`; emitting `id` there covers every type without touching 45 files.
+- **Keep the class, change the element.** `csf-title` becomes `<label for>` retaining its class, so no stylesheet changes and no visual regression.
+- **Vendored changes must be re-appliable.** `lib/codestar-framework/` is third-party. Every edit is recorded so a Codestar upgrade can replay it, or it will be silently reverted by the next vendor bump.
+- **The picker is one component, not one per cardinality.** `has_one` is the picker capped at one. A separate single-select implementation is how the two drift.
+- **The picker writes through the same governed path.** A metabox save is a mutation: it goes through `RelationshipManager` and `ProposalService` like every other write, so an editor's change is queued for review exactly as an agent's is, if the site requires review.
+- **No new frontend framework.** The picker uses what the admin already loads. Select2 is bundled with Codestar; the RFC assumed it.
+- **Bulk operations reuse `wp saltus` service classes**, not a parallel implementation. The CLI already does bulk correctly.
+
+| Item | Status |
+|------|--------|
+| Codestar: emit `id` alongside `name` in `CSF_Fields::field_attributes()` | [ ] |
+| Codestar: `csf-title` from `<h4>` to `<label for="…">`, class preserved | [ ] |
+| Codestar: `aria-describedby` linking `csf-desc-text` to its input | [ ] |
+| Codestar: vendored-change log so a Codestar upgrade can replay the patches | [ ] |
+| Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | [ ] |
+| Picker writes routed through `RelationshipManager` + `ProposalService`, matching the agent write path | [ ] |
+| Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] |
+| Relationship column on the post list table, with eager loading so the list stays one query per relationship | [ ] |
+| Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | [ ] |
+| Keyboard operability and screen-reader labels verified on the picker specifically | [ ] |
+| Re-evaluate the declarative forms API now that labels and ids exist — the [8B no-go](#8b--admin-surface-and-governed-writes) was conditional on these defects | [ ] |
+| Accessibility statement in the docs recording what was fixed and what remains unverified | [ ] |
+
+**Exit criteria:** An editor can find, set, reorder, and remove related posts from the post editor, and the resulting write is governed identically to an agent's. Every Codestar field type emits an input `id`, a `<label for>`, and `aria-describedby` where a description exists. The declarative-forms decision is revisited against the fixed markup and recorded either way.
+
+**Non-goals:** inline editing in the post list, frontend submission forms (the RFC listed both — they need their own security review, since a frontend form is an unauthenticated write path and nothing in Saltus currently accepts one), a block-editor sidebar panel duplicating the metabox, and a full WCAG audit. Full conformance validation needs manual testing with assistive technology and expert review; this phase fixes four specific documented defects and says so.
+
+---
+
+### Phase 14: Observability (v3.0+)
+
+**Theme:** Turn the audit trail into something an operator can read. The data is already collected and almost nothing surfaces it.
+
+**Premise:** `AuditLogger` records every ability call with timestamp, user, arguments, status, duration, and error code. `HealthController` already computes error rate, average/p95/max latency, and per-status counts from those rows. All of it is available at exactly one place — a JSON REST endpoint — with no UI, no per-tool breakdown, no time series, and no way to notice a problem without polling by hand. The v1.8.3 and v1.8.4 maintenance findings are both cases where a silently broken audit table would have looked identical to a healthy one from the outside. That is the gap.
+
+**Design constraints:**
+- **Aggregate, do not re-log.** Everything here reads existing audit rows. This phase adds no new write path into the audit table, because a metrics writer competing with the audit writer is a way to lose audit rows.
+- **A dashboard must not scan the whole table.** `get_recent_entries()` takes a limit and the health payload samples it. A dashboard over 90 days of rows needs pre-aggregated buckets, not a full scan on page load — the same instinct that put the DDL behind a transient.
+- **Report the missing table as missing.** The one thing health must never do is read an absent or broken audit table as zero errors. Both maintenance findings were versions of this; the invariant belongs in a test, not a comment.
+- **Retention already exists and bounds everything.** The daily cron prunes past `saltus/framework/mcp/audit/retention_days` (default 30). Aggregates must survive pruning — roll up before the rows go, or a 90-day view silently becomes a 30-day view.
+- **No external services by default.** Error tracking integrates through a filter a site can point at its own collector. Saltus ships no outbound network call and no third-party SDK.
+- **Sampling is a config knob, not a rewrite.** A high-traffic site should be able to audit 1-in-N calls without changing what the dashboard means.
+
+| Item | Status |
+|------|--------|
+| Pre-aggregated daily rollups per ability: call count, error count, latency percentiles | [ ] |
+| Rollups computed on the existing retention cron, before pruning removes the source rows | [ ] |
+| Admin dashboard: per-tool call volume, error rate, and latency over a selectable window | [ ] |
+| Per-tool and per-client breakdown, reusing `ClientIdentity` so no raw visitor IP is surfaced | [ ] |
+| Audit table health check that reports "unavailable" distinctly from "zero errors" | [ ] |
+| `wp saltus metrics [--ability=<name>] [--since=<date>] [--format=table\|json\|yaml]` | [ ] |
+| Error tracking hand-off filter (`saltus/framework/observability/error`) for an external collector, no SDK bundled | [ ] |
+| Audit sampling rate filter for high-traffic sites, with the sample rate recorded alongside the aggregates | [ ] |
+| Slow-call log: calls exceeding a filterable duration threshold, retained separately from the sampled set | [ ] |
+| Health payload extended with rollup freshness, so a stalled cron is visible | [ ] |
+| Dashboard accessibility verified against the [Phase 13](#phase-13-enhanced-ux-v29) markup fixes | [ ] |
+| PHPUnit coverage for rollup arithmetic, retention interaction, and the missing-table case | [ ] |
+
+**Exit criteria:** An operator can see per-tool call volume, error rate, and latency over a chosen window from wp-admin and from `wp saltus metrics`, without a full table scan. A missing or broken audit table reports as unavailable rather than healthy. Aggregates survive retention pruning. Nothing leaves the site unless a filter is wired to send it.
+
+**Non-goals:** APM-grade tracing, a bundled third-party error-tracking SDK, request-level profiling of non-Saltus code, alerting or notification delivery (the hand-off filter is the integration point; a site's existing alerting owns the rest), and multisite network-wide aggregation.
+
+---

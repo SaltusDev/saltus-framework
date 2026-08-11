@@ -13,9 +13,18 @@ require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
  */
 class AuditLoggerTest extends TestCase
 {
+    /** @var mixed The shared global this class borrows, put back on teardown. */
+    private $original_wpdb;
+
     protected function setUp(): void
     {
         global $wpdb, $wp_transients;
+
+        // Tests that model a rejected DDL swap in their own failing double. The
+        // global is shared with every other test class, so remember what was
+        // there and restore it rather than leaving a failing wpdb behind.
+        $this->original_wpdb = $wpdb;
+
         if ( ! is_object( $wpdb ) ) {
             $wpdb = $this->fakeWpdb();
         }
@@ -25,6 +34,19 @@ class AuditLoggerTest extends TestCase
         // ensure_db() skips the DDL while its verification transient is live, so a
         // marker left by an earlier test would make later ones see no CREATE.
         $wp_transients = [];
+
+        // The schema-version option is written by ensure_db() and asserted on by
+        // the DDL-failure tests, so it cannot carry over between orderings.
+        delete_option('saltus_mcp_audit_db_version');
+    }
+
+    protected function tearDown(): void
+    {
+        global $wpdb, $wp_transients;
+
+        $wpdb          = $this->original_wpdb;
+        $wp_transients = [];
+        delete_option('saltus_mcp_audit_db_version');
     }
 
     public function testRecordStoresEntryInAuditTable(): void
@@ -147,6 +169,52 @@ class AuditLoggerTest extends TestCase
         (new AuditLogger())->get_recent_entries();
 
         $this->assertNotSame([], $this->createQueries($wpdb->queries));
+    }
+
+    /**
+     * A failed create must not be recorded as a success. Marking the table
+     * verified after rejected DDL suppresses the retry for the whole TTL, and
+     * every read in that window queries a missing table and reports zero errors
+     * — a broken log indistinguishable from a healthy one.
+     */
+    public function testFailedDdlIsNotMarkedVerified(): void
+    {
+        global $wpdb;
+
+        $wpdb = $this->fakeWpdb(false);
+
+        (new AuditLogger())->get_recent_entries();
+        $this->assertNotSame([], $this->createQueries($wpdb->queries), 'the first read must attempt the DDL');
+
+        $this->assertFalse(
+            get_transient('saltus_mcp_audit_table_verified'),
+            'a rejected CREATE must leave no verification marker'
+        );
+
+        $wpdb->queries = [];
+        (new AuditLogger())->get_recent_entries();
+
+        $this->assertNotSame(
+            [],
+            $this->createQueries($wpdb->queries),
+            'the next request must retry the create rather than trust a failed one'
+        );
+    }
+
+    /**
+     * The schema marker records that this version's table exists. Writing it
+     * after a failed create would make a future migration skip a table that was
+     * never built.
+     */
+    public function testFailedDdlDoesNotRecordSchemaVersion(): void
+    {
+        global $wpdb;
+
+        $wpdb = $this->fakeWpdb(false);
+
+        (new AuditLogger())->get_recent_entries();
+
+        $this->assertFalse(get_option('saltus_mcp_audit_db_version'));
     }
 
     /**
@@ -281,14 +349,24 @@ class AuditLoggerTest extends TestCase
         $this->assertSame('badtool', $wpdb->inserts[0]['data']['ability']);
     }
 
-    private function fakeWpdb(): object
+    /**
+     * @param bool $query_result What query() reports. False models a server that
+     *                           rejected the statement, as wpdb::query() does.
+     */
+    private function fakeWpdb(bool $query_result = true): object
     {
-        return new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
+        return new class($query_result) implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
             public string $prefix = 'wp_';
             /** @var list<array<string, mixed>> */
             public array $inserts = [];
             /** @var list<string> */
             public array $queries = [];
+            private bool $query_result;
+
+            public function __construct(bool $query_result = true)
+            {
+                $this->query_result = $query_result;
+            }
 
             public function prefix(): string
             {
@@ -308,7 +386,7 @@ class AuditLoggerTest extends TestCase
             public function query(string $query): bool
             {
                 $this->queries[] = $query;
-                return true;
+                return $this->query_result;
             }
 
 			public function prepare(string $query, ...$args): string

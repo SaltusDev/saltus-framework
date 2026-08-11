@@ -28,6 +28,7 @@
 	- The audit table existence check is gated on a one-hour transient instead of running `CREATE TABLE IF NOT EXISTS` on every request that touches the log. A busy site was sending DDL against the same table from every worker to learn something it already knew. Creation is still not gated on the stored schema version, so a dropped table comes back on its own — within the hour rather than on the very next read. Filter `saltus/framework/mcp/audit/table_check_ttl`; `0` restores the per-request check.
 
 ### Fixed
+	- A failed audit-table create is no longer recorded as a success. `AuditLogger::ensure_table()` discarded the DDL result, so `ensure_db()` set its one-hour verification transient even when `CREATE TABLE IF NOT EXISTS` was rejected — and every read in that window then queried a table that did not exist and reported zero errors, which is a broken audit log that looks like a healthy one. The transient and the `saltus_mcp_audit_db_version` marker are now written only on success, so a transient database failure retries on the next request instead of being cached for the full TTL.
 	- `ResultBudget::shrink_lists()` documented a guarantee it does not make. Dropping every remaining list entry reclaims the list cost, not the whole payload: a result whose scalar keys alone exceed the allowance stays over it, and `clip_strings()` takes the next pass. Behavior is unchanged and was already correct — `apply()` withholds `truncated` when it finds nothing to trim, which is what tells an agent the result is whole rather than silently short.
 
 ### Security

@@ -94,11 +94,15 @@ class AuditLogger {
 
 	/**
 	 * Create the audit log database table if it does not exist.
+	 *
+	 * @return bool True when the DDL ran and the table can be trusted to exist.
+	 *              False when there is no database to run it against, or the
+	 *              server rejected the statement.
 	 */
-	private function ensure_table(): void {
+	private function ensure_table(): bool {
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {
-			return;
+			return false;
 		}
 
 		$table           = $this->table_name();
@@ -121,7 +125,13 @@ class AuditLogger {
 		) {$charset_collate}";
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- DDL uses the internal audit table name.
-		$wpdb->query( $sql );
+		$result = $wpdb->query( $sql );
+
+		// `wpdb::query()` answers a CREATE with `true` and any failure with
+		// `false`, but the interface also permits the affected-row count other
+		// statements return. Compare against `false` so a legitimate `0` is not
+		// read as a rejected statement.
+		return $result !== false;
 	}
 
 	/**
@@ -138,6 +148,11 @@ class AuditLogger {
 	 * and it buys nothing once the table is known to exist. The transient keeps
 	 * the self-healing property with a bounded delay: a dropped table comes back
 	 * within the TTL rather than on the very next read.
+	 *
+	 * Only a DDL that actually succeeded is recorded. Marking the table verified
+	 * after a failed create would suppress the retry for the whole TTL, and every
+	 * read in that window queries a table that is not there and reports zero
+	 * errors — a broken log that looks like a healthy one.
 	 */
 	private function ensure_db(): void {
 		if ( $this->db_initialized ) {
@@ -152,7 +167,10 @@ class AuditLogger {
 			return;
 		}
 
-		$this->ensure_table();
+		if ( ! $this->ensure_table() ) {
+			return;
+		}
+
 		$this->mark_table_verified();
 
 		if ( function_exists( 'get_option' ) && function_exists( 'update_option' )
