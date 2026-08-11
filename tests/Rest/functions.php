@@ -1029,6 +1029,29 @@ if ( ! function_exists( 'esc_attr__' ) ) {
 	}
 }
 
+if ( ! function_exists( '_n' ) ) {
+	function _n( string $single, string $plural, int $number, string $domain = 'default' ): string {
+		return $number === 1 ? $single : $plural;
+	}
+}
+
+if ( ! function_exists( 'number_format_i18n' ) ) {
+	function number_format_i18n( $number, int $decimals = 0 ): string {
+		return number_format( (float) $number, $decimals );
+	}
+}
+
+if ( ! function_exists( 'get_edit_post_link' ) ) {
+	function get_edit_post_link( $post = 0, string $context = 'display' ) {
+		global $wp_posts;
+		$post_id = is_object( $post ) ? (int) $post->ID : (int) $post;
+
+		return isset( $wp_posts[ $post_id ] )
+			? 'https://example.test/wp-admin/post.php?post=' . $post_id . '&action=edit'
+			: null;
+	}
+}
+
 if ( ! function_exists( 'esc_html__' ) ) {
 	function esc_html__( string $text, string $domain = 'default' ): string {
 		return $text;

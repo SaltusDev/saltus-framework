@@ -155,6 +155,22 @@ The target post type needs `show_in_rest` enabled, which is the Saltus default.
 Keyboard: `↑`/`↓` move through results, `Enter` selects, `Esc` closes,
 `Alt`+`↑`/`↓` reorders the selected set.
 
+## On the post list
+
+Each relationship also gets a column on the post list table, showing up to three
+related posts as links to their editors and summarizing the rest as "+N more".
+The whole page is resolved in one query per relationship, not one per row.
+
+Two bulk actions per relationship — **Attach to …** and **Detach from …** — apply
+to every checked post. Choose the post to attach or detach with the
+`saltus_rel_target` query argument; without it the action returns you to the list
+with your selection intact and asks for one.
+
+Bulk operations run the same per-post checks a single attach does. Attaching a
+second post to a `has_one` relationship is refused for that post and reported in
+the result count rather than overwriting what is there, and posts you cannot edit
+are skipped rather than failing the whole run.
+
 ## REST
 
 | Route | Methods | Purpose |

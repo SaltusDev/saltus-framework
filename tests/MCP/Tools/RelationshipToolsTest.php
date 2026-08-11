@@ -30,6 +30,22 @@ class RelationshipToolsTest extends TestCase {
 		$wp_current_user_can  = true;
 	}
 
+	/**
+	 * Resetting in setUp protects this class but not the next one.
+	 *
+	 * This class seeds post 7 as a `movie`, and `AbilityRuntimeTest` asserts on
+	 * post 7 expecting a `book` — `AiContextProvider::validate_mutation()` reads
+	 * the model name off the stored post when one exists. Under a random ordering
+	 * that made this class's leftovers fail a test in another file, with nothing
+	 * pointing back here.
+	 */
+	protected function tearDown(): void {
+		global $wp_posts, $wp_post_type_objects, $wp_current_user_can;
+		$wp_posts             = [];
+		$wp_post_type_objects = [];
+		$wp_current_user_can  = true;
+	}
+
 	public function testEveryToolDeclaresItsNameDescriptionAndRelationshipCapability(): void {
 		$expected = [
 			'list_relationships' => new ListRelationships(),

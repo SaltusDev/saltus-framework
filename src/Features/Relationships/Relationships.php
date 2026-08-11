@@ -39,6 +39,10 @@ final class Relationships implements Service, Registerable, RestRouteProvider, T
 
 	private ?RelationshipMetabox $metabox = null;
 
+	private ?RelationshipColumn $column = null;
+
+	private ?RelationshipBulkActions $bulk_actions = null;
+
 	/**
 	 * @param array<string, mixed>     $dependencies Framework dependencies.
 	 * @param RelationshipStore|null   $store        Optional shared store.
@@ -59,6 +63,103 @@ final class Relationships implements Service, Registerable, RestRouteProvider, T
 		add_action( 'add_meta_boxes', [ $this, 'register_metabox' ], 10, 1 );
 		add_action( 'save_post', [ $this, 'save_metabox' ], 10, 1 );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_picker' ], 10, 1 );
+
+		// The list-table hooks are per-post-type, and the post type is only known
+		// once a screen is loading. Binding them from `current_screen` keeps the
+		// registration one place instead of a loop over every model at boot.
+		add_action( 'current_screen', [ $this, 'register_list_screen' ], 10, 1 );
+		add_action( 'admin_notices', [ $this, 'render_bulk_notice' ], 10, 0 );
+	}
+
+	/**
+	 * Bind the column and bulk actions for the post type being listed.
+	 *
+	 * @param mixed $screen Current admin screen.
+	 */
+	public function register_list_screen( $screen ): void {
+		if ( ! $screen instanceof \WP_Screen || $screen->base !== 'edit' ) {
+			return;
+		}
+
+		$post_type = (string) $screen->post_type;
+		$manager   = $this->manager();
+		if ( $post_type === '' || ! $manager instanceof RelationshipManager || ! $manager->has_relationships( $post_type ) ) {
+			return;
+		}
+
+		$column = $this->column();
+		$bulk   = $this->bulk_actions();
+		if ( ! $column instanceof RelationshipColumn || ! $bulk instanceof RelationshipBulkActions ) {
+			return;
+		}
+
+		add_filter(
+			"manage_{$post_type}_posts_columns",
+			static function ( $columns ) use ( $column, $post_type ) {
+				return $column->add_columns( is_array( $columns ) ? $columns : [], $post_type );
+			},
+			10,
+			1
+		);
+
+		add_action(
+			"manage_{$post_type}_posts_custom_column",
+			static function ( $name, $post_id ) use ( $column ) {
+				$column->render( (string) $name, (int) $post_id );
+			},
+			10,
+			2
+		);
+
+		// `the_posts` is the last point where the whole result set is available
+		// before rows start rendering, which is what makes one query per
+		// relationship possible instead of one per row.
+		add_filter(
+			'the_posts',
+			static function ( $posts ) use ( $column, $post_type ) {
+				return $column->prime( is_array( $posts ) ? $posts : [], $post_type );
+			},
+			10,
+			1
+		);
+
+		add_filter(
+			"bulk_actions-edit-{$post_type}",
+			static function ( $actions ) use ( $bulk, $post_type ) {
+				return $bulk->add_actions( is_array( $actions ) ? $actions : [], $post_type );
+			},
+			10,
+			1
+		);
+
+		add_filter(
+			"handle_bulk_actions-edit-{$post_type}",
+			static function ( $redirect_to, $action, $post_ids ) use ( $bulk, $post_type ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- core verifies the bulk-action nonce before this filter runs.
+				$request = wp_unslash( $_REQUEST );
+
+				return $bulk->handle(
+					(string) $redirect_to,
+					(string) $action,
+					array_values( array_map( 'intval', is_array( $post_ids ) ? $post_ids : [] ) ),
+					$post_type,
+					$request
+				);
+			},
+			10,
+			3
+		);
+	}
+
+	/** Report what a bulk relationship action did. */
+	public function render_bulk_notice(): void {
+		$bulk = $this->bulk_actions();
+		if ( ! $bulk instanceof RelationshipBulkActions ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only rendering of counts already applied by the handler.
+		$bulk->render_notice( wp_unslash( $_GET ) );
 	}
 
 	/**
@@ -202,6 +303,44 @@ final class Relationships implements Service, Registerable, RestRouteProvider, T
 		$this->metabox = new RelationshipMetabox( $manager );
 
 		return $this->metabox;
+	}
+
+	/**
+	 * The list-table column, once a manager can be built.
+	 *
+	 * Held on the service rather than rebuilt per hook because the primed
+	 * eager-loading map lives on the instance: a fresh column per callback would
+	 * prime in one object and render from an empty one.
+	 */
+	private function column(): ?RelationshipColumn {
+		if ( $this->column instanceof RelationshipColumn ) {
+			return $this->column;
+		}
+
+		$manager = $this->manager();
+		if ( ! $manager instanceof RelationshipManager ) {
+			return null;
+		}
+
+		$this->column = new RelationshipColumn( $manager );
+
+		return $this->column;
+	}
+
+	/** The bulk actions handler, once a manager can be built. */
+	private function bulk_actions(): ?RelationshipBulkActions {
+		if ( $this->bulk_actions instanceof RelationshipBulkActions ) {
+			return $this->bulk_actions;
+		}
+
+		$manager = $this->manager();
+		if ( ! $manager instanceof RelationshipManager ) {
+			return null;
+		}
+
+		$this->bulk_actions = new RelationshipBulkActions( $manager );
+
+		return $this->bulk_actions;
 	}
 
 	/**

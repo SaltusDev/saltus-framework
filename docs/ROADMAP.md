@@ -937,11 +937,11 @@ fields:
 | Codestar: vendored-change log so a Codestar upgrade can replay the patches | ✓ Done 2026-08-11 |
 | Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | ✓ Done 2026-08-11 |
 | Picker writes through `RelationshipManager::sync()`, matching what `RelationshipsController` already does — see the constraint above on where queueing actually lives | ✓ Done 2026-08-11 |
-| Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] |
-| Relationship column on the post list table, with eager loading so the list stays one query per relationship | [ ] |
-| Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | [ ] |
+| Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] — blocked, Phase 11 not started |
+| Relationship column on the post list table, with eager loading so the list stays one query per relationship | ✓ Done 2026-08-11 |
+| Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | ✓ Done 2026-08-11 |
 | Keyboard operability and screen-reader labels verified on the picker specifically | ✓ Done 2026-08-11 |
-| Re-evaluate the declarative forms API now that labels and ids exist — the [8B no-go](#8b--admin-surface-and-governed-writes) was conditional on these defects | [ ] |
+| Re-evaluate the declarative forms API now that labels and ids exist — the [8B no-go](#8b--admin-surface-and-governed-writes) was conditional on these defects | ✓ Done 2026-08-11 — **closed, not deferred** |
 | Accessibility statement in the docs recording what was fixed and what remains unverified | ✓ Done 2026-08-11 |
 
 **Picker notes from implementation:**
@@ -958,7 +958,22 @@ fields:
 
 **Verification:** 539 tests, 1534 assertions; 32 JS tests (21 bridge + 11 picker); PHPStan Level 7 and PHPCS clean. Six guards mutation-tested — removing the absent-nonce guard, the nonce verification, the `edit_post` check, the revision guard, the `has_relationships` gate, or the input's `aria-describedby` each fail at least one test.
 
-**Still open in this phase:** the post-list column and bulk attach/detach, the `FieldPermissionPolicy` integration once Phase 11 lands, and the declarative-forms re-evaluation. The picker's own accessibility is implemented and unit-tested, but *verified* here means automated assertions on emitted markup and keyboard handlers — not manual testing with a screen reader, which `docs/ACCESSIBILITY.md` records as outstanding.
+**List-table notes from implementation:**
+
+- **Priming happens on `the_posts`, not in the render callback.** WordPress renders a custom column one row at a time, so resolving a relationship inside `render()` would cost one query per row. `the_posts` is the last point where the whole result set is available, which is what makes `get_related_for_posts()` — the eager-loading entry point 10A already built — usable here. A test counts SELECTs at the `AuditDatabase` boundary and asserts a three-row page costs exactly one read, and that rendering adds none.
+- **An unprimed render is blank, not a fallback query.** If `prime()` never ran — another plugin replacing the query, a screen reached by a path that skips `the_posts` — the cell renders empty rather than querying per row. A silent N+1 on an admin list is worse than a blank cell, and the mutation test for this is the one that catches a well-meaning "fix".
+- **Bulk actions have no fast path.** Attaching fifty posts is fifty `RelationshipManager::attach()` calls, each enforcing cardinality and target validity, not one query that skips the checks. A bulk `has_one` attach against a post that already has one is refused per post and counted as failed — asserted, because a bulk operation that can produce state a single operation would have rejected is exactly the bug this shape prevents.
+- **Capability is checked twice, at different grains.** Per relationship when offering the action, and per post inside the loop, because a bulk selection can span posts the user may not all edit.
+- **The related post id comes from a query argument.** WordPress's bulk-action UI cannot host a second input, so a run without a target redirects back with the selection intact and a "choose a post" notice rather than failing the action. This is how core's own multi-step bulk flows work.
+- **The empty cell is `—` plus screen-reader text.** A bare dash is meaningless to a screen reader, so it is `aria-hidden` and paired with "None".
+
+**Declarative forms: closed, not deferred.** The re-evaluation is recorded internally. Fixes 1–3 landed and settings screens are now technically derivable, but the two findings that ruled it out are permanent: field names are bracketed because that *is* WordPress's submission contract (changing it breaks every site's saved data), and a metabox cannot have its own form because a nested form is invalid HTML and the post editor owns the outer one. Beyond that, a declarative form submits itself — there is no interception point, so it would hand an agent a direct write with no proposal, no review, and no audit entry, which is the opposite of the posture 8B established. Adopting it for settings screens alone would add a second tool-definition mechanism beside `AdminTool` over the same screens, which is the drift `AdminTool` exists to prevent. Reopen only if the API grows both an explicit schema override and a submission hook.
+
+**Still open in this phase:** only the `FieldPermissionPolicy` integration, which is blocked on Phase 11 not being started. Note that "keyboard and screen-reader verified" means automated assertions on emitted markup and keyboard handlers — not manual testing with a real screen reader, which `docs/ACCESSIBILITY.md` records as outstanding.
+
+**Verification:** 560 tests, 1578 assertions; 32 JS tests; PHPStan Level 7 and PHPCS clean; stable across 40 random orderings. Four more guards mutation-tested — making `render()` fall back to a per-row query, making `prime()` loop per post, dropping the per-post `edit_post` check in bulk, or removing the missing-target guard each fail at least one test.
+
+**Two pre-existing test-isolation bugs were fixed along the way.** `AiContextProvider::validate_mutation()` reads the model name off the stored post when one exists, so a post left in the shared `$wp_posts` global by an earlier test class changes an unrelated class's result. `RelationshipToolsTest` seeded post 7 as a `movie` and never cleared it, while `AbilityRuntimeTest` asserts on post 7 expecting a `book` — a real intermittent failure reproducible on seed `1786446439`, present before this phase and surfacing roughly once in twenty runs. Both classes now clear `$wp_posts` in `tearDown`. Resetting in `setUp` protects the class doing it but not the next one.
 
 **Exit criteria:** An editor can find, set, reorder, and remove related posts from the post editor, and the resulting write is governed identically to an agent's. Every Codestar field type emits an input `id`, a `<label for>`, and `aria-describedby` where a description exists. The declarative-forms decision is revisited against the fixed markup and recorded either way.
 

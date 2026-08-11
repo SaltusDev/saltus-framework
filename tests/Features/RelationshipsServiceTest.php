@@ -100,6 +100,21 @@ class RelationshipsServiceTest extends TestCase {
 		$this->assertContains( 'admin_enqueue_scripts', $hooks, 'The picker needs its own script and style.' );
 	}
 
+	/**
+	 * The list-table hooks are bound from `current_screen` rather than at boot,
+	 * because the post type is only known once a screen is loading.
+	 */
+	public function testRegisterHooksTheListScreen(): void {
+		global $wp_actions_registered;
+
+		( new Relationships() )->register();
+
+		$hooks = array_column( $wp_actions_registered, 'hook_name' );
+
+		$this->assertContains( 'current_screen', $hooks, 'Column and bulk actions bind per post type from the screen.' );
+		$this->assertContains( 'admin_notices', $hooks, 'A bulk run reports its outcome.' );
+	}
+
 	public function testDeletingAPostClearsRowsAndCascadesThroughTheService(): void {
 		$modeler = new ServiceRelationshipModeler( $this->models() );
 		$store   = new RelationshipStore( null );

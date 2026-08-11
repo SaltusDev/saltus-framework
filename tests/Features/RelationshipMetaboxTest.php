@@ -28,8 +28,11 @@ class RelationshipMetaboxTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
-		global $wp_meta_boxes, $wp_current_user_can, $wp_nonce_valid, $wp_post_revisions;
+		global $wp_posts, $wp_meta_boxes, $wp_current_user_can, $wp_nonce_valid, $wp_post_revisions;
 
+		// `$wp_posts` is shared and not every class resets it in setUp, so a post
+		// left here can change an unrelated class's result under a random ordering.
+		$wp_posts            = [];
 		$wp_meta_boxes       = [];
 		$wp_current_user_can = true;
 		$wp_nonce_valid      = true;
