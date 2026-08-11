@@ -134,9 +134,19 @@ class ModelFactory {
 				continue;
 			}
 
+			$service = $this->app->get( $normalized_feature_name );
+
+			// Not every registered service is a per-model feature. `blocks`, for one,
+			// is a container id but has no `make()` — it is a *top-level* config key,
+			// and writing it under `features` used to raise a fatal
+			// `Call to undefined method`. A misplaced key is an authoring mistake, so
+			// it is skipped like any unavailable feature rather than crashing the site.
+			if ( ! method_exists( $service, 'make' ) ) {
+				continue;
+			}
+
 			// make sure $args is an array
 			$args        = is_array( $args ) ? $args : [];
-			$service     = $this->app->get( $normalized_feature_name );
 			$service_imp = $service::make( $cpt->get_registration_name(), $this->project, $args );
 
 			if ( $service_imp instanceof Processable ) {

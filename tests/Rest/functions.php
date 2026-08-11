@@ -668,6 +668,15 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
 	}
 }
 
+if ( ! function_exists( 'register_post_type' ) ) {
+	function register_post_type( string $post_type, array $args = [] ) {
+		global $wp_post_types_registered;
+		$wp_post_types_registered[ $post_type ] = compact( 'post_type', 'args' );
+
+		return (object) [ 'name' => $post_type ];
+	}
+}
+
 if ( ! function_exists( 'register_taxonomy' ) ) {
 	function register_taxonomy( string $taxonomy, $object_type, array $args = [] ): void {
 		global $wp_taxonomies_registered;
