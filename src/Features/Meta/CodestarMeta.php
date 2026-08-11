@@ -284,9 +284,16 @@ final class CodestarMeta implements Processable {
 	/**
 	 * Match fields to their types
 	 *
+	 * Public so config validation can derive the accepted field-type list from the
+	 * same map this class uses to resolve them, rather than keeping a transcribed
+	 * copy that silently drifts when a field type is added or renamed. The result
+	 * passes through `saltus/framework/meta/matched_fields`, so a site adding a
+	 * custom type is reflected too — which is why an unrecognized type warns
+	 * rather than errors.
+	 *
 	 * @return array<string, string> Array of field types
 	 */
-	private function match_fields(): array {
+	public function match_fields(): array {
 
 		$field_type_map = [
 			'accordion'    => 'string',
