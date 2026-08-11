@@ -30,6 +30,28 @@ class AiAssistantTest extends TestCase {
 		$wp_ai_generated          = [];
 	}
 
+	/**
+	 * Resetting in setUp only protects this class; the next one inherits whatever
+	 * was left behind. This class seeds a post at id 12, and
+	 * `AiContextFeatureTest` asserts on that same id expecting no stored post —
+	 * `AiContextProvider` resolves a model name from a post when one exists, so the
+	 * leftover made an unrelated test fail under some orderings. Reproducible on
+	 * seed 1786480403.
+	 */
+	protected function tearDown(): void {
+		global $wp_posts, $wp_filters_registered, $wp_filter_values, $wp_current_user_can;
+		global $wp_ai_supported, $wp_ai_supported_for_text, $wp_ai_text_result, $wp_ai_generated;
+
+		$wp_posts                 = [];
+		$wp_filters_registered    = [];
+		$wp_filter_values         = [];
+		$wp_current_user_can      = true;
+		$wp_ai_supported          = false;
+		$wp_ai_supported_for_text = null;
+		$wp_ai_text_result        = null;
+		$wp_ai_generated          = [];
+	}
+
 	public function testConfiguredModelExposesActionsAndNormalizedFields(): void {
 		$provider = new AiAssistantProvider( $this->modeler() );
 		$definition = $provider->definition( 'book' );
