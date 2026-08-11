@@ -26,6 +26,10 @@ class AuditLogger {
 		'validation_error',
 		'rate_limited',
 		'exception',
+		// Field-level denial, kept distinct from `error` so an operator can tell a
+		// per-field permission or encryption rule from a capability failure. The
+		// two have different fixes: one is model config, the other is a role.
+		'field_denied',
 	];
 
 	private bool $db_initialized = false;

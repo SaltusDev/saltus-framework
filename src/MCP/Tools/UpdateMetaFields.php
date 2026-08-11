@@ -1,6 +1,7 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\Features\Meta\FieldEncryptionPolicy;
 use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\Modeler;
@@ -13,14 +14,21 @@ class UpdateMetaFields extends RestTool {
 
 	private MetaFieldProvider $meta_field_provider;
 	private FieldPermissionPolicy $field_permissions;
+	private FieldEncryptionPolicy $field_encryption;
 
 	/**
 	 * @param MetaFieldProvider|null $meta_field_provider Shared meta field provider.
 	 * @param FieldPermissionPolicy|null $field_permissions Shared per-field access policy.
+	 * @param FieldEncryptionPolicy|null $field_encryption Shared per-field encryption policy.
 	 */
-	public function __construct( ?MetaFieldProvider $meta_field_provider = null, ?FieldPermissionPolicy $field_permissions = null ) {
+	public function __construct(
+		?MetaFieldProvider $meta_field_provider = null,
+		?FieldPermissionPolicy $field_permissions = null,
+		?FieldEncryptionPolicy $field_encryption = null
+	) {
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
 		$this->field_permissions   = $field_permissions ?? new FieldPermissionPolicy( $this->meta_field_provider );
+		$this->field_encryption    = $field_encryption ?? new FieldEncryptionPolicy( $this->meta_field_provider );
 	}
 
 	/**
@@ -128,8 +136,23 @@ class UpdateMetaFields extends RestTool {
 			return $denied;
 		}
 
+		// Encryption runs after the permission check and before storage, so a
+		// denied write never reaches the cipher and a permitted one is never
+		// stored in plaintext.
+		$encrypted = $this->field_encryption->encrypt_payload( $modeler, $post_type, $meta );
+		if ( $encrypted instanceof \WP_Error ) {
+			return $encrypted;
+		}
+
 		$meta_key_lookup = $this->build_meta_key_lookup( $meta_fields_info );
-		$updated         = $this->apply_meta_updates( $post_id, $meta, $meta_key_lookup );
+		$updated         = $this->apply_meta_updates( $post_id, $encrypted, $meta_key_lookup );
+
+		// The response reports what the caller set, not the envelope. Returning
+		// ciphertext would be useless to a client and would put the stored form in
+		// logs and caches.
+		foreach ( array_keys( $updated ) as $key ) {
+			$updated[ $key ] = $this->field_encryption->decrypt_stored( $modeler, $post_type, (string) $key, $updated[ $key ] );
+		}
 
 		return [
 			'post_id'   => $post_id,

@@ -4,7 +4,7 @@
 - Version: `package.json` bumped to 1.8.4 (2026-08-10); all 1.8.x work currently sits under `CHANGELOG.md`'s `[Unreleased]` heading with no `[1.8.x]` release sections cut; relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
-- Phases 11–14 scoped 2026-08-11: Security & Compliance, Developer Experience, Enhanced UX, Observability. None started. There is no Phase 9 — see [Phase Numbering](#phase-numbering).
+- Phases 11–14 scoped 2026-08-11: Security & Compliance, Developer Experience, Enhanced UX, Observability. **Phase 11 delivered 2026-08-11** (field-level permissions across all four surfaces, per-field encryption, GDPR export/erase, distinct denial auditing). Phase 13 is 11 of 12 items. Phases 12 and 14 not started. There is no Phase 9 — see [Phase Numbering](#phase-numbering).
 - Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 25 tools
@@ -863,16 +863,35 @@ fields:
 
 | Item | Status |
 |------|--------|
-| `FieldPermissionPolicy` — resolves per-field read/write capability for a model, one point all four surfaces consult | [ ] |
-| REST enforcement: filter response fields and reject writes to denied fields in `MetaController` | [ ] |
-| MCP/WP-CLI enforcement through the same policy, verified by a parity test per surface | [ ] |
-| WebMCP enforcement: `PublicFieldFilter` composes with the policy rather than duplicating its rules | [ ] |
-| Encryption at rest for fields declaring `encrypted: true`, with key material from `wp-config.php` or a filter | [ ] |
-| Encrypted fields rejected from query, sort, and filter arguments with an actionable error hint | [ ] |
-| GDPR: `wp_privacy_personal_data_exporters` registration covering model meta fields | [ ] |
-| GDPR: `wp_privacy_personal_data_erasers` registration, honoring relationship cascade rules | [ ] |
-| Audit events for denied field access, distinguishable from a capability failure | [ ] |
-| Mutation-test every new guard: removing it must fail at least one test | [ ] |
+| `FieldPermissionPolicy` — resolves per-field read/write capability for a model, one point all four surfaces consult | ✓ Done 2026-08-11 |
+| REST enforcement: filter response fields and reject writes to denied fields in `MetaController` | ✓ Done 2026-08-11 |
+| MCP/WP-CLI enforcement through the same policy, verified by a parity test per surface | ✓ Done 2026-08-11 |
+| WebMCP enforcement: `PublicFieldFilter` composes with the policy rather than duplicating its rules | ✓ Done 2026-08-11 |
+| Encryption at rest for fields declaring `encrypted: true`, with key material from `wp-config.php` or a filter | ✓ Done 2026-08-11 |
+| Encrypted fields rejected from query, sort, and filter arguments with an actionable error hint | ✓ Done 2026-08-11 |
+| GDPR: `wp_privacy_personal_data_exporters` registration covering model meta fields | ✓ Done 2026-08-11 |
+| GDPR: `wp_privacy_personal_data_erasers` registration, honoring relationship cascade rules | ✓ Done 2026-08-11 |
+| Audit events for denied field access, distinguishable from a capability failure | ✓ Done 2026-08-11 |
+| Mutation-test every new guard: removing it must fail at least one test | ✓ Done 2026-08-11 |
+
+**Notes from implementation:**
+
+- **The policy resolves against normalized fields, not raw config.** All four surfaces already hold `MetaFieldProvider`'s normalized field list, so resolving there is what makes one answer possible. `filter_payload()` and `reject_denied_write()` live on the policy for the same reason — three surfaces filter the same payload shape, and a per-surface copy is how one ends up a version behind.
+- **No rule means no change.** A field without `permissions` stays exactly as accessible as before, inverting the usual deny-by-omission default so existing sites cannot break by upgrading. A malformed rule is also treated as no rule: it must not silently become a denial of everything, nor an accidental grant.
+- **A rule on a parent binds its children.** Without it, denying a serialized parent leaks through any nested field and the caller reconstructs the parent from its parts.
+- **Denied writes are rejected, not skipped.** A 200 with the key absent is indistinguishable from "written, value unchanged". A payload mixing allowed and denied fields rejects wholesale rather than applying half.
+- **WebMCP composes and runs last.** The policy applies *after* the `public_fields` filter hook — running before would make the hook a bypass. A test pins that ordering.
+- **Encryption uses XChaCha20-Poly1305 with an OpenSSL AES-256-GCM fallback**, both authenticated so tampering fails rather than yielding altered plaintext. Ciphertext carries a version prefix, which is what lets `is_encrypted()` recognize an envelope and what makes a backend change readable rather than indistinguishable from corruption. The fallback is exercised explicitly in tests: an untested crypto path is worse than no path, since a site without libsodium would otherwise be the first to run it.
+- **Keys never touch the database.** `SALTUS_FIELD_ENCRYPTION_KEY` in `wp-config.php` or the `saltus/framework/field_encryption_key` filter for an external store. A wrong-length key is refused rather than padded — stretching it would weaken every value invisibly.
+- **Encryption fails closed.** No key configured means the write is refused, because storing plaintext in a field the author marked encrypted defeats the declaration silently.
+- **An encrypted field is never public**, regardless of the `public_fields` filter. Decrypting for an anonymous caller would defeat the reason for encrypting.
+- **The query guard is wired into `AbilityRuntime`**, the single point both dispatch paths pass through, and grouped with the permission and governance checks into `pre_dispatch_gates()` so a check added there cannot be forgotten in one path. `search` is deliberately not treated as a field reference: it hits post title and content, not meta.
+- **Export decrypts, erasure follows cascade.** A data subject request asks what the site holds about a person, so ciphertext answers nothing — encryption protects the value at rest, not from its subject. Erasure removes meta but keeps posts, matching how core's own erasers anonymize rather than delete, and follows cascade-declared relationships because leaving a dependent's meta behind leaves the subject's data on an orphan the request cannot see.
+- **`field_denied` is its own audit status**, and deliberately does not count toward the health error rate. A capability failure and a field denial have different fixes — one is a role, the other is model config — and a working security rule should not look like an outage.
+
+**Verification:** 667 tests, 1834 assertions; 32 JS tests; PHPStan Level 7 and PHPCS clean; stable across 20 random orderings. Eleven guards mutation-tested — parent inheritance, the no-rule default, any-vs-all capability matching, the write rejection, read filtering, the WebMCP composition ordering, nonce reuse, key length refusal, the double-encrypt guard, the query-guard wiring, and the distinct audit status each fail at least one test.
+
+**Deferred within scope:** `FieldPermissionPolicy` is not yet consulted by the Phase 13 relationship picker or post-list column. Those surface *relationships*, not meta fields, so the policy has nothing to say about them until field-level rules extend to relationship visibility — which is not in this phase's scope. The Phase 13 row tracking that integration stays open.
 
 **Exit criteria:** A field declaring `permissions` is unreadable and unwritable through REST, MCP, WP-CLI, and WebMCP by a caller lacking the capability, with one policy resolving all four. A field declaring `encrypted: true` is stored as ciphertext and rejected from query arguments. A core privacy request exports and erases model meta.
 
@@ -937,7 +956,7 @@ fields:
 | Codestar: vendored-change log so a Codestar upgrade can replay the patches | ✓ Done 2026-08-11 |
 | Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | ✓ Done 2026-08-11 |
 | Picker writes through `RelationshipManager::sync()`, matching what `RelationshipsController` already does — see the constraint above on where queueing actually lives | ✓ Done 2026-08-11 |
-| Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] — blocked, Phase 11 not started |
+| Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] — unblocked; the policy shipped 2026-08-11, but it governs meta fields and the picker surfaces relationships, so this needs field-level rules to extend to relationship visibility first |
 | Relationship column on the post list table, with eager loading so the list stays one query per relationship | ✓ Done 2026-08-11 |
 | Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | ✓ Done 2026-08-11 |
 | Keyboard operability and screen-reader labels verified on the picker specifically | ✓ Done 2026-08-11 |
@@ -969,7 +988,7 @@ fields:
 
 **Declarative forms: closed, not deferred.** The re-evaluation is recorded internally. Fixes 1–3 landed and settings screens are now technically derivable, but the two findings that ruled it out are permanent: field names are bracketed because that *is* WordPress's submission contract (changing it breaks every site's saved data), and a metabox cannot have its own form because a nested form is invalid HTML and the post editor owns the outer one. Beyond that, a declarative form submits itself — there is no interception point, so it would hand an agent a direct write with no proposal, no review, and no audit entry, which is the opposite of the posture 8B established. Adopting it for settings screens alone would add a second tool-definition mechanism beside `AdminTool` over the same screens, which is the drift `AdminTool` exists to prevent. Reopen only if the API grows both an explicit schema override and a submission hook.
 
-**Still open in this phase:** only the `FieldPermissionPolicy` integration, which is blocked on Phase 11 not being started. Note that "keyboard and screen-reader verified" means automated assertions on emitted markup and keyboard handlers — not manual testing with a real screen reader, which `docs/ACCESSIBILITY.md` records as outstanding.
+**Still open in this phase:** only the `FieldPermissionPolicy` integration. No longer blocked — the policy shipped with Phase 11 — but it governs *meta fields* while the picker and column surface *relationships*, so it has nothing to say about them until field-level rules extend to relationship visibility. That extension is not in Phase 11's scope and needs its own decision. Note that "keyboard and screen-reader verified" means automated assertions on emitted markup and keyboard handlers — not manual testing with a real screen reader, which `docs/ACCESSIBILITY.md` records as outstanding.
 
 **Verification:** 560 tests, 1578 assertions; 32 JS tests; PHPStan Level 7 and PHPCS clean; stable across 40 random orderings. Four more guards mutation-tested — making `render()` fall back to a per-row query, making `prime()` loop per post, dropping the per-post `edit_post` check in bulk, or removing the missing-target guard each fail at least one test.
 

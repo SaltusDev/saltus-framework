@@ -11,6 +11,7 @@ use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Validation\Validator;
 use Saltus\WP\Framework\Features\AiContext\AiContextProvider;
+use Saltus\WP\Framework\Features\Meta\FieldQueryGuard;
 use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 
 /**
@@ -23,12 +24,21 @@ use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 class AbilityRuntime {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
+	/**
+	 * Audit status for a field-level denial.
+	 *
+	 * Distinct from `error` so an operator reading the log can tell a per-field
+	 * permission or encryption rule from a capability failure — the fixes differ.
+	 */
+	public const STATUS_FIELD_DENIED = 'field_denied';
+
 	private AuditLogger $audit_logger;
 	private RateLimiter $rate_limiter;
 	private TransientCache $cache;
 	private ?MiddlewarePipeline $pipeline;
 	private ?AiContextProvider $ai_context;
 	private ?ProposalService $proposals;
+	private ?FieldQueryGuard $field_queries;
 
 	/**
 	 * @param AuditLogger|null $audit_logger  Optional audit logger.
@@ -42,14 +52,16 @@ class AbilityRuntime {
 		?TransientCache $cache = null,
 		?MiddlewarePipeline $pipeline = null,
 		?AiContextProvider $ai_context = null,
-		?ProposalService $proposals = null
+		?ProposalService $proposals = null,
+		?FieldQueryGuard $field_queries = null
 	) {
-		$this->audit_logger = $audit_logger ?? new AuditLogger();
-		$this->rate_limiter = $rate_limiter ?? new RateLimiter();
-		$this->cache        = $cache ?? new TransientCache();
-		$this->pipeline     = $pipeline;
-		$this->ai_context   = $ai_context;
-		$this->proposals    = $proposals;
+		$this->audit_logger  = $audit_logger ?? new AuditLogger();
+		$this->rate_limiter  = $rate_limiter ?? new RateLimiter();
+		$this->cache         = $cache ?? new TransientCache();
+		$this->pipeline      = $pipeline;
+		$this->ai_context    = $ai_context;
+		$this->proposals     = $proposals;
+		$this->field_queries = $field_queries;
 	}
 
 	/**
@@ -97,17 +109,9 @@ class AbilityRuntime {
 		$result = $this->pipeline->execute(
 			$context,
 			function ( RequestContext $ctx ) use ( $tool, $args ) {
-				if ( ! $tool->has_permission( $args ) ) {
-					return \Saltus\WP\Framework\MCP\Error\ErrorResponse::forbidden(
-						'edit_posts',
-						\__( 'You do not have permission to use this tool.', 'saltus-framework' )
-					);
-				}
-				if ( $this->ai_context !== null ) {
-					$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
-					if ( $governance_error instanceof \WP_Error ) {
-						return $governance_error;
-					}
+				$gate_error = $this->pre_dispatch_gates( $tool, $args );
+				if ( $gate_error !== null ) {
+					return $gate_error;
 				}
 				if ( $this->proposals !== null && $this->proposals->should_queue( $tool->get_name() ) ) {
 					return $this->proposals->propose( $tool->get_name(), $args );
@@ -204,6 +208,13 @@ class AbilityRuntime {
 				return $governance_error;
 			}
 		}
+
+		$query_error = $this->check_field_queries( $args );
+		if ( $query_error instanceof \WP_Error ) {
+			$this->record_error( $entry, self::STATUS_FIELD_DENIED, $query_error );
+			return $query_error;
+		}
+
 		$rate_limit = $this->rate_limiter->check( $this->identifier() );
 		if ( ! $rate_limit->allowed ) {
 			$error = $this->error(
@@ -288,6 +299,50 @@ class AbilityRuntime {
 			$this->record_error( $entry, 'exception', $error );
 			return $error;
 		}
+	}
+
+	/**
+	 * Run the checks that must pass before a tool reaches dispatch.
+	 *
+	 * Permission, then governance, then field-level query rules. Grouped so the
+	 * pipeline closure stays readable and both dispatch paths gate identically —
+	 * a check added here cannot be forgotten in one of them.
+	 *
+	 * @param array<string, mixed> $args Tool arguments.
+	 * @return \WP_Error|null Error to return, or null to proceed.
+	 */
+	private function pre_dispatch_gates( ToolInterface $tool, array $args ): ?\WP_Error {
+		if ( ! $tool->has_permission( $args ) ) {
+			return \Saltus\WP\Framework\MCP\Error\ErrorResponse::forbidden(
+				'edit_posts',
+				\__( 'You do not have permission to use this tool.', 'saltus-framework' )
+			);
+		}
+
+		if ( $this->ai_context !== null ) {
+			$governance_error = $this->ai_context->validate_mutation( $tool->get_name(), $args );
+			if ( $governance_error instanceof \WP_Error ) {
+				return $governance_error;
+			}
+		}
+
+		return $this->check_field_queries( $args );
+	}
+
+	/**
+	 * Reject a call that would query, sort, or filter on an encrypted field.
+	 *
+	 * Inert when no guard is configured, so an encrypted field is never the reason
+	 * a site without this wiring starts failing calls.
+	 *
+	 * @param array<string, mixed> $args Tool arguments.
+	 */
+	private function check_field_queries( array $args ): ?\WP_Error {
+		if ( $this->field_queries === null ) {
+			return null;
+		}
+
+		return $this->field_queries->check( $args );
 	}
 
 	/**

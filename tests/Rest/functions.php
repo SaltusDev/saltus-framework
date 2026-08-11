@@ -732,6 +732,66 @@ if ( ! function_exists( 'update_post_meta' ) ) {
 	}
 }
 
+if ( ! function_exists( 'delete_post_meta' ) ) {
+	function delete_post_meta( int $post_id, string $meta_key, $meta_value = '' ): bool {
+		global $wp_post_meta, $wp_meta_deletes;
+		$wp_meta_deletes[] = compact( 'post_id', 'meta_key' );
+		if ( ! isset( $wp_post_meta[ $post_id ][ $meta_key ] ) ) {
+			return false;
+		}
+		unset( $wp_post_meta[ $post_id ][ $meta_key ] );
+		return true;
+	}
+}
+
+if ( ! class_exists( 'WP_User' ) ) {
+	class WP_User {
+		public int $ID = 0;
+		public string $user_email = '';
+
+		public function __construct( array $data = [] ) {
+			$this->ID         = (int) ( $data['ID'] ?? 0 );
+			$this->user_email = (string) ( $data['user_email'] ?? '' );
+		}
+	}
+}
+
+if ( ! function_exists( 'get_user_by' ) ) {
+	function get_user_by( string $field, $value ) {
+		global $wp_users_by_email;
+		if ( $field === 'email' && isset( $wp_users_by_email[ (string) $value ] ) ) {
+			return $wp_users_by_email[ (string) $value ];
+		}
+		return false;
+	}
+}
+
+if ( ! function_exists( 'get_posts' ) ) {
+	function get_posts( array $args = [] ): array {
+		global $wp_posts, $wp_get_posts_args;
+		$wp_get_posts_args[] = $args;
+
+		$types  = $args['post_type'] ?? [];
+		$types  = is_array( $types ) ? $types : [ $types ];
+		$author = isset( $args['author'] ) ? (int) $args['author'] : null;
+		$paged  = max( 1, (int) ( $args['paged'] ?? 1 ) );
+		$per    = (int) ( $args['posts_per_page'] ?? 20 );
+
+		$matched = [];
+		foreach ( $wp_posts as $post ) {
+			if ( $types !== [] && ! in_array( $post->post_type, $types, true ) ) {
+				continue;
+			}
+			if ( $author !== null && (int) ( $post->post_author ?? 0 ) !== $author ) {
+				continue;
+			}
+			$matched[] = $post;
+		}
+
+		return array_slice( $matched, ( $paged - 1 ) * $per, $per );
+	}
+}
+
 if ( ! function_exists( 'get_post_type' ) ) {
 	function get_post_type( ?int $post_id = null ) {
 		global $wp_posts;

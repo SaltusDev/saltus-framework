@@ -7,6 +7,7 @@ use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
+use Saltus\WP\Framework\Features\Meta\FieldEncryptionPolicy;
 use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\MCP\MCPConfig;
@@ -22,23 +23,27 @@ class MetaController extends WP_REST_Controller {
 	private ?ModelRestPolicy $policy;
 	private MetaFieldProvider $meta_field_provider;
 	private FieldPermissionPolicy $field_permissions;
+	private FieldEncryptionPolicy $field_encryption;
 
 	/**
 	 * @param Modeler $modeler  The model registry.
 	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
 	 * @param MetaFieldProvider|null $meta_field_provider Optional meta field provider.
 	 * @param FieldPermissionPolicy|null $field_permissions Optional per-field access policy.
+	 * @param FieldEncryptionPolicy|null $field_encryption Optional per-field encryption policy.
 	 */
 	public function __construct(
 		Modeler $modeler,
 		?ModelRestPolicy $policy = null,
 		?MetaFieldProvider $meta_field_provider = null,
-		?FieldPermissionPolicy $field_permissions = null
+		?FieldPermissionPolicy $field_permissions = null,
+		?FieldEncryptionPolicy $field_encryption = null
 	) {
 		$this->modeler             = $modeler;
 		$this->policy              = $policy;
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
 		$this->field_permissions   = $field_permissions ?? new FieldPermissionPolicy( $this->meta_field_provider );
+		$this->field_encryption    = $field_encryption ?? new FieldEncryptionPolicy( $this->meta_field_provider );
 		$this->namespace           = MCPConfig::get_namespace();
 		$this->rest_base           = 'meta';
 	}
@@ -252,8 +257,21 @@ class MetaController extends WP_REST_Controller {
 			return $denied;
 		}
 
+		// After the permission check, before storage: a denied write never reaches
+		// the cipher, and a permitted one is never stored in plaintext.
+		$encrypted = $this->field_encryption->encrypt_payload( $this->modeler, (string) $post_type, $meta_data );
+		if ( $encrypted instanceof WP_Error ) {
+			return $encrypted;
+		}
+
 		$meta_key_lookup = $this->build_meta_key_lookup( $meta_fields_info );
-		$updated         = $this->apply_meta_updates( $post_id, $meta_data, $meta_key_lookup );
+		$updated         = $this->apply_meta_updates( $post_id, $encrypted, $meta_key_lookup );
+
+		// Report what the caller set, not the envelope: ciphertext is useless to a
+		// client and would put the stored form into logs and caches.
+		foreach ( array_keys( $updated ) as $key ) {
+			$updated[ $key ] = $this->field_encryption->decrypt_stored( $this->modeler, (string) $post_type, (string) $key, $updated[ $key ] );
+		}
 
 		return rest_ensure_response(
 			[

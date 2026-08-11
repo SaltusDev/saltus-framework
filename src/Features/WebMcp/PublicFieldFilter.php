@@ -2,6 +2,7 @@
 
 namespace Saltus\WP\Framework\Features\WebMcp;
 
+use Saltus\WP\Framework\Features\Meta\FieldEncryptionPolicy;
 use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\Modeler;
@@ -59,10 +60,16 @@ final class PublicFieldFilter {
 
 	private MetaFieldProvider $meta_field_provider;
 	private FieldPermissionPolicy $field_permissions;
+	private FieldEncryptionPolicy $field_encryption;
 
-	public function __construct( ?MetaFieldProvider $meta_field_provider = null, ?FieldPermissionPolicy $field_permissions = null ) {
+	public function __construct(
+		?MetaFieldProvider $meta_field_provider = null,
+		?FieldPermissionPolicy $field_permissions = null,
+		?FieldEncryptionPolicy $field_encryption = null
+	) {
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
 		$this->field_permissions   = $field_permissions ?? new FieldPermissionPolicy( $this->meta_field_provider );
+		$this->field_encryption    = $field_encryption ?? new FieldEncryptionPolicy( $this->meta_field_provider );
 	}
 
 	/**
@@ -114,7 +121,36 @@ final class PublicFieldFilter {
 		// before, the hook would be a bypass. For an anonymous caller every
 		// capability check fails, so any field declaring a `permissions` rule is
 		// never publicly readable, which is the intended reading of a rule.
-		return $this->field_permissions->filter_readable( $filtered );
+		$permitted = $this->field_permissions->filter_readable( $filtered );
+
+		return $this->without_encrypted( $permitted, $modeler, $post_type );
+	}
+
+	/**
+	 * Drop encrypted fields, which are never public.
+	 *
+	 * Not negotiable through the filter above. Declaring `encrypted: true` means
+	 * the value is sensitive enough to keep ciphertext in the database with key
+	 * material outside it; decrypting that for an anonymous caller would defeat the
+	 * declaration entirely. Denied rather than decrypted.
+	 *
+	 * @param list<array<string, mixed>> $fields Fields that cleared the other rules.
+	 * @return list<array<string, mixed>>
+	 */
+	private function without_encrypted( array $fields, Modeler $modeler, string $post_type ): array {
+		$encrypted = $this->field_encryption->encrypted_paths( $modeler, $post_type );
+		if ( $encrypted === [] ) {
+			return $fields;
+		}
+
+		$public_fields = [];
+		foreach ( $fields as $field ) {
+			if ( ! in_array( (string) ( $field['path'] ?? '' ), $encrypted, true ) ) {
+				$public_fields[] = $field;
+			}
+		}
+
+		return $public_fields;
 	}
 
 	/**
