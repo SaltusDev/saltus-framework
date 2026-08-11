@@ -1348,6 +1348,15 @@ if ( ! function_exists( 'wp_get_object_terms' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mail' ) ) {
+	function wp_mail( $to, string $subject, string $message, $headers = '', $attachments = [] ): bool {
+		global $wp_mail_sent;
+		$wp_mail_sent   = is_array( $wp_mail_sent ) ? $wp_mail_sent : [];
+		$wp_mail_sent[] = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
+		return true;
+	}
+}
+
 if ( ! function_exists( 'wp_set_object_terms' ) ) {
 	function wp_set_object_terms( int $object_id, $terms, string $taxonomy, bool $append = false ) {
 		return [];
