@@ -43,8 +43,24 @@ if ( ! class_exists( 'CSF_Fields' ) ) {
       $field_id   = ( ! empty( $this->field['id'] ) ) ? $this->field['id'] : '';
       $attributes = ( ! empty( $this->field['attributes'] ) ) ? $this->field['attributes'] : array();
 
+      // Emit an HTML id attribute for every field, unless one is already set.
+      // This id is what <label for> targets, and screen readers need it for
+      // proper field identification. Without it, a label would point nowhere
+      // and the field is unlabeled to assistive technology.
+      if ( ! empty( $field_id ) && empty( $attributes['id'] ) ) {
+        $attributes['id'] = $field_id;
+      }
+
       if ( ! empty( $field_id ) && empty( $attributes['data-depend-id'] ) ) {
         $attributes['data-depend-id'] = $field_id;
+      }
+
+      // Link the input to its description for screen readers. When a field has
+      // a desc, field_after() emits a div with id="{field_id}-desc". This
+      // aria-describedby tells assistive technology that relationship, so a
+      // screen reader announces the description when focusing the field.
+      if ( ! empty( $field_id ) && ! empty( $this->field['desc'] ) && empty( $attributes['aria-describedby'] ) ) {
+        $attributes['aria-describedby'] = $field_id . '-desc';
       }
 
       if ( ! empty( $this->field['placeholder'] ) ) {
@@ -76,7 +92,13 @@ if ( ! class_exists( 'CSF_Fields' ) ) {
     public function field_after() {
 
       $output  = ( ! empty( $this->field['after'] ) ) ? '<div class="csf-after-text">'. $this->field['after'] .'</div>' : '';
-      $output .= ( ! empty( $this->field['desc'] ) ) ? '<div class="clear"></div><div class="csf-desc-text">'. $this->field['desc'] .'</div>' : '';
+
+      if ( ! empty( $this->field['desc'] ) ) {
+        $desc_id = ! empty( $this->field['id'] ) ? $this->field['id'] . '-desc' : '';
+        $id_attr = $desc_id ? ' id="'. esc_attr( $desc_id ) .'"' : '';
+        $output .= '<div class="clear"></div><div class="csf-desc-text"'. $id_attr .'>'. $this->field['desc'] .'</div>';
+      }
+
       $output .= ( ! empty( $this->field['help'] ) ) ? '<div class="csf-help"><span class="csf-help-text">'. $this->field['help'] .'</span><i class="fas fa-question-circle"></i></div>' : '';
       $output .= ( ! empty( $this->field['_error'] ) ) ? '<div class="csf-error-text">'. $this->field['_error'] .'</div>' : '';
 

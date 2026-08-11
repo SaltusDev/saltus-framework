@@ -758,8 +758,9 @@ if ( ! class_exists( 'CSF_Setup' ) ) {
       if ( ! empty( $field_type ) ) {
 
         if ( ! empty( $field['title'] ) ) {
+          $field_id_attr = ! empty( $field['id'] ) ? ' for="'. esc_attr( $field['id'] ) .'"' : '';
           echo '<div class="csf-title">';
-          echo '<h4>'. $field['title'] .'</h4>';
+          echo '<label'. $field_id_attr .'>'. $field['title'] .'</label>';
           echo ( ! empty( $field['subtitle'] ) ) ? '<div class="csf-subtitle-text">'. $field['subtitle'] .'</div>' : '';
           echo '</div>';
         }

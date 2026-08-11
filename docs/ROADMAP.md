@@ -929,10 +929,10 @@ fields:
 
 | Item | Status |
 |------|--------|
-| Codestar: emit `id` alongside `name` in `CSF_Fields::field_attributes()` | [ ] |
-| Codestar: `csf-title` from `<h4>` to `<label for="…">`, class preserved | [ ] |
-| Codestar: `aria-describedby` linking `csf-desc-text` to its input | [ ] |
-| Codestar: vendored-change log so a Codestar upgrade can replay the patches | [ ] |
+| Codestar: emit `id` alongside `name` in `CSF_Fields::field_attributes()` | ✓ Done 2026-08-11 |
+| Codestar: `csf-title` from `<h4>` to `<label for="…">`, class preserved | ✓ Done 2026-08-11 |
+| Codestar: `aria-describedby` linking `csf-desc-text` to its input | ✓ Done 2026-08-11 |
+| Codestar: vendored-change log so a Codestar upgrade can replay the patches | ✓ Done 2026-08-11 |
 | Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | [ ] |
 | Picker writes routed through `RelationshipManager` + `ProposalService`, matching the agent write path | [ ] |
 | Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] |
