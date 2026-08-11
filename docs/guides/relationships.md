@@ -183,6 +183,12 @@ wp saltus relationship detach <post-id> <relationship> <related-id>
 wp saltus relationship sync <post-id> <relationship> <json|@file>
 ```
 
+Unlike the MCP abilities above, these commands apply immediately — they call
+`RelationshipManager` directly and do not create a proposal. The same is true of
+the REST routes. The review queue governs the agent surfaces, where a caller may
+be an autonomous client; a WP-CLI or REST caller has already cleared a WordPress
+capability check, and that is the gate on those paths.
+
 ```bash
 wp saltus relationship attach 42 actors 108 --pivot='{"role":"Ripley"}'
 wp saltus relationship sync 42 actors '[108,109]'

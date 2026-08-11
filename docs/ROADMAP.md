@@ -733,7 +733,7 @@ The internal planning documents were written before implementation and describe 
 | `cascade_delete` on the declaring side, sparing shared targets | ✓ Done 2026-08-08 |
 | REST: 3 routes covering discovery, read, attach, sync, and detach | ✓ Done 2026-08-08 |
 | MCP: `list_relationships`, `get_related`, `attach_related`, `detach_related`, `sync_related` | ✓ Done 2026-08-08 |
-| Relationship writes routed through `ProposalService` review queue | ✓ Done 2026-08-08 |
+| Relationship writes queued for review **on the agent paths** — MCP via `AbilityRuntime`, WebMCP via `WebMcp`; REST and WP-CLI write directly, as they do for every other feature | ✓ Done 2026-08-08 |
 | WP-CLI parity: `wp saltus relationship {list\|get\|attach\|detach\|sync}` | ✓ Done 2026-08-08 |
 | Author guide at [guides/relationships.md](guides/relationships.md) | ✓ Done 2026-08-08 |
 | PHPUnit coverage across registry, store, manager, REST, tools, CLI, and governance | ✓ Done 2026-08-08 |
@@ -751,7 +751,9 @@ The internal planning documents were written before implementation and describe 
 
 **Verification:** 505 tests, 1469 assertions; PHPStan Level 7 and PHPCS clean; 21 JS tests unaffected. Six guards were mutation-tested — removing reciprocal-side cardinality enforcement, allowing undeclared pivot keys, validating sync after clearing, dropping relationship writes from the review queue, cascading into a shared target, or letting the reciprocal inherit cascade each fail at least one test.
 
-**Exit criteria:** A model declares a relationship in config and both sides become readable and writable through REST, MCP, and WP-CLI, with cardinality enforced from either direction, one query per relationship per result set, and all writes governed by the review queue. ✓ Done 2026-08-08
+**Exit criteria:** A model declares a relationship in config and both sides become readable and writable through REST, MCP, and WP-CLI, with cardinality enforced from either direction, one query per relationship per result set, and agent-originated writes governed by the review queue. ✓ Done 2026-08-08
+
+**Correction (2026-08-11):** this section previously said "all writes governed by the review queue," and the item table said writes were "routed through `ProposalService`." Both overstated it. Queueing is implemented one layer above `RelationshipManager` — in `AbilityRuntime` for MCP and in `WebMcp` for the browser surface, each keyed on `ProposalService::should_queue()`. `RelationshipsController::sync_items()` and `RelationshipCommand::sync()` both call `RelationshipManager::sync()` directly, so a REST or WP-CLI caller holding `edit_posts` writes without review. That is consistent with how every other Saltus feature treats those two surfaces, and `sync_related` *is* in `ProposalService`'s mutating list — so the agent paths do queue exactly as claimed. Only the scope of the word "all" was wrong.
 
 **Non-goals for Phase 10A:** the admin metabox UI (Select2 picker), migration scripts from ACF/Toolset/Pods, a query-builder facade (`Relations::for()->with()`), and relationships to taxonomy terms or users. Storage and the three programmatic surfaces come first; the UI is worth building once the data model has settled.
 
@@ -923,7 +925,7 @@ fields:
 - **Keep the class, change the element.** `csf-title` becomes `<label for>` retaining its class, so no stylesheet changes and no visual regression.
 - **Vendored changes must be re-appliable.** `lib/codestar-framework/` is third-party. Every edit is recorded so a Codestar upgrade can replay it, or it will be silently reverted by the next vendor bump.
 - **The picker is one component, not one per cardinality.** `has_one` is the picker capped at one. A separate single-select implementation is how the two drift.
-- **The picker writes through the same governed path.** A metabox save is a mutation: it goes through `RelationshipManager` and `ProposalService` like every other write, so an editor's change is queued for review exactly as an agent's is, if the site requires review.
+- **The picker must decide where it sits relative to the queue, explicitly.** Queueing is not in `RelationshipManager` — it lives one layer up, in `AbilityRuntime` for MCP calls and in `WebMcp` for browser calls, both keyed on `ProposalService::should_queue()`. `RelationshipsController` calls `RelationshipManager::sync()` directly, so a REST caller with `edit_posts` already writes without review. A metabox save is closer to the REST path than the agent path, and an editor clearing a capability gate arguably *is* the human review. The picker should therefore write directly like REST does, and the roadmap should stop implying a governance layer that is not where it looked.
 - **No new frontend framework.** The picker uses what the admin already loads. Select2 is bundled with Codestar; the RFC assumed it.
 - **Bulk operations reuse `wp saltus` service classes**, not a parallel implementation. The CLI already does bulk correctly.
 
@@ -934,7 +936,7 @@ fields:
 | Codestar: `aria-describedby` linking `csf-desc-text` to its input | ✓ Done 2026-08-11 |
 | Codestar: vendored-change log so a Codestar upgrade can replay the patches | ✓ Done 2026-08-11 |
 | Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | [ ] |
-| Picker writes routed through `RelationshipManager` + `ProposalService`, matching the agent write path | [ ] |
+| Picker writes through `RelationshipManager::sync()`, matching what `RelationshipsController` already does — see the constraint above on where queueing actually lives | [ ] |
 | Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] |
 | Relationship column on the post list table, with eager loading so the list stays one query per relationship | [ ] |
 | Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | [ ] |
