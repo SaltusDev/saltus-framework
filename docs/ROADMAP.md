@@ -940,7 +940,7 @@ fields:
 | Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | [ ] |
 | Keyboard operability and screen-reader labels verified on the picker specifically | [ ] |
 | Re-evaluate the declarative forms API now that labels and ids exist — the [8B no-go](#8b--admin-surface-and-governed-writes) was conditional on these defects | [ ] |
-| Accessibility statement in the docs recording what was fixed and what remains unverified | [ ] |
+| Accessibility statement in the docs recording what was fixed and what remains unverified | ✓ Done 2026-08-11 |
 
 **Exit criteria:** An editor can find, set, reorder, and remove related posts from the post editor, and the resulting write is governed identically to an agent's. Every Codestar field type emits an input `id`, a `<label for>`, and `aria-describedby` where a description exists. The declarative-forms decision is revisited against the fixed markup and recorded either way.
 

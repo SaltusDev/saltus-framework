@@ -77,6 +77,7 @@ export default defineConfig({
           { text: 'About', link: '/PROJECT' },
           { text: 'Architecture & Decisions', link: '/CONTEXT' },
           { text: 'Roadmap', link: '/ROADMAP' },
+          { text: 'Accessibility', link: '/ACCESSIBILITY' },
         ],
       },
       {
