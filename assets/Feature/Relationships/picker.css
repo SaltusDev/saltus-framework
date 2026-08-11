@@ -1,0 +1,116 @@
+/**
+ * Relationship picker styles.
+ *
+ * Focus outlines are deliberately not removed anywhere in this file: the picker
+ * is keyboard-operable and the focus ring is how a keyboard user knows where
+ * they are.
+ */
+
+.saltus-relationship-field {
+	margin: 0 0 1.5em;
+}
+
+.saltus-relationship-field:last-child {
+	margin-bottom: 0;
+}
+
+.saltus-relationship-label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 0.25em;
+}
+
+.saltus-relationship-desc {
+	margin: 0 0 0.5em;
+}
+
+.saltus-relationship-control {
+	position: relative;
+	max-width: 40em;
+}
+
+.saltus-relationship-search {
+	width: 100%;
+}
+
+.saltus-relationship-search:disabled {
+	background: #f0f0f1;
+	cursor: not-allowed;
+}
+
+.saltus-relationship-results {
+	position: absolute;
+	z-index: 10;
+	left: 0;
+	right: 0;
+	margin: 0;
+	padding: 0;
+	max-height: 14em;
+	overflow-y: auto;
+	list-style: none;
+	background: #fff;
+	border: 1px solid #8c8f94;
+	box-shadow: 0 2px 6px rgba( 0, 0, 0, 0.1 );
+}
+
+.saltus-relationship-result {
+	margin: 0;
+	padding: 0.5em 0.75em;
+	cursor: pointer;
+}
+
+.saltus-relationship-result:hover,
+.saltus-relationship-result.is-active {
+	background: #2271b1;
+	color: #fff;
+}
+
+.saltus-relationship-selected {
+	margin: 0.5em 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.saltus-relationship-item {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+	margin: 0 0 0.25em;
+	padding: 0.4em 0.6em;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+}
+
+.saltus-relationship-item-title {
+	flex: 1 1 auto;
+}
+
+.saltus-relationship-remove {
+	flex: 0 0 auto;
+	color: #b32d2e;
+	text-decoration: none;
+}
+
+.saltus-relationship-remove:hover,
+.saltus-relationship-remove:focus {
+	color: #8a2424;
+	text-decoration: underline;
+}
+
+/*
+ * The status line is announced by screen readers but takes no visual space:
+ * clip rather than display:none, which would remove it from the accessibility
+ * tree and stop the announcements.
+ */
+.saltus-relationship-status {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect( 0, 0, 0, 0 );
+	white-space: nowrap;
+	border: 0;
+}

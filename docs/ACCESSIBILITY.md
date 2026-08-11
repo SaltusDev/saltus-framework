@@ -32,16 +32,32 @@ Four defects were documented during the Phase 8B declarative-forms evaluation (s
 
 ---
 
+### Phase 13 Slice 2: Relationship Picker (2026-08-11)
+
+The relationship picker on the post editor was built keyboard-operable and screen-reader-labelled from the start rather than retrofitted:
+
+- **Label and description are programmatically associated.** Each control emits `<label for>` bound to the search input's `id`, and `aria-describedby` pointing at its description — the same pattern the Codestar fixes established, so the picker is consistent with every other field on the screen.
+- **Full keyboard operation.** Arrow keys move through search results with `aria-selected` tracking the active option, Enter selects, Escape closes the list, and Alt+Arrow reorders the selected set. Reordering is not mouse-only, which is the usual failure of drag-to-sort UI.
+- **Focus is managed on removal.** Removing an item moves focus to the next item, the previous one, or back to the search field. It is never allowed to fall to `<body>`, which would lose a keyboard user's place entirely.
+- **Status changes are announced.** A `role="status"` `aria-live="polite"` region reports result counts, additions, removals, and reorder moves. It is visually hidden by clipping rather than `display: none`, which would remove it from the accessibility tree and stop the announcements — the bug that makes most live regions silent.
+- **Search results are text, never markup.** Titles come back from core rendered and may carry entities. They are set with `textContent` and a test asserts no child elements are ever constructed from a title.
+
+**Verification:** 16 PHPUnit tests over rendering and save behavior, 11 JS tests over selection state and keyboard reordering. Six guards mutation-tested.
+
+**Not verified:** none of this has been tested with an actual screen reader. The assertions confirm the markup and handlers are present and behave as intended in a synthetic DOM; they cannot confirm that NVDA, JAWS, or VoiceOver announce it usefully. See below.
+
+---
+
 ## What Remains
 
-### Keyboard Operability
+### Manual Assistive-Technology Testing
 
-The relationship picker (Phase 13 slice 2, not yet implemented) will need explicit keyboard operability verification:
-- Tab order through search, selection, reorder, and detach controls
-- Focus indicators visible on all interactive elements
-- Escape to cancel, Enter to confirm where applicable
+Everything above is verified by automated assertions on emitted markup and simulated events. That catches regressions but proves less than it appears to: markup can satisfy every ARIA rule and still be confusing to use. Outstanding:
 
-This verification is a distinct Phase 13 item and will be documented here when the picker is built.
+- Screen-reader passes with NVDA, JAWS, and VoiceOver on the picker and on a representative metabox
+- Confirmation that the live-region announcements are useful rather than merely present, and not so chatty they drown the content
+- Tab-order review on a screen with several relationship fields plus other Codestar fields
+- Visible focus indicators checked against the WordPress admin's own styles at each interactive step
 
 ---
 
@@ -64,7 +80,7 @@ Saltus has **not** undergone such an audit. The four defects fixed in Phase 13 s
 
 - **Color contrast** — Saltus inherits Codestar's styles and WordPress admin's styles. Neither color contrast nor minimum touch target sizes have been verified against WCAG 2.1 criteria.
 
-- **Dynamic content** — JavaScript-driven field interactions (e.g., dependency showing/hiding fields, AJAX-powered fields) have not been verified for screen-reader announcements or focus management.
+- **Dynamic content** — Codestar's own JavaScript-driven field interactions (dependency showing/hiding fields, AJAX-powered fields) have not been verified for screen-reader announcements or focus management. The Saltus relationship picker is the exception: its announcements and focus handling are implemented and unit-tested, though not screen-reader-tested.
 
 - **Metabox collapsing** — WordPress's metabox drag-and-drop and collapse/expand UI is core functionality, not Saltus's. Saltus does not modify it and does not claim it is accessible.
 

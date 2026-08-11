@@ -129,6 +129,32 @@ declare are discarded rather than stored.
 leaves the existing set untouched instead of half-written. It accepts at most
 200 ids per call.
 
+## In the post editor
+
+Every post type in a relationship gets a **Relationships** metabox with no
+configuration. Search for a post by title, select it, drag or Alt+Arrow to
+reorder, Remove to detach. One field appears per relationship.
+
+Both sides of a relationship get a picker. Declaring `movie.actors` gives movies
+an "Actors" field *and* people an "Acted In" field, because the reciprocal is a
+first-class relationship rather than a read-only view. Editing either side writes
+the same row.
+
+A relationship declaring a `capability` is hidden from users who lack it, and a
+save by such a user leaves it untouched rather than clearing it.
+
+The picker submits the whole set on save and applies it with `sync()`, so
+removing everything from a field and saving clears that relationship. Saves that
+never rendered the picker — REST, WP-CLI, another plugin calling
+`wp_update_post()` — leave stored relationships alone.
+
+Search queries WordPress core's own `/wp/v2/{post_type}` endpoint, so results
+respect core's capability handling and no additional Saltus route is involved.
+The target post type needs `show_in_rest` enabled, which is the Saltus default.
+
+Keyboard: `↑`/`↓` move through results, `Enter` selects, `Esc` closes,
+`Alt`+`↑`/`↓` reorders the selected set.
+
 ## REST
 
 | Route | Methods | Purpose |

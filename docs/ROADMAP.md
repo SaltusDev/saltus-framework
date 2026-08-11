@@ -935,14 +935,30 @@ fields:
 | Codestar: `csf-title` from `<h4>` to `<label for="…">`, class preserved | ✓ Done 2026-08-11 |
 | Codestar: `aria-describedby` linking `csf-desc-text` to its input | ✓ Done 2026-08-11 |
 | Codestar: vendored-change log so a Codestar upgrade can replay the patches | ✓ Done 2026-08-11 |
-| Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | [ ] |
-| Picker writes through `RelationshipManager::sync()`, matching what `RelationshipsController` already does — see the constraint above on where queueing actually lives | [ ] |
+| Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | ✓ Done 2026-08-11 |
+| Picker writes through `RelationshipManager::sync()`, matching what `RelationshipsController` already does — see the constraint above on where queueing actually lives | ✓ Done 2026-08-11 |
 | Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] |
 | Relationship column on the post list table, with eager loading so the list stays one query per relationship | [ ] |
 | Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | [ ] |
-| Keyboard operability and screen-reader labels verified on the picker specifically | [ ] |
+| Keyboard operability and screen-reader labels verified on the picker specifically | ✓ Done 2026-08-11 |
 | Re-evaluate the declarative forms API now that labels and ids exist — the [8B no-go](#8b--admin-surface-and-governed-writes) was conditional on these defects | [ ] |
 | Accessibility statement in the docs recording what was fixed and what remains unverified | ✓ Done 2026-08-11 |
+
+**Picker notes from implementation:**
+
+- **Selection state lives in the hidden inputs, in document order.** Reordering moves list items and their inputs move with them, so the submitted order *is* whatever the list shows. There is no separate order field to fall out of step with the display.
+- **No Select2, no jQuery.** The design constraint above assumed Select2 because the RFC did. It was not used: vanilla JS against WordPress core's own `/wp/v2/{post_type}` collection is fewer moving parts, adds no dependency, and gave better keyboard handling than configuring a library would have. Nothing new is enqueued beyond the picker's own script and style.
+- **No new REST route.** Search hits core's post-type collection, so core's capability handling applies and Saltus adds no surface to secure. A target post type that sets its own `rest_base` is resolved server-side into the localized payload rather than guessed in the browser.
+- **A missing nonce field means "no submission", not "empty set".** A post saved through REST, WP-CLI, or another plugin fires `save_post` without ever rendering the picker. Treating that as an emptied picker would clear every relationship on the post. The absent-nonce guard is the one whose removal is most quietly destructive, and it is mutation-tested.
+- **Ids are passed through unsanitized, deliberately.** `RelationshipManager::sync()` routes them through `PostIdListTrait::post_id_list()`, which casts to int, drops anything not `> 0`, and deduplicates while preserving order. A second filter in the metabox was written first, then removed once a mutation test showed it could not fail — it was dead code that looked load bearing. Only the length cap is applied locally, because `sync()` rejects an oversized list outright and silently refusing an editor's save is worse than trimming it.
+- **A relationship the user cannot see is skipped on save, not cleared.** `render_field()` omits it, so it is absent from the payload — indistinguishable from "emptied" without an explicit capability re-check in the save loop.
+- **Both sides get a picker.** The target of a declared relationship has the synthesized reciprocal, so `person` gets an `acted_in` picker even though it declares nothing. The registry treats both sides as first-class and the UI follows.
+- **Keyboard operability is built in, not deferred:** arrow keys move through results with `aria-selected` tracking, Enter selects, Escape closes, and Alt+Arrow reorders the selected set. Focus is moved deliberately after a removal rather than being allowed to fall to `<body>`. The live region announcing result counts and add/remove is visually clipped rather than `display:none`, which would remove it from the accessibility tree and silence it.
+- **A core-rendered title is set with `textContent`, never `innerHTML`.** Core returns rendered titles that may carry entities; a test asserts no child elements are ever built from a title, so the search results cannot become an injection point.
+
+**Verification:** 539 tests, 1534 assertions; 32 JS tests (21 bridge + 11 picker); PHPStan Level 7 and PHPCS clean. Six guards mutation-tested — removing the absent-nonce guard, the nonce verification, the `edit_post` check, the revision guard, the `has_relationships` gate, or the input's `aria-describedby` each fail at least one test.
+
+**Still open in this phase:** the post-list column and bulk attach/detach, the `FieldPermissionPolicy` integration once Phase 11 lands, and the declarative-forms re-evaluation. The picker's own accessibility is implemented and unit-tested, but *verified* here means automated assertions on emitted markup and keyboard handlers — not manual testing with a screen reader, which `docs/ACCESSIBILITY.md` records as outstanding.
 
 **Exit criteria:** An editor can find, set, reorder, and remove related posts from the post editor, and the resulting write is governed identically to an agent's. Every Codestar field type emits an input `id`, a `<label for>`, and `aria-describedby` where a description exists. The declarative-forms decision is revisited against the fixed markup and recorded either way.
 

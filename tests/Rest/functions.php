@@ -196,6 +196,8 @@ $wp_blocks_registered      = [];
 $wp_shortcodes_registered  = [];
 $wp_query_posts            = [];
 $wp_nonce_valid            = true;
+$wp_meta_boxes             = [];
+$wp_post_revisions         = [];
 $wp_meta_updates           = [];
 $wp_post_type_objects      = [];
 $wp_posts                  = [];
@@ -973,6 +975,24 @@ if ( ! function_exists( 'wp_nonce_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'add_meta_box' ) ) {
+	function add_meta_box( string $id, string $title, $callback, $screen = null, string $context = 'advanced', string $priority = 'default', $callback_args = null ): void {
+		global $wp_meta_boxes;
+		if ( ! is_array( $wp_meta_boxes ) ) {
+			$wp_meta_boxes = [];
+		}
+		$wp_meta_boxes[] = compact( 'id', 'title', 'callback', 'screen', 'context', 'priority', 'callback_args' );
+	}
+}
+
+if ( ! function_exists( 'wp_is_post_revision' ) ) {
+	function wp_is_post_revision( $post ) {
+		global $wp_post_revisions;
+		$post_id = is_object( $post ) ? (int) $post->ID : (int) $post;
+		return is_array( $wp_post_revisions ) && in_array( $post_id, $wp_post_revisions, true ) ? $post_id : false;
+	}
+}
+
 if ( ! function_exists( 'esc_attr' ) ) {
 	function esc_attr( $text ): string {
 		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
@@ -1000,6 +1020,12 @@ if ( ! function_exists( 'esc_url' ) ) {
 if ( ! function_exists( 'esc_url_raw' ) ) {
 	function esc_url_raw( $url ): string {
 		return (string) $url;
+	}
+}
+
+if ( ! function_exists( 'esc_attr__' ) ) {
+	function esc_attr__( string $text, string $domain = 'default' ): string {
+		return esc_attr( $text );
 	}
 }
 

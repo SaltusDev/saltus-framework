@@ -83,6 +83,23 @@ class RelationshipsServiceTest extends TestCase {
 		);
 	}
 
+	/**
+	 * The picker is dead weight unless all three of its hooks are bound: one to
+	 * render it, one to save it, and one to load its assets. Missing the save
+	 * hook in particular fails silently — the UI works and nothing persists.
+	 */
+	public function testRegisterHooksTheRelationshipPicker(): void {
+		global $wp_actions_registered;
+
+		( new Relationships() )->register();
+
+		$hooks = array_column( $wp_actions_registered, 'hook_name' );
+
+		$this->assertContains( 'add_meta_boxes', $hooks, 'The picker must be registered as a metabox.' );
+		$this->assertContains( 'save_post', $hooks, 'Without this the picker renders but never persists.' );
+		$this->assertContains( 'admin_enqueue_scripts', $hooks, 'The picker needs its own script and style.' );
+	}
+
 	public function testDeletingAPostClearsRowsAndCascadesThroughTheService(): void {
 		$modeler = new ServiceRelationshipModeler( $this->models() );
 		$store   = new RelationshipStore( null );
