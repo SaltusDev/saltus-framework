@@ -7,6 +7,7 @@ use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
+use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\Modeler;
@@ -20,16 +21,24 @@ class MetaController extends WP_REST_Controller {
 	protected Modeler $modeler;
 	private ?ModelRestPolicy $policy;
 	private MetaFieldProvider $meta_field_provider;
+	private FieldPermissionPolicy $field_permissions;
 
 	/**
 	 * @param Modeler $modeler  The model registry.
 	 * @param ModelRestPolicy|null $policy  Optional REST policy for capability gating.
 	 * @param MetaFieldProvider|null $meta_field_provider Optional meta field provider.
+	 * @param FieldPermissionPolicy|null $field_permissions Optional per-field access policy.
 	 */
-	public function __construct( Modeler $modeler, ?ModelRestPolicy $policy = null, ?MetaFieldProvider $meta_field_provider = null ) {
+	public function __construct(
+		Modeler $modeler,
+		?ModelRestPolicy $policy = null,
+		?MetaFieldProvider $meta_field_provider = null,
+		?FieldPermissionPolicy $field_permissions = null
+	) {
 		$this->modeler             = $modeler;
 		$this->policy              = $policy;
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
+		$this->field_permissions   = $field_permissions ?? new FieldPermissionPolicy( $this->meta_field_provider );
 		$this->namespace           = MCPConfig::get_namespace();
 		$this->rest_base           = 'meta';
 	}
@@ -137,9 +146,14 @@ class MetaController extends WP_REST_Controller {
 			fn( string $post_type ): bool => $this->can_view_post_type_meta( $post_type )
 		);
 
+		$filtered = [];
+		foreach ( $post_types as $entry ) {
+			$filtered[] = $this->field_permissions->filter_payload( $entry );
+		}
+
 		return rest_ensure_response(
 			[
-				'post_types' => $post_types,
+				'post_types' => $filtered,
 			]
 		);
 	}
@@ -152,8 +166,13 @@ class MetaController extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$post_type = $request->get_param( 'post_type' );
+		$result    = $this->meta_field_provider->post_type_meta( $this->modeler, $this->policy, (string) $post_type );
 
-		return rest_ensure_response( $this->meta_field_provider->post_type_meta( $this->modeler, $this->policy, (string) $post_type ) );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $this->field_permissions->filter_payload( $result ) );
 	}
 
 	/**
@@ -226,6 +245,11 @@ class MetaController extends WP_REST_Controller {
 		$meta_fields_info = $this->meta_field_provider->post_type_meta( $this->modeler, $this->policy, (string) $post_type );
 		if ( is_wp_error( $meta_fields_info ) ) {
 			return $meta_fields_info;
+		}
+
+		$denied = $this->field_permissions->reject_denied_write( $this->modeler, (string) $post_type, $meta_data );
+		if ( $denied instanceof WP_Error ) {
+			return $denied;
 		}
 
 		$meta_key_lookup = $this->build_meta_key_lookup( $meta_fields_info );

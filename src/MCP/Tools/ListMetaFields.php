@@ -1,6 +1,7 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
@@ -11,12 +12,15 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
 class ListMetaFields extends RestTool {
 
 	private MetaFieldProvider $meta_field_provider;
+	private FieldPermissionPolicy $field_permissions;
 
 	/**
 	 * @param MetaFieldProvider|null $meta_field_provider Shared meta field provider.
+	 * @param FieldPermissionPolicy|null $field_permissions Shared per-field access policy.
 	 */
-	public function __construct( ?MetaFieldProvider $meta_field_provider = null ) {
+	public function __construct( ?MetaFieldProvider $meta_field_provider = null, ?FieldPermissionPolicy $field_permissions = null ) {
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
+		$this->field_permissions   = $field_permissions ?? new FieldPermissionPolicy( $this->meta_field_provider );
 	}
 
 	/**
@@ -74,7 +78,12 @@ class ListMetaFields extends RestTool {
 	 * @return list<array<string, mixed>>
 	 */
 	public function list_meta_fields( Modeler $modeler, ?ModelRestPolicy $policy, callable $can_view_post_type ): array {
-		return $this->meta_field_provider->all_post_type_meta( $modeler, $policy, $can_view_post_type );
+		$filtered = [];
+		foreach ( $this->meta_field_provider->all_post_type_meta( $modeler, $policy, $can_view_post_type ) as $entry ) {
+			$filtered[] = $this->field_permissions->filter_payload( $entry );
+		}
+
+		return $filtered;
 	}
 
 	/**

@@ -1,6 +1,7 @@
 <?php
 namespace Saltus\WP\Framework\MCP\Tools;
 
+use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\Modeler;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
@@ -11,12 +12,15 @@ use Saltus\WP\Framework\Rest\ModelRestPolicy;
 class UpdateMetaFields extends RestTool {
 
 	private MetaFieldProvider $meta_field_provider;
+	private FieldPermissionPolicy $field_permissions;
 
 	/**
 	 * @param MetaFieldProvider|null $meta_field_provider Shared meta field provider.
+	 * @param FieldPermissionPolicy|null $field_permissions Shared per-field access policy.
 	 */
-	public function __construct( ?MetaFieldProvider $meta_field_provider = null ) {
+	public function __construct( ?MetaFieldProvider $meta_field_provider = null, ?FieldPermissionPolicy $field_permissions = null ) {
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
+		$this->field_permissions   = $field_permissions ?? new FieldPermissionPolicy( $this->meta_field_provider );
 	}
 
 	/**
@@ -114,6 +118,14 @@ class UpdateMetaFields extends RestTool {
 		$meta_fields_info = $this->meta_field_provider->post_type_meta( $modeler, $policy, $post_type );
 		if ( is_wp_error( $meta_fields_info ) ) {
 			return $meta_fields_info;
+		}
+
+		// Same policy, same rejection as REST. This method is also what
+		// `wp saltus meta update` calls, so MCP and WP-CLI enforce here together
+		// rather than each reimplementing the check.
+		$denied = $this->field_permissions->reject_denied_write( $modeler, $post_type, $meta );
+		if ( $denied instanceof \WP_Error ) {
+			return $denied;
 		}
 
 		$meta_key_lookup = $this->build_meta_key_lookup( $meta_fields_info );

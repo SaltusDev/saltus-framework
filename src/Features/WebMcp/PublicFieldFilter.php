@@ -2,6 +2,7 @@
 
 namespace Saltus\WP\Framework\Features\WebMcp;
 
+use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\Modeler;
 
@@ -57,9 +58,11 @@ final class PublicFieldFilter {
 	];
 
 	private MetaFieldProvider $meta_field_provider;
+	private FieldPermissionPolicy $field_permissions;
 
-	public function __construct( ?MetaFieldProvider $meta_field_provider = null ) {
+	public function __construct( ?MetaFieldProvider $meta_field_provider = null, ?FieldPermissionPolicy $field_permissions = null ) {
 		$this->meta_field_provider = $meta_field_provider ?? new MetaFieldProvider();
+		$this->field_permissions   = $field_permissions ?? new FieldPermissionPolicy( $this->meta_field_provider );
 	}
 
 	/**
@@ -99,10 +102,19 @@ final class PublicFieldFilter {
 		 * @param list<array<string, mixed>> $public    Public field definitions.
 		 * @param string                     $post_type Post type slug.
 		 */
-		return $this->accept_fields(
+		$filtered = $this->accept_fields(
 			apply_filters( 'saltus/framework/webmcp/public_fields', $public, $post_type ),
 			$public
 		);
+
+		// Applied last, deliberately. This composes with the public-field rules
+		// rather than duplicating them: a field must be *both* publicly exposable
+		// and permitted for this caller. Running after the filter hook means a
+		// third-party filter cannot re-add a field the policy denies — if this ran
+		// before, the hook would be a bypass. For an anonymous caller every
+		// capability check fails, so any field declaring a `permissions` rule is
+		// never publicly readable, which is the intended reading of a rule.
+		return $this->field_permissions->filter_readable( $filtered );
 	}
 
 	/**
