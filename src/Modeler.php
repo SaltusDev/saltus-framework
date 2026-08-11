@@ -142,19 +142,17 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	 * @param AbstractConfig|array<string|int, mixed> $config Model config data.
 	 */
 	protected function process_config( $config ): void {
-		if ( $config instanceof AbstractConfig ) {
-			( $this->is_multiple( $config ) ?
-				$this->iterate_multiple( $config ) :
-				$this->create( $config )
-			);
+		$data = $config instanceof AbstractConfig ? $config->all() : $config;
+
+		if ( $data === [] ) {
 			return;
 		}
 
-		if ( $config === [] ) {
-			return;
-		}
+		// Re-wrapped rather than mutated in place: `AbstractConfig` exposes no way
+		// to reorder its data, and normalizing here means both the file-loaded and
+		// filter-injected paths get the same treatment.
+		$wrapped_config = new NoFile( $this->sort_config( $data ) );
 
-		$wrapped_config = new NoFile( $config );
 		( $this->is_multiple( $wrapped_config ) ?
 			$this->iterate_multiple( $wrapped_config ) :
 			$this->create( $wrapped_config )
@@ -162,10 +160,39 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	}
 
 	/**
-	 * Is multidimensional config
+	 * Is this config a list of models rather than a single one?
+	 *
+	 * Decided by whether `type` is present at the top level, not by inspecting the
+	 * first key. Every registerable model must declare `type` at depth 0 —
+	 * `ModelFactory::create()` returns null without it — so a config carrying one
+	 * is a single model and a config without one is a map of model-name => config.
+	 *
+	 * This used to test `is_array( current( ... ) )`, which made the answer depend
+	 * on *key order*: a single model listing `labels` before `type` was read as a
+	 * list of models, and each of its top-level keys then reached `create()` with
+	 * no `type` of its own, so the post type silently never registered. Key order
+	 * is now normalized too (see `sort_config()`), but detection no longer relies
+	 * on it either way — a multi-model file may legitimately hold a stray scalar.
 	 */
 	protected function is_multiple( AbstractConfig $config ): bool {
-		return ( is_array( current( $config->all() ) ) );
+		return ! $config->has( 'type' );
+	}
+
+	/**
+	 * Normalize top-level key order so authoring order cannot change meaning.
+	 *
+	 * Scalars first, then array-valued keys, each group keeping its original
+	 * relative order. Safe because no consumer reads model config positionally —
+	 * every other access is by key — so this only removes order as a variable.
+	 *
+	 * @param array<string|int, mixed> $config Raw config data.
+	 * @return array<string|int, mixed>
+	 */
+	protected function sort_config( array $config ): array {
+		$scalars = array_filter( $config, static fn( $value ): bool => ! is_array( $value ) );
+		$arrays  = array_filter( $config, static fn( $value ): bool => is_array( $value ) );
+
+		return $scalars + $arrays;
 	}
 
 	/**
@@ -175,7 +202,13 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	 */
 	protected function iterate_multiple( AbstractConfig $config ): void {
 		foreach ( $config as $single_config ) {
-			$this->create( new NoFile( $single_config ) );
+			// A stray scalar at the top of a multi-model file is not a model. Without
+			// this, `new NoFile( 'string' )` would reach `create()` and fail there.
+			if ( ! is_array( $single_config ) ) {
+				continue;
+			}
+
+			$this->create( new NoFile( $this->sort_config( $single_config ) ) );
 		}
 	}
 
