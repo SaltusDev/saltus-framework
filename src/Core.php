@@ -44,6 +44,7 @@ use Saltus\WP\Framework\Features\WebMcp\WebMcp;
 use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
 use Saltus\WP\Framework\Features\Observability\MetricsApi;
 use Saltus\WP\Framework\Features\Observability\ObservabilityDashboard;
+use Saltus\WP\Framework\Features\Workflow\Workflow;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\Models\Config\ConfigValidationContributor;
 use Saltus\WP\Framework\Rest\HealthController;
@@ -442,6 +443,7 @@ class Core implements Plugin {
 			'webmcp'           => WebMcp::class,
 			'metrics_api'      => MetricsApi::class,
 			'observability'    => ObservabilityDashboard::class,
+			'workflow'         => Workflow::class,
 			'wp_cli'           => WpCli::class,
 		];
 	}
