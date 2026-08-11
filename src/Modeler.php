@@ -9,7 +9,10 @@ namespace Saltus\WP\Framework;
 
 use Noodlehaus\AbstractConfig;
 use Noodlehaus\Config;
+use Saltus\WP\Framework\Models\Config\ConfigValidator;
 use Saltus\WP\Framework\Models\Config\NoFile;
+use Saltus\WP\Framework\Models\ConfigError;
+use Saltus\WP\Framework\Models\ConfigValidationResult;
 use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\ModelFactory;
 use Saltus\WP\Framework\MCP\Tools\CreatePost;
@@ -32,6 +35,9 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
 class Modeler implements RestRouteProvider, ToolContributor {
 
 	protected ModelFactory $model_factory;
+
+	/** Built on first use; validation is not needed until a model arrives. */
+	private ?ConfigValidator $config_validator = null;
 
 	/** @var array<string, Model> */
 	protected array $model_list = [];
@@ -215,14 +221,128 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	/**
 	 * Creates the model in the factory
 	 *
+	 * Validation happens here rather than in `process_config()` because this is the
+	 * one point every model passes through — single configs and each child of a
+	 * multi-model file alike — so a model cannot reach the factory unchecked.
+	 *
 	 * @param $config The set of configurations for the cpt/tax
 	 */
 	protected function create( AbstractConfig $config ): void {
+		if ( ! $this->passes_validation( $config ) ) {
+			return;
+		}
+
 		$model = $this->model_factory->create( $config );
 		if ( $model === null ) {
 			return;
 		}
 		$this->add( $model );
+	}
+
+	/**
+	 * Validate a config, log what was found, and report whether to proceed.
+	 *
+	 * Errors stop registration; warnings are logged and the model registers anyway.
+	 * The verdict is cached against a hash of the config, so the common case of an
+	 * unchanged config costs a hash rather than a full walk. There is no file path
+	 * or mtime to key on — configs are plain arrays by the time they arrive, and
+	 * filter-injected ones never had a file — so content is the only stable key,
+	 * and a changed config simply produces a different one.
+	 */
+	protected function passes_validation( AbstractConfig $config ): bool {
+		$data   = $config->all();
+		$result = $this->validation_verdict( $data );
+
+		foreach ( $result->get_warnings() as $warning ) {
+			$this->report_config_problem( $warning, $data );
+		}
+
+		if ( ! $result->has_errors() ) {
+			return true;
+		}
+
+		foreach ( $result->get_errors() as $error ) {
+			$this->report_config_problem( $error, $data );
+		}
+
+		return false;
+	}
+
+	/**
+	 * The cached verdict for a config, computing and storing it when absent.
+	 *
+	 * @param array<string|int, mixed> $data
+	 */
+	private function validation_verdict( array $data ): ConfigValidationResult {
+		$cache_key = 'saltus_config_valid_' . md5( (string) wp_json_encode( $data ) );
+
+		if ( $this->validation_cache_enabled() ) {
+			$cached = get_transient( $cache_key );
+
+			// Stored as a plain array, not an object: a serialized instance would break
+			// the moment either value object changes shape.
+			if ( is_array( $cached ) ) {
+				return ConfigValidationResult::from_array( $cached );
+			}
+		}
+
+		$result = $this->config_validator()->validate( $data );
+
+		if ( $this->validation_cache_enabled() ) {
+			// Same fallback AuditLogger uses: the constant is WordPress-only, and this
+			// class is exercised outside it.
+			$day = defined( 'DAY_IN_SECONDS' ) ? DAY_IN_SECONDS : 86400;
+			set_transient( $cache_key, $result->to_array(), $day );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Whether verdicts may be cached.
+	 *
+	 * Off while developing, where a config changes constantly and a stale verdict
+	 * is worse than recomputing. `saltus/framework/config/cache_validation`.
+	 */
+	private function validation_cache_enabled(): bool {
+		if ( ! function_exists( 'get_transient' ) || ! function_exists( 'set_transient' ) ) {
+			return false;
+		}
+
+		$enabled = ! ( defined( 'WP_DEBUG' ) && WP_DEBUG );
+
+		return (bool) apply_filters( 'saltus/framework/config/cache_validation', $enabled );
+	}
+
+	/**
+	 * Surface one config problem where a developer will see it.
+	 *
+	 * `_doing_it_wrong` is the WordPress-native channel for "you have configured
+	 * this incorrectly": it respects WP_DEBUG, is capturable in tests, and does not
+	 * write to the audit log, which records agent activity rather than authoring
+	 * mistakes.
+	 *
+	 * @param array<string|int, mixed> $data Config the problem was found in.
+	 */
+	private function report_config_problem( ConfigError $problem, array $data ): void {
+		if ( ! function_exists( '_doing_it_wrong' ) ) {
+			return;
+		}
+
+		_doing_it_wrong(
+			'Saltus model config',
+			esc_html( $problem->describe() . "\n" . $problem->render_excerpt( $data ) ),
+			'1.8.5'
+		);
+	}
+
+	/** The validator, built once per Modeler. */
+	private function config_validator(): ConfigValidator {
+		if ( ! $this->config_validator instanceof ConfigValidator ) {
+			$this->config_validator = new ConfigValidator();
+		}
+
+		return $this->config_validator;
 	}
 
 	/**

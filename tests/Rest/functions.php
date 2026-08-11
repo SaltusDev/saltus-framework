@@ -668,6 +668,16 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
 	}
 }
 
+if ( ! function_exists( '_doing_it_wrong' ) ) {
+	function _doing_it_wrong( string $function_name, string $message, string $version ): void {
+		global $wp_doing_it_wrong;
+		if ( ! is_array( $wp_doing_it_wrong ) ) {
+			$wp_doing_it_wrong = [];
+		}
+		$wp_doing_it_wrong[] = compact( 'function_name', 'message', 'version' );
+	}
+}
+
 if ( ! function_exists( 'register_post_type' ) ) {
 	function register_post_type( string $post_type, array $args = [] ) {
 		global $wp_post_types_registered;
