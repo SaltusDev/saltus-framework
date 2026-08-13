@@ -358,10 +358,16 @@ if ( ! function_exists( 'current_user_can' ) ) {
 }
 
 if ( ! function_exists( 'get_post' ) ) {
+	/**
+	 * Mirrors WordPress: with no id, falls back to the global $post.
+	 *
+	 * Set $post to a WP_Post (or leave it unset) to control what a bare
+	 * get_post() call sees, as on an edit screen.
+	 */
 	function get_post( ?int $post_id = null ): ?WP_Post {
-		global $wp_posts;
+		global $wp_posts, $post;
 		if ( $post_id === null || $post_id === 0 ) {
-			return null;
+			return $post instanceof WP_Post ? $post : null;
 		}
 		return $wp_posts[ $post_id ] ?? null;
 	}
@@ -824,7 +830,9 @@ if ( ! function_exists( 'get_post_type' ) ) {
 if ( ! function_exists( 'get_post_type_object' ) ) {
 	function get_post_type_object( string $post_type ): ?stdClass {
 		global $wp_post_type_objects;
-		if ( isset( $wp_post_type_objects[ $post_type ] ) ) {
+		// An explicit null entry means "not registered", as WordPress reports for
+		// an unknown post type. Only an absent key falls through to the default.
+		if ( array_key_exists( $post_type, $wp_post_type_objects ) ) {
 			return $wp_post_type_objects[ $post_type ];
 		}
 
@@ -952,6 +960,34 @@ if ( ! function_exists( 'wp_kses_post' ) ) {
 if ( ! function_exists( 'mysql2date' ) ) {
 	function mysql2date( string $format, string $date, bool $translate = true ): string {
 		return date( $format, strtotime( $date ) );
+	}
+}
+
+if ( ! function_exists( 'date_i18n' ) ) {
+	function date_i18n( string $format, $timestamp = false, bool $gmt = false ): string {
+		return date( $format, $timestamp === false ? time() : (int) $timestamp );
+	}
+}
+
+if ( ! function_exists( 'get_preview_post_link' ) ) {
+	function get_preview_post_link( $post = null, array $query_args = [], string $preview_link = '' ): string {
+		$id = is_object( $post ) ? (int) $post->ID : (int) $post;
+		return 'http://example.com/?p=' . $id . '&preview=true';
+	}
+}
+
+if ( ! function_exists( 'wp_post_revision_title' ) ) {
+	/**
+	 * Set $wp_post_revision_titles[ $id ] to control the returned title.
+	 *
+	 * @return string|false
+	 */
+	function wp_post_revision_title( int $revision_id, bool $link = true ) {
+		global $wp_post_revision_titles;
+		if ( is_array( $wp_post_revision_titles ) && array_key_exists( $revision_id, $wp_post_revision_titles ) ) {
+			return $wp_post_revision_titles[ $revision_id ];
+		}
+		return 'January 1, 2026 @ 00:00';
 	}
 }
 
@@ -1154,6 +1190,22 @@ if ( ! function_exists( 'wp_enqueue_style' ) ) {
 	function wp_enqueue_style( string $handle, string $src = '', array $deps = [], $ver = false, string $media = 'all' ): void {
 		global $wp_styles_enqueued;
 		$wp_styles_enqueued[] = compact( 'handle', 'src', 'deps', 'ver', 'media' );
+	}
+}
+
+if ( ! function_exists( 'wp_register_script' ) ) {
+	function wp_register_script( string $handle, $src = '', array $deps = [], $ver = false, $in_footer = false ): bool {
+		global $wp_scripts_registered;
+		$wp_scripts_registered[ $handle ] = compact( 'handle', 'src', 'deps', 'ver', 'in_footer' );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'wp_register_style' ) ) {
+	function wp_register_style( string $handle, $src = '', array $deps = [], $ver = false, string $media = 'all' ): bool {
+		global $wp_styles_registered;
+		$wp_styles_registered[ $handle ] = compact( 'handle', 'src', 'deps', 'ver', 'media' );
+		return true;
 	}
 }
 

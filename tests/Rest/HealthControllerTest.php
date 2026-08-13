@@ -4,6 +4,9 @@ namespace Saltus\WP\Framework\Tests\Rest;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
+use Saltus\WP\Framework\Models\ConfigError;
+use Saltus\WP\Framework\Models\ConfigValidationResult;
+use Saltus\WP\Framework\Models\ConfigValidationSummary;
 use Saltus\WP\Framework\Rest\HealthController;
 use WP_Error;
 
@@ -176,6 +179,121 @@ class HealthControllerTest extends TestCase {
 		$this->assertSame( [ 'book' ], $data['webmcp']['models']['frontend'] );
 		$this->assertSame( [ 'book', 'note' ], $data['webmcp']['models']['admin'] );
 		$this->assertSame( 2, $data['webmcp']['enabled_count'] );
+	}
+
+	public function testConfigStatsReportsUnavailableWithoutModeler(): void {
+		$logger = $this->createStub( AuditLogger::class );
+		$logger->method( 'get_recent_entries' )->willReturn( [] );
+
+		$controller = new HealthController( '2.0.0', $logger, null, null );
+		$data       = $controller->get_item( null )->get_data();
+
+		$this->assertFalse( $data['config']['available'] );
+		$this->assertNull( $data['config']['valid'] );
+	}
+
+	public function testConfigStatsReportsValidConfigsWithNoErrors(): void {
+		$summary = ( new ConfigValidationSummary() )
+			->with( new ConfigValidationResult( 'book', [] ) )
+			->with( new ConfigValidationResult( 'author', [] ) )
+			->with( new ConfigValidationResult( 'movie', [] ) );
+
+		$data = $this->config_payload( $summary );
+
+		$this->assertTrue( $data['available'] );
+		$this->assertTrue( $data['valid'] );
+		$this->assertSame( 3, $data['total'] );
+		$this->assertSame( 3, $data['valid_count'] );
+		$this->assertSame( 0, $data['error_count'] );
+		$this->assertSame( 0, $data['warning_count'] );
+	}
+
+	public function testConfigStatsReportsInvalidConfigsWithErrors(): void {
+		$summary = ( new ConfigValidationSummary() )
+			->with( new ConfigValidationResult( 'book', [ ConfigError::error( 'book', 'type', 'type.unknown', 'Unknown type' ) ] ) )
+			->with( new ConfigValidationResult( 'author', [ ConfigError::error( 'author', 'name', 'name.too_long', 'Name too long' ) ] ) )
+			->with( new ConfigValidationResult( 'movie', [] ) );
+
+		$data = $this->config_payload( $summary );
+
+		$this->assertTrue( $data['available'] );
+		$this->assertFalse( $data['valid'] );
+		$this->assertSame( 3, $data['total'] );
+		$this->assertSame( 1, $data['valid_count'] );
+		$this->assertSame( 2, $data['error_count'] );
+	}
+
+	/**
+	 * The three counts have to agree, or the payload contradicts itself.
+	 *
+	 * `error_count` counts failing *models*, not errors, so a model carrying three
+	 * problems is still one failure and `valid + error` still equals `total`.
+	 */
+	public function testConfigCountsRemainConsistentWhenOneModelHasManyErrors(): void {
+		$summary = ( new ConfigValidationSummary() )
+			->with(
+				new ConfigValidationResult(
+					'book',
+					[
+						ConfigError::error( 'book', 'type', 'type.unknown', 'Unknown type' ),
+						ConfigError::error( 'book', 'name', 'name.too_long', 'Name too long' ),
+						ConfigError::error( 'book', 'meta', 'meta.conflict', 'fields and sections' ),
+					]
+				)
+			)
+			->with( new ConfigValidationResult( 'movie', [] ) );
+
+		$data = $this->config_payload( $summary );
+
+		$this->assertSame( 2, $data['total'] );
+		$this->assertSame( 1, $data['valid_count'] );
+		$this->assertSame( 1, $data['error_count'] );
+		$this->assertSame( $data['total'], $data['valid_count'] + $data['error_count'] );
+	}
+
+	public function testConfigStatsReportsWarningsWithoutMarkingTheSiteInvalid(): void {
+		$summary = ( new ConfigValidationSummary() )
+			->with(
+				new ConfigValidationResult(
+					'book',
+					[ ConfigError::warning( 'book', 'taxonomies', 'unknown_key', 'No such key' ) ]
+				)
+			);
+
+		$data = $this->config_payload( $summary );
+
+		$this->assertTrue( $data['valid'], 'A warning must not mark the config invalid.' );
+		$this->assertSame( 1, $data['valid_count'] );
+		$this->assertSame( 0, $data['error_count'] );
+		$this->assertSame( 1, $data['warning_count'] );
+	}
+
+	/**
+	 * An empty summary is "loading ran and found nothing", which is a real answer.
+	 * A null one is "nothing has been validated", which is not — that reports as
+	 * unavailable, tested above.
+	 */
+	public function testConfigStatsReportsAnEmptySummaryAsAvailable(): void {
+		$data = $this->config_payload( new ConfigValidationSummary() );
+
+		$this->assertTrue( $data['available'] );
+		$this->assertTrue( $data['valid'] );
+		$this->assertSame( 0, $data['total'] );
+	}
+
+	/**
+	 * Build a controller around one summary and return just its config section.
+	 */
+	private function config_payload( ConfigValidationSummary $summary ): array {
+		$logger = $this->createStub( AuditLogger::class );
+		$logger->method( 'get_recent_entries' )->willReturn( [] );
+
+		$modeler = $this->createStub( \Saltus\WP\Framework\Modeler::class );
+		$modeler->method( 'get_config_validation' )->willReturn( $summary );
+
+		$controller = new HealthController( '2.0.0', $logger, null, $modeler );
+
+		return $controller->get_item( null )->get_data()['config'];
 	}
 
 	/**
