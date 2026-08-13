@@ -93,6 +93,13 @@ abstract class BaseModel {
 	 * @return boolean
 	 */
 	protected function is_disabled(): bool {
+		// An explicit false disables the model. This has to be checked before the
+		// empty() below, which would otherwise read false as "no value set" and
+		// register the model anyway.
+		if ( ( $this->data['active'] ?? null ) === false ) {
+			return true;
+		}
+
 		if ( empty( $this->data['active'] ) || $this->data['active'] === true ) {
 			return false;
 		}
