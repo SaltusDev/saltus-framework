@@ -56,6 +56,7 @@ class WpCliFeatureTest extends TestCase {
 			'saltus relationship',
 			'saltus context',
 			'saltus webmcp',
+			'saltus config',
 		], array_keys( $this->cli->commands ) );
 	}
 
@@ -195,6 +196,8 @@ final class TestCliGateway implements CliGateway {
 	public array $formats = [];
 	/** @var list<string> */
 	public array $messages = [];
+	/** Exit status, or null while the command is still considered successful. */
+	public ?int $halted = null;
 
 	public function add_command( string $name, $command_handler ): void {
 		$this->commands[ $name ] = $command_handler;
@@ -212,7 +215,44 @@ final class TestCliGateway implements CliGateway {
 		$this->messages[] = $message;
 	}
 
+	/**
+	 * Throws, mirroring the real gateway's exit.
+	 *
+	 * `WP_CLI::error()` terminates the process, so a command must not carry on
+	 * afterwards. Throwing is how that non-return shows up in a test.
+	 */
 	public function error( string $message ): void {
+		$this->messages[] = $message;
 		throw new \RuntimeException( $message );
+	}
+
+	public function warning( string $message ): void {
+		$this->messages[] = $message;
+	}
+
+	public function halt( int $code ): void {
+		$this->halted = $code;
+	}
+
+	/** Everything written, in order, as one string. */
+	public function output(): string {
+		return implode( "\n", $this->messages );
+	}
+
+	/**
+	 * The status the command would exit with.
+	 *
+	 * Zero unless something halted, so a test can assert success without the
+	 * gateway having to model a process exit.
+	 */
+	public function exit_code(): int {
+		return $this->halted ?? 0;
+	}
+
+	/** The format passed to the most recent `format_items()` call. */
+	public function last_format(): ?string {
+		$last = end( $this->formats );
+
+		return is_array( $last ) ? (string) $last['format'] : null;
 	}
 }
