@@ -12,6 +12,7 @@ use Saltus\WP\Framework\MCP\Tools\SyncRelated;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\Modeler;
+use Saltus\WP\Framework\Models\Config\ConfigValidationContributor;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RelationshipsController;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
@@ -26,7 +27,7 @@ use Saltus\WP\Framework\Rest\RestRouteProvider;
  *
  * @api
  */
-final class Relationships implements Service, Registerable, RestRouteProvider, ToolContributor {
+final class Relationships implements Service, Registerable, RestRouteProvider, ToolContributor, ConfigValidationContributor {
 
 	/** @var callable */
 	private $modeler_resolver;
@@ -42,6 +43,9 @@ final class Relationships implements Service, Registerable, RestRouteProvider, T
 	private ?RelationshipColumn $column = null;
 
 	private ?RelationshipBulkActions $bulk_actions = null;
+
+	/** Built on first use; config rules are only needed when a config is validated. */
+	private ?RelationshipConfigRules $config_rules = null;
 
 	/**
 	 * @param array<string, mixed>     $dependencies Framework dependencies.
@@ -414,5 +418,39 @@ final class Relationships implements Service, Registerable, RestRouteProvider, T
 			new DetachRelated(),
 			new SyncRelated(),
 		];
+	}
+
+	// --- ConfigValidationContributor ---
+	//
+	// Delegated to `RelationshipConfigRules` rather than implemented here. The rules
+	// must run with no WordPress present, for `wp saltus config validate` and CI,
+	// while this service exists to wire up hooks, a store, and REST routes. Keeping
+	// them apart means the rules stay testable without booting any of that.
+
+	public function get_config_section(): string {
+		return $this->config_rules()->get_config_section();
+	}
+
+	/**
+	 * @param mixed $value Raw `relationships` value.
+	 * @return list<\Saltus\WP\Framework\Models\ConfigError>
+	 */
+	public function validate_config_section( $value, string $model_name ): array {
+		return $this->config_rules()->validate_config_section( $value, $model_name );
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	public function get_config_schema(): array {
+		return $this->config_rules()->get_config_schema();
+	}
+
+	private function config_rules(): RelationshipConfigRules {
+		if ( ! $this->config_rules instanceof RelationshipConfigRules ) {
+			$this->config_rules = new RelationshipConfigRules();
+		}
+
+		return $this->config_rules;
 	}
 }
