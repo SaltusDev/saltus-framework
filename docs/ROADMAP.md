@@ -4,7 +4,7 @@
 - Version: `package.json` bumped to 1.8.4 (2026-08-10); all 1.8.x work currently sits under `CHANGELOG.md`'s `[Unreleased]` heading with no `[1.8.x]` release sections cut; relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
-- Phases 11–14 scoped 2026-08-11: Security & Compliance, Developer Experience, Enhanced UX, Observability. **Phase 11 delivered 2026-08-11** (field-level permissions across all four surfaces, per-field encryption, GDPR export/erase, distinct denial auditing). Phase 13 is 11 of 12 items. Phases 12 and 14 not started. There is no Phase 9 — see [Phase Numbering](#phase-numbering).
+- Phases 11–14 scoped 2026-08-11: Security & Compliance, Developer Experience, Enhanced UX, Observability. **Phase 11 delivered 2026-08-11** (field-level permissions across all four surfaces, per-field encryption, GDPR export/erase, distinct denial auditing). **Phase 12 delivered 2026-08-11** (config-time validation with schema derivation, health integration, CLI command, generated reference docs). Phase 13 is 11 of 12 items. Phase 14 not started. There is no Phase 9 — see [Phase Numbering](#phase-numbering).
 - Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 25 tools
@@ -914,18 +914,18 @@ fields:
 
 | Item | Status |
 |------|--------|
-| `ConfigValidator` — validates a model config against a schema derived from the feature services that consume each section | [ ] |
-| Structured `ConfigError` value objects carrying file, key path, found value, and accepted values | [ ] |
-| Error/warning severity split: warnings log and continue, errors refuse to register the model | [ ] |
-| `wp saltus config validate [--model=<name>] [--strict]` for CI, exiting non-zero on error | [ ] |
-| Validation verdict cached per config file, invalidated on file mtime change | [ ] |
-| Unknown-key detection with a nearest-match suggestion (`has_meny` → `has_many`) | [ ] |
-| Deprecated-key warnings for `features.draganddrop` vs `features.drag_and_drop` and the other known drift pairs | [ ] |
-| Health endpoint reports config validity per model, so a broken config is visible without CLI access | [ ] |
-| Generated config reference at `docs/guides/config-reference.md`, refreshed by `composer docs:all` | [ ] |
-| PHPUnit coverage per config section, including one fixture per known-bad shape | [ ] |
+| `ConfigValidator` — validates a model config against a schema derived from the feature services that consume each section | ✓ Done 2026-08-11 |
+| Structured `ConfigError` value objects carrying file, key path, found value, and accepted values | ✓ Done 2026-08-11 |
+| Error/warning severity split: warnings log and continue, errors refuse to register the model | ✓ Done 2026-08-11 |
+| `wp saltus config validate [--model=<name>] [--strict]` for CI, exiting non-zero on error | ✓ Done 2026-08-11 |
+| Validation verdict cached per config file, invalidated on file mtime change | ✓ Done 2026-08-11 |
+| Unknown-key detection with a nearest-match suggestion (`has_meny` → `has_many`) | ✓ Done 2026-08-11 |
+| Deprecated-key warnings for `features.draganddrop` vs `features.drag_and_drop` and the other known drift pairs | ✓ Done 2026-08-11 |
+| Health endpoint reports config validity per model, so a broken config is visible without CLI access | ✓ Done 2026-08-11 |
+| Generated config reference at `docs/api/config-reference.md`, refreshed by `composer docs:all` | ✓ Done 2026-08-11 |
+| PHPUnit coverage per config section, including one fixture per known-bad shape | ✓ Done 2026-08-11 |
 
-**Exit criteria:** A malformed model config produces an error naming the file, key path, and accepted values, at registration time and via `wp saltus config validate`. A config with only unknown-but-harmless keys warns and still registers. Health reports per-model config validity. The config reference is generated, not authored.
+**Exit criteria:** A malformed model config produces an error naming the file, key path, and accepted values, at registration time and via `wp saltus config validate`. A config with only unknown-but-harmless keys warns and still registers. Health reports per-model config validity. The config reference is generated, not authored. ✓ Done 2026-08-11
 
 **Non-goals:** a GraphQL surface (the RFC listed it; REST + MCP + WP-CLI + WebMCP is already four surfaces to keep in parity, and nothing has asked for a fifth), an IDE plugin, config scaffolding or generators, and a migration system without a migration to run. `has_meny` suggestions are worth building; a fifth transport is not.
 
@@ -1032,5 +1032,58 @@ fields:
 **Exit criteria:** An operator can see per-tool call volume, error rate, and latency over a chosen window from wp-admin and from `wp saltus metrics`, without a full table scan. A missing or broken audit table reports as unavailable rather than healthy. Aggregates survive retention pruning. Nothing leaves the site unless a filter is wired to send it.
 
 **Non-goals:** APM-grade tracing, a bundled third-party error-tracking SDK, request-level profiling of non-Saltus code, alerting or notification delivery (the hand-off filter is the integration point; a site's existing alerting owns the rest), and multisite network-wide aggregation.
+
+---
+
+## Phase 15 — v1.8.5 Review [✗] (0/5)
+
+@priority medium @owner OmensUI
+
+Code review findings from the v1.8.5 cycle. Each finding is an open task to fix in a later cycle.
+
+### 15.1 [medium] Derive known top-level keys from the keys actually read, not every service id
+
+> src/Models/Config/SchemaBuilder.php:278 — `known_top_level_keys()` takes `array_keys( Core::get_service_classes() )`; docs/api/config-reference.md:133 documents the result
+
+All 19 service ids are treated as valid top-level model config keys, but 12 are only meaningful under `features:` (`admin_cols`, `admin_filters`, `ai_assistant`, `draganddrop`, `duplicate`, `editorial_review`, `mcp`, `privacy`, `quick_edit`, `remember_tabs`, `single_export`) and `wp_cli` is not a model-config key at all — nothing reads them at depth 0. The unknown-key warning (and the generated reference) now silently accepts genuinely inert keys.
+
+- [ ] Restrict the derived set to service ids actually read at the top level (`frontend`, `meta`, `settings`, `blocks`, `webmcp`, `ai_context`, `relationships`), or keep an explicit top-level allowlist alongside the derivation
+- [ ] Add a regression test asserting `wp_cli` and at least one `features`-only id (e.g. `admin_cols`) are NOT in `known_top_level_keys`
+- [ ] Regenerate `docs/api/config-reference.md` (`composer docs:config`) so the published key list matches
+
+### 15.2 [medium] Roadmap marks `--model` and `--strict` for `wp saltus config validate` as done; the command implements neither
+
+> docs/ROADMAP.md:106 (✓ Done 2026-08-11) vs src/Features/WpCli/Commands/ConfigCommand.php:34 — only `--format` is implemented
+
+The Phase 12 roadmap item promises `wp saltus config validate [--model=<name>] [--strict]`. The implemented command has no `--model` filter and no `--strict` mode, so warnings can never fail CI — the advertised CI use case is absent.
+
+- [ ] Add `--model=<name>` to narrow the summary/errors to one model, or update the roadmap item to the implemented scope
+- [ ] Add `--strict` so warnings exit non-zero, and document it in the command docblock
+- [ ] Cover both flags in `ConfigCommandTest`
+
+### 15.3 [medium] `Core::get_service_classes()` changed from protected instance to public static and is invoked via `self::`
+
+> src/Core.php:351 and src/Core.php:421 — `$services = self::get_service_classes();` where the method was `$this->get_service_classes()`
+
+This is a framework API change shipped in a patch release. A consumer subclass that overrode the former `protected` method now either fatals (non-static override of a static method) or is silently bypassed: `self::` never dispatches to an override, so a subclass's customised service list would no longer be used and its services would silently vanish.
+
+- [ ] Call `static::get_service_classes()` so compatible static overrides are honoured, or keep an instance method and add a static bridge for the schema derivation
+- [ ] Note the signature change in the changelog and release notes for 1.8.5
+
+### 15.4 [low] `SuggestsNearestKey` trait duplicates `ConfigValidator::nearest()`
+
+> src/Models/Config/ConfigValidator.php:634 — private `nearest()` with `SUGGESTION_MAX_DISTANCE` alongside the new trait in src/Models/Config/SuggestsNearestKey.php
+
+The trait's docblock says it exists so `ConfigValidator` and every contributor agree on one distance threshold, but `ConfigValidator` kept its own private copy — two implementations of the same logic that can drift.
+
+- [ ] Make `ConfigValidator` use the `SuggestsNearestKey` trait and delete the private `nearest()` method and `SUGGESTION_MAX_DISTANCE` constant
+
+### 15.5 [low] `--format=csv` advertised by `wp saltus config validate` but silently coerced to table
+
+> src/Features/WpCli/Commands/ConfigCommand.php:17-24 (docblock options include `csv`) vs src/Features/WpCli/Commands/AbstractCommand.php:28 (`format()` accepts only table/json/yaml)
+
+WP-CLI accepts `--format=csv` (it is in the declared options list), then `AbstractCommand::format()` falls back to `table`, so a caller asking for CSV gets a table with no error.
+
+- [ ] Add `csv` to the accepted formats in `AbstractCommand::format()`, or drop `csv` from the ConfigCommand docblock options
 
 ---
