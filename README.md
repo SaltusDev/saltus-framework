@@ -349,6 +349,18 @@ composer docs:mcp
 
 This refreshes `docs/mcp/abilities.md` and the generated ability-count block in `docs/mcp/index.md`.
 
+### Generated config reference
+
+Every key a model config may declare is documented in `docs/api/config-reference.md`, generated
+from `SchemaBuilder` — the same schema the config validator consumes, so the reference cannot
+describe a rule the framework does not enforce:
+
+```bash
+composer docs:config
+```
+
+Validate your own configs against it with `wp saltus config validate`.
+
 ## Building
 
 ### Quality checks

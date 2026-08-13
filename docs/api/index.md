@@ -29,12 +29,19 @@ The API reference is generated from PHPDoc annotations using phpDocumentor. It c
 The full generated class reference — every class, interface, method, and property — is at
 [/api/reference/](/api/reference/).
 
+## Configuration Reference
+
+[Config Reference](/api/config-reference) documents every key a model config may declare,
+generated from `SchemaBuilder` — the same schema the config validator consumes.
+
 ## Generating the API Docs
 
 ```bash
-composer docs:api
+composer docs:api      # phpDocumentor class reference
+composer docs:config   # model config reference
+composer docs:all      # every generator, including the two above
 ```
 
-This writes phpDocumentor's HTML to `build/docs/api/`, which the site build stages into
+`docs:api` writes phpDocumentor's HTML to `build/docs/api/`, which the site build stages into
 `/api/reference/`. It requires phpDocumentor to be installed. See the
 [Build Guide](/guides/build) for setup instructions.

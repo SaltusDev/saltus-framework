@@ -127,6 +127,15 @@ export default defineConfig({
           ],
         },
       ],
+      '/api/': [
+        {
+          text: 'API Reference',
+          items: [
+            { text: 'Overview', link: '/api/index' },
+            { text: 'Config Reference', link: '/api/config-reference' },
+          ],
+        },
+      ],
       '/PROJECT': PROJECT_SIDEBAR,
       '/CONTEXT': PROJECT_SIDEBAR,
       '/ROADMAP': PROJECT_SIDEBAR,

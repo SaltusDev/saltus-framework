@@ -46,6 +46,12 @@ composer docs:mcp
 # Generate WP-CLI command docs from CommandCatalog
 composer docs:wpcli
 
+# Generate the WebMCP tool table from src/WebMcp/Tools
+composer docs:webmcp
+
+# Generate the model config reference from SchemaBuilder
+composer docs:config
+
 # Build API docs (requires phpDocumentor)
 composer docs:api
 
@@ -56,7 +62,7 @@ composer docs:all
 npm run docs:build
 ```
 
-Two published pages are generated and must not be hand-edited: `docs/mcp/abilities.md` and `docs/guides/wp-cli.md`. `composer docs:mcp` also refreshes the ability-count block inside `docs/mcp/index.md`, and `composer docs:webmcp` the tool table inside `docs/guides/webmcp.md`. Re-run `composer docs:all` whenever a tool or command is added, renamed, or has its schema changed — CI fails the docs build if the generated output differs from what is committed.
+Three published pages are generated and must not be hand-edited: `docs/mcp/abilities.md`, `docs/guides/wp-cli.md`, and `docs/api/config-reference.md`. `composer docs:mcp` also refreshes the ability-count block inside `docs/mcp/index.md`, and `composer docs:webmcp` the tool table inside `docs/guides/webmcp.md`. Re-run `composer docs:all` whenever a tool, command, or config key is added, renamed, or has its schema changed — CI fails the docs build if the generated output differs from what is committed.
 
 ## Documentation Layout
 
