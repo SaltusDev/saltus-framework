@@ -3,7 +3,6 @@
 namespace Saltus\WP\Framework\Models\Config;
 
 use Noodlehaus\AbstractConfig;
-use Saltus\WP\Framework\Features\Relationships\RelationshipDefinition;
 use Saltus\WP\Framework\Models\ConfigError;
 use Saltus\WP\Framework\Models\ConfigValidationResult;
 
@@ -38,8 +37,88 @@ final class ConfigValidator {
 	/** @var array<string, mixed>|null */
 	private ?array $schema = null;
 
-	public function __construct( ?SchemaBuilder $schema_builder = null ) {
+	/**
+	 * Features owning their own section's rules, keyed by section.
+	 *
+	 * @var array<string, ConfigValidationContributor>
+	 */
+	private array $contributors = [];
+
+	/**
+	 * Sections whose rules live in a feature but must be checked regardless.
+	 *
+	 * A contributor arrives from `Core`'s registry at runtime, but the validator is
+	 * also built directly — by `wp saltus config validate` and by tests — and a
+	 * section with no contributor is not checked at all. Silently skipping is the
+	 * worst outcome: an invalid config reports valid. So the framework's own rule
+	 * classes are the default, and a contributor from the registry replaces its
+	 * matching default rather than adding beside it.
+	 *
+	 * @return list<ConfigValidationContributor>
+	 */
+	private static function default_contributors(): array {
+		return [
+			new \Saltus\WP\Framework\Features\Relationships\RelationshipConfigRules(),
+		];
+	}
+
+	/**
+	 * @param list<ConfigValidationContributor> $contributors Features owning a section.
+	 */
+	public function __construct( ?SchemaBuilder $schema_builder = null, array $contributors = [] ) {
 		$this->schema_builder = $schema_builder ?? new SchemaBuilder();
+
+		// Registered contributors first, so a feature's own instance wins and the
+		// default for that section is skipped as already-claimed.
+		foreach ( $contributors as $contributor ) {
+			$this->add_contributor( $contributor );
+		}
+
+		foreach ( self::default_contributors() as $default ) {
+			if ( ! $this->owns( $default->get_config_section() ) ) {
+				$this->add_contributor( $default );
+			}
+		}
+	}
+
+	/**
+	 * Register a contributor for its declared section.
+	 *
+	 * Two features claiming one section is a programming error, and the last-wins
+	 * default would hide it: the losing feature's rules would simply stop running
+	 * and every config would still pass. Throwing makes the collision visible at
+	 * boot, where it is one line to fix.
+	 *
+	 * @throws \LogicException If a second contributor claims an occupied section.
+	 */
+	public function add_contributor( ConfigValidationContributor $contributor ): void {
+		$section = $contributor->get_config_section();
+
+		if ( isset( $this->contributors[ $section ] ) ) {
+			$message = sprintf(
+				'Config section "%s" is already validated by %s; %s cannot claim it too.',
+				$section,
+				get_class( $this->contributors[ $section ] ),
+				get_class( $contributor )
+			);
+
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Section and class names are code identifiers; this is a boot-time programming error and never reaches a response.
+			throw new \LogicException( $message );
+		}
+
+		$this->contributors[ $section ] = $contributor;
+
+		// The merged schema is stale once the contributor set changes.
+		$this->schema = null;
+	}
+
+	/**
+	 * Sections currently owned by a contributor.
+	 *
+	 * @return list<string>
+	 */
+	public function get_contributed_sections(): array {
+		return array_keys( $this->contributors );
 	}
 
 	/**
@@ -52,18 +131,54 @@ final class ConfigValidator {
 		$data = $config instanceof AbstractConfig ? $config->all() : $config;
 		$name = $model_name !== '' ? $model_name : $this->resolve_name( $data );
 
+		// A section has exactly one owner. Where a contributor claims one, the
+		// built-in check stands down: running both would double-report every problem,
+		// and the built-in reads its rules from a schema fragment the contributor has
+		// replaced, so it would be validating against a shape that no longer exists.
 		$problems = array_merge(
 			$this->check_type( $data, $name ),
 			$this->check_name( $data, $name ),
 			$this->check_active( $data, $name ),
 			$this->check_unknown_top_level_keys( $data, $name ),
-			$this->check_relationships( $data, $name ),
 			$this->check_features( $data, $name ),
-			$this->check_meta( $data, $name ),
-			$this->check_associations( $data, $name )
+			$this->owns( 'meta' ) ? [] : $this->check_meta( $data, $name ),
+			$this->owns( 'associations' ) ? [] : $this->check_associations( $data, $name ),
+			$this->check_contributed_sections( $data, $name )
 		);
 
 		return new ConfigValidationResult( $name, $problems );
+	}
+
+	/** Whether a contributor has taken over this section. */
+	private function owns( string $section ): bool {
+		return isset( $this->contributors[ $section ] );
+	}
+
+	/**
+	 * Hand each declared section to the feature that owns it.
+	 *
+	 * A section absent from the config is not offered to its contributor: not
+	 * declaring `relationships` is not a relationships problem, and a contributor
+	 * asked about a key nobody wrote would have to distinguish "absent" from
+	 * "empty" on every call.
+	 *
+	 * @param array<string|int, mixed> $data
+	 * @return list<ConfigError>
+	 */
+	private function check_contributed_sections( array $data, string $model_name ): array {
+		$problems = [];
+
+		foreach ( $this->contributors as $section => $contributor ) {
+			if ( ! array_key_exists( $section, $data ) ) {
+				continue;
+			}
+
+			foreach ( $contributor->validate_config_section( $data[ $section ], $model_name ) as $problem ) {
+				$problems[] = $problem;
+			}
+		}
+
+		return $problems;
 	}
 
 	/**
@@ -221,96 +336,7 @@ final class ConfigValidator {
 		return $problems;
 	}
 
-	/**
-	 * Each relationship needs a recognized cardinality and a target model.
-	 *
-	 * An unrecognized cardinality is an error: `RelationshipRegistry` skips the
-	 * declaration entirely, so the relationship silently does not exist.
-	 *
-	 * @param array<string|int, mixed> $data
-	 * @return list<ConfigError>
-	 */
-	private function check_relationships( array $data, string $model_name ): array {
-		$section = $data['relationships'] ?? null;
-		if ( ! is_array( $section ) ) {
-			return [];
-		}
 
-		$accepted = $this->schema()['relationships']['cardinalities'];
-		$problems = [];
-
-		foreach ( $section as $relationship => $declaration ) {
-			$path = 'relationships.' . (string) $relationship;
-
-			if ( ! is_array( $declaration ) ) {
-				$problems[] = ConfigError::error(
-					$model_name,
-					$path,
-					'relationship_not_an_object',
-					'A relationship must be declared as a set of keys, including "type" and "model".',
-					$declaration
-				);
-				continue;
-			}
-
-			$problems = array_merge( $problems, $this->check_relationship( $declaration, $path, $model_name, $accepted ) );
-		}
-
-		return $problems;
-	}
-
-	/**
-	 * @param array<string|int, mixed> $declaration
-	 * @param list<string>             $accepted
-	 * @return list<ConfigError>
-	 */
-	private function check_relationship( array $declaration, string $path, string $model_name, array $accepted ): array {
-		$problems = [];
-
-		// `cardinality` is a plausible-looking name for this key and appears in some
-		// older notes, but the code reads `type`. Worth saying explicitly, since the
-		// symptom is a relationship that simply is not there.
-		if ( ! array_key_exists( 'type', $declaration ) && array_key_exists( 'cardinality', $declaration ) ) {
-			$problems[] = ConfigError::error(
-				$model_name,
-				$path . '.cardinality',
-				'relationship_cardinality_key',
-				'The cardinality key is named "type". Nothing reads "cardinality".',
-				$declaration['cardinality'],
-				$accepted,
-				'type'
-			);
-		}
-
-		if ( array_key_exists( 'type', $declaration ) ) {
-			$type = $declaration['type'];
-
-			if ( ! is_string( $type ) || ! RelationshipDefinition::is_valid_type( $type ) ) {
-				$found = is_scalar( $type ) ? (string) $type : gettype( $type );
-
-				$problems[] = ConfigError::error(
-					$model_name,
-					$path . '.type',
-					'relationship_type_unrecognized',
-					sprintf( '"%s" is not a relationship type, so this relationship will not exist.', $found ),
-					$type,
-					$accepted,
-					$this->nearest( $found, $accepted )
-				);
-			}
-		}
-
-		if ( ! array_key_exists( 'model', $declaration ) ) {
-			$problems[] = ConfigError::error(
-				$model_name,
-				$path . '.model',
-				'relationship_model_missing',
-				'No target "model" declared, so there is nothing to relate to.'
-			);
-		}
-
-		return $problems;
-	}
 
 	/**
 	 * The `drag_and_drop` / `draganddrop` pair.
@@ -648,11 +674,23 @@ final class ConfigValidator {
 	}
 
 	/**
+	 * The schema, with each contributor's fragment merged under its own section.
+	 *
+	 * A contributor's fragment wins for its own section: the feature that owns the
+	 * rules is the authority on them, and a stale copy left behind in `SchemaBuilder`
+	 * must not shadow it.
+	 *
 	 * @return array<string, mixed>
 	 */
 	private function schema(): array {
 		if ( $this->schema === null ) {
-			$this->schema = $this->schema_builder->build();
+			$schema = $this->schema_builder->build();
+
+			foreach ( $this->contributors as $section => $contributor ) {
+				$schema[ $section ] = $contributor->get_config_schema();
+			}
+
+			$this->schema = $schema;
 		}
 
 		return $this->schema;

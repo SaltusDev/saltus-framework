@@ -2,6 +2,7 @@
 
 namespace Saltus\WP\Framework\Models\Config;
 
+use Saltus\WP\Framework\Core;
 use Saltus\WP\Framework\Features\Meta\CodestarMeta;
 use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Relationships\RelationshipDefinition;
@@ -252,51 +253,57 @@ final class SchemaBuilder {
 	}
 
 	/**
-	 * All recognized top-level keys, for nearest-match suggestions.
+	 * Every top-level key a model config may declare.
+	 *
+	 * Three sources, combined rather than transcribed:
+	 *
+	 * - Every service id in `Core::get_service_classes()`. A service id *is* a
+	 *   valid top-level key — `ModelFactory` dispatches `frontend`, `meta`, and
+	 *   `settings` from it directly, and the rest are read by the features
+	 *   themselves. Deriving means registering a new feature cannot leave this
+	 *   list behind.
+	 * - Keys the model classes read directly.
+	 * - `register_post_type()` / `register_taxonomy()` arguments, which pass
+	 *   through to WordPress.
+	 *
+	 * The first draft of this list was hand-written and omitted `options`,
+	 * `settings`, `frontend`, `blocks`, and `admin_cols` — all real, all actively
+	 * read — so every normal config emitted spurious "nothing reads this key"
+	 * warnings. Under WP-CLI those notices print to stdout and corrupt
+	 * `--format=json` output, which is how a cosmetic mistake became a broken CLI.
 	 *
 	 * @return list<string>
 	 */
 	private function known_top_level_keys(): array {
-		return [
+		$service_keys = array_keys( Core::get_service_classes() );
+
+		// Read directly by BaseModel / PostType / Taxonomy rather than dispatched.
+		$model_keys = [
 			'type',
 			'name',
 			'active',
-			'slug',
-			'labels',
-			'description',
-			'meta',
-			'relationships',
-			'features',
-			'webmcp',
-			'ai_context',
+			'options',
+			'supports',
 			'associations',
 			'supported_post_types',
 			'block_editor',
-			'hierarchical',
-			'public',
-			'publicly_queryable',
-			'show_ui',
-			'show_in_menu',
-			'show_in_nav_menus',
-			'show_in_rest',
-			'rest_base',
-			'rest_namespace',
-			'menu_position',
-			'menu_icon',
-			'capability_type',
-			'capabilities',
-			'map_meta_cap',
-			'supports',
-			'register_meta_box_cb',
-			'has_archive',
-			'rewrite',
-			'query_var',
-			'can_export',
-			'delete_with_user',
-			'show_in_quick_edit',
-			'show_admin_column',
-			'sort',
+			'labels',
+			'slug',
+			'description',
+			'features',
 		];
+
+		// Deliberately no list of register_post_type() arguments here. They are not
+		// top-level keys: BaseModel::set_options() reads them from `options` only, so
+		// a top-level `public:` or `has_archive:` really is inert and should warn.
+		// `taxonomies` is the case worth naming — it looks like a WordPress argument
+		// and is not read anywhere; a taxonomy declares its own post types via
+		// `associations`.
+
+		$all = array_merge( $service_keys, $model_keys );
+		sort( $all );
+
+		return array_values( array_unique( $all ) );
 	}
 
 	/**
