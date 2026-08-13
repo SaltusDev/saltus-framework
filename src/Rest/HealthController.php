@@ -21,11 +21,13 @@ class HealthController extends WP_REST_Controller {
 	private string $version;
 	private AuditLogger $audit_logger;
 	private ?WebMcpPolicy $webmcp;
+	private ?\Saltus\WP\Framework\Modeler $modeler;
 
-	public function __construct( string $version, ?AuditLogger $audit_logger = null, ?WebMcpPolicy $webmcp = null ) {
+	public function __construct( string $version, ?AuditLogger $audit_logger = null, ?WebMcpPolicy $webmcp = null, ?\Saltus\WP\Framework\Modeler $modeler = null ) {
 		$this->version      = $version;
 		$this->audit_logger = $audit_logger ?? new AuditLogger();
 		$this->webmcp       = $webmcp;
+		$this->modeler      = $modeler;
 		$this->namespace    = MCPConfig::get_namespace();
 		$this->rest_base    = 'health';
 	}
@@ -99,6 +101,7 @@ class HealthController extends WP_REST_Controller {
 				'cache'        => [
 					'enabled' => (bool) $this->filter( 'saltus/framework/mcp/cache/enabled', true ),
 				],
+				'config'       => $this->config_stats(),
 			]
 		);
 	}
@@ -233,5 +236,36 @@ class HealthController extends WP_REST_Controller {
 		$rank = max( 1, min( $rank, count( $values ) ) );
 
 		return $values[ $rank - 1 ];
+	}
+
+	/**
+	 * Report config validation status.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function config_stats(): array {
+		if ( ! $this->modeler instanceof \Saltus\WP\Framework\Modeler ) {
+			return [
+				'available' => false,
+				'valid'     => null,
+			];
+		}
+
+		$summary = $this->modeler->get_config_validation();
+		if ( $summary === null ) {
+			return [
+				'available' => false,
+				'valid'     => null,
+			];
+		}
+
+		return [
+			'available'     => true,
+			'valid'         => $summary->is_valid(),
+			'total'         => $summary->total_count(),
+			'valid_count'   => $summary->valid_count(),
+			'error_count'   => $summary->error_count(),
+			'warning_count' => $summary->warning_count(),
+		];
 	}
 }
