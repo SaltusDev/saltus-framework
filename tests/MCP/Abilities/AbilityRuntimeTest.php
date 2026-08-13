@@ -36,6 +36,22 @@ class AbilityRuntimeTest extends TestCase {
 		$wpdb->queries = [];
 	}
 
+	/**
+	 * Clear the response override on the way out, not just on the way in.
+	 *
+	 * One test here installs a canned `WP_REST_Response` that the stubbed
+	 * `rest_do_request()` returns for every dispatch. Resetting only in `setUp`
+	 * protects this class while leaving the override in place for whichever class
+	 * runs next — `FieldQueryGuardTest` then saw this class's response instead of
+	 * its own, and failed on seed 1786550479.
+	 */
+	protected function tearDown(): void {
+		global $wp_rest_response_override, $wp_transients, $wp_rest_request_log;
+		$wp_rest_response_override = null;
+		$wp_transients             = [];
+		$wp_rest_request_log       = [];
+	}
+
 	public function testExecuteCallsRestDoRequestOnValidTool(): void {
 		global $wp_rest_request_log;
 

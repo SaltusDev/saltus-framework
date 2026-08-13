@@ -17,17 +17,35 @@ require_once dirname( __DIR__ ) . '/Rest/functions.php';
 class FieldQueryGuardTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_current_user_can, $wp_rest_request_log, $wp_posts;
-		$wp_current_user_can = true;
-		$wp_rest_request_log = [];
-		$wp_posts            = [];
+		$this->reset();
 	}
 
 	protected function tearDown(): void {
-		global $wp_current_user_can, $wp_rest_request_log, $wp_posts;
+		$this->reset();
+	}
+
+	/**
+	 * Reset in both hooks, not just setUp.
+	 *
+	 * `$wp_transients` matters here even though nothing in this class writes one:
+	 * `AbilityRuntime::execute()` rate-limits through transients, so requests left
+	 * behind by an earlier class count against this class's sliding window and the
+	 * two "must be allowed" tests come back `rate_limited` instead. Reproducible on
+	 * seed 1786550479. Clearing only in setUp protects this class but still leaks
+	 * into the next one.
+	 */
+	private function reset(): void {
+		global $wp_current_user_can, $wp_rest_request_log, $wp_posts, $wp_transients, $wp_rest_response_override;
 		$wp_current_user_can = true;
 		$wp_rest_request_log = [];
 		$wp_posts            = [];
+		$wp_transients       = [];
+		// The stubbed `rest_do_request()` returns this whenever it is set, so an
+		// override left behind by another class makes every dispatch here reply with
+		// that class's canned response. `AbilityRuntimeTest` sets one and had no
+		// tearDown, which is what failed the two "must be allowed" tests on seed
+		// 1786550479.
+		$wp_rest_response_override = null;
 	}
 
 	private function modeler(): Modeler {
