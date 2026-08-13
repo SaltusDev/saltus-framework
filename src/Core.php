@@ -43,6 +43,7 @@ use Saltus\WP\Framework\Features\Relationships\Relationships;
 use Saltus\WP\Framework\Features\WebMcp\WebMcp;
 use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
 use Saltus\WP\Framework\MCP\Tools\ToolContributor;
+use Saltus\WP\Framework\Models\Config\ConfigValidationContributor;
 use Saltus\WP\Framework\Rest\HealthController;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
 use Saltus\WP\Framework\Rest\RestRouteDefinition;
@@ -108,6 +109,18 @@ class Core implements Plugin {
 	 */
 	protected array $tool_contributors = [];
 
+	/**
+	 * Dedicated registry of ConfigValidationContributor services.
+	 *
+	 * Populated before the is_needed() gate for a reason specific to validation:
+	 * config is validated during `init`, before most features decide they are
+	 * needed, and a section whose contributor was gated out would silently stop
+	 * being checked. Unvalidated is worse than absent — it looks like a pass.
+	 *
+	 * @var list<ConfigValidationContributor>
+	 */
+	protected array $config_contributors = [];
+
 	public function __construct( string $project_path, ?string $plugin_file = null ) {
 
 		//TODO by pcarvalho: move to project class
@@ -154,8 +167,21 @@ class Core implements Plugin {
 		// 2- Create a Model Factory with services container
 		$model_factory = new ModelFactory( $this->service_container, $this->project );
 
-		// 3- Create a "store" with a factory
-		$this->modeler = new Modeler( $model_factory );
+		// 3- Create a "store" with a factory, wiring the CLI gateway when available
+		$cli_gateway = null;
+		if ( $this->service_container->has( 'wp_cli' ) ) {
+			$cli_service = $this->service_container->get( 'wp_cli' );
+			$cli_gateway = ( $cli_service instanceof \Saltus\WP\Framework\Features\WpCli\WpCli )
+				? $cli_service->get_gateway()
+				: null;
+		}
+		$this->modeler = new Modeler(
+			$model_factory,
+			$cli_gateway,
+			function (): array {
+				return $this->config_contributors;
+			}
+		);
 		$project_path  = $this->project['path'];
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound
 		$priority = (int) apply_filters( self::HOOK_PREFIX . 'modeler/priority', 1 );
@@ -190,7 +216,7 @@ class Core implements Plugin {
 		$routes = [
 			new RestRouteDefinition(
 				ModelRestPolicy::CAPABILITY_HEALTH,
-				new HealthController( self::VERSION, null, new WebMcpPolicy( $this->modeler ) )
+				new HealthController( self::VERSION, null, new WebMcpPolicy( $this->modeler ), $this->modeler )
 			),
 		];
 
@@ -237,6 +263,33 @@ class Core implements Plugin {
 		if ( $instance instanceof ToolContributor ) {
 			$this->tool_contributors[] = $instance;
 		}
+	}
+
+	/**
+	 * If the given service class implements ConfigValidationContributor,
+	 * instantiate it unconditionally and add it to the dedicated registry.
+	 *
+	 * @param class-string $service_class Service class name.
+	 * @param array<mixed> $dependencies  Constructor dependencies.
+	 */
+	private function maybe_register_config_contributor( string $service_class, array $dependencies ): void {
+		if ( ! is_a( $service_class, ConfigValidationContributor::class, true ) ) {
+			return;
+		}
+
+		$instance = $this->service_container->instantiate_unconditionally( $service_class, $dependencies );
+		if ( $instance instanceof ConfigValidationContributor ) {
+			$this->config_contributors[] = $instance;
+		}
+	}
+
+	/**
+	 * Every registered config validation contributor.
+	 *
+	 * @return list<ConfigValidationContributor>
+	 */
+	public function get_config_contributors(): array {
+		return $this->config_contributors;
 	}
 
 	private function register_rest_routes(): void {
@@ -295,7 +348,7 @@ class Core implements Plugin {
 
 		// Add the injector as the very first service.
 		//TODO by pcarvalho: add injectors
-		$services = $this->get_service_classes();
+		$services = self::get_service_classes();
 
 		if ( $this->enable_filters ) {
 			/**
@@ -318,14 +371,19 @@ class Core implements Plugin {
 		}
 
 		$dependencies = [
-			'project'           => $this->project,
-			'modeler'           => $this->modeler,
-			'modeler_resolver'  => function (): ?Modeler {
+			'project'             => $this->project,
+			'modeler'             => $this->modeler,
+			'modeler_resolver'    => function (): ?Modeler {
 				return $this->modeler;
 			},
-			'services'          => $this->service_container,
-			'tool_contributors' => function (): array {
+			'services'            => $this->service_container,
+			'tool_contributors'   => function (): array {
 				return $this->tool_contributors;
+			},
+			// A closure, not the array: the registry is still being filled while
+			// dependencies are handed out, so a snapshot taken here would be empty.
+			'config_contributors' => function (): array {
+				return $this->config_contributors;
 			},
 		];
 
@@ -336,6 +394,7 @@ class Core implements Plugin {
 		foreach ( $services as $service_class ) {
 			$this->maybe_register_route_provider( $service_class, $dependencies );
 			$this->maybe_register_tool_contributor( $service_class, $dependencies );
+			$this->maybe_register_config_contributor( $service_class, $dependencies );
 		}
 
 		// Second pass: register services with the is_needed() gate.
@@ -350,10 +409,16 @@ class Core implements Plugin {
 	/**
 	 * Get the list of services to register.
 	 *
+	 * Public so config validation can derive the set of valid feature and service
+	 * keys from the same map that registers them. A transcribed copy of this list
+	 * went wrong immediately: it omitted `options`, `settings`, `frontend`,
+	 * `blocks`, and `admin_cols`, so every normal config produced spurious
+	 * "nothing reads this key" warnings.
+	 *
 	 * @return array<string, class-string> Associative array of identifiers mapped
 	 *                                     to fully qualified class names.
 	 */
-	protected function get_service_classes(): array {
+	public static function get_service_classes(): array {
 		return [
 			'admin_cols'       => AdminCols::class,
 			'admin_filters'    => AdminFilters::class,

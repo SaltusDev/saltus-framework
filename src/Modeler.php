@@ -9,12 +9,15 @@ namespace Saltus\WP\Framework;
 
 use Noodlehaus\AbstractConfig;
 use Noodlehaus\Config;
+use Saltus\WP\Framework\Models\Config\ConfigValidationContributor;
 use Saltus\WP\Framework\Models\Config\ConfigValidator;
 use Saltus\WP\Framework\Models\Config\NoFile;
 use Saltus\WP\Framework\Models\ConfigError;
 use Saltus\WP\Framework\Models\ConfigValidationResult;
+use Saltus\WP\Framework\Models\ConfigValidationSummary;
 use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Models\ModelFactory;
+use Saltus\WP\Framework\Features\WpCli\CliGateway;
 use Saltus\WP\Framework\MCP\Tools\CreatePost;
 use Saltus\WP\Framework\MCP\Tools\CreateTerm;
 use Saltus\WP\Framework\MCP\Tools\DeletePost;
@@ -39,6 +42,26 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	/** Built on first use; validation is not needed until a model arrives. */
 	private ?ConfigValidator $config_validator = null;
 
+	/**
+	 * Accumulated verdicts, or null until the first config is validated.
+	 *
+	 * Null and empty mean different things to a caller: null is "nothing has been
+	 * loaded yet, so the question cannot be answered", while an empty summary is
+	 * "loading ran and found no configs". Health and the CLI both report the former
+	 * as unavailable rather than as a valid site.
+	 */
+	private ?ConfigValidationSummary $config_validation = null;
+
+	/** CLI gateway for reporting config problems without corrupting stdout. */
+	private ?CliGateway $cli_gateway = null;
+
+	/**
+	 * Resolves the features owning their own config sections.
+	 *
+	 * @var callable|null
+	 */
+	private $config_contributors = null;
+
 	/** @var array<string, Model> */
 	protected array $model_list = [];
 
@@ -47,9 +70,17 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	/**
 	 * Construct the modeler.
 	 * @param ModelFactory $model_factory
+	 * @param CliGateway|null $cli_gateway Optional gateway for CLI reporting.
 	 */
-	public function __construct( ModelFactory $model_factory ) {
+	/**
+	 * @param callable|null $config_contributors Returns the registered contributors.
+	 */
+	public function __construct( ModelFactory $model_factory, ?CliGateway $cli_gateway = null, ?callable $config_contributors = null ) {
 		$this->model_factory = $model_factory;
+		$this->cli_gateway   = $cli_gateway;
+		// A resolver rather than the list: Core is still filling its registry when
+		// the modeler is built, so a snapshot taken here would always be empty.
+		$this->config_contributors = $config_contributors;
 		// should contain a list of loaded models
 	}
 
@@ -253,6 +284,11 @@ class Modeler implements RestRouteProvider, ToolContributor {
 		$data   = $config->all();
 		$result = $this->validation_verdict( $data );
 
+		// Recorded before the error check below returns, so a rejected model still
+		// appears in the summary. A config that failed to register is exactly what
+		// health and the CLI need to report.
+		$this->config_validation = ( $this->config_validation ?? new ConfigValidationSummary() )->with( $result );
+
 		foreach ( $result->get_warnings() as $warning ) {
 			$this->report_config_problem( $warning, $data );
 		}
@@ -266,6 +302,17 @@ class Modeler implements RestRouteProvider, ToolContributor {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Every model's verdict, or null when nothing has been validated yet.
+	 *
+	 * Null is the honest answer before `init()` runs: reporting a valid site
+	 * because no config has been examined would be the same mistake the v1.8.4
+	 * audit fix corrected — an absent source read as a clean result.
+	 */
+	public function get_config_validation(): ?ConfigValidationSummary {
+		return $this->config_validation;
 	}
 
 	/**
@@ -322,24 +369,49 @@ class Modeler implements RestRouteProvider, ToolContributor {
 	 * write to the audit log, which records agent activity rather than authoring
 	 * mistakes.
 	 *
+	 * Under WP-CLI it goes to the warning channel instead. `_doing_it_wrong` raises
+	 * a PHP notice, and a notice raised during registration prints to **stdout** —
+	 * inside whatever a command is emitting. One stray line makes `--format=json`
+	 * unparseable, so every `wp saltus` call looks broken even when registration
+	 * succeeded. The CliGateway abstraction provides warning(), which routes to
+	 * stderr and keeps stdout clean for piping.
+	 *
 	 * @param array<string|int, mixed> $data Config the problem was found in.
 	 */
 	private function report_config_problem( ConfigError $problem, array $data ): void {
+		$report = $problem->describe() . "\n" . $problem->render_excerpt( $data );
+
+		if ( $this->cli_gateway !== null ) {
+			$this->cli_gateway->warning( $report );
+
+			return;
+		}
+
 		if ( ! function_exists( '_doing_it_wrong' ) ) {
 			return;
 		}
 
-		_doing_it_wrong(
-			'Saltus model config',
-			esc_html( $problem->describe() . "\n" . $problem->render_excerpt( $data ) ),
-			'1.8.5'
-		);
+		_doing_it_wrong( 'Saltus model config', esc_html( $report ), '1.8.5' );
 	}
 
 	/** The validator, built once per Modeler. */
 	private function config_validator(): ConfigValidator {
 		if ( ! $this->config_validator instanceof ConfigValidator ) {
-			$this->config_validator = new ConfigValidator();
+			$contributors = [];
+
+			if ( is_callable( $this->config_contributors ) ) {
+				$resolved = ( $this->config_contributors )();
+				if ( is_array( $resolved ) ) {
+					$contributors = array_values(
+						array_filter(
+							$resolved,
+							static fn( $c ): bool => $c instanceof ConfigValidationContributor
+						)
+					);
+				}
+			}
+
+			$this->config_validator = new ConfigValidator( null, $contributors );
 		}
 
 		return $this->config_validator;
