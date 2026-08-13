@@ -44,7 +44,7 @@ class ModelerValidationTest extends TestCase {
 	 * Feed a config through the real registration path and report what happened.
 	 *
 	 * @param array<string|int, mixed> $config
-	 * @return array{reached_factory: list<array<string, mixed>>, reports: list<string>}
+	 * @return array{reached_factory: list<array<string, mixed>>, reports: list<string>, modeler: Modeler}
 	 */
 	private function register( array $config ): array {
 		// Observing at the *factory* rather than by overriding `create()`. An
@@ -78,6 +78,7 @@ class ModelerValidationTest extends TestCase {
 		return [
 			'reached_factory' => $factory->received,
 			'reports'         => array_column( is_array( $wp_doing_it_wrong ) ? $wp_doing_it_wrong : [], 'message' ),
+			'modeler'         => $modeler,
 		];
 	}
 
@@ -219,5 +220,106 @@ class ModelerValidationTest extends TestCase {
 		);
 
 		$this->assertSame( [], $keys, 'The filter must be able to turn caching off while developing.' );
+	}
+
+	// --- The accumulated summary ---
+
+	/**
+	 * Null and empty are different answers.
+	 *
+	 * Before anything is validated there is no verdict to report, and saying "valid"
+	 * would repeat the v1.8.4 mistake: an unread source reported as a clean result.
+	 */
+	public function testTheSummaryIsNullBeforeAnythingIsValidated(): void {
+		$modeler = new class() extends Modeler {
+			public function __construct() {
+				// No container needed to ask for a verdict that does not exist yet.
+			}
+		};
+
+		$this->assertNull( $modeler->get_config_validation() );
+	}
+
+	public function testAValidatedModelAppearsInTheSummary(): void {
+		$outcome = $this->register( [ 'type' => 'cpt', 'name' => 'movie' ] );
+		$summary = $outcome['modeler']->get_config_validation();
+
+		$this->assertNotNull( $summary );
+		$this->assertSame( 1, $summary->total_count() );
+		$this->assertSame( 1, $summary->valid_count() );
+		$this->assertSame( 0, $summary->error_count() );
+		$this->assertTrue( $summary->is_valid() );
+	}
+
+	/**
+	 * A model rejected for an error must still be counted.
+	 *
+	 * This is the guard on *where* the accumulation sits. Recording after the
+	 * error-return instead of before it would drop exactly the models an operator
+	 * needs to see, and the site would report itself as valid because the only
+	 * broken config never made it into the summary.
+	 */
+	public function testARejectedModelStillAppearsInTheSummary(): void {
+		$outcome = $this->register( [ 'type' => 'not_a_type', 'name' => 'movie' ] );
+		$summary = $outcome['modeler']->get_config_validation();
+
+		$this->assertSame( [], $outcome['reached_factory'], 'Precondition: this config must be rejected.' );
+		$this->assertNotNull( $summary );
+		$this->assertSame( 1, $summary->total_count(), 'A rejected model must still be counted.' );
+		$this->assertSame( 1, $summary->error_count() );
+		$this->assertSame( 0, $summary->valid_count() );
+		$this->assertFalse( $summary->is_valid() );
+	}
+
+	public function testWarningsAreCountedWithoutInvalidatingTheSite(): void {
+		$outcome = $this->register(
+			[
+				'type'       => 'cpt',
+				'name'       => 'movie',
+				'taxonomies' => [],
+			]
+		);
+		$summary = $outcome['modeler']->get_config_validation();
+
+		$this->assertNotNull( $summary );
+		$this->assertSame( 1, $summary->warning_count() );
+		$this->assertSame( 1, $summary->valid_count() );
+		$this->assertTrue( $summary->is_valid(), 'A warning must not make the site invalid.' );
+	}
+
+	public function testEveryChildOfAMultiModelFileIsCounted(): void {
+		$outcome = $this->register(
+			[
+				'movie'  => [ 'type' => 'cpt', 'name' => 'movie' ],
+				'broken' => [ 'type' => 'not_a_type', 'name' => 'broken' ],
+				'book'   => [ 'type' => 'cpt', 'name' => 'book' ],
+			]
+		);
+		$summary = $outcome['modeler']->get_config_validation();
+
+		$this->assertNotNull( $summary );
+		$this->assertSame( 3, $summary->total_count(), 'All three children must be counted, including the rejected one.' );
+		$this->assertSame( 2, $summary->valid_count() );
+		$this->assertSame( 1, $summary->error_count() );
+		$this->assertSame(
+			$summary->total_count(),
+			$summary->valid_count() + $summary->error_count(),
+			'total must equal valid + error.'
+		);
+	}
+
+	public function testTheSummaryNamesTheFailingModel(): void {
+		$outcome = $this->register(
+			[
+				'movie'  => [ 'type' => 'cpt', 'name' => 'movie' ],
+				'broken' => [ 'type' => 'not_a_type', 'name' => 'broken' ],
+			]
+		);
+		$summary = $outcome['modeler']->get_config_validation();
+
+		$this->assertNotNull( $summary );
+		$errors = $summary->all_errors();
+		$this->assertNotSame( [], $errors );
+		$this->assertSame( 'broken', $errors[0]->get_model_name() );
 	}
 }

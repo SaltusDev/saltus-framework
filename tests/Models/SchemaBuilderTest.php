@@ -147,8 +147,8 @@ class SchemaBuilderTest extends TestCase {
 		$this->assertContains( 'meta', $keys );
 		$this->assertContains( 'relationships', $keys );
 		$this->assertContains( 'features', $keys );
-		$this->assertContains( 'hierarchical', $keys );
-		$this->assertContains( 'show_in_rest', $keys );
+		$this->assertContains( 'options', $keys );
+		$this->assertContains( 'labels', $keys );
 	}
 
 	public function testKnownTopLevelKeysDoesNotIncludeTaxonomies(): void {
