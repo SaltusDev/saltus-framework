@@ -25,4 +25,12 @@ final class WordPressCliGateway implements CliGateway {
 	public function error( string $message ): void {
 		\WP_CLI::error( $message );
 	}
+
+	public function warning( string $message ): void {
+		\WP_CLI::warning( $message );
+	}
+
+	public function halt( int $code ): void {
+		\WP_CLI::halt( $code );
+	}
 }

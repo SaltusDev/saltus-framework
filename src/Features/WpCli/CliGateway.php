@@ -14,4 +14,18 @@ interface CliGateway {
 	public function line( string $message ): void;
 	public function success( string $message ): void;
 	public function error( string $message ): void;
+
+	/** Non-fatal notice. Goes to stderr, so it cannot corrupt piped stdout. */
+	public function warning( string $message ): void;
+
+	/**
+	 * Exit with a status code, having already written output.
+	 *
+	 * Distinct from `error()`, which prints its own message and exits: a command
+	 * that has just formatted a table of problems needs the table to stand as the
+	 * explanation and only the exit status to signal failure. Routing that through
+	 * `error()` would append a redundant message and, under `--format=json`, emit a
+	 * second non-JSON line into piped stdout.
+	 */
+	public function halt( int $code ): void;
 }
