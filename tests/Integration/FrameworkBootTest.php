@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Tests\Integration;
 
 use Saltus\WP\Framework\Core;
 use Saltus\WP\Framework\Features\MCP\MCP;
+use Saltus\WP\Framework\Models\Config\ConfigValidationContributor;
 use Saltus\WP\Framework\Tests\TestCase;
 
 require_once dirname( __DIR__ ) . '/Rest/functions.php';
@@ -22,6 +23,43 @@ class FrameworkBootTest extends TestCase {
 		$this->assertTrue( $container->has( 'mcp' ) );
 		$this->assertInstanceOf( MCP::class, $container->get( 'mcp' ) );
 		$this->assertGreaterThan( 1, count( $container ) );
+	}
+
+	/**
+	 * Config contributors must be collected during the unconditional first pass.
+	 *
+	 * Registration is what makes a contributed rule run at all. A feature that
+	 * implements the contract but never reaches the registry validates nothing,
+	 * and the config still reports valid — a silent hole rather than a failure.
+	 * Deleting the `maybe_register_config_contributor()` call fails this.
+	 */
+	public function testCoreCollectsConfigValidationContributors(): void {
+		$core = new Core( __DIR__ );
+
+		$core->register_services();
+
+		$contributors = $core->get_config_contributors();
+
+		$this->assertNotSame( [], $contributors, 'At least one feature must contribute config rules.' );
+
+		foreach ( $contributors as $contributor ) {
+			$this->assertInstanceOf( ConfigValidationContributor::class, $contributor );
+			$this->assertNotSame( '', $contributor->get_config_section(), 'A contributor must name its section.' );
+		}
+	}
+
+	/** Each section may have exactly one owner, or one feature's rules stop running. */
+	public function testNoTwoContributorsClaimTheSameSection(): void {
+		$core = new Core( __DIR__ );
+
+		$core->register_services();
+
+		$sections = array_map(
+			static fn( ConfigValidationContributor $c ): string => $c->get_config_section(),
+			$core->get_config_contributors()
+		);
+
+		$this->assertSame( array_unique( $sections ), $sections, 'Two features claim the same config section.' );
 	}
 
 	public function testCoreRegistersLifecycleHooksAgainstPluginFile(): void {
