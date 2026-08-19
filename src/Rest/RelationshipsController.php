@@ -2,6 +2,7 @@
 
 namespace Saltus\WP\Framework\Rest;
 
+use Saltus\WP\Framework\Features\Relationships\RelationshipDefinition;
 use Saltus\WP\Framework\Features\Relationships\RelationshipManager;
 use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\Modeler;
@@ -16,7 +17,10 @@ use WP_REST_Server;
  *
  * Reads require the post type's read-level edit capability; writes are checked
  * against the specific post being changed, so a user able to edit one post
- * cannot rewrite relationships on another.
+ * cannot rewrite relationships on another. On top of that, a relationship
+ * declaring `capabilities` is gated per relationship: a denied read is refused
+ * here rather than answered with an empty set, while the definition listing
+ * filters, because one denial there would hide every other relationship.
  *
  * @api
  */
@@ -191,9 +195,18 @@ class RelationshipsController extends WP_REST_Controller {
 			return $post_type;
 		}
 
-		$gate = $this->assert_relationship_available( $post_type, $relationship );
-		if ( $gate instanceof WP_Error ) {
-			return $gate;
+		$definition = $this->resolve_relationship( $post_type, $relationship );
+		if ( $definition instanceof WP_Error ) {
+			return $definition;
+		}
+
+		// Refused rather than filtered to an empty set. A 200 with `related: []` cannot
+		// be told apart from a relationship that is genuinely empty, so a caller has no
+		// way to learn it was denied. The list route above still filters, because there
+		// one denial would hide every other relationship on the post type.
+		$denied = $this->relationships->permissions()->reject_denied_read( $definition );
+		if ( $denied instanceof WP_Error ) {
+			return $denied;
 		}
 
 		return rest_ensure_response(
@@ -220,7 +233,7 @@ class RelationshipsController extends WP_REST_Controller {
 			return $post_type;
 		}
 
-		$gate = $this->assert_relationship_available( $post_type, $relationship );
+		$gate = $this->resolve_relationship( $post_type, $relationship );
 		if ( $gate instanceof WP_Error ) {
 			return $gate;
 		}
@@ -255,7 +268,7 @@ class RelationshipsController extends WP_REST_Controller {
 			return $post_type;
 		}
 
-		$gate = $this->assert_relationship_available( $post_type, $relationship );
+		$gate = $this->resolve_relationship( $post_type, $relationship );
 		if ( $gate instanceof WP_Error ) {
 			return $gate;
 		}
@@ -292,7 +305,7 @@ class RelationshipsController extends WP_REST_Controller {
 			return $post_type;
 		}
 
-		$gate = $this->assert_relationship_available( $post_type, $relationship );
+		$gate = $this->resolve_relationship( $post_type, $relationship );
 		if ( $gate instanceof WP_Error ) {
 			return $gate;
 		}
@@ -457,18 +470,22 @@ class RelationshipsController extends WP_REST_Controller {
 	}
 
 	/**
-	 * Refuse when the model is gated off or does not declare the relationship.
+	 * Resolve one relationship, or explain why the request cannot proceed.
 	 *
-	 * @return WP_Error|null
+	 * Returns the definition rather than just a verdict so the read route can hand it
+	 * to the permission policy without resolving it a second time.
+	 *
+	 * @return RelationshipDefinition|WP_Error
 	 */
-	private function assert_relationship_available( string $post_type, string $relationship ): ?WP_Error {
+	private function resolve_relationship( string $post_type, string $relationship ) {
 		$gate = $this->assert_model_enabled( $post_type );
 		if ( $gate instanceof WP_Error ) {
 			return $gate;
 		}
 
-		if ( $this->relationships->get_definition( $post_type, $relationship ) !== null ) {
-			return null;
+		$definition = $this->relationships->get_definition( $post_type, $relationship );
+		if ( $definition instanceof RelationshipDefinition ) {
+			return $definition;
 		}
 
 		return new WP_Error(

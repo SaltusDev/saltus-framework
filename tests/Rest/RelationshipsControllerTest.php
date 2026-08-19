@@ -22,11 +22,26 @@ require_once __DIR__ . '/functions.php';
 class RelationshipsControllerTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_rest_routes_registered, $wp_current_user_can, $wp_posts, $wp_post_type_objects;
+		global $wp_rest_routes_registered, $wp_current_user_can, $wp_posts, $wp_post_type_objects, $wp_filter_values, $wp_filters_registered;
 		$wp_rest_routes_registered = [];
 		$wp_current_user_can       = true;
 		$wp_posts                  = [];
 		$wp_post_type_objects      = [];
+		$wp_filter_values          = [];
+		$wp_filters_registered     = [];
+	}
+
+	/**
+	 * The capability stub and the filter registry are shared with every other class.
+	 * A denial left behind here changes an unrelated class's result under a random
+	 * ordering, and the failure surfaces there with nothing pointing back.
+	 */
+	protected function tearDown(): void {
+		global $wp_current_user_can, $wp_posts, $wp_filter_values, $wp_filters_registered;
+		$wp_current_user_can   = true;
+		$wp_posts              = [];
+		$wp_filter_values      = [];
+		$wp_filters_registered = [];
 	}
 
 	/**
@@ -242,6 +257,69 @@ class RelationshipsControllerTest extends TestCase {
 		$this->assertInstanceOf( WP_Error::class, $unknown );
 		$this->assertSame( 'saltus_relationship_not_found', $unknown->get_error_code() );
 		$this->assertSame( 404, $unknown->get_error_data()['status'] );
+	}
+
+	public function testDeniedReadIsRefusedRatherThanAnsweredWithAnEmptySet(): void {
+		global $wp_current_user_can;
+		$controller = $this->controller(
+			[
+				'relationships' => [
+					'actors'   => [
+						'type'         => 'has_many',
+						'model'        => 'person',
+						'capabilities' => [ 'read' => [ 'view_cast' ] ],
+					],
+					'director' => [
+						'type'  => 'has_one',
+						'model' => 'person',
+					],
+				],
+			]
+		);
+		$this->seed_post( 1, 'movie' );
+		$wp_current_user_can = [ 'view_cast' => false ];
+
+		$refused = $controller->get_items( $this->request( [ 'post_id' => 1, 'relationship' => 'actors' ] ) );
+
+		// A 200 carrying `related: []` is indistinguishable from a relationship that is
+		// genuinely empty, so the caller never learns it was denied. The write half of
+		// the policy has always refused loudly; this is the read half catching up.
+		$this->assertInstanceOf( WP_Error::class, $refused );
+		$this->assertSame( 'rest_relationship_forbidden', $refused->get_error_code() );
+		$this->assertSame( 403, $refused->get_error_data()['status'] );
+		$this->assertSame( 'read', $refused->get_error_data()['operation'] );
+
+		// A sibling with no rule is unaffected: the refusal is per relationship, not
+		// per post type.
+		$permitted = $controller->get_items( $this->request( [ 'post_id' => 1, 'relationship' => 'director' ] ) );
+		$this->assertInstanceOf( WP_REST_Response::class, $permitted );
+	}
+
+	public function testDefinitionListingStillFiltersInsteadOfRefusing(): void {
+		global $wp_current_user_can;
+		$controller = $this->controller(
+			[
+				'relationships' => [
+					'actors'   => [
+						'type'         => 'has_many',
+						'model'        => 'person',
+						'capabilities' => [ 'read' => [ 'view_cast' ] ],
+					],
+					'director' => [
+						'type'  => 'has_one',
+						'model' => 'person',
+					],
+				],
+			]
+		);
+		$wp_current_user_can = [ 'view_cast' => false ];
+
+		$response = $controller->get_definitions( $this->request( [ 'post_type' => 'movie' ] ) );
+
+		// The distinction the read gate turns on: refusing here would let one denied
+		// relationship hide `director`, which the caller may read.
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( [ 'director' ], array_column( $response->get_data()['relationships'], 'name' ) );
 	}
 
 	public function testCardinalityErrorsSurfaceThroughTheRestSurface(): void {
