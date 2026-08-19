@@ -10,6 +10,7 @@
   },
   "scripts": {
     "test": "node --test \"tests/js/*.test.js\"",
+    "assets:manifest": "node bin/generate-asset-manifests.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:assemble": "node bin/assemble-docs.mjs",
     "docs:site": "npm run docs:assemble && vitepress build docs && node bin/check-docs-leak.mjs",
