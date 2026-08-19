@@ -8,8 +8,18 @@ namespace Saltus\WP\Framework\MCP\Audit;
 class AuditLogger {
 	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
 
-	private const TABLE_SUFFIX      = 'saltus_mcp_audit';
-	private const DB_VERSION        = '1.0.0';
+	private const TABLE_SUFFIX = 'saltus_mcp_audit';
+
+	/**
+	 * Schema version, and the value stored in the verification transient.
+	 *
+	 * 1.1.0 put the slow-call table on the same schema path as the audit table.
+	 * The bump invalidates every existing verification marker, so the pass that
+	 * creates both runs on the next request instead of waiting out a marker
+	 * written when only the audit table was ever created.
+	 */
+	private const DB_VERSION = '1.1.0';
+
 	private const SLOW_TABLE_SUFFIX = 'saltus_mcp_audit_slow_calls';
 
 	/** Transient recording that the DDL has run recently. */
@@ -21,10 +31,17 @@ class AuditLogger {
 	/**
 	 * Bound shared by the sampling draw and its divisor.
 	 *
-	 * A draw of 1..N over N gives a retained fraction of floor(rate * N) / N,
-	 * which is exact for any rate expressible in millionths.
+	 * The draw is `wp_rand( 1, N ) / N`, so it takes one of the N multiples of
+	 * 1/N in [1/N, 1.0] and never yields 0. The retained fraction of a rate is
+	 * therefore floor( rate * N ) / N, which is exact for any rate expressible in
+	 * millionths and 0 for every rate below 1/N — the smallest proportion this
+	 * constant can express, and the floor RollupStore::normalize_sample_rate()
+	 * clamps a smaller configured rate up to.
+	 *
+	 * Public because that normalizer is the one place the floor has to be applied
+	 * for the rate persisted with each rollup to match the rate the draw used.
 	 */
-	private const SAMPLE_PRECISION = 1000000;
+	public const SAMPLE_PRECISION = 1000000;
 
 	/** @var list<string> */
 	private const VALID_STATUSES = [
@@ -167,7 +184,49 @@ class AuditLogger {
 	}
 
 	/**
-	 * Ensure the audit table exists, at most once per request.
+	 * Create the slow-call table if it does not exist.
+	 *
+	 * The rows live in their own table because they bypass sampling and outlive
+	 * the audit rows under their own retention setting, but the table is created
+	 * on the same path. It used to be created only by `record_slow_call()`, so on
+	 * an install that had never recorded a slow call the retention pass deleted
+	 * from a table that was not there and logged a database error every run.
+	 *
+	 * @return bool True when the DDL ran and the table can be trusted to exist.
+	 */
+	private function ensure_slow_table(): bool {
+		$wpdb = $this->wpdb();
+		if ( $wpdb === null ) {
+			return false;
+		}
+
+		$table           = $this->slow_table_name();
+		$charset_collate = $wpdb->get_charset_collate();
+		$sql             = "CREATE TABLE IF NOT EXISTS {$table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			created_at datetime(3) NOT NULL,
+			user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			identifier varchar(191) NULL,
+			ability varchar(191) NOT NULL,
+			arguments longtext NULL,
+			status varchar(32) NOT NULL,
+			duration_ms double NOT NULL,
+			error_code varchar(191) NULL,
+			error_message text NULL,
+			PRIMARY KEY (id),
+			KEY created_at (created_at),
+			KEY ability (ability),
+			KEY duration_ms (duration_ms)
+		) {$charset_collate}";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- DDL uses the internal slow-call table name.
+		$result = $wpdb->query( $sql );
+
+		return $result !== false;
+	}
+
+	/**
+	 * Ensure both audit tables exist, at most once per request.
 	 *
 	 * Creation is not gated on the stored schema version: that would mean a table
 	 * dropped after the option was set is never recreated, and every read then
@@ -181,10 +240,10 @@ class AuditLogger {
 	 * the self-healing property with a bounded delay: a dropped table comes back
 	 * within the TTL rather than on the very next read.
 	 *
-	 * Only a DDL that actually succeeded is recorded. Marking the table verified
-	 * after a failed create would suppress the retry for the whole TTL, and every
-	 * read in that window queries a table that is not there and reports zero
-	 * errors — a broken log that looks like a healthy one.
+	 * Only a pass where both creates succeeded is recorded. Marking the tables
+	 * verified after a failed create would suppress the retry for the whole TTL,
+	 * and every read in that window queries a table that is not there and reports
+	 * zero errors — a broken log that looks like a healthy one.
 	 */
 	private function ensure_db(): void {
 		if ( $this->db_initialized ) {
@@ -199,7 +258,13 @@ class AuditLogger {
 			return;
 		}
 
-		if ( ! $this->ensure_table() ) {
+		// Both creates are attempted even when the first fails: one table being
+		// rejected is no reason to leave the other missing until the next
+		// request. The marker covers both, so both have to have succeeded.
+		$audit_ready = $this->ensure_table();
+		$slow_ready  = $this->ensure_slow_table();
+
+		if ( ! $audit_ready || ! $slow_ready ) {
 			return;
 		}
 
@@ -245,7 +310,7 @@ class AuditLogger {
 	}
 
 	/**
-	 * Delete audit entries older than the retention period.
+	 * Delete audit entries older than their retention period.
 	 *
 	 * Computes rollups for yesterday before deleting old rows, so aggregates
 	 * survive retention pruning.
@@ -254,6 +319,20 @@ class AuditLogger {
 		// Compute rollups for yesterday before pruning
 		$this->compute_recent_rollups();
 
+		$this->cleanup_audit_entries();
+
+		// Slow calls carry their own retention setting, so their pruning cannot
+		// sit behind the normal one. This ran inside the normal path, past its
+		// early return, so configuring normal retention as unlimited also stopped
+		// the slow-call table being pruned at all — while its own setting said it
+		// was still bounded.
+		$this->cleanup_slow_calls();
+	}
+
+	/**
+	 * Prune normal audit rows past their retention period.
+	 */
+	private function cleanup_audit_entries(): void {
 		$days = (int) $this->filter( 'saltus/framework/mcp/audit/retention_days', 30 );
 		if ( $days <= 0 ) {
 			return;
@@ -271,29 +350,49 @@ class AuditLogger {
 		$table       = $this->table_name();
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is internal.
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $cutoff ) );
-		$this->cleanup_slow_calls();
 	}
 
 	/**
-	 * Compute rollups for recent days that haven't been rolled up yet.
+	 * Roll up every day the retention pass still owes, before it prunes.
 	 *
-	 * Runs yesterday and the day before to handle late-arriving entries.
+	 * The store's completion marker is the cursor, so a gap in the schedule is
+	 * caught up instead of lost, and the marker advances only once every date in
+	 * this run has been written. Recording a date whose write failed would report
+	 * stale metrics as fresh and step the cursor past a day whose source rows the
+	 * prune below is about to delete.
 	 */
 	private function compute_recent_rollups(): void {
+		$database = $this->wpdb();
+		if ( $database === null ) {
+			return;
+		}
+
 		// Hand the store this logger's own adapter. Letting it resolve the global
 		// itself would mean the rollup read and the prune could run against two
 		// different databases, and the rollup would silently no-op wherever the
 		// global is an AuditDatabase rather than a \wpdb.
-		$rollup_store = new RollupStore( $this->wpdb() );
+		//
+		// Wrapped, because the store writes rollups through the seam without
+		// surfacing the result, and this pass has to know whether they landed.
+		$watcher      = new RollupWriteWatcher( $database );
+		$rollup_store = new RollupStore( $watcher );
 
-		// Roll up yesterday
-		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
-		$rollup_store->compute_and_store_rollup( $yesterday );
+		$dates = $rollup_store->pending_rollup_dates();
+		if ( $dates === [] ) {
+			return;
+		}
 
-		// Roll up day before yesterday to catch any late entries
-		$day_before = gmdate( 'Y-m-d', strtotime( '-2 days' ) );
-		$rollup_store->compute_and_store_rollup( $day_before );
-		$rollup_store->record_completion( $yesterday );
+		foreach ( $dates as $date ) {
+			$rollup_store->compute_and_store_rollup( $date );
+		}
+
+		if ( $watcher->write_failed() ) {
+			return;
+		}
+
+		// The last date of the run, which a bounded catch-up leaves short of
+		// yesterday on purpose: the next pass resumes from here.
+		$rollup_store->record_completion( $dates[ count( $dates ) - 1 ] );
 	}
 
 	/**
@@ -374,7 +473,10 @@ class AuditLogger {
 	}
 
 	/**
-	 * Sampling value in [0.0, 1.0], with a filterable seam for deterministic tests.
+	 * Sampling draw in [1/SAMPLE_PRECISION, 1.0], with a filterable seam for
+	 * deterministic tests. The unfiltered draw never returns 0, which is why a
+	 * configured rate below the floor would retain nothing and is clamped up to it
+	 * by RollupStore::normalize_sample_rate() before reaching the comparison.
 	 *
 	 * The draw and the divisor share one explicit bound. `wp_rand()` called
 	 * without arguments draws from 0..PHP_INT_MAX, which has no relation to
@@ -398,34 +500,18 @@ class AuditLogger {
 	 * @param array<string, mixed> $data Completed audit payload.
 	 */
 	private function record_slow_call( array $data ): void {
+		// Behind the shared verification transient rather than a CREATE TABLE per
+		// call: the schema check used to run on every slow call, adding database
+		// work to exactly the requests already identified as slow.
+		$this->ensure_db();
+
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {
 			return;
 		}
 
-		$table           = $this->slow_table_name();
-		$charset_collate = $wpdb->get_charset_collate();
-		$sql             = "CREATE TABLE IF NOT EXISTS {$table} (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			created_at datetime(3) NOT NULL,
-			user_id bigint(20) unsigned NOT NULL DEFAULT 0,
-			identifier varchar(191) NULL,
-			ability varchar(191) NOT NULL,
-			arguments longtext NULL,
-			status varchar(32) NOT NULL,
-			duration_ms double NOT NULL,
-			error_code varchar(191) NULL,
-			error_message text NULL,
-			PRIMARY KEY (id),
-			KEY created_at (created_at),
-			KEY ability (ability),
-			KEY duration_ms (duration_ms)
-		) {$charset_collate}";
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Internal table name.
-		$wpdb->query( $sql );
 		$wpdb->insert(
-			$table,
+			$this->slow_table_name(),
 			[
 				'created_at'    => $data['timestamp'],
 				'user_id'       => function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0,
@@ -449,6 +535,8 @@ class AuditLogger {
 		if ( $days <= 0 ) {
 			return;
 		}
+
+		$this->ensure_db();
 
 		$wpdb = $this->wpdb();
 		if ( $wpdb === null ) {
