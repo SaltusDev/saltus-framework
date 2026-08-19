@@ -162,6 +162,41 @@ class SchemaBuilderTest extends TestCase {
 		);
 	}
 
+	/**
+	 * Every service id a model config is actually read for, and only those.
+	 *
+	 * The list was once `array_keys( Core::get_service_classes() )`, which accepted
+	 * every registered feature id at depth 0. Most features are opt-ins declared
+	 * under `features:`, so a top-level `admin_cols:` was silently inert while the
+	 * validator called it valid — the exact silent failure the unknown-key warning
+	 * exists to catch.
+	 */
+	public function testKnownTopLevelKeysCoversTheServicesReadAtDepthZero(): void {
+		$keys = ( new SchemaBuilder() )->build()['known_top_level_keys'];
+
+		foreach ( [ 'frontend', 'meta', 'settings', 'blocks', 'webmcp', 'ai_context', 'relationships' ] as $service ) {
+			$this->assertContains( $service, $keys, sprintf( '"%s" is read from the model config at depth 0.', $service ) );
+		}
+	}
+
+	public function testKnownTopLevelKeysExcludesFeatureOnlyAndNonModelServiceIds(): void {
+		$keys = ( new SchemaBuilder() )->build()['known_top_level_keys'];
+
+		$this->assertNotContains(
+			'wp_cli',
+			$keys,
+			'wp_cli is a service container id, never a model config key.'
+		);
+
+		foreach ( [ 'admin_cols', 'admin_filters', 'quick_edit', 'duplicate', 'draganddrop', 'privacy', 'remember_tabs', 'single_export', 'ai_assistant', 'editorial_review', 'mcp' ] as $feature ) {
+			$this->assertNotContains(
+				$feature,
+				$keys,
+				sprintf( '"%s" is only read under features:, so at depth 0 it must warn.', $feature )
+			);
+		}
+	}
+
 	public function testFieldPermissionOperationsListsReadAndWrite(): void {
 		$builder    = new SchemaBuilder();
 		$operations = $builder->field_permission_operations();

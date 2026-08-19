@@ -2,7 +2,6 @@
 
 namespace Saltus\WP\Framework\Models\Config;
 
-use Saltus\WP\Framework\Core;
 use Saltus\WP\Framework\Features\Meta\CodestarMeta;
 use Saltus\WP\Framework\Features\Meta\FieldPermissionPolicy;
 use Saltus\WP\Framework\Features\Relationships\RelationshipDefinition;
@@ -255,27 +254,41 @@ final class SchemaBuilder {
 	/**
 	 * Every top-level key a model config may declare.
 	 *
-	 * Three sources, combined rather than transcribed:
+	 * Two lists. The first is the service ids a model config is read for at depth 0;
+	 * the second is the keys the model classes read directly.
 	 *
-	 * - Every service id in `Core::get_service_classes()`. A service id *is* a
-	 *   valid top-level key — `ModelFactory` dispatches `frontend`, `meta`, and
-	 *   `settings` from it directly, and the rest are read by the features
-	 *   themselves. Deriving means registering a new feature cannot leave this
-	 *   list behind.
-	 * - Keys the model classes read directly.
-	 * - `register_post_type()` / `register_taxonomy()` arguments, which pass
-	 *   through to WordPress.
+	 * A service id is not a top-level key by virtue of being registered, which is
+	 * why this no longer derives from `Core::get_service_classes()`. Most features
+	 * are opt-ins declared under `features:` and `wp_cli` is not a model key at all,
+	 * so deriving accepted keys nothing reads — a top-level `admin_cols:` did
+	 * nothing and the validator called it valid. Each id below names the code that
+	 * reads it, so a service that starts or stops reading top-level config is a
+	 * one-line change here.
 	 *
-	 * The first draft of this list was hand-written and omitted `options`,
-	 * `settings`, `frontend`, `blocks`, and `admin_cols` — all real, all actively
-	 * read — so every normal config emitted spurious "nothing reads this key"
-	 * warnings. Under WP-CLI those notices print to stdout and corrupt
-	 * `--format=json` output, which is how a cosmetic mistake became a broken CLI.
+	 * Being wrong the other way is just as bad, which is why both lists are pinned
+	 * by tests. The first draft was hand-written and omitted `options`, `settings`,
+	 * `frontend`, and `blocks` — all real, all actively read — so every normal
+	 * config emitted spurious "nothing reads this key" warnings. Under WP-CLI those
+	 * notices print to stdout and corrupt `--format=json` output, which is how a
+	 * cosmetic mistake became a broken CLI.
 	 *
 	 * @return list<string>
 	 */
 	private function known_top_level_keys(): array {
-		$service_keys = array_keys( Core::get_service_classes() );
+		$service_keys = [
+			// ModelFactory::process_services() dispatches these three by name.
+			'frontend',
+			'meta',
+			'settings',
+			// SaltusBlocks::definitions() reads `$model->get_config()['blocks']`.
+			'blocks',
+			// WebMcpPolicy::config() reads `$model->get_config()['webmcp']`.
+			'webmcp',
+			// AiContextProvider::get() reads `$config['ai_context']`.
+			'ai_context',
+			// RelationshipRegistry::parse_model() reads `$config['relationships']`.
+			'relationships',
+		];
 
 		// Read directly by BaseModel / PostType / Taxonomy rather than dispatched.
 		$model_keys = [
