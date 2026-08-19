@@ -22,10 +22,18 @@ abstract class AbstractCommand {
 		return $modeler;
 	}
 
-	/** @param array<string, mixed> $assoc_args */
+	/**
+	 * The requested output format, or `table` when none is usable.
+	 *
+	 * Every accepted value is one `WP_CLI\Utils\format_items()` renders natively,
+	 * so a command that declares a format in its synopsis gets that format rather
+	 * than a silent fallback.
+	 *
+	 * @param array<string, mixed> $assoc_args
+	 */
 	protected function format( array $assoc_args ): string {
 		$format = strtolower( (string) ( $assoc_args['format'] ?? 'table' ) );
-		return in_array( $format, [ 'table', 'json', 'yaml' ], true ) ? $format : 'table';
+		return in_array( $format, [ 'table', 'json', 'yaml', 'csv' ], true ) ? $format : 'table';
 	}
 
 	/** @return array<mixed> */
