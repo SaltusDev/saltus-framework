@@ -350,7 +350,7 @@ class Core implements Plugin {
 
 		// Add the injector as the very first service.
 		//TODO by pcarvalho: add injectors
-		$services = self::get_service_classes();
+		$services = $this->get_service_classes();
 
 		if ( $this->enable_filters ) {
 			/**
@@ -411,16 +411,16 @@ class Core implements Plugin {
 	/**
 	 * Get the list of services to register.
 	 *
-	 * Public so config validation can derive the set of valid feature and service
-	 * keys from the same map that registers them. A transcribed copy of this list
-	 * went wrong immediately: it omitted `options`, `settings`, `frontend`,
-	 * `blocks`, and `admin_cols`, so every normal config produced spurious
-	 * "nothing reads this key" warnings.
+	 * Protected and non-static so a consumer subclass can override it and have its
+	 * list used: `register_services()` dispatches through `$this`. It was briefly
+	 * `public static` — invoked via `self::` — purely so config validation could
+	 * reach the map without a `Core` instance; that silently bypassed every
+	 * override, and validation no longer needs it.
 	 *
 	 * @return array<string, class-string> Associative array of identifiers mapped
 	 *                                     to fully qualified class names.
 	 */
-	public static function get_service_classes(): array {
+	protected function get_service_classes(): array {
 		return [
 			'admin_cols'       => AdminCols::class,
 			'admin_filters'    => AdminFilters::class,

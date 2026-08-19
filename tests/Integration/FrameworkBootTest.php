@@ -26,6 +26,25 @@ class FrameworkBootTest extends TestCase {
 	}
 
 	/**
+	 * A subclass's service list must be the one that registers.
+	 *
+	 * `get_service_classes()` was briefly `public static`, invoked via `self::`, so
+	 * an override was either a fatal signature clash or silently skipped — a
+	 * consumer's customised services vanished with no error. Reverting to `self::`
+	 * or to a static method fails this.
+	 */
+	public function testASubclassServiceListReplacesTheDefaultOne(): void {
+		$core = new CoreWithOneService( __DIR__ );
+
+		$core->register_services();
+
+		$container = $core->get_container();
+
+		$this->assertTrue( $container->has( 'mcp' ), 'The subclass list must be the one registered.' );
+		$this->assertFalse( $container->has( 'relationships' ), 'A default the subclass dropped must not register.' );
+	}
+
+	/**
 	 * Config contributors must be collected during the unconditional first pass.
 	 *
 	 * Registration is what makes a contributed rule run at all. A feature that
@@ -85,5 +104,16 @@ class FrameworkBootTest extends TestCase {
 
 		$this->assertSame( [], $wp_activation_hooks );
 		$this->assertSame( [], $wp_deactivation_hooks );
+	}
+}
+
+/** A consumer subclass narrowing the framework's service list, as the docblock promises. */
+class CoreWithOneService extends Core {
+
+	/**
+	 * @return array<string, class-string>
+	 */
+	protected function get_service_classes(): array {
+		return [ 'mcp' => MCP::class ];
 	}
 }
