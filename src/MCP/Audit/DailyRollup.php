@@ -113,11 +113,52 @@ final class DailyRollup {
 		return $this->max_duration_ms;
 	}
 
-	public function error_rate(): float {
+	/**
+	 * Estimated calls this row stands for once sampling is undone.
+	 *
+	 * Failures bypass the sampling draw in AuditLogger::should_record(), so a
+	 * sampled row holds every error and exception but only a `sample_rate`
+	 * fraction of everything else. Scaling the whole recorded count back up
+	 * would therefore inflate the failures too; only the non-failing remainder
+	 * is divided by the rate.
+	 *
+	 * A rate of 0.0 means nothing but failures was ever recorded, so there is no
+	 * sample to extrapolate from and the recorded count is returned unchanged.
+	 */
+	public function estimated_call_count(): float {
+		// No recorded calls is nothing to extrapolate from at any rate, including a
+		// corrupted row that carries failures without the calls they came from.
 		if ( $this->call_count === 0 ) {
 			return 0.0;
 		}
-		return ( $this->error_count + $this->exception_count ) / $this->call_count;
+
+		if ( $this->sample_rate <= 0.0 || $this->sample_rate >= 1.0 ) {
+			return (float) $this->call_count;
+		}
+
+		// Guard a row claiming more failures than calls: a negative remainder
+		// would pull the estimate below the recorded count.
+		$failures = $this->error_count + $this->exception_count;
+		$sampled  = max( 0, $this->call_count - $failures );
+
+		return $failures + ( $sampled / $this->sample_rate );
+	}
+
+	/**
+	 * Share of estimated calls that failed, normalized for sampling.
+	 *
+	 * Dividing the unsampled failure count by the sampled call count overstates
+	 * the rate by roughly 1/`sample_rate`, so the denominator is the estimate
+	 * from estimated_call_count() rather than the recorded count. At a rate of
+	 * 1.0 the two are identical and this is the plain recorded ratio.
+	 */
+	public function error_rate(): float {
+		$estimated = $this->estimated_call_count();
+		if ( $estimated <= 0.0 ) {
+			return 0.0;
+		}
+
+		return ( $this->error_count + $this->exception_count ) / $estimated;
 	}
 
 	/**

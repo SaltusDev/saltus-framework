@@ -106,6 +106,104 @@ class DailyRollupTest extends TestCase {
 		$this->assertSame( 0.0, $rollup->error_rate() );
 	}
 
+	/**
+	 * An unsampled row is the plain recorded ratio: the estimate and the recorded
+	 * count coincide at a rate of 1.0, so nothing about the arithmetic changes.
+	 */
+	public function test_error_rate_is_the_recorded_ratio_when_unsampled(): void {
+		$rollup = new DailyRollup(
+			$this->data(
+				[
+					'sample_rate'     => 1.0,
+					'call_count'      => 20,
+					'error_count'     => 2,
+					'exception_count' => 0,
+				]
+			)
+		);
+
+		$this->assertSame( 20.0, $rollup->estimated_call_count() );
+		$this->assertSame( 0.1, $rollup->error_rate() );
+	}
+
+	/**
+	 * Failures bypass the sampling draw, so a sampled row holds every failure but
+	 * only a fraction of the successes. Dividing by the recorded count would call
+	 * a 1.1%-error day a 10%-error day at a rate of 0.1.
+	 */
+	public function test_error_rate_normalizes_the_sampled_denominator(): void {
+		$rollup = new DailyRollup(
+			$this->data(
+				[
+					'sample_rate'     => 0.1,
+					'call_count'      => 20,
+					'error_count'     => 1,
+					'exception_count' => 1,
+				]
+			)
+		);
+
+		// 2 failures kept whole + 18 sampled successes standing for 180.
+		$this->assertSame( 182.0, $rollup->estimated_call_count() );
+		$this->assertEqualsWithDelta( 2 / 182, $rollup->error_rate(), 1e-12 );
+	}
+
+	/**
+	 * At a rate of 0.0 only failures were ever recorded, so there is no sample to
+	 * scale up. Reporting the recorded ratio is honest about that; extrapolating
+	 * from an empty sample would not be.
+	 */
+	public function test_a_zero_rate_does_not_extrapolate(): void {
+		$rollup = new DailyRollup(
+			$this->data(
+				[
+					'sample_rate'     => 0.0,
+					'call_count'      => 4,
+					'error_count'     => 4,
+					'exception_count' => 0,
+				]
+			)
+		);
+
+		$this->assertSame( 4.0, $rollup->estimated_call_count() );
+		$this->assertSame( 1.0, $rollup->error_rate() );
+	}
+
+	/**
+	 * A row claiming more failures than calls can only be corrupted. The estimate
+	 * must not drop below the recorded count on the negative remainder.
+	 */
+	public function test_a_sampled_row_with_more_failures_than_calls_does_not_shrink(): void {
+		$rollup = new DailyRollup(
+			$this->data(
+				[
+					'sample_rate'     => 0.5,
+					'call_count'      => 3,
+					'error_count'     => 5,
+					'exception_count' => 0,
+				]
+			)
+		);
+
+		$this->assertSame( 5.0, $rollup->estimated_call_count() );
+	}
+
+	public function test_no_calls_estimates_nothing_at_any_rate(): void {
+		$rollup = new DailyRollup(
+			$this->data(
+				[
+					'sample_rate'     => 0.25,
+					'call_count'      => 0,
+					'error_count'     => 2,
+					'exception_count' => 0,
+				]
+			)
+		);
+
+		$this->assertSame( 0.0, $rollup->estimated_call_count() );
+		$this->assertSame( 0.0, $rollup->error_rate() );
+	}
+
 	public function test_to_array_round_trips_through_the_constructor(): void {
 		$original = new DailyRollup( $this->data() );
 		$rebuilt  = new DailyRollup( $original->to_array() );
