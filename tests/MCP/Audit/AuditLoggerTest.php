@@ -18,7 +18,7 @@ class AuditLoggerTest extends TestCase
 
     protected function setUp(): void
     {
-        global $wpdb, $wp_transients;
+        global $wpdb, $wp_transients, $wp_filter_values;
 
         // Tests that model a rejected DDL swap in their own failing double. The
         // global is shared with every other test class, so remember what was
@@ -35,6 +35,10 @@ class AuditLoggerTest extends TestCase
         // marker left by an earlier test would make later ones see no CREATE.
         $wp_transients = [];
 
+        // Sampling and TTL are filter-driven, so a value left behind by one test
+        // silently changes what the next one measures.
+        $wp_filter_values = [];
+
         // The schema-version option is written by ensure_db() and asserted on by
         // the DDL-failure tests, so it cannot carry over between orderings.
         delete_option('saltus_mcp_audit_db_version');
@@ -42,10 +46,11 @@ class AuditLoggerTest extends TestCase
 
     protected function tearDown(): void
     {
-        global $wpdb, $wp_transients;
+        global $wpdb, $wp_transients, $wp_filter_values;
 
-        $wpdb          = $this->original_wpdb;
-        $wp_transients = [];
+        $wpdb             = $this->original_wpdb;
+        $wp_transients    = [];
+        $wp_filter_values = [];
         delete_option('saltus_mcp_audit_db_version');
     }
 
@@ -87,8 +92,10 @@ class AuditLoggerTest extends TestCase
 
         $delete_queries = array_values(array_filter($wpdb->queries, static fn(string $query): bool => strpos($query, 'DELETE FROM') === 0));
 
-        $this->assertCount(1, $delete_queries);
-		$this->assertStringStartsWith("DELETE FROM wp_saltus_mcp_audit WHERE created_at < '", $delete_queries[0]);
+        // Phase 14: cleanup now deletes from two tables (normal audit + slow-call).
+        $this->assertCount(2, $delete_queries);
+        $this->assertStringStartsWith("DELETE FROM wp_saltus_mcp_audit WHERE created_at < '", $delete_queries[0]);
+        $this->assertStringStartsWith("DELETE FROM wp_saltus_mcp_audit_slow_calls WHERE created_at < '", $delete_queries[1]);
     }
 
     /**
@@ -347,6 +354,111 @@ class AuditLoggerTest extends TestCase
         $logger->record($entry);
 
         $this->assertSame('badtool', $wpdb->inserts[0]['data']['ability']);
+    }
+
+    /**
+     * The draw has to land in 0..1. It was `wp_rand() / getrandmax()`, whose two
+     * bounds are unrelated — the result sat above 1.0 on all but a vanishing
+     * fraction of draws, so every rate below 1.0 discarded very nearly
+     * everything while the rate persisted with each rollup claimed otherwise.
+     *
+     * The band is deliberately loose: the point is a draw that never falls under
+     * the rate, not the shape of the distribution. At 2000 entries and p = 0.5
+     * the standard deviation is ~22, so these bounds are some 30 sigma out —
+     * unreachable by chance, and comfortably failed by an unbounded draw.
+     */
+    public function testHalfRateKeepsRoughlyHalfTheEntries(): void
+    {
+        global $wpdb, $wp_filter_values;
+
+        $wp_filter_values['saltus/framework/mcp/audit/sample_rate'] = 0.5;
+
+        $this->recordEntries(2000);
+
+        $kept = count($wpdb->inserts);
+
+        $this->assertGreaterThan(300, $kept, 'the sampling draw must fall below the rate sometimes');
+        $this->assertLessThan(1700, $kept);
+    }
+
+    public function testFullRateRecordsEverything(): void
+    {
+        global $wpdb, $wp_filter_values;
+
+        $wp_filter_values['saltus/framework/mcp/audit/sample_rate'] = 1.0;
+
+        $this->recordEntries(25);
+
+        $this->assertCount(25, $wpdb->inserts);
+    }
+
+    public function testZeroRateRecordsNothing(): void
+    {
+        global $wpdb, $wp_filter_values;
+
+        $wp_filter_values['saltus/framework/mcp/audit/sample_rate'] = 0.0;
+
+        $this->recordEntries(25);
+
+        $this->assertSame([], $wpdb->inserts);
+    }
+
+    public function testADrawUnderTheRateIsKept(): void
+    {
+        global $wpdb, $wp_filter_values;
+
+        $wp_filter_values['saltus/framework/mcp/audit/sample_rate']  = 0.5;
+        $wp_filter_values['saltus/framework/mcp/audit/sample_value'] = 0.2;
+
+        $this->recordEntries(3);
+
+        $this->assertCount(3, $wpdb->inserts);
+    }
+
+    public function testADrawOverTheRateIsDropped(): void
+    {
+        global $wpdb, $wp_filter_values;
+
+        $wp_filter_values['saltus/framework/mcp/audit/sample_rate']  = 0.5;
+        $wp_filter_values['saltus/framework/mcp/audit/sample_value'] = 0.8;
+
+        $this->recordEntries(3);
+
+        $this->assertSame([], $wpdb->inserts);
+    }
+
+    /**
+     * Error visibility must not depend on the sampling rate: a site sampling at
+     * a low rate to control table growth still needs every failure.
+     */
+    public function testFailuresBypassSamplingEntirely(): void
+    {
+        global $wpdb, $wp_filter_values;
+
+        $wp_filter_values['saltus/framework/mcp/audit/sample_rate']  = 0.0;
+        $wp_filter_values['saltus/framework/mcp/audit/sample_value'] = 1.0;
+
+        $logger = new AuditLogger();
+
+        foreach (['error', 'exception'] as $status) {
+            $entry = new AuditEntry('failing', []);
+            $entry->complete($status);
+            $logger->record($entry);
+        }
+
+        $this->assertCount(2, $wpdb->inserts);
+    }
+
+    /** Record $count completed successes through one logger. */
+    private function recordEntries(int $count): void
+    {
+        $logger = new AuditLogger();
+
+        for ($i = 0; $i < $count; $i++) {
+            $entry = new AuditEntry('list_models', []);
+            $entry->complete('success');
+            $logger->record($entry);
+        }
     }
 
     /**
