@@ -207,6 +207,10 @@ $wp_options                = [];
 $wp_transients             = [];
 $wp_activation_hooks       = [];
 $wp_deactivation_hooks     = [];
+$wp_admin_pages            = [];
+$wp_ajax_referer_checks    = [];
+$wp_json_responses         = [];
+$wp_json_response_returns  = false;
 $wp_scheduled_events       = [];
 $wpdb                      = new class implements \Saltus\WP\Framework\MCP\Audit\AuditDatabase {
 	public string $prefix = 'wp_';
@@ -1190,6 +1194,98 @@ if ( ! function_exists( 'esc_html__' ) ) {
 if ( ! function_exists( 'wp_die' ) ) {
 	function wp_die( $message = '', $title = '', $args = [] ): void {
 		throw new \RuntimeException( is_scalar( $message ) ? (string) $message : 'wp_die called' );
+	}
+}
+
+/**
+ * Raised in place of the `die()` that ends a real AJAX response, so a test can
+ * assert on what was sent and on whether anything ran afterwards.
+ */
+class SaltusJsonResponse extends \RuntimeException {
+
+	public bool $success;
+
+	/** @var mixed */
+	public $data;
+
+	/**
+	 * @param bool $success Whether wp_send_json_success or _error was called.
+	 * @param mixed $data The payload sent.
+	 */
+	public function __construct( bool $success, $data ) {
+		parent::__construct( $success ? 'json_success' : 'json_error' );
+		$this->success = $success;
+		$this->data    = $data;
+	}
+}
+
+if ( ! function_exists( 'wp_send_json_success' ) ) {
+	function wp_send_json_success( $data = null, int $status_code = 0 ): void {
+		saltus_record_json_response( true, $data );
+	}
+}
+
+if ( ! function_exists( 'wp_send_json_error' ) ) {
+	function wp_send_json_error( $data = null, int $status_code = 0 ): void {
+		saltus_record_json_response( false, $data );
+	}
+}
+
+if ( ! function_exists( 'saltus_record_json_response' ) ) {
+	/**
+	 * Record a JSON response, then either throw or return.
+	 *
+	 * Throwing models WordPress ending the request, which is what most tests
+	 * want. Returning models a caller that keeps executing after the send, which
+	 * is the only way to prove an explicit `return` after a rejection is the
+	 * thing stopping the work rather than the `die()`.
+	 *
+	 * @param bool $success Whether this is a success response.
+	 * @param mixed $data The payload.
+	 */
+	function saltus_record_json_response( bool $success, $data ): void {
+		global $wp_json_responses, $wp_json_response_returns;
+
+		$wp_json_responses   = is_array( $wp_json_responses ) ? $wp_json_responses : [];
+		$wp_json_responses[] = compact( 'success', 'data' );
+
+		if ( ! empty( $wp_json_response_returns ) ) {
+			return;
+		}
+
+		throw new SaltusJsonResponse( $success, $data );
+	}
+}
+
+if ( ! function_exists( 'check_ajax_referer' ) ) {
+	function check_ajax_referer( $action = -1, $query_arg = false, bool $stop = true ) {
+		global $wp_nonce_valid, $wp_ajax_referer_checks;
+
+		$wp_ajax_referer_checks   = is_array( $wp_ajax_referer_checks ) ? $wp_ajax_referer_checks : [];
+		$wp_ajax_referer_checks[] = compact( 'action', 'query_arg' );
+
+		if ( ! $wp_nonce_valid ) {
+			throw new \RuntimeException( 'invalid_nonce' );
+		}
+
+		return 1;
+	}
+}
+
+if ( ! function_exists( 'add_management_page' ) ) {
+	function add_management_page( string $page_title, string $menu_title, string $capability, string $menu_slug, $callback = '', $position = null ) {
+		global $wp_admin_pages;
+
+		$wp_admin_pages   = is_array( $wp_admin_pages ) ? $wp_admin_pages : [];
+		$wp_admin_pages[] = compact( 'page_title', 'menu_title', 'capability', 'menu_slug', 'callback', 'position' );
+
+		return 'tools_page_' . $menu_slug;
+	}
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+	function esc_html_e( string $text, string $domain = 'default' ): void {
+		echo esc_html( $text );
 	}
 }
 
