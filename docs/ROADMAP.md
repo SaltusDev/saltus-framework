@@ -1,11 +1,11 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` is at 2.1.1, released 2026-08-19 with an annotated `v2.1.1` tag; `CHANGELOG.md` now cuts a `[2.1.0]` section, but `[Unreleased]` is empty and no `[2.1.1]` section exists yet — see finding 17.27 in [Phase 17](#phase-17--v211-review--227); relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
+- Version: `package.json` is at 2.1.1, released 2026-08-19 with an annotated `v2.1.1` tag; `CHANGELOG.md` now cuts a `[2.1.0]` section, but `[Unreleased]` is empty and no `[2.1.1]` section exists yet — see finding 17.27 in [Phase 17](#phase-17--v211-review--2527); relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
 - **Phase 14 delivered 2026-08-16** (daily rollups, retention ordering, aggregate and per-client metrics, admin dashboard, `wp saltus metrics`, audit health states, error hand-off, sampling, slow-call logging, rollup freshness, and coverage). There is no Phase 9 — see [Phase Numbering](#phase-numbering).
-- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Open review backlogs: [Phase 15 — v1.8.5 Review](#phase-15--v185-review--05) (0/5), [Phase 16 — v2.1.0 Review](#phase-16--v210-review--09) (0/9, approved 2026-08-17 as the next work), and [Phase 17 — v2.1.1 Review](#phase-17--v211-review--227) (2/27 — 17.1 audit sampling range and 17.2 rollup upsert atomicity were fixed in the v2.1.1 cycle; the remaining 25 are open).
+- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Review backlogs after the 2026-08-19 fix pass: [Phase 15 — v1.8.5 Review](#phase-15--v185-review--45) (4/5 — only the 15.3 changelog note is left, deferred to finding 17.27), [Phase 16 — v2.1.0 Review](#phase-16--v210-review--79) (7/9 — 16.3 reciprocal permission reconciliation and 16.4 privacy cascade read path are held open pending a design decision), and [Phase 17 — v2.1.1 Review](#phase-17--v211-review--2527) (25/27 — 17.5 static-analysis strictness and 17.27 changelog remain).
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface, audit rollups and the observability metrics dashboard
 - WordPress-native MCP/Abilities surface with 25 tools
 - REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
@@ -15,7 +15,7 @@
 - MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from the old saltus_rest array to a per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
-- 1293 PHPUnit tests passing (3360 assertions) and PHPStan Level 7 clean across the configured analysis set, verified in the v2.1.1 cycle; `phpstan.neon` now sets `treatPhpDocTypesAsCertain: false` globally — see finding 17.5. The `npm test` JS suites are untouched by this cycle.
+- 1369 PHPUnit tests passing (3560 assertions) and PHPStan Level 7 clean, plus 51 `node --test` JS tests across three suites, verified 2026-08-19 after the fix pass. `phpstan.neon` still sets `treatPhpDocTypesAsCertain: false` globally — see finding 17.5.
 - WebMCP Phase 8A delivers a third consumer of the tool registry (alongside MCP/Abilities and WP-CLI): read-only tools projected into the visitor's browser for models that opt in with `webmcp: { enabled: true, frontend: true }`.
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
@@ -1165,7 +1165,7 @@ fields:
 
 ---
 
-## Phase 15 — v1.8.5 Review [✗] (0/5)
+## Phase 15 — v1.8.5 Review [~] (4/5)
 
 @priority medium @owner OmensUI
 
@@ -1177,9 +1177,9 @@ Code review findings from the v1.8.5 cycle. Each finding is an open task to fix 
 
 All 19 service ids are treated as valid top-level model config keys, but 12 are only meaningful under `features:` (`admin_cols`, `admin_filters`, `ai_assistant`, `draganddrop`, `duplicate`, `editorial_review`, `mcp`, `privacy`, `quick_edit`, `remember_tabs`, `single_export`) and `wp_cli` is not a model-config key at all — nothing reads them at depth 0. The unknown-key warning (and the generated reference) now silently accepts genuinely inert keys.
 
-- [ ] Restrict the derived set to service ids actually read at the top level (`frontend`, `meta`, `settings`, `blocks`, `webmcp`, `ai_context`, `relationships`), or keep an explicit top-level allowlist alongside the derivation
-- [ ] Add a regression test asserting `wp_cli` and at least one `features`-only id (e.g. `admin_cols`) are NOT in `known_top_level_keys`
-- [ ] Regenerate `docs/api/config-reference.md` (`composer docs:config`) so the published key list matches
+- [x] Restrict the derived set to service ids actually read at the top level (`frontend`, `meta`, `settings`, `blocks`, `webmcp`, `ai_context`, `relationships`), or keep an explicit top-level allowlist alongside the derivation
+- [x] Add a regression test asserting `wp_cli` and at least one `features`-only id (e.g. `admin_cols`) are NOT in `known_top_level_keys`
+- [x] Regenerate `docs/api/config-reference.md` (`composer docs:config`) so the published key list matches
 
 ### 15.2 [medium] Roadmap marks `--model` and `--strict` for `wp saltus config validate` as done; the command implements neither
 
@@ -1187,9 +1187,9 @@ All 19 service ids are treated as valid top-level model config keys, but 12 are 
 
 The Phase 12 roadmap item promises `wp saltus config validate [--model=<name>] [--strict]`. The implemented command has no `--model` filter and no `--strict` mode, so warnings can never fail CI — the advertised CI use case is absent.
 
-- [ ] Add `--model=<name>` to narrow the summary/errors to one model, or update the roadmap item to the implemented scope
-- [ ] Add `--strict` so warnings exit non-zero, and document it in the command docblock
-- [ ] Cover both flags in `ConfigCommandTest`
+- [x] Add `--model=<name>` to narrow the summary/errors to one model, or update the roadmap item to the implemented scope
+- [x] Add `--strict` so warnings exit non-zero, and document it in the command docblock
+- [x] Cover both flags in `ConfigCommandTest`
 
 ### 15.3 [medium] `Core::get_service_classes()` changed from protected instance to public static and is invoked via `self::`
 
@@ -1197,7 +1197,7 @@ The Phase 12 roadmap item promises `wp saltus config validate [--model=<name>] [
 
 This is a framework API change shipped in a patch release. A consumer subclass that overrode the former `protected` method now either fatals (non-static override of a static method) or is silently bypassed: `self::` never dispatches to an override, so a subclass's customised service list would no longer be used and its services would silently vanish.
 
-- [ ] Call `static::get_service_classes()` so compatible static overrides are honoured, or keep an instance method and add a static bridge for the schema derivation
+- [x] Call `static::get_service_classes()` so compatible static overrides are honoured, or keep an instance method and add a static bridge for the schema derivation
 - [ ] Note the signature change in the changelog and release notes for 1.8.5
 
 ### 15.4 [low] `SuggestsNearestKey` trait duplicates `ConfigValidator::nearest()`
@@ -1206,7 +1206,7 @@ This is a framework API change shipped in a patch release. A consumer subclass t
 
 The trait's docblock says it exists so `ConfigValidator` and every contributor agree on one distance threshold, but `ConfigValidator` kept its own private copy — two implementations of the same logic that can drift.
 
-- [ ] Make `ConfigValidator` use the `SuggestsNearestKey` trait and delete the private `nearest()` method and `SUGGESTION_MAX_DISTANCE` constant
+- [x] Make `ConfigValidator` use the `SuggestsNearestKey` trait and delete the private `nearest()` method and `SUGGESTION_MAX_DISTANCE` constant
 
 ### 15.5 [low] `--format=csv` advertised by `wp saltus config validate` but silently coerced to table
 
@@ -1214,11 +1214,11 @@ The trait's docblock says it exists so `ConfigValidator` and every contributor a
 
 WP-CLI accepts `--format=csv` (it is in the declared options list), then `AbstractCommand::format()` falls back to `table`, so a caller asking for CSV gets a table with no error.
 
-- [ ] Add `csv` to the accepted formats in `AbstractCommand::format()`, or drop `csv` from the ConfigCommand docblock options
+- [x] Add `csv` to the accepted formats in `AbstractCommand::format()`, or drop `csv` from the ConfigCommand docblock options
 
 ---
 
-## Phase 16 — v2.1.0 Review [✗] (0/9)
+## Phase 16 — v2.1.0 Review [~] (7/9)
 
 @priority high @owner OmensUI
 
@@ -1230,7 +1230,7 @@ Code review findings from the v2.1.0 cycle. Each finding is an open task to fix 
 
 Impact: Schema upgrades can fail or diverge on supported database configurations, leaving rollup storage unavailable or partially migrated.
 
-- [ ] Replace the database-specific migration with a portable WordPress-compatible schema upgrade, preserve existing rollup data, and cover fresh installs plus upgrades from the prior schema.
+- [x] Replace the database-specific migration with a portable WordPress-compatible schema upgrade, preserve existing rollup data, and cover fresh installs plus upgrades from the prior schema.
 
 ### 16.2 [high] Make relationship synchronization atomic
 
@@ -1238,7 +1238,7 @@ Impact: Schema upgrades can fail or diverge on supported database configurations
 
 Impact: A failure between writes can leave the forward and reciprocal relationship state partially updated and internally inconsistent.
 
-- [ ] Execute the complete relationship sync atomically, roll back every mutation on failure, and verify that interrupted attach, detach, and reorder operations preserve the prior state.
+- [x] Execute the complete relationship sync atomically, roll back every mutation on failure, and verify that interrupted attach, detach, and reorder operations preserve the prior state.
 
 ### 16.3 [high] Reconcile reciprocal relationship permissions explicitly
 
@@ -1262,7 +1262,7 @@ Impact: Personal data in filtered or otherwise non-visible relationships can sur
 
 Impact: Enabling client metrics can remove or distort the aggregate series, so dashboard and API totals become incomplete or mode-dependent.
 
-- [ ] Store and query aggregate and client-scoped rollups as distinct coexisting series, prevent double-counting, and cover API results with client mode both enabled and disabled.
+- [x] Store and query aggregate and client-scoped rollups as distinct coexisting series, prevent double-counting, and cover API results with client mode both enabled and disabled.
 
 ### 16.6 [medium] Make error-rate calculation sampling-aware
 
@@ -1270,7 +1270,7 @@ Impact: Enabling client metrics can remove or distort the aggregate series, so d
 
 Impact: Sampled traffic can produce materially misleading error rates and cause operators to misjudge service health.
 
-- [ ] Weight or normalize sampled call and error counts using the recorded sampling metadata, define behavior for mixed sampling rates, and add arithmetic coverage for sampled and unsampled windows.
+- [x] Weight or normalize sampled call and error counts using the recorded sampling metadata, define behavior for mixed sampling rates, and add arithmetic coverage for sampled and unsampled windows.
 
 ### 16.7 [medium] Decouple slow-call retention cleanup
 
@@ -1278,7 +1278,7 @@ Impact: Sampled traffic can produce materially misleading error rates and cause 
 
 Impact: Configuring normal audit retention as unlimited also disables pruning of the slow-call store, allowing it to grow without honoring its own retention policy.
 
-- [ ] Run slow-call cleanup independently of normal audit retention, and cover unlimited normal retention combined with finite slow-call retention.
+- [x] Run slow-call cleanup independently of normal audit retention, and cover unlimited normal retention combined with finite slow-call retention.
 
 ### 16.8 [medium] Update rollup freshness only after successful rollups
 
@@ -1286,7 +1286,7 @@ Impact: Configuring normal audit retention as unlimited also disables pruning of
 
 Impact: Health reporting can claim rollups are fresh while metrics are stale or incomplete, masking a failed retention job.
 
-- [ ] Record the freshness timestamp only after all required rollup writes succeed, leave the prior value unchanged on every failure path, and cover partial and total rollup failures.
+- [x] Record the freshness timestamp only after all required rollup writes succeed, leave the prior value unchanged on every failure path, and cover partial and total rollup failures.
 
 ### 16.9 [medium] Implement or remove the blank metrics chart
 
@@ -1294,11 +1294,11 @@ Impact: Health reporting can claim rollups are fresh while metrics are stale or 
 
 Impact: Operators see an empty chart region that implies missing data or a broken dashboard and provides no usable metrics insight.
 
-- [ ] Either render an accessible chart from the supplied metrics with loading, empty, and error states, or remove the unused chart markup and JavaScript path so the dashboard exposes no blank control.
+- [x] Either render an accessible chart from the supplied metrics with loading, empty, and error states, or remove the unused chart markup and JavaScript path so the dashboard exposes no blank control.
 
 ---
 
-## Phase 17 — v2.1.1 Review [~] (2/27)
+## Phase 17 — v2.1.1 Review [~] (25/27)
 
 @priority high @owner OmensUI
 
@@ -1326,7 +1326,7 @@ Impact: Overlapping or repeated rollup runs can persist more than one aggregate 
 
 Impact: On every install that has not yet recorded a slow call, the retention cron issues a delete against a missing table and logs a database error on each run.
 
-- [ ] Ensure the slow-call table exists on the same schema path as the audit table, and cover retention on an install with no recorded slow calls.
+- [x] Ensure the slow-call table exists on the same schema path as the audit table, and cover retention on an install with no recorded slow calls.
 
 ### 17.4 [medium] Throttle the slow-call schema check
 
@@ -1334,7 +1334,7 @@ Impact: On every install that has not yet recorded a slow call, the retention cr
 
 Impact: A burst of slow calls turns each one into an additional schema statement, adding database work to exactly the requests already identified as slow.
 
-- [ ] Move the slow-call schema check behind the same verified-transient throttle used for the audit table, and cover that repeated slow calls issue the schema statement once.
+- [x] Move the slow-call schema check behind the same verified-transient throttle used for the audit table, and cover that repeated slow calls issue the schema statement once.
 
 ### 17.5 [medium] Reduce global static-analysis strictness back
 
@@ -1350,7 +1350,7 @@ Impact: A whole class of type contradictions stops being reported repository-wid
 
 Impact: A long window on a busy site loads an unbounded result set into memory per dashboard request, with the client-scoped query growing by distinct client identifier as well as by ability.
 
-- [ ] Apply an explicit bound to both rollup reads with deterministic ordering and a way to page beyond it, and cover a window that exceeds the bound.
+- [x] Apply an explicit bound to both rollup reads with deterministic ordering and a way to page beyond it, and cover a window that exceeds the bound.
 
 ### 17.7 [medium] Backfill rollups for missed retention runs
 
@@ -1358,7 +1358,7 @@ Impact: A long window on a busy site loads an unbounded result set into memory p
 
 Impact: Any gap in the retention schedule permanently loses the metrics for the skipped days, because the source audit rows are deleted with no path to recompute them.
 
-- [ ] Roll up every date not yet covered by the recorded completion marker before pruning, bound the catch-up work per run, and cover a multi-day gap.
+- [x] Roll up every date not yet covered by the recorded completion marker before pruning, bound the catch-up work per run, and cover a multi-day gap.
 
 ### 17.8 [medium] Disclose sampling when rates differ across a window
 
@@ -1366,7 +1366,7 @@ Impact: Any gap in the retention schedule permanently loses the metrics for the 
 
 Impact: Metrics spanning a sampling configuration change are presented as exact counts with no sampling notice, which is the one case where the disclosure matters most.
 
-- [ ] Report sampling whenever any rollup in the window is sampled, expose the per-rate breakdown rather than a single value, and cover a window mixing sampled and unsampled days.
+- [x] Report sampling whenever any rollup in the window is sampled, expose the per-rate breakdown rather than a single value, and cover a window mixing sampled and unsampled days.
 
 ### 17.9 [medium] Answer denied relationship reads with a refusal
 
@@ -1374,7 +1374,7 @@ Impact: Metrics spanning a sampling configuration change are presented as exact 
 
 Impact: A caller cannot distinguish a relationship it may not read from one that is genuinely empty, and the read half of the policy diverges from the write half, which refuses loudly.
 
-- [ ] Refuse denied reads through the existing rejection path at the surfaces that can carry an error, keep the filtered-list behaviour only where a hard error would hide permitted relationships, and cover both shapes.
+- [x] Refuse denied reads through the existing rejection path at the surfaces that can carry an error, keep the filtered-list behaviour only where a hard error would hide permitted relationships, and cover both shapes.
 
 ### 17.10 [medium] Cover the new sampling and slow-call logic with tests
 
@@ -1382,7 +1382,7 @@ Impact: A caller cannot distinguish a relationship it may not read from one that
 
 Impact: The sampling decision, the failure bypass, the slow-call threshold, and the error hook can all regress without any test failing.
 
-- [ ] Add coverage for the sampling decision at its boundaries, the error and exception bypass, the slow-call threshold and its persistence, and the error action firing only after a successful insert.
+- [x] Add coverage for the sampling decision at its boundaries, the error and exception bypass, the slow-call threshold and its persistence, and the error action firing only after a successful insert.
 
 ### 17.11 [medium] Discard stale metrics responses
 
@@ -1390,7 +1390,7 @@ Impact: The sampling decision, the failure bypass, the slow-call threshold, and 
 
 Impact: A slower earlier request can resolve after a newer one and overwrite the displayed metrics with data for a filter the operator has already changed.
 
-- [ ] Abort or ignore superseded requests so only the newest response updates state, and cover an out-of-order resolution.
+- [x] Abort or ignore superseded requests so only the newest response updates state, and cover an out-of-order resolution.
 
 ### 17.12 [low] Unslash the ability filter before sanitizing
 
@@ -1398,7 +1398,7 @@ Impact: A slower earlier request can resolve after a newer one and overwrite the
 
 Impact: WordPress-added slashes survive into the comparison value, so an ability name containing a quote silently matches nothing instead of filtering.
 
-- [ ] Unslash the request value before sanitizing it, matching the convention used by the other request-reading surfaces.
+- [x] Unslash the request value before sanitizing it, matching the convention used by the other request-reading surfaces.
 
 ### 17.13 [low] Render or drop the estimated call total
 
@@ -1406,7 +1406,7 @@ Impact: WordPress-added slashes survive into the comparison value, so an ability
 
 Impact: The payload carries a field nothing displays while the visible notice contradicts it, so the extrapolation is both unused and misdescribed.
 
-- [ ] Either surface the estimate alongside the recorded count with its own label, or remove the field and keep the notice as the single statement about sampling.
+- [x] Either surface the estimate alongside the recorded count with its own label, or remove the field and keep the notice as the single statement about sampling.
 
 ### 17.14 [low] Validate the `--since` argument
 
@@ -1414,7 +1414,7 @@ Impact: The payload carries a field nothing displays while the visible notice co
 
 Impact: An empty value widens the window to every stored rollup, and a malformed value reports no metrics rather than a bad argument, so both failure modes look like absent data.
 
-- [ ] Validate `--since` as a calendar date and fail with a clear message otherwise, and cover an empty and a malformed value.
+- [x] Validate `--since` as a calendar date and fail with a clear message otherwise, and cover an empty and a malformed value.
 
 ### 17.15 [low] Prepare the table existence check
 
@@ -1422,7 +1422,7 @@ Impact: An empty value widens the window to every stored rollup, and a malformed
 
 Impact: This is the one unprepared interpolation among the new audit queries, so the file no longer demonstrates the pattern the rest of the tree follows.
 
-- [ ] Pass the table name as a prepared value, matching the prepared form used by the other audit queries.
+- [x] Pass the table name as a prepared value, matching the prepared form used by the other audit queries.
 
 ### 17.16 [low] Make the audit staleness threshold configurable
 
@@ -1430,7 +1430,7 @@ Impact: This is the one unprepared interpolation among the new audit queries, so
 
 Impact: A site with legitimately low MCP traffic is reported as stale and unhealthy whenever an hour passes without a call.
 
-- [ ] Make the staleness bound filterable with the current value as the default, and cover a quiet site reporting healthy.
+- [x] Make the staleness bound filterable with the current value as the default, and cover a quiet site reporting healthy.
 
 ### 17.17 [low] Guard the observability error action
 
@@ -1438,7 +1438,7 @@ Impact: A site with legitimately low MCP traffic is reported as stale and unheal
 
 Impact: The class fatals rather than degrading in the non-WordPress contexts its other guards are written to tolerate, so the file is inconsistent with its own convention.
 
-- [ ] Guard the action emission like the other WordPress calls in the class, and cover recording a failure with the function absent.
+- [x] ~~Guard the action emission like the other WordPress calls in the class~~ — **won't fix.** The framework is WordPress-only, so `do_action()` is always defined; the `function_exists()` guards elsewhere in the class are the inconsistency, not this call. The action is now covered instead by tests asserting it fires only after a successful insert.
 
 ### 17.18 [low] Reject unrecognized capability operations at normalization
 
@@ -1446,7 +1446,7 @@ Impact: The class fatals rather than degrading in the non-WordPress contexts its
 
 Impact: A typo in an operation name produces a stored rule that silently never applies, and only config validation reports it, so a site that does not run validation believes the relationship is protected.
 
-- [ ] Narrow normalization to the operations the policy defines, and cover an unrecognized operation being dropped rather than stored.
+- [x] Narrow normalization to the operations the policy defines, and cover an unrecognized operation being dropped rather than stored.
 
 ### 17.19 [low] Consider read permission when registering the metabox
 
@@ -1454,7 +1454,7 @@ Impact: A typo in an operation name produces a stored rule that silently never a
 
 Impact: A post type whose every relationship the caller may not read still registers a relationships metabox that renders no fields.
 
-- [ ] Base the registration decision on relationships the caller may actually read, and cover a post type where every relationship is read-denied.
+- [x] Base the registration decision on relationships the caller may actually read, and cover a post type where every relationship is read-denied.
 
 ### 17.20 [low] Use a valid ARIA role for the sampling notice
 
@@ -1462,7 +1462,7 @@ Impact: A post type whose every relationship the caller may not read still regis
 
 Impact: The role is ignored by assistive technology, so the notice carries no semantics and the invalid value fails accessibility validation.
 
-- [ ] Replace the invalid role with a defined one or with native markup that conveys the same meaning, and check it against the project accessibility notes.
+- [x] Replace the invalid role with a defined one or with native markup that conveys the same meaning, and check it against the project accessibility notes.
 
 ### 17.21 [low] Guard the numeric formatting in the dashboard
 
@@ -1470,7 +1470,7 @@ Impact: The role is ignored by assistive technology, so the notice carries no se
 
 Impact: A single absent or non-numeric field throws during render and blanks the entire dashboard instead of degrading that one cell.
 
-- [ ] Coerce and default the response values before formatting them, and cover a response missing a numeric field.
+- [x] Coerce and default the response values before formatting them, and cover a response missing a numeric field.
 
 ### 17.22 [low] Generate or remove the dashboard asset manifest
 
@@ -1478,7 +1478,7 @@ Impact: A single absent or non-numeric field throws during render and blanks the
 
 Impact: The version and dependency list exist in two places that drift apart, and the manifest implies a build pipeline that does not run for this asset.
 
-- [ ] Either generate the manifest from a real build step or drop it and read the version from the single existing source, removing the duplicated fallback.
+- [x] Either generate the manifest from a real build step or drop it and read the version from the single existing source, removing the duplicated fallback.
 
 ### 17.23 [medium] Keep the aggregate sentinel out of the client identifier space
 
@@ -1486,7 +1486,7 @@ Impact: The version and dependency list exist in two places that drift apart, an
 
 Impact: With client mode on, one client whose identifier sanitizes to empty collides with the aggregate row on the unique key, so the upsert overwrites the day's total with that single client's subtotal. The row hydrates back as the aggregate and is excluded from `get_client_rollups()`, so the corrupted total is presented as exact and the client vanishes from the per-client view.
 
-- [ ] Normalize an empty identifier to the aggregate case before the pair list is built, or reserve a sentinel no identifier can produce, and cover an audit row whose identifier is the empty string under client mode.
+- [x] Normalize an empty identifier to the aggregate case before the pair list is built, or reserve a sentinel no identifier can produce, and cover an audit row whose identifier is the empty string under client mode.
 
 ### 17.24 [medium] Record the rollup schema version only when the 1.2.0 repair applied
 
@@ -1494,7 +1494,7 @@ Impact: With client mode on, one client whose identifier sanitizes to empty coll
 
 Impact: A table at the old schema whose version option is absent — a partial restore, a deleted option, a table created in a context without the options API — is stamped 1.2.0 without the repair ever running, and the guard then refuses to retry. The duplicate aggregate rows the fix exists to collapse survive permanently, and the deliberate `IS NULL` tolerance in the aggregate read keeps serving them, so the double-counting continues with no failing signal.
 
-- [ ] Decide the repair from the table's own state rather than from the presence of the option, advance the recorded version only after the normalization is confirmed applied, and cover an old-schema table with no version option.
+- [x] Decide the repair from the table's own state rather than from the presence of the option, advance the recorded version only after the normalization is confirmed applied, and cover an old-schema table with no version option.
 
 ### 17.25 [low] Bound and guard the duplicate-collapse migration
 
@@ -1502,7 +1502,7 @@ Impact: A table at the old schema whose version option is absent — a partial r
 
 Impact: The first dashboard or CLI read after the upgrade pays for an unbounded self-join delete plus a table rebuild inside the request, and concurrent readers each start the same repair before any of them records the new version, serializing on metadata locks.
 
-- [ ] Move the repair to an upgrade routine, take a lock so only one runner performs it, bound the delete per pass, and cover a table carrying many duplicate rows.
+- [x] Move the repair to an upgrade routine, take a lock so only one runner performs it, bound the delete per pass, and cover a table carrying many duplicate rows.
 
 ### 17.26 [low] State the sampling precision floor the draw actually has
 
@@ -1510,7 +1510,7 @@ Impact: The first dashboard or CLI read after the upgrade pays for an unbounded 
 
 Impact: A rate under the precision floor is silently a total stop rather than sampling, while the rate persisted with each rollup still claims that proportion was kept, so the extrapolation downstream reads a rate that was never applied.
 
-- [ ] Say in the docblock what floor the constant imposes, clamp or refuse a configured rate below it rather than treating it as zero, and cover a rate under the floor.
+- [x] Say in the docblock what floor the constant imposes, clamp or refuse a configured rate below it rather than treating it as zero, and cover a rate under the floor.
 
 ### 17.27 [low] Document the release in the changelog
 
