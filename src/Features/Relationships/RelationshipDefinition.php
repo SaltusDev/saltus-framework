@@ -40,6 +40,17 @@ final class RelationshipDefinition {
 	private bool $cascade_delete;
 	private ?string $capability;
 
+	/**
+	 * Per-operation capability rules, keyed by `read`/`write`.
+	 *
+	 * Absent means unrestricted. An operation present with a non-empty list means
+	 * the caller needs one of those capabilities. Distinct from `$capability`,
+	 * which is an admin-UI affordance no programmatic surface reads.
+	 *
+	 * @var array<string, list<string>>
+	 */
+	private array $capabilities;
+
 	/** @var array<string, array<string, mixed>> */
 	private array $pivot;
 
@@ -57,6 +68,56 @@ final class RelationshipDefinition {
 		$this->pivot          = $this->normalize_pivot( $attributes['pivot'] ?? null );
 		$this->reciprocal     = $this->optional_string( $attributes, 'reciprocal' );
 		$this->capability     = $this->optional_string( $attributes, 'capability' );
+		$this->capabilities   = $this->normalize_capabilities( $attributes['capabilities'] ?? null );
+	}
+
+	/**
+	 * Keep only operations declaring at least one usable capability string.
+	 *
+	 * An unparseable rule is dropped rather than kept as an empty list. An empty
+	 * list would satisfy nothing and deny everyone, turning a config typo into a
+	 * lockout; dropping it preserves current access and leaves the complaint to
+	 * `RelationshipConfigRules`, where the author can act on it.
+	 *
+	 * Accepts a bare string (`read: editor`) as well as a list, because a
+	 * single-capability rule is the common case and requiring a one-item list for it
+	 * is the kind of friction that gets the key spelled wrong.
+	 *
+	 * @param mixed $capabilities Raw `capabilities` declaration.
+	 * @return array<string, list<string>>
+	 */
+	private function normalize_capabilities( $capabilities ): array {
+		if ( ! is_array( $capabilities ) ) {
+			return [];
+		}
+
+		$normalized = [];
+		foreach ( $capabilities as $operation => $declared ) {
+			if ( ! is_string( $operation ) || $operation === '' ) {
+				continue;
+			}
+
+			if ( is_string( $declared ) ) {
+				$declared = [ $declared ];
+			}
+
+			if ( ! is_array( $declared ) ) {
+				continue;
+			}
+
+			$list = [];
+			foreach ( $declared as $capability ) {
+				if ( is_string( $capability ) && $capability !== '' ) {
+					$list[] = $capability;
+				}
+			}
+
+			if ( $list !== [] ) {
+				$normalized[ $operation ] = $list;
+			}
+		}
+
+		return $normalized;
 	}
 
 	/**
@@ -140,8 +201,33 @@ final class RelationshipDefinition {
 		return $this->cascade_delete;
 	}
 
+	/**
+	 * Capability recorded for admin-UI gating.
+	 *
+	 * Read only by `RelationshipMetabox`, `RelationshipColumn`, and
+	 * `RelationshipBulkActions`. No programmatic surface enforces it — see
+	 * `get_capabilities_for()` for the key that is a security boundary.
+	 */
 	public function get_capability(): ?string {
 		return $this->capability;
+	}
+
+	/**
+	 * Capabilities granting one operation, or null when unrestricted.
+	 *
+	 * @return list<string>|null
+	 */
+	public function get_capabilities_for( string $operation ): ?array {
+		return $this->capabilities[ $operation ] ?? null;
+	}
+
+	/**
+	 * Every declared per-operation rule, keyed by operation.
+	 *
+	 * @return array<string, list<string>>
+	 */
+	public function get_capabilities(): array {
+		return $this->capabilities;
 	}
 
 	/** @return array<string, array<string, mixed>> */

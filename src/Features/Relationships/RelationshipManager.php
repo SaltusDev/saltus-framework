@@ -21,10 +21,29 @@ final class RelationshipManager {
 
 	private RelationshipRegistry $registry;
 	private RelationshipStore $store;
+	private RelationshipPermissionPolicy $permissions;
 
-	public function __construct( RelationshipRegistry $registry, ?RelationshipStore $store = null ) {
-		$this->registry = $registry;
-		$this->store    = $store ?? new RelationshipStore();
+	/**
+	 * @param RelationshipPermissionPolicy|null $permissions Per-relationship access policy.
+	 *                                                      Enforced here rather than per surface
+	 *                                                      because every path — REST, MCP, WP-CLI,
+	 *                                                      metabox, bulk actions — routes through
+	 *                                                      this class, so a new caller inherits the
+	 *                                                      gate instead of having to remember it.
+	 */
+	public function __construct(
+		RelationshipRegistry $registry,
+		?RelationshipStore $store = null,
+		?RelationshipPermissionPolicy $permissions = null
+	) {
+		$this->registry    = $registry;
+		$this->store       = $store ?? new RelationshipStore();
+		$this->permissions = $permissions ?? new RelationshipPermissionPolicy();
+	}
+
+	/** The access policy, for surfaces that need to gate before they render. */
+	public function permissions(): RelationshipPermissionPolicy {
+		return $this->permissions;
 	}
 
 	/** Resolve one relationship declared by a post type. */
@@ -39,7 +58,11 @@ final class RelationshipManager {
 	 */
 	public function describe( string $post_type ): array {
 		$described = [];
-		foreach ( $this->registry->get_for_model( $post_type ) as $definition ) {
+		// Filtered rather than refused: a caller listing relationships wants the ones
+		// it can use, and a hard error would make one denied relationship hide every
+		// other. A denied write still refuses loudly, because there a silent skip is
+		// indistinguishable from a successful no-op.
+		foreach ( $this->permissions->filter_readable( $this->registry->get_for_model( $post_type ) ) as $definition ) {
 			$described[] = $definition->to_array();
 		}
 
@@ -53,10 +76,26 @@ final class RelationshipManager {
 	 */
 	public function get_related_ids( int $post_id, string $post_type, string $name ): array {
 		$definition = $this->registry->get( $post_type, $name );
-		if ( ! $definition instanceof RelationshipDefinition ) {
+		if ( ! $definition instanceof RelationshipDefinition || ! $this->permissions->can_read( $definition ) ) {
 			return [];
 		}
 
+		return $this->stored_related_ids( $definition, $post_id );
+	}
+
+	/**
+	 * Related ids straight from storage, with no capability check.
+	 *
+	 * Exists for cascade cleanup, which is not a user action. `delete_all_for_post()`
+	 * runs on `before_delete_post` and must resolve the same targets regardless of who
+	 * triggered the delete: routing it through the gated read would mean a user denied
+	 * read silently strands every cascade target, leaving rows pointing at a post that
+	 * no longer exists. Data integrity is not a permission question, and the deletion
+	 * itself is already authorized by whatever let the post be deleted.
+	 *
+	 * @return list<int>
+	 */
+	private function stored_related_ids( RelationshipDefinition $definition, int $post_id ): array {
 		$rows    = $this->store->get_by_posts( $definition->get_key(), $definition->own_column(), [ $post_id ] );
 		$related = $definition->related_column();
 		$ids     = [];
@@ -74,7 +113,7 @@ final class RelationshipManager {
 	 */
 	public function get_related( int $post_id, string $post_type, string $name ): array {
 		$definition = $this->registry->get( $post_type, $name );
-		if ( ! $definition instanceof RelationshipDefinition ) {
+		if ( ! $definition instanceof RelationshipDefinition || ! $this->permissions->can_read( $definition ) ) {
 			return [];
 		}
 
@@ -92,7 +131,7 @@ final class RelationshipManager {
 	 */
 	public function get_related_for_posts( array $post_ids, string $post_type, string $name ): array {
 		$definition = $this->registry->get( $post_type, $name );
-		if ( ! $definition instanceof RelationshipDefinition ) {
+		if ( ! $definition instanceof RelationshipDefinition || ! $this->permissions->can_read( $definition ) ) {
 			return [];
 		}
 
@@ -134,6 +173,11 @@ final class RelationshipManager {
 		}
 
 		/** @var RelationshipDefinition $definition Validated above. */
+		$denied = $this->permissions->reject_denied_write( $definition );
+		if ( $denied instanceof \WP_Error ) {
+			return $denied;
+		}
+
 		$capacity = $this->assert_capacity( $definition, $post_id, $related_id );
 		if ( $capacity instanceof \WP_Error ) {
 			return $capacity;
@@ -185,6 +229,11 @@ final class RelationshipManager {
 		}
 
 		/** @var RelationshipDefinition $definition Validated above. */
+		$denied = $this->permissions->reject_denied_write( $definition );
+		if ( $denied instanceof \WP_Error ) {
+			return $denied;
+		}
+
 		$row     = $this->row_for( $definition, $post_id, $related_id );
 		$removed = $this->store->delete( (string) $row['relationship_key'], (int) $row['from_post_id'], (int) $row['to_post_id'] );
 
@@ -214,6 +263,13 @@ final class RelationshipManager {
 
 		if ( $post_id <= 0 ) {
 			return $this->invalid_post( $post_id );
+		}
+
+		// Before any clearing, like every other sync check: a refused call must leave
+		// the stored set exactly as it was rather than half-applied.
+		$denied = $this->permissions->reject_denied_write( $definition );
+		if ( $denied instanceof \WP_Error ) {
+			return $denied;
 		}
 
 		$ids = self::post_id_list( $related_ids );
@@ -309,7 +365,9 @@ final class RelationshipManager {
 				continue;
 			}
 
-			foreach ( $this->get_related_ids( $post_id, $post_type, $definition->get_name() ) as $related_id ) {
+			// Deliberately the ungated read: see stored_related_ids(). A cascade must
+			// resolve the same targets no matter who deleted the post.
+			foreach ( $this->stored_related_ids( $definition, $post_id ) as $related_id ) {
 				if ( $this->is_only_referenced_by( $definition, $related_id, $post_id ) ) {
 					$targets[] = $related_id;
 				}

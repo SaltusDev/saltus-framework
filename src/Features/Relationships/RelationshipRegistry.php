@@ -155,6 +155,7 @@ final class RelationshipRegistry {
 				'reciprocal'     => $settings['reciprocal'] ?? null,
 				'cascade_delete' => $settings['cascade_delete'] ?? false,
 				'capability'     => $settings['capability'] ?? null,
+				'capabilities'   => $settings['capabilities'] ?? null,
 				'pivot'          => $settings['meta'] ?? $settings['pivot'] ?? null,
 			]
 		);
@@ -224,6 +225,12 @@ final class RelationshipRegistry {
 				// here would delete the declaring posts when a target is removed.
 				'cascade_delete' => false,
 				'capability'     => $definition->get_capability(),
+				// Capabilities, unlike cascade, *are* inherited. Both sides write the
+				// same row, so a rule stopping at the declaring side would be bypassed
+				// by writing through the reciprocal — the far-end hole that
+				// two-directional cardinality enforcement already closes. Cascade is
+				// semantics and does not inherit; this is security and must.
+				'capabilities'   => $definition->get_capabilities(),
 				'pivot'          => $definition->get_pivot_fields(),
 			]
 		);
