@@ -48,7 +48,8 @@ registered on the target model automatically.
 | `reciprocal` | no | none | Name to register on the target model for the reverse direction. |
 | `meta` (or `pivot`) | no | none | Fields stored on the relationship itself rather than on either post. |
 | `cascade_delete` | no | `false` | Delete related posts when the declaring post is deleted. |
-| `capability` | no | none | Capability recorded on the definition for site-specific gating. |
+| `capabilities` | no | none | Per-relationship read/write permissions enforced at the manager. |
+| `capability` | no | none | Legacy single-capability key for admin UI gating only. Use `capabilities` instead. |
 | `key` | no | derived | Explicit storage key, for adopting existing relationship data. |
 
 A declaration naming an unknown cardinality, or omitting `model`, is skipped
@@ -140,8 +141,45 @@ an "Actors" field *and* people an "Acted In" field, because the reciprocal is a
 first-class relationship rather than a read-only view. Editing either side writes
 the same row.
 
-A relationship declaring a `capability` is hidden from users who lack it, and a
-save by such a user leaves it untouched rather than clearing it.
+### Permissions
+
+A relationship declaring `capabilities` is gated across every surface. Declare
+`read` and `write` capability lists, each accepting one capability name or an
+array of them:
+
+```yaml
+relationships:
+  actors:
+    type: has_many
+    model: person
+    capabilities:
+      read: view_cast       # string for single capability
+      write:
+        - manage_cast       # array for multiple
+        - edit_others_posts
+```
+
+**Read-denied** relationships are omitted from `describe()` and return empty from
+all read methods, so they never appear in the picker or on the post list. One
+private relationship does not hide every other one on the post type.
+
+**Write-denied** relationships render as read-only in the picker: values stay
+visible but the control is a plain list with no hidden inputs, no data
+attributes, and no remove buttons, so re-enabling it in devtools yields no
+submittable field. The save path re-checks write permission per relationship, so
+a read-only render does not clear data when saved.
+
+The picker also respects the older `capability` key, which gates visibility but
+not write operations — it was an admin-UI-only check. Use `capabilities` with
+separate `read` and `write` rules for enforcement across all four surfaces.
+
+Reciprocals inherit the declaring side's capabilities. A rule on `movie.actors`
+also gates `person.acted_in`, because both write the same row — gating one side
+but not the other would make the rule a bypass.
+
+A relationship with no `capabilities` key is unaffected by the caller's
+capabilities — this deliberately does not deny by default, so adding the feature
+cannot change what an existing site exposes.
 
 The picker submits the whole set on save and applies it with `sync()`, so
 removing everything from a field and saving clears that relationship. Saves that
@@ -186,6 +224,10 @@ All routes are under `saltus-framework/v1/`. Reads require the post type's
 changed, so a user able to edit one post cannot rewrite relationships on
 another.
 
+Relationships declaring `capabilities` enforce them here too. A read-denied
+relationship returns empty from the GET route, and a write-denied relationship
+returns `403` with code `rest_relationship_forbidden` from POST/PUT/DELETE.
+
 ```bash
 curl -X POST https://example.test/wp-json/saltus-framework/v1/posts/42/relationships/actors \
   -H 'Content-Type: application/json' \
@@ -215,6 +257,10 @@ review queue wherever it is enabled: the call returns a pending proposal id
 rather than applying the change, and the write lands on approval. See
 [MCP/Abilities](/mcp/abilities) for the generated parameter reference.
 
+Relationships declaring `capabilities` enforce them on the MCP surface too. A
+read-denied relationship returns empty, and a write-denied relationship returns
+`WP_Error` with code `rest_relationship_forbidden`.
+
 ## WP-CLI
 
 ```bash
@@ -231,6 +277,10 @@ the REST routes. The review queue governs the agent surfaces, where a caller may
 be an autonomous client; a WP-CLI or REST caller has already cleared a WordPress
 capability check, and that is the gate on those paths.
 
+Relationships declaring `capabilities` enforce them on the WP-CLI surface too. A
+read-denied relationship returns empty, and a write-denied relationship exits
+with an error message naming the relationship and operation.
+
 ```bash
 wp saltus relationship attach 42 actors 108 --pivot='{"role":"Ripley"}'
 wp saltus relationship sync 42 actors '[108,109]'
@@ -245,6 +295,38 @@ When a relationship declares `cascade_delete: true`, its related posts are
 deleted along with the declaring post — but only those no other post still
 references, so shared targets survive. Cascade belongs to the declaring side
 only: deleting a target never deletes the post that declared the cascade.
+
+Cascade deletion bypasses read gates: resolving targets for cleanup is about
+referential integrity, not user permissions. Routing it through the gated read
+would let a read-denied user delete a post and silently strand every cascade
+target, leaving rows pointing at a post that no longer exists.
+
+## Addon integration
+
+Sibling addons whose namespace is rewritten by Strauss cannot import framework
+classes, so relationship permissions are also adjustable through WordPress
+filters that pass primitives only:
+
+```php
+// Adjust capability list before resolution.
+add_filter( 'saltus/framework/relationships/capabilities', function ( $capabilities, $name, $model, $operation ) {
+    if ( $name === 'actors' && $operation === 'write' ) {
+        return [ 'manage_cast' ];
+    }
+    return $capabilities;
+}, 10, 4 );
+
+// Override the final verdict.
+add_filter( 'saltus/framework/relationships/can', function ( $allowed, $name, $model, $operation ) {
+    // Custom logic: ownership, workflow state, etc.
+    return $allowed;
+}, 10, 4 );
+```
+
+Both filters receive the relationship name, model slug, and operation (`read` or
+`write`) as strings. The capabilities filter can impose a rule on a relationship
+that declares none; the verdict filter runs last and can grant where the
+capability check denies.
 
 ## Actions
 
