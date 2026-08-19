@@ -159,9 +159,13 @@ relationships:
         - edit_others_posts
 ```
 
-**Read-denied** relationships are omitted from `describe()` and return empty from
-all read methods, so they never appear in the picker or on the post list. One
-private relationship does not hide every other one on the post type.
+**Read-denied** relationships are refused where a surface can carry an error and
+filtered where it cannot. Asking REST or MCP for one specific read-denied
+relationship returns `403` with code `rest_relationship_forbidden`, so a caller can
+tell a relationship it may not read from one that is genuinely empty. Listing
+relationships and eager-loading a page of posts filter instead, because one private
+relationship must not hide every other one on the post type. A post type whose
+every relationship is read-denied registers no picker at all.
 
 **Write-denied** relationships render as read-only in the picker: values stay
 visible but the control is a plain list with no hidden inputs, no data
@@ -180,6 +184,11 @@ but not the other would make the rule a bypass.
 A relationship with no `capabilities` key is unaffected by the caller's
 capabilities — this deliberately does not deny by default, so adding the feature
 cannot change what an existing site exposes.
+
+`read` and `write` are the only operations. Anything else — a misspelled `raed`, a
+`delete` the policy has no concept of — is dropped when the definition is built, so
+it cannot read back as protection that is never consulted. `wp saltus config validate`
+names the offending key and suggests the nearest valid one.
 
 The picker submits the whole set on save and applies it with `sync()`, so
 removing everything from a field and saving clears that relationship. Saves that
@@ -225,8 +234,10 @@ changed, so a user able to edit one post cannot rewrite relationships on
 another.
 
 Relationships declaring `capabilities` enforce them here too. A read-denied
-relationship returns empty from the GET route, and a write-denied relationship
-returns `403` with code `rest_relationship_forbidden` from POST/PUT/DELETE.
+relationship returns `403` with code `rest_relationship_forbidden` from the GET
+route, as does a write-denied relationship from POST/PUT/DELETE. The definition
+listing route filters instead of refusing, so it returns only the relationships the
+caller may read.
 
 ```bash
 curl -X POST https://example.test/wp-json/saltus-framework/v1/posts/42/relationships/actors \
@@ -257,9 +268,9 @@ review queue wherever it is enabled: the call returns a pending proposal id
 rather than applying the change, and the write lands on approval. See
 [MCP/Abilities](/mcp/abilities) for the generated parameter reference.
 
-Relationships declaring `capabilities` enforce them on the MCP surface too. A
-read-denied relationship returns empty, and a write-denied relationship returns
-`WP_Error` with code `rest_relationship_forbidden`.
+Relationships declaring `capabilities` enforce them on the MCP surface too. Both a
+read-denied and a write-denied relationship return `WP_Error` with code
+`rest_relationship_forbidden`; `list_relationships` filters instead of refusing.
 
 ## WP-CLI
 
