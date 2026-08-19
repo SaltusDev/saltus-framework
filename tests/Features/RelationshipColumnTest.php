@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Features\Relationships\RelationshipBulkActions;
 use Saltus\WP\Framework\Features\Relationships\RelationshipColumn;
 use Saltus\WP\Framework\Features\Relationships\RelationshipManager;
+use Saltus\WP\Framework\Features\Relationships\RelationshipPermissionPolicy;
 use Saltus\WP\Framework\Features\Relationships\RelationshipRegistry;
 use Saltus\WP\Framework\Features\Relationships\RelationshipStore;
 use Saltus\WP\Framework\Models\ModelFactory;
@@ -134,6 +135,68 @@ class RelationshipColumnTest extends TestCase {
 		}
 
 		$this->assertSame( $before, $database->reads, 'Rendering a primed column must issue no query.' );
+	}
+
+	/**
+	 * Eager loading filters where a refusal would take the screen down with it.
+	 *
+	 * `RelationshipsController::get_items()` answers a denied read with a 403, because
+	 * a single-relationship read has nothing else to hide. Here the caller is resolving
+	 * a page of posts across several relationships at once, so the same denial must
+	 * narrow the result instead — erroring would blank a list table whose other
+	 * relationships the caller may read.
+	 */
+	public function testPrimingFiltersDeniedRelationshipsAcrossAMixedResultSet(): void {
+		$manager = $this->gated_manager();
+		$column  = new RelationshipColumn( $manager );
+
+		$movie = $this->seed_post( 10, 'movie' );
+		$this->seed_post( 20, 'person', 'Ripley' );
+		$this->seed_post( 30, 'person', 'Ridley Scott' );
+
+		$columns = $column->add_columns( [ 'title' => 'Title' ], 'movie' );
+		$this->assertArrayHasKey( 'saltus_rel_director', $columns );
+		$this->assertArrayNotHasKey( 'saltus_rel_actors', $columns, 'A read-denied relationship offers no column.' );
+
+		$column->prime( [ $movie ], 'movie' );
+
+		ob_start();
+		$column->render( 'saltus_rel_director', 10 );
+		$permitted = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'None', $permitted, 'The permitted relationship still renders.' );
+
+		// The manager returns a map rather than an error, which is what lets the screen
+		// above survive one denied relationship.
+		$this->assertSame( [ 10 => [] ], $manager->get_related_for_posts( [ 10 ], 'movie', 'director' ) );
+		$this->assertSame( [], $manager->get_related_for_posts( [ 10 ], 'movie', 'actors' ) );
+	}
+
+	/** A manager whose `actors` read is denied while `director` carries no rule. */
+	private function gated_manager(): RelationshipManager {
+		$models = [
+			'movie'  => new RelationshipModel(
+				'movie',
+				[
+					'actors'   => [
+						'type'         => 'has_many',
+						'model'        => 'person',
+						'capabilities' => [ 'read' => [ 'view_cast' ] ],
+					],
+					'director' => [
+						'type'  => 'has_one',
+						'model' => 'person',
+					],
+				]
+			),
+			'person' => new RelationshipModel( 'person', [] ),
+		];
+
+		return new RelationshipManager(
+			new RelationshipRegistry( new RelationshipModeler( $this->createStub( ModelFactory::class ), $models ) ),
+			new RelationshipStore( null ),
+			new RelationshipPermissionPolicy( static fn ( string $capability ): bool => false )
+		);
 	}
 
 	public function testRenderLinksEachRelatedPostToItsEditor(): void {

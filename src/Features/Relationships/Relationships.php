@@ -87,7 +87,7 @@ final class Relationships implements Service, Registerable, RestRouteProvider, T
 
 		$post_type = (string) $screen->post_type;
 		$manager   = $this->manager();
-		if ( $post_type === '' || ! $manager instanceof RelationshipManager || ! $manager->has_relationships( $post_type ) ) {
+		if ( $post_type === '' || ! $manager instanceof RelationshipManager || ! $manager->has_readable_relationships( $post_type ) ) {
 			return;
 		}
 
@@ -216,7 +216,7 @@ final class Relationships implements Service, Registerable, RestRouteProvider, T
 
 		$screen    = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		$post_type = $screen instanceof \WP_Screen ? (string) $screen->post_type : '';
-		if ( $post_type === '' || ! $manager->has_relationships( $post_type ) ) {
+		if ( $post_type === '' || ! $manager->has_readable_relationships( $post_type ) ) {
 			return;
 		}
 

@@ -40,12 +40,12 @@ final class RelationshipMetabox {
 	}
 
 	/**
-	 * Register the picker for every post type that declares a relationship.
+	 * Register the picker for every post type declaring a relationship the caller may read.
 	 *
 	 * @param string $post_type Post type being edited.
 	 */
 	public function add_meta_boxes( string $post_type ): void {
-		if ( ! $this->manager->has_relationships( $post_type ) ) {
+		if ( ! $this->manager->has_readable_relationships( $post_type ) ) {
 			return;
 		}
 

@@ -27,21 +27,26 @@ require_once __DIR__ . '/RelationshipsTest.php';
 class RelationshipPermissionSurfaceTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_posts, $wp_current_user_can, $wp_filter_values, $wp_filters_registered;
+		global $wp_posts, $wp_current_user_can, $wp_filter_values, $wp_filters_registered, $wp_meta_boxes;
 
 		$wp_posts              = [];
 		$wp_current_user_can   = true;
 		$wp_filter_values      = [];
 		$wp_filters_registered = [];
+		$wp_meta_boxes         = [];
 	}
 
 	protected function tearDown(): void {
-		global $wp_posts, $wp_current_user_can, $wp_filter_values, $wp_filters_registered;
+		global $wp_posts, $wp_current_user_can, $wp_filter_values, $wp_filters_registered, $wp_meta_boxes;
 
+		// Shared with every other class. A filter or a post left here changes an
+		// unrelated class's result under a random ordering, and the failure surfaces
+		// there with nothing pointing back.
 		$wp_posts              = [];
 		$wp_current_user_can   = true;
 		$wp_filter_values      = [];
 		$wp_filters_registered = [];
+		$wp_meta_boxes         = [];
 	}
 
 	private function seed_post( int $post_id, string $post_type ): \WP_Post {
@@ -312,6 +317,21 @@ class RelationshipPermissionSurfaceTest extends TestCase {
 		$markup = (string) ob_get_clean();
 
 		$this->assertStringNotContainsString( 'saltus-relationship-field', $markup );
+	}
+
+	public function testMetaboxIsNotRegisteredWhenEveryRelationshipIsReadDenied(): void {
+		global $wp_meta_boxes;
+
+		// `movie` declares only `actors`, so denying its read leaves nothing to render.
+		// Registering anyway would put an empty "Relationships" panel on the editor —
+		// the registration gate disagreeing with the render gate asserted above.
+		( new RelationshipMetabox( $this->manager( [ 'read' => [ 'view_cast' ] ] ) ) )->add_meta_boxes( 'movie' );
+
+		$this->assertSame( [], $wp_meta_boxes );
+
+		( new RelationshipMetabox( $this->manager( [ 'read' => [ 'view_cast' ] ], [ 'view_cast' ] ) ) )->add_meta_boxes( 'movie' );
+
+		$this->assertNotSame( [], $wp_meta_boxes, 'The same relationship registers once its read is permitted.' );
 	}
 
 	public function testReadOnlyRenderDoesNotClearOnSave(): void {
