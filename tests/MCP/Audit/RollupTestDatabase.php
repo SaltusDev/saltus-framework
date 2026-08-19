@@ -42,6 +42,9 @@ class RollupTestDatabase implements AuditDatabase {
 	/** @var list<string> Every statement seen, in order. */
 	public array $queries = [];
 
+	/** @var list<string> Every statement passed through prepare(), before substitution. */
+	public array $prepared = [];
+
 	/** @var list<array<string, mixed>> Every insert seen, in order. */
 	public array $inserts = [];
 
@@ -57,10 +60,77 @@ class RollupTestDatabase implements AuditDatabase {
 	 */
 	public bool $ignore_order_by = false;
 
+	/**
+	 * Rollup dates whose upsert reports failure, as the real `query()` does when
+	 * the write is rejected: false, and no row stored.
+	 *
+	 * @var list<string>
+	 */
+	public array $failing_rollup_dates = [];
+
+	/**
+	 * The rollup table's columns as `information_schema` reports them: name =>
+	 * whether the column accepts NULL.
+	 *
+	 * Modelled rather than assumed, because the migration now decides what to do
+	 * from this and nothing else. A double that answered a fixed shape could not
+	 * tell a fresh install (no ALTER at all) from an upgrade, which is the whole
+	 * distinction the portable migration rests on.
+	 *
+	 * Defaults to the current schema, so a test that says nothing about the
+	 * schema is a fresh install.
+	 *
+	 * @var array<string, bool>
+	 */
+	public array $table_columns = [
+		'id'                     => false,
+		'rollup_date'            => false,
+		'ability'                => false,
+		'client_identifier'      => false,
+		'sample_rate'            => false,
+		'call_count'             => false,
+		'error_count'            => false,
+		'exception_count'        => false,
+		'validation_error_count' => false,
+		'rate_limited_count'     => false,
+		'avg_duration_ms'        => false,
+		'p50_duration_ms'        => false,
+		'p95_duration_ms'        => false,
+		'p99_duration_ms'        => false,
+		'max_duration_ms'        => false,
+	];
+
+	/** @var list<string> Index names on the rollup table. */
+	public array $table_indexes = [ 'PRIMARY', 'rollup_date_ability_client', 'ability', 'rollup_date' ];
+
 	/** @var string Table prefix. */
 	private string $prefix = 'wp_';
 	public function prefix(): string {
 		return $this->prefix;
+	}
+
+	/**
+	 * Put the rollup table into the shape a given schema version left it in.
+	 *
+	 * '1.0.0' predates client attribution: no `client_identifier`, no
+	 * `sample_rate`, and the two-column unique key. '1.1.0' has both columns with
+	 * a nullable identifier, still under the two-column key — the state that let
+	 * unconstrained NULL aggregate rows accumulate.
+	 *
+	 * @param string $version Schema version to model.
+	 */
+	public function useSchemaVersion( string $version ): void {
+		if ( $version === '1.0.0' ) {
+			unset( $this->table_columns['client_identifier'], $this->table_columns['sample_rate'] );
+			$this->table_indexes = [ 'PRIMARY', 'rollup_date_ability', 'ability', 'rollup_date' ];
+
+			return;
+		}
+
+		if ( $version === '1.1.0' ) {
+			$this->table_columns['client_identifier'] = true;
+			$this->table_indexes                      = [ 'PRIMARY', 'rollup_date_ability', 'ability', 'rollup_date' ];
+		}
 	}
 
 	/**
@@ -81,6 +151,10 @@ class RollupTestDatabase implements AuditDatabase {
 		$this->queries[] = $query;
 
 		if ( strpos( $query, 'INSERT INTO' ) === 0 && strpos( $query, 'ON DUPLICATE KEY UPDATE' ) !== false ) {
+			if ( $this->rollupUpsertFails( $query ) ) {
+				return false;
+			}
+
 			$this->applyRollupUpsert( $query );
 		} elseif ( strpos( $query, 'UPDATE' ) === 0 && strpos( $query, "SET client_identifier = ''" ) !== false ) {
 			// The 1.2.0 normalization: legacy aggregate rows onto the sentinel.
@@ -89,11 +163,38 @@ class RollupTestDatabase implements AuditDatabase {
 					$this->rollup_rows[ $index ]['client_identifier'] = '';
 				}
 			}
-		} elseif ( strpos( $query, 'DELETE stale FROM' ) === 0 ) {
-			$this->collapseDuplicateRollups();
+		} elseif ( strpos( $query, 'ALTER TABLE' ) === 0 ) {
+			$this->applyAlter( $query );
+		} elseif ( strpos( $query, 'DELETE FROM' ) === 0 && strpos( $query, ' WHERE id IN (' ) !== false ) {
+			$this->deleteRollupIds( $query );
 		}
 
 		return true;
+	}
+
+	/**
+	 * Whether this upsert is for a date configured to fail.
+	 *
+	 * The date is read out of the statement rather than counted per call, so the
+	 * failure follows the row being written however many abilities a date has.
+	 */
+	private function rollupUpsertFails( string $query ): bool {
+		if ( $this->failing_rollup_dates === [] ) {
+			return false;
+		}
+
+		$values_open  = strpos( $query, ') VALUES (' );
+		$values_close = strpos( $query, ') ON DUPLICATE KEY UPDATE ' );
+
+		if ( $values_open === false || $values_close === false ) {
+			return false;
+		}
+
+		$offset = $values_open + strlen( ') VALUES (' );
+		$values = $this->splitValues( substr( $query, $offset, $values_close - $offset ) );
+
+		// rollup_date leads ROLLUP_COLUMNS, so it is the first value.
+		return in_array( $values[0] ?? '', $this->failing_rollup_dates, true );
 	}
 
 	/**
@@ -220,28 +321,152 @@ class RollupTestDatabase implements AuditDatabase {
 	}
 
 	/**
-	 * Collapse rows sharing a unique key, keeping the highest id — the row the
-	 * migration's `newer.id > stale.id` join keeps.
+	 * Apply a plain DDL statement to the modelled schema.
+	 *
+	 * The store reads the table back before it records the schema version, so a
+	 * double that recorded the statements without applying them would report an
+	 * upgrade that never converged. Only the unguarded forms are understood: a
+	 * statement carrying `IF NOT EXISTS` or `IF EXISTS` is MariaDB-only syntax
+	 * MySQL rejects, and this models MySQL.
 	 */
-	private function collapseDuplicateRollups(): void {
+	private function applyAlter( string $query ): void {
+		if ( strpos( $query, 'IF NOT EXISTS' ) !== false || strpos( $query, 'IF EXISTS' ) !== false ) {
+			return;
+		}
+
+		if ( preg_match( '/ADD COLUMN (\w+)/', $query, $match ) === 1 ) {
+			$this->table_columns[ $match[1] ] = strpos( $query, 'NOT NULL' ) === false;
+			$this->backfillColumn( $match[1], $query );
+
+			return;
+		}
+
+		if ( preg_match( '/MODIFY (\w+)/', $query, $match ) === 1 ) {
+			$this->table_columns[ $match[1] ] = strpos( $query, 'NOT NULL' ) === false;
+
+			return;
+		}
+
+		if ( preg_match( '/DROP INDEX (\w+)/', $query, $match ) === 1 ) {
+			$this->table_indexes = array_values(
+				array_filter(
+					$this->table_indexes,
+					static fn( string $index ): bool => $index !== $match[1]
+				)
+			);
+
+			return;
+		}
+
+		if ( preg_match( '/ADD UNIQUE KEY (\w+)/', $query, $match ) === 1 ) {
+			$this->table_indexes[] = $match[1];
+		}
+	}
+
+	/**
+	 * Give every existing row the new column's default, as `ADD COLUMN … NOT NULL
+	 * DEFAULT` does. Unconditionally: the column is being added, so whatever a
+	 * seeded row carries under that name is a value the table did not have.
+	 */
+	private function backfillColumn( string $column, string $query ): void {
+		if ( preg_match( "/DEFAULT (?:'([^']*)'|([\d.]+))/", $query, $match ) !== 1 ) {
+			return;
+		}
+
+		$default = ( $match[2] ?? '' ) !== '' ? (float) $match[2] : $match[1];
+
+		foreach ( $this->rollup_rows as $index => $row ) {
+			$this->rollup_rows[ $index ][ $column ] = $default;
+		}
+	}
+
+	/**
+	 * The ids the migration's bounded duplicate read returns: every row of a
+	 * unique key but the highest id, up to the statement's own LIMIT.
+	 *
+	 * NULL is folded onto the sentinel here, matching the `COALESCE` the real
+	 * join carries. That is deliberately not `rollupKey()`, which models the
+	 * server's rule that a NULL collides with nothing — true of the unique index,
+	 * and the reason these duplicates exist, but not of this statement, whose job
+	 * is to find them.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function staleDuplicateIds( string $query ): array {
+		$limit = preg_match( '/LIMIT (\d+)/', $query, $match ) === 1 ? (int) $match[1] : PHP_INT_MAX;
+
 		$rows = $this->rollup_rows;
 		usort(
 			$rows,
 			static fn( array $a, array $b ): int => ( (int) ( $a['id'] ?? 0 ) ) <=> ( (int) ( $b['id'] ?? 0 ) )
 		);
 
-		$kept = [];
+		$newest = [];
 		foreach ( $rows as $row ) {
-			$kept[ $this->rollupKey( $row ) ] = $row;
+			$newest[ $this->coalescedKey( $row ) ] = (int) ( $row['id'] ?? 0 );
 		}
 
-		$this->rollup_rows = array_values( $kept );
+		$stale = [];
+		foreach ( $rows as $row ) {
+			if ( count( $stale ) >= $limit ) {
+				break;
+			}
+
+			$id = (int) ( $row['id'] ?? 0 );
+			if ( $newest[ $this->coalescedKey( $row ) ] !== $id ) {
+				$stale[] = [ 'id' => $id ];
+			}
+		}
+
+		return $stale;
 	}
 
+	/**
+	 * A rollup row's unique key with NULL read as the sentinel.
+	 *
+	 * @param array<string, mixed> $row
+	 */
+	private function coalescedKey( array $row ): string {
+		return (string) ( $row['rollup_date'] ?? '' ) . "\x00"
+			. (string) ( $row['ability'] ?? '' ) . "\x00"
+			. (string) ( $row['client_identifier'] ?? '' );
+	}
+
+	/**
+	 * Delete the rollup rows named by an `id IN (…)` list.
+	 */
+	private function deleteRollupIds( string $query ): void {
+		if ( preg_match( '/ WHERE id IN \(([\d,]+)\)/', $query, $match ) !== 1 ) {
+			return;
+		}
+
+		$ids = array_map( 'intval', explode( ',', $match[1] ) );
+
+		$this->rollup_rows = array_values(
+			array_filter(
+				$this->rollup_rows,
+				static fn( array $row ): bool => ! in_array( (int) ( $row['id'] ?? 0 ), $ids, true )
+			)
+		);
+	}
+
+	/**
+	 * Substituted with substr_replace() rather than preg_replace(): a backslash in
+	 * a value is an escape in a regex replacement string, so `\\` collapsed to `\`
+	 * and a slashed value produced the same SQL as its unslashed form — which is
+	 * exactly the difference an unslashing test has to be able to see.
+	 */
 	public function prepare( string $query, ...$args ): string {
+		$this->prepared[] = $query;
+
 		foreach ( $args as $arg ) {
 			$replacement = is_string( $arg ) ? "'" . $arg . "'" : (string) $arg;
-			$query       = (string) preg_replace( '/%[dsf]/', $replacement, $query, 1 );
+
+			if ( preg_match( '/%[dsf]/', $query, $match, PREG_OFFSET_CAPTURE ) !== 1 ) {
+				continue;
+			}
+
+			$query = substr_replace( $query, $replacement, (int) $match[0][1], strlen( $match[0][0] ) );
 		}
 
 		return $query;
@@ -265,6 +490,18 @@ class RollupTestDatabase implements AuditDatabase {
 			return $this->audit_table_exists ? [ [ 'Tables_in_wp' => $this->prefix . 'saltus_mcp_audit' ] ] : [];
 		}
 
+		if ( strpos( $query, 'SELECT COLUMN_NAME' ) === 0 ) {
+			return $this->informationSchemaColumns();
+		}
+
+		if ( strpos( $query, 'SELECT DISTINCT INDEX_NAME' ) === 0 ) {
+			return $this->informationSchemaIndexes();
+		}
+
+		if ( strpos( $query, 'SELECT DISTINCT stale.id' ) === 0 ) {
+			return $this->staleDuplicateIds( $query );
+		}
+
 		if ( strpos( $query, 'SELECT DISTINCT ability' ) === 0 ) {
 			return $this->distinctAbilities( $query );
 		}
@@ -282,6 +519,37 @@ class RollupTestDatabase implements AuditDatabase {
 		}
 
 		return [];
+	}
+
+	/**
+	 * The modelled columns in the shape `information_schema.COLUMNS` returns,
+	 * under the lower-cased aliases the store's own statement asks for.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function informationSchemaColumns(): array {
+		$rows = [];
+		foreach ( $this->table_columns as $column => $nullable ) {
+			$rows[] = [
+				'column_name' => $column,
+				'is_nullable' => $nullable ? 'YES' : 'NO',
+			];
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * The modelled index names in the shape `information_schema.STATISTICS`
+	 * returns.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	private function informationSchemaIndexes(): array {
+		return array_map(
+			static fn( string $index ): array => [ 'index_name' => $index ],
+			$this->table_indexes
+		);
 	}
 
 	/**
@@ -461,6 +729,10 @@ class RollupTestDatabase implements AuditDatabase {
 			$rows[] = $row;
 		}
 
+		// The full ORDER BY both reads carry, primary key last. Modelled rather
+		// than approximated: paging is only sound because the sort is total, so a
+		// double that stopped at (date, ability) could not tell a deterministic
+		// page from one that repeats or skips a row on the boundary.
 		usort(
 			$rows,
 			static function ( array $a, array $b ): int {
@@ -469,11 +741,38 @@ class RollupTestDatabase implements AuditDatabase {
 					return $by_date;
 				}
 
-				return (string) ( $a['ability'] ?? '' ) <=> (string) ( $b['ability'] ?? '' );
+				$by_ability = (string) ( $a['ability'] ?? '' ) <=> (string) ( $b['ability'] ?? '' );
+				if ( $by_ability !== 0 ) {
+					return $by_ability;
+				}
+
+				$by_client = (string) ( $a['client_identifier'] ?? '' ) <=> (string) ( $b['client_identifier'] ?? '' );
+				if ( $by_client !== 0 ) {
+					return $by_client;
+				}
+
+				return ( (int) ( $a['id'] ?? 0 ) ) <=> ( (int) ( $b['id'] ?? 0 ) );
 			}
 		);
 
-		return $rows;
+		return $this->applyPaging( $query, $rows );
+	}
+
+	/**
+	 * Apply the LIMIT/OFFSET tail of a rollup read.
+	 *
+	 * Without this the bound would be unobservable: the store could stop sending
+	 * LIMIT entirely and every read test would still pass.
+	 *
+	 * @param list<array<string, mixed>> $rows
+	 * @return list<array<string, mixed>>
+	 */
+	private function applyPaging( string $query, array $rows ): array {
+		if ( preg_match( '/LIMIT (\d+) OFFSET (\d+)/', $query, $matches ) !== 1 ) {
+			return $rows;
+		}
+
+		return array_values( array_slice( $rows, (int) $matches[2], (int) $matches[1] ) );
 	}
 
 	/**

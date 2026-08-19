@@ -15,19 +15,23 @@ class RollupStoreTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		global $wp_filter_values, $wp_options;
+		global $wp_filter_values, $wp_options, $wp_transients;
 
 		$wp_filter_values = [];
 		$wp_options       = [];
+		// The migration's advisory lock is a transient, so one left behind would
+		// stop the next test's store from ever reaching the repair.
+		$wp_transients = [];
 
 		$this->db = new RollupTestDatabase();
 	}
 
 	protected function tearDown(): void {
-		global $wp_filter_values, $wp_options;
+		global $wp_filter_values, $wp_options, $wp_transients;
 
 		$wp_filter_values = [];
 		$wp_options       = [];
+		$wp_transients    = [];
 
 		parent::tearDown();
 	}
@@ -406,7 +410,7 @@ class RollupStoreTest extends TestCase {
 
 		$this->store()->get_rollups( '2026-08-01', '2026-08-14' );
 
-		$this->assertSame( '1.2.0', $wp_options['saltus_mcp_audit_rollups_db_version'] ?? null );
+		$this->assertSame( '1.2.1', $wp_options['saltus_mcp_audit_rollups_db_version'] ?? null );
 	}
 
 	/**
@@ -477,10 +481,11 @@ class RollupStoreTest extends TestCase {
 
 		$count = $this->store()->compute_and_store_rollup( '2026-08-13' );
 
-		$this->assertSame( 2, $count );
+		// Three rows: the aggregate the totals are read from, plus one per client.
+		$this->assertSame( 3, $count );
 		$clients = array_column( $this->db->rollup_writes, 'client_identifier' );
 		sort( $clients );
-		$this->assertSame( [ 'webmcp:user:1', 'webmcp:user:2' ], $clients );
+		$this->assertSame( [ '', 'webmcp:user:1', 'webmcp:user:2' ], $clients );
 	}
 
 	public function test_client_mode_scopes_counts_to_each_client(): void {
@@ -501,20 +506,99 @@ class RollupStoreTest extends TestCase {
 		$this->assertSame( 1, $rollups[0]->error_count() );
 	}
 
-	public function test_get_rollups_returns_only_aggregate_rows_by_default(): void {
+	/**
+	 * The two series coexist: enabling client mode adds the per-client rows
+	 * beside the aggregate rather than replacing it. Writing only client rows is
+	 * what made every total mode-dependent — the aggregate series the dashboard
+	 * and CLI read went empty for as long as the filter was on.
+	 */
+	public function test_client_mode_stores_the_aggregate_row_alongside_the_client_rows(): void {
 		global $wp_filter_values;
 		$wp_filter_values['saltus/framework/mcp/audit/rollup_by_client'] = true;
 
 		$this->db->addAuditRow( 'list_models', 'success', 10.0, '2026-08-13 09:00:00.000', 'webmcp:user:1' );
+		$this->db->addAuditRow( 'list_models', 'success', 30.0, '2026-08-13 09:00:01.000', 'webmcp:user:2' );
 
 		$store = $this->store();
 		$store->compute_and_store_rollup( '2026-08-13' );
 
-		// Default call (no client filter) should return only aggregate rows (null client).
-		// Since client mode was on, we stored per-client rows, so aggregate query returns empty.
 		$aggregate = $store->get_rollups( '2026-08-13', '2026-08-13' );
 
-		$this->assertSame( [], $aggregate, 'default get_rollups must not return client-scoped rows' );
+		$this->assertCount( 1, $aggregate, 'the aggregate series must exist in client mode too' );
+		$this->assertNull( $aggregate[0]->client_identifier() );
+		$this->assertSame( 2, $aggregate[0]->call_count(), 'the aggregate counts every call, not one client' );
+		$this->assertCount( 2, $store->get_client_rollups( '2026-08-13', '2026-08-13' ) );
+	}
+
+	public function test_get_rollups_excludes_client_rows_from_the_aggregate_series(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_by_client'] = true;
+
+		$this->db->addAuditRow( 'list_models', 'success', 10.0, '2026-08-13 09:00:00.000', 'webmcp:user:1' );
+		$this->db->addAuditRow( 'list_models', 'success', 30.0, '2026-08-13 09:00:01.000', 'webmcp:user:2' );
+
+		$store = $this->store();
+		$store->compute_and_store_rollup( '2026-08-13' );
+
+		$aggregate = $store->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$clients = array_map(
+			static fn( $rollup ): ?string => $rollup->client_identifier(),
+			$aggregate
+		);
+
+		$this->assertSame( [ null ], $clients, 'default get_rollups must not return client-scoped rows' );
+	}
+
+	/**
+	 * An audit identifier of `''` is the one value that collides with
+	 * AGGREGATE_CLIENT. Written as a client it would land on the aggregate's
+	 * unique key, the upsert would replace the day's total with that one
+	 * caller's subtotal, and the row would hydrate back as the aggregate — a
+	 * corrupted total presented as exact, with the client absent from the
+	 * per-client view. It is folded into the aggregate case instead, where its
+	 * calls were already counted.
+	 */
+	public function test_an_empty_audit_identifier_cannot_overwrite_the_aggregate(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_by_client'] = true;
+
+		$this->db->addAuditRow( 'list_models', 'success', 10.0, '2026-08-13 09:00:00.000', '' );
+		$this->db->addAuditRow( 'list_models', 'success', 30.0, '2026-08-13 09:00:01.000', 'webmcp:user:1' );
+
+		$store = $this->store();
+		$store->compute_and_store_rollup( '2026-08-13' );
+
+		$aggregate = $store->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertCount( 1, $aggregate );
+		$this->assertSame( 2, $aggregate[0]->call_count(), 'the aggregate must still count both calls' );
+
+		$clients = array_column( $this->db->rollup_writes, 'client_identifier' );
+		sort( $clients );
+		$this->assertSame( [ '', 'webmcp:user:1' ], $clients, 'no client row may be keyed on the sentinel' );
+
+		$client_rows = $store->get_client_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertCount( 1, $client_rows );
+		$this->assertSame( 'webmcp:user:1', $client_rows[0]->client_identifier() );
+	}
+
+	/**
+	 * The sentinel is the aggregate slot, not an identifier, so requesting it as
+	 * a client asks for the aggregate series rather than matching a row whose
+	 * stored value happens to be empty.
+	 */
+	public function test_an_empty_client_filter_selects_the_aggregate_series(): void {
+		$this->db->addAuditRow( 'list_models', 'success', 10.0, '2026-08-13 09:00:00.000' );
+
+		$store = $this->store();
+		$store->compute_and_store_rollup( '2026-08-13' );
+
+		$rollups = $store->get_rollups( '2026-08-13', '2026-08-13', null, '' );
+
+		$this->assertCount( 1, $rollups );
+		$this->assertNull( $rollups[0]->client_identifier() );
 	}
 
 	public function test_get_rollups_returns_client_rows_when_specified(): void {
@@ -586,6 +670,140 @@ class RollupStoreTest extends TestCase {
 		$this->assertFalse( $freshness['enabled'] );
 		$this->assertSame( 'disabled', $freshness['status'] );
 		$this->assertFalse( $freshness['stale'] );
+	}
+
+	/**
+	 * A date N whole days before today, in UTC.
+	 */
+	private function daysAgo( int $days ): string {
+		return gmdate( 'Y-m-d', strtotime( 'today 00:00:00 UTC' ) - ( $days * 86400 ) );
+	}
+
+	private function seedMarker( string $through ): void {
+		global $wp_options;
+
+		$wp_options[ RollupStore::FRESHNESS_OPTION ] = [
+			'at'      => '2000-01-01T00:00:00Z',
+			'through' => $through,
+		];
+	}
+
+	/**
+	 * With no marker the pass covers the window it had before there was a cursor.
+	 * Reaching further back on a first run would scan days a new site has no rows
+	 * for at all.
+	 */
+	public function test_pending_dates_cover_two_days_without_a_marker(): void {
+		$this->assertSame(
+			[ $this->daysAgo( 2 ), $this->daysAgo( 1 ) ],
+			$this->store()->pending_rollup_dates()
+		);
+	}
+
+	/**
+	 * The marker's own date leads the list. Recomputing it absorbs entries that
+	 * arrived after the pass that covered it — the reason the window was two days
+	 * wide before the cursor existed.
+	 */
+	public function test_pending_dates_recompute_the_marker_date(): void {
+		$this->seedMarker( $this->daysAgo( 1 ) );
+
+		$this->assertSame( [ $this->daysAgo( 1 ) ], $this->store()->pending_rollup_dates() );
+	}
+
+	public function test_pending_dates_span_a_gap_from_the_marker_to_yesterday(): void {
+		$this->seedMarker( $this->daysAgo( 4 ) );
+
+		$this->assertSame(
+			[
+				$this->daysAgo( 4 ),
+				$this->daysAgo( 3 ),
+				$this->daysAgo( 2 ),
+				$this->daysAgo( 1 ),
+			],
+			$this->store()->pending_rollup_dates()
+		);
+	}
+
+	/**
+	 * The bound is what keeps a month-long gap from becoming a scan per day plus
+	 * a statement per ability inside one cron request.
+	 */
+	public function test_pending_dates_stop_at_the_catch_up_bound(): void {
+		$this->seedMarker( $this->daysAgo( 40 ) );
+
+		$dates = $this->store()->pending_rollup_dates();
+
+		// The marker's recompute day plus the bound's worth of new days.
+		$this->assertCount( 15, $dates );
+		$this->assertSame( $this->daysAgo( 40 ), $dates[0] );
+		$this->assertSame( $this->daysAgo( 26 ), $dates[14] );
+	}
+
+	public function test_the_catch_up_bound_is_filterable(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_catch_up_days'] = 3;
+
+		$this->seedMarker( $this->daysAgo( 40 ) );
+
+		$this->assertSame(
+			[
+				$this->daysAgo( 40 ),
+				$this->daysAgo( 39 ),
+				$this->daysAgo( 38 ),
+				$this->daysAgo( 37 ),
+			],
+			$this->store()->pending_rollup_dates()
+		);
+	}
+
+	/**
+	 * A bound of zero or less would otherwise leave the list at the marker's own
+	 * date forever, so the cursor could never move and the gap never close.
+	 */
+	public function test_a_non_positive_catch_up_bound_still_advances_one_day(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_catch_up_days'] = 0;
+
+		$this->seedMarker( $this->daysAgo( 10 ) );
+
+		$this->assertSame(
+			[ $this->daysAgo( 10 ), $this->daysAgo( 9 ) ],
+			$this->store()->pending_rollup_dates()
+		);
+	}
+
+	/**
+	 * A marker ahead of yesterday — clock skew, a database restored from a later
+	 * snapshot — must not send the pass at days that have not finished yet. Their
+	 * rollups would be partial and the marker would then claim they were done.
+	 */
+	public function test_pending_dates_never_reach_past_yesterday(): void {
+		$this->seedMarker( gmdate( 'Y-m-d', strtotime( 'today 00:00:00 UTC' ) + ( 3 * 86400 ) ) );
+
+		$this->assertSame( [ $this->daysAgo( 1 ) ], $this->store()->pending_rollup_dates() );
+	}
+
+	public function test_pending_dates_are_empty_when_rollups_are_disabled(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_enabled'] = false;
+
+		$this->assertSame( [], $this->store()->pending_rollup_dates() );
+	}
+
+	/**
+	 * A marker that is not a date cannot be stepped forward from, so carrying it
+	 * would have the pass re-record the same value every run and freeze the
+	 * cursor for good. Treated as absent instead, which the next pass recovers
+	 * from on its own.
+	 */
+	public function test_an_unparseable_marker_falls_back_to_the_default_window(): void {
+		$this->seedMarker( 'not-a-date' );
+
+		$this->assertSame(
+			[ $this->daysAgo( 2 ), $this->daysAgo( 1 ) ],
+			$this->store()->pending_rollup_dates()
+		);
 	}
 
 	/**
@@ -661,14 +879,17 @@ class RollupStoreTest extends TestCase {
 		$store->compute_and_store_rollup( '2026-08-13' );
 		$store->compute_and_store_rollup( '2026-08-13' );
 
-		$this->assertCount( 2, $this->db->rollup_rows, 'one row per client, not one per run' );
+		$this->assertCount( 3, $this->db->rollup_rows, 'one row per client and one aggregate, not one set per run' );
 	}
 
 	public function test_upgrade_normalizes_legacy_null_aggregate_rows(): void {
 		global $wp_options;
 
 		$wp_options['saltus_mcp_audit_rollups_db_version'] = '1.1.0';
-		$this->db->rollup_rows                             = [
+		// The repair is decided from the table, so the table has to be at the old
+		// schema — the recorded version alone no longer implies anything.
+		$this->db->useSchemaVersion( '1.1.0' );
+		$this->db->rollup_rows = [
 			$this->legacyRow( 1, '2026-08-13', 'list_models', null, 5 ),
 		];
 
@@ -686,7 +907,8 @@ class RollupStoreTest extends TestCase {
 		global $wp_options;
 
 		$wp_options['saltus_mcp_audit_rollups_db_version'] = '1.1.0';
-		$this->db->rollup_rows                             = [
+		$this->db->useSchemaVersion( '1.1.0' );
+		$this->db->rollup_rows = [
 			$this->legacyRow( 1, '2026-08-13', 'list_models', null, 5 ),
 			$this->legacyRow( 2, '2026-08-13', 'list_models', null, 9 ),
 		];
@@ -712,6 +934,311 @@ class RollupStoreTest extends TestCase {
 
 		$this->assertCount( 1, $rollups );
 		$this->assertSame( 5, $rollups[0]->call_count() );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 17: bounded reads
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Seed one aggregate rollup row per date, ids ascending.
+	 *
+	 * @param list<string> $dates
+	 */
+	private function seedAggregateRows( array $dates ): void {
+		foreach ( $dates as $index => $date ) {
+			// The empty string is the aggregate sentinel a stored row carries.
+			$this->db->rollup_rows[] = $this->legacyRow( $index + 1, $date, 'list_models', '', 1 );
+		}
+	}
+
+	/**
+	 * Both reads run on every metrics request over windows of up to a year, and
+	 * the client-scoped one grows by distinct client as well as by date and
+	 * ability, so neither may load a set sized by traffic into memory. The bound
+	 * has to be in the statement rather than left to the caller.
+	 */
+	public function test_both_rollup_reads_carry_a_bound(): void {
+		$store = $this->store();
+		$store->get_rollups( '2026-01-01', '2026-12-31' );
+		$store->get_client_rollups( '2026-01-01', '2026-12-31' );
+
+		$reads = array_values(
+			array_filter(
+				$this->db->queries,
+				static fn( string $query ): bool => strpos( $query, 'SELECT * FROM' ) === 0
+			)
+		);
+
+		$this->assertCount( 2, $reads );
+		$this->assertStringContainsString( 'LIMIT 10000 OFFSET 0', $reads[0] );
+		$this->assertStringContainsString( 'LIMIT 10000 OFFSET 0', $reads[1] );
+	}
+
+	/**
+	 * The bound is a ceiling, not a default: a caller asking for more than the
+	 * cap gets the cap, because an unbounded read is the failure being prevented.
+	 */
+	public function test_a_requested_limit_above_the_bound_clamps_to_it(): void {
+		$this->store()->get_rollups( '2026-01-01', '2026-12-31', null, null, 999999 );
+
+		$this->assertStringContainsString( 'LIMIT 10000 OFFSET 0', $this->db->queries[ count( $this->db->queries ) - 1 ] );
+	}
+
+	public function test_a_window_that_exceeds_the_bound_is_truncated_and_pageable(): void {
+		$this->seedAggregateRows( [ '2026-08-11', '2026-08-12', '2026-08-13', '2026-08-14', '2026-08-15' ] );
+
+		$store = $this->store();
+
+		$first  = $store->get_rollups( '2026-08-11', '2026-08-15', null, null, 2 );
+		$second = $store->get_rollups( '2026-08-11', '2026-08-15', null, null, 2, 2 );
+		$third  = $store->get_rollups( '2026-08-11', '2026-08-15', null, null, 2, 4 );
+
+		$dates = static fn( array $rollups ): array => array_map(
+			static fn( $rollup ): string => $rollup->date(),
+			$rollups
+		);
+
+		$this->assertSame( [ '2026-08-11', '2026-08-12' ], $dates( $first ) );
+		$this->assertSame( [ '2026-08-13', '2026-08-14' ], $dates( $second ) );
+		$this->assertSame( [ '2026-08-15' ], $dates( $third ) );
+	}
+
+	public function test_client_rollups_page_past_the_bound_without_repeating_a_row(): void {
+		global $wp_filter_values;
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_by_client'] = true;
+
+		foreach ( [ 'webmcp:user:1', 'webmcp:user:2', 'webmcp:user:3' ] as $index => $client ) {
+			$this->db->addAuditRow( 'list_models', 'success', 10.0, '2026-08-13 09:00:0' . $index . '.000', $client );
+		}
+
+		$store = $this->store();
+		$store->compute_and_store_rollup( '2026-08-13' );
+
+		$clients = static fn( array $rollups ): array => array_map(
+			static fn( $rollup ): ?string => $rollup->client_identifier(),
+			$rollups
+		);
+
+		$first  = $store->get_client_rollups( '2026-08-13', '2026-08-13', null, 2 );
+		$second = $store->get_client_rollups( '2026-08-13', '2026-08-13', null, 2, 2 );
+
+		$this->assertSame( [ 'webmcp:user:1', 'webmcp:user:2' ], $clients( $first ) );
+		$this->assertSame( [ 'webmcp:user:3' ], $clients( $second ) );
+	}
+
+	/**
+	 * Paging is only sound if the sort is total. Rows tying on date and ability —
+	 * which the legacy unconstrained NULL key allowed — would otherwise be
+	 * ordered by whatever the server returned, so one page could repeat a row the
+	 * previous page already yielded and drop another entirely.
+	 */
+	public function test_the_read_order_breaks_ties_on_the_primary_key(): void {
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$read = $this->db->queries[ count( $this->db->queries ) - 1 ];
+
+		$this->assertStringContainsString( 'ORDER BY rollup_date ASC, ability ASC, id ASC', $read );
+	}
+
+	// -------------------------------------------------------------------------
+	// Phase 16/17: portable, guarded, bounded schema migration
+	// -------------------------------------------------------------------------
+
+	/**
+	 * The ALTER statements issued, in order.
+	 *
+	 * @return list<string>
+	 */
+	private function alterStatements(): array {
+		return array_values(
+			array_filter(
+				$this->db->queries,
+				static fn( string $query ): bool => strpos( $query, 'ALTER TABLE' ) === 0
+			)
+		);
+	}
+
+	/**
+	 * `ADD COLUMN IF NOT EXISTS`, `DROP INDEX IF EXISTS`, and `ADD UNIQUE KEY IF
+	 * NOT EXISTS` are MariaDB extensions. MySQL rejects each one outright, so on
+	 * MySQL the upgrade silently did nothing and the correctness repair the
+	 * migration exists for never applied.
+	 */
+	public function test_the_migration_issues_no_engine_specific_ddl(): void {
+		$this->db->useSchemaVersion( '1.0.0' );
+
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertNotSame( [], $this->alterStatements(), 'a 1.0.0 table must be altered at all' );
+
+		foreach ( $this->alterStatements() as $statement ) {
+			$this->assertStringNotContainsString( 'IF NOT EXISTS', $statement );
+			$this->assertStringNotContainsString( 'IF EXISTS', $statement );
+		}
+	}
+
+	/**
+	 * The CREATE already carries the current schema, so introspection has to see
+	 * that and issue nothing — otherwise every install pays for a table rebuild
+	 * it does not need.
+	 */
+	public function test_a_fresh_install_alters_nothing(): void {
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertSame( [], $this->alterStatements() );
+	}
+
+	/**
+	 * @return array<string, array{0: string}>
+	 */
+	public static function priorSchemaProvider(): array {
+		return [
+			'1.0.0 (pre-client)'      => [ '1.0.0' ],
+			'1.1.0 (nullable client)' => [ '1.1.0' ],
+		];
+	}
+
+	/**
+	 * @dataProvider priorSchemaProvider
+	 */
+	public function test_every_prior_schema_converges_on_the_current_one( string $version ): void {
+		global $wp_options;
+
+		$this->db->useSchemaVersion( $version );
+
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertArrayHasKey( 'client_identifier', $this->db->table_columns );
+		$this->assertArrayHasKey( 'sample_rate', $this->db->table_columns );
+		$this->assertFalse( $this->db->table_columns['client_identifier'], 'the column must refuse NULL' );
+		$this->assertContains( 'rollup_date_ability_client', $this->db->table_indexes );
+		$this->assertNotContains( 'rollup_date_ability', $this->db->table_indexes, 'the two-column key must go' );
+		$this->assertSame( '1.2.1', $wp_options['saltus_mcp_audit_rollups_db_version'] ?? null );
+	}
+
+	/**
+	 * The upgrade is a repair, not a reset: the rows it is collapsing duplicates
+	 * out of are the site's only metrics history once the audit rows behind them
+	 * have been pruned.
+	 */
+	public function test_the_upgrade_preserves_the_rows_it_migrates(): void {
+		$this->db->useSchemaVersion( '1.0.0' );
+		// A 1.0.0 table has no client_identifier column at all, so the value the
+		// row ends up with is whatever ADD COLUMN's default gives it.
+		$this->db->rollup_rows = [
+			$this->legacyRow( 1, '2026-08-13', 'list_models', null, 5 ),
+		];
+
+		$rollups = $this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertCount( 1, $rollups );
+		$this->assertSame( 5, $rollups[0]->call_count() );
+		$this->assertSame( '', $this->db->rollup_rows[0]['client_identifier'], 'the new column defaults to the sentinel' );
+	}
+
+	/**
+	 * The repair used to be gated on a stored version being present, while the
+	 * version was written on every path. A table at the old schema whose option
+	 * is absent — a partial restore, a deleted option, a table created without
+	 * the options API — was therefore stamped current without ever being
+	 * repaired, and the gate then refused to look again.
+	 */
+	public function test_an_old_table_with_no_version_option_is_repaired_not_stamped(): void {
+		global $wp_options;
+
+		$this->assertArrayNotHasKey( 'saltus_mcp_audit_rollups_db_version', $wp_options );
+
+		$this->db->useSchemaVersion( '1.1.0' );
+		$this->db->rollup_rows = [
+			$this->legacyRow( 1, '2026-08-13', 'list_models', null, 5 ),
+			$this->legacyRow( 2, '2026-08-13', 'list_models', null, 9 ),
+		];
+
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertCount( 1, $this->db->rollup_rows, 'the duplicate must be collapsed' );
+		$this->assertSame( '', $this->db->rollup_rows[0]['client_identifier'] );
+		$this->assertFalse( $this->db->table_columns['client_identifier'] );
+		$this->assertSame( '1.2.1', $wp_options['saltus_mcp_audit_rollups_db_version'] ?? null );
+	}
+
+	/**
+	 * The collapse runs inside whatever request first reaches the repair, over a
+	 * row count set by how long the site ran on the broken schema. One pass takes
+	 * a bounded bite; the version stays unrecorded until a pass finds nothing
+	 * left, which is what brings the next request back to finish the job.
+	 */
+	public function test_the_duplicate_collapse_is_bounded_and_resumes(): void {
+		global $wp_options;
+
+		// A recorded old version, so what is under test is the bound rather than
+		// whether the repair is reached at all.
+		$wp_options['saltus_mcp_audit_rollups_db_version'] = '1.1.0';
+		$this->db->useSchemaVersion( '1.1.0' );
+
+		// One key over 502 rows: 501 duplicates, one more than a 500-row pass.
+		for ( $id = 1; $id <= 502; $id++ ) {
+			$this->db->rollup_rows[] = $this->legacyRow( $id, '2026-08-13', 'list_models', null, $id );
+		}
+
+		// A window that excludes the seeded date: this exercises the migration, not
+		// the read.
+		$this->store()->get_rollups( '2026-08-01', '2026-08-02' );
+
+		$this->assertCount( 2, $this->db->rollup_rows, 'one pass deletes at most its batch' );
+		$this->assertSame(
+			'1.1.0',
+			$wp_options['saltus_mcp_audit_rollups_db_version'],
+			'an unfinished collapse must not advance the version'
+		);
+
+		// A later request, which is a new store: the flag that keeps one DDL pass
+		// per instance is per instance.
+		$this->store()->get_rollups( '2026-08-01', '2026-08-02' );
+
+		$this->assertCount( 1, $this->db->rollup_rows, 'a later pass finishes the remainder' );
+		$this->assertSame( 502, $this->db->rollup_rows[0]['call_count'], 'the newest row is the one kept' );
+		$this->assertSame( '1.2.1', $wp_options['saltus_mcp_audit_rollups_db_version'] ?? null );
+	}
+
+	/**
+	 * Every metrics read reaches `ensure_table()`, and this class has no upgrade
+	 * routine to move the repair to. Without a lock each concurrent reader starts
+	 * the same delete and index rebuild and they serialize on metadata locks.
+	 */
+	public function test_a_held_lock_keeps_a_second_runner_out_of_the_repair(): void {
+		global $wp_options;
+
+		$wp_options['saltus_mcp_audit_rollups_db_version'] = '1.1.0';
+		$this->db->useSchemaVersion( '1.1.0' );
+		set_transient( 'saltus_mcp_rollup_migration_lock', '1.2.1', 300 );
+
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertSame( [], $this->alterStatements(), 'the repair belongs to whoever holds the lock' );
+		$this->assertTrue( $this->db->table_columns['client_identifier'], 'the schema must be untouched' );
+		$this->assertSame( '1.1.0', $wp_options['saltus_mcp_audit_rollups_db_version'] );
+
+		// The same setup with the lock free, so the lock is demonstrably what
+		// stopped it rather than the schema state.
+		delete_transient( 'saltus_mcp_rollup_migration_lock' );
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertNotSame( [], $this->alterStatements() );
+		$this->assertSame( '1.2.1', $wp_options['saltus_mcp_audit_rollups_db_version'] ?? null );
+	}
+
+	/**
+	 * A pass that finished releases the lock rather than holding it for the TTL,
+	 * so a table needing more than one pass is not stalled behind its own marker.
+	 */
+	public function test_a_finished_pass_releases_the_lock(): void {
+		$this->db->useSchemaVersion( '1.1.0' );
+
+		$this->store()->get_rollups( '2026-08-13', '2026-08-13' );
+
+		$this->assertFalse( get_transient( 'saltus_mcp_rollup_migration_lock' ) );
 	}
 }
 
