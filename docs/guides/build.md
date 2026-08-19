@@ -37,6 +37,8 @@ composer fix:phpcbf
 composer validate --strict
 ```
 
+`phpstan.neon` runs level 7 over `src/` with `treatPhpDocTypesAsCertain: false` (added in v2.1.1), so PHPStan does not report a type contradiction on the strength of a PHPDoc annotation alone. That setting is repository-wide and is tracked for removal as an open review finding — prefer a narrow per-file ignore over widening it further.
+
 ## Documentation
 
 ```bash

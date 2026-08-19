@@ -1,12 +1,12 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` is at 2.1.0; 1.8.x/2.x work still sits under `CHANGELOG.md`'s `[Unreleased]` heading with no release sections cut; relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
+- Version: `package.json` is at 2.1.1, released 2026-08-19 with an annotated `v2.1.1` tag; `CHANGELOG.md` now cuts a `[2.1.0]` section, but `[Unreleased]` is empty and no `[2.1.1]` section exists yet — see finding 17.27 in [Phase 17](#phase-17--v211-review--227); relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
 - **Phase 14 delivered 2026-08-16** (daily rollups, retention ordering, aggregate and per-client metrics, admin dashboard, `wp saltus metrics`, audit health states, error hand-off, sampling, slow-call logging, rollup freshness, and coverage). There is no Phase 9 — see [Phase Numbering](#phase-numbering).
-- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Open review backlogs: [Phase 15 — v1.8.5 Review](#phase-15--v185-review--05) (0/5) and [Phase 16 — v2.1.0 Review](#phase-16--v210-review--09) (0/9, approved 2026-08-17 as the next work).
-- Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
+- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Open review backlogs: [Phase 15 — v1.8.5 Review](#phase-15--v185-review--05) (0/5), [Phase 16 — v2.1.0 Review](#phase-16--v210-review--09) (0/9, approved 2026-08-17 as the next work), and [Phase 17 — v2.1.1 Review](#phase-17--v211-review--227) (2/27 — 17.1 audit sampling range and 17.2 rollup upsert atomicity were fixed in the v2.1.1 cycle; the remaining 25 are open).
+- Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface, audit rollups and the observability metrics dashboard
 - WordPress-native MCP/Abilities surface with 25 tools
 - REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
 - Phase 3 hardening complete: caching, rate limiting, audit trail, structured error codes, health monitoring
@@ -15,7 +15,7 @@
 - MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from the old saltus_rest array to a per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
-- 394 PHPUnit tests passing (1072 assertions) plus 13 `bridge.js` tests via `npm test`, PHPStan Level 7 clean across the configured analysis set
+- 1293 PHPUnit tests passing (3360 assertions) and PHPStan Level 7 clean across the configured analysis set, verified in the v2.1.1 cycle; `phpstan.neon` now sets `treatPhpDocTypesAsCertain: false` globally — see finding 17.5. The `npm test` JS suites are untouched by this cycle.
 - WebMCP Phase 8A delivers a third consumer of the tool registry (alongside MCP/Abilities and WP-CLI): read-only tools projected into the visitor's browser for models that opt in with `webmcp: { enabled: true, frontend: true }`.
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
@@ -399,11 +399,11 @@ frontend:
 - ✓ Address remaining PHPStan errors (2 pre-existing in ResourceProvider) — resolved 2026-07-01.
 - ✓ Code-review hardening pass — export isolation, lifecycle hook file registration, fail-closed MCP permissions, structured settings sanitization, JSON fallback, and AssetLoader PHPStan coverage resolved 2026-07-02.
 - ✓ Service extraction — inline REST controller logic (WXR export, meta field normalization, post reorder, settings CRUD) moved into dedicated shared service classes and wired into both REST controllers and MCP tools; defensive guards for null post, private property access, taxonomy object, and asset data types — resolved 2026-07-03.
-- Continue maintaining automated testing suites (372 tests, 1015 assertions as of 2026-08-07).
+- Continue maintaining automated testing suites (1293 tests, 3360 assertions as of 2026-08-19).
 - WordPress-native MCP/Abilities integration shipped in v2.0.0.
 - ✓ **Phase 5 implementation** — Block Editor integration, WP-CLI tools, Frontend rendering, and documentation completion — delivered 2026-07-31.
 - ✓ **Phase 6C AI client generation** — unhandled assistant actions generate through the WordPress AI Client; `saltus/framework/ai/prompt_builder` filter; AI availability reported in health + `wp saltus` — delivered 2026-08-07.
-- Reconcile version numbering across `package.json` (now 1.8.3), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
+- Reconcile version numbering across `package.json` (now 2.1.1), `docs/ROADMAP.md`, `CHANGELOG.md`, and the `v1.4.2`/`v2.0.0` tags.
 - ✓ **Phase 8B implementation** — admin WebMCP surface and proposal-queue-governed writes: `AdminScreen`/`AdminToolSet` per-screen scoping, `AdminTool` decorating existing abilities with the review-queue write posture, nonce-authenticated execute + refresh route, `saltus-webmcp-toolchange` re-registration in the bridge, `wp saltus webmcp manifest|validate`, health/`wp saltus health` WebMCP stats, and the declarative forms no-go evaluation — delivered 2026-08-08.
 - ✓ **Phase 8 scope defined** — WebMCP browser surface: frontend read-only tools in 8A, admin surface and proposal-queue-governed writes in 8B — scoped 2026-08-07.
 - ✓ **Phase 8A implementation** — `WebMcp` feature service, `WebMcpPolicy` gating, `ManifestBuilder` projection from the existing tool registry, five public read tools (`search_content`, `get_content`, `list_content_models`, `list_taxonomy_terms`, `filter_content`), `PublicFieldFilter`, `WebMcpController` manifest/execute routes, and the `bridge.js` single-point namespace probe — delivered 2026-08-07.
@@ -413,7 +413,9 @@ frontend:
 - ✓ **Bug-fix pass 1.8.3** — shortcode alias bound to its own model (bare `[books]` renders), `__invoke()` removed from `wp saltus` parent commands so subcommands register, audit table created before reads, WebMCP manifest includes admin models via `enabled_models()`, and `ResultBudget` guarantees fit at the pass bound — delivered 2026-08-10.
 - ✓ **Maintenance pass 1.8.4** — `AuditLogger::ensure_table()` returns whether the DDL succeeded, so a failed create no longer marks the table verified and hides a missing audit table for the full TTL — delivered 2026-08-11.
 - ✓ **Phases 11–14 scoped** — Security & Compliance (field-level permissions, per-field encryption, GDPR hooks), Developer Experience (config-time validation), Enhanced UX (relationship picker plus the four documented Codestar accessibility defects), Observability (audit rollups and a metrics surface) — scoped 2026-08-11. The phase-numbering collision with the retired bug-fix buckets is resolved and recorded.
-- Next code work, in the order it unblocks: the Phase 10A follow-ups (metabox picker → query-builder facade → migration scripts). The picker and the Codestar accessibility fixes both now sit in [Phase 13](#phase-13-enhanced-ux-v29), which is where that work belongs.
+- ✓ **Phase 14 implementation** — Observability: `RollupStore`/`DailyRollup` daily audit rollups with a portable 1.2.0 schema migration and an atomic upsert, the `Observability` feature (metrics dashboard plus `MetricsApi`), `wp saltus metrics`, rollup-freshness reporting on the health endpoint, audit sampling, and slow-call logging — delivered 2026-08-16, released in v2.1.1 on 2026-08-19.
+- ✓ **Per-relationship capability enforcement** — `RelationshipPermissionPolicy` resolves a relationship's declared `capabilities` at the `RelationshipManager` choke-point, so REST, MCP, WP-CLI, and the metabox cannot disagree; reciprocals inherit the declaring side's rules, cascade cleanup is exempt, and write-denied pickers render read-only — delivered 2026-08-14, released in v2.1.1.
+- Next code work: the [Phase 16](#phase-16--v210-review--09) review backlog, approved 2026-08-17 as the next work, then the 25 open [Phase 17](#phase-17--v211-review--227) findings. The remaining Phase 10A follow-ups — the query-builder facade, then the ACF/Toolset/Pods migration scripts — are still open; the metabox picker and the Codestar accessibility fixes shipped with [Phase 13](#phase-13-enhanced-ux-v29).
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -1154,6 +1156,8 @@ fields:
 | Health payload extended with rollup freshness, so a stalled cron is visible | ✓ Done 2026-08-16 |
 | Dashboard accessibility verified against the [Phase 13](#phase-13-enhanced-ux-v29) markup fixes | ✓ Done 2026-08-16 — tables retain scoped sortable headers, keyboard buttons, live status, and empty/error states |
 | PHPUnit coverage for rollup arithmetic, retention interaction, and the missing-table case | ✓ Done 2026-08-16 — includes error hand-off, sampling, slow-call, freshness, API, CLI, and runtime wiring contracts |
+
+**Verification:** 1293 tests, 3360 assertions; PHPStan Level 7 clean. Confirmed at the v2.1.1 release commit, which is also where this phase's code was committed — the rollup store, the metrics dashboard and API, `wp saltus metrics`, and the health freshness reporting all landed as atomic commits in that cycle.
 
 **Exit criteria:** An operator can see per-tool and per-client call volume, error rate, and latency over a chosen window from wp-admin and from `wp saltus metrics`, without a full table scan. Aggregate and client-scoped rows are queried separately and are never double-counted. A missing or broken audit table reports as unavailable rather than healthy. Aggregates survive retention pruning. Slow calls remain visible even when normal audit sampling excludes a call. Rollup freshness and stalled retention work are visible in health. Nothing leaves the site unless a filter is wired to send it.
 
