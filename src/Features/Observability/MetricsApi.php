@@ -60,7 +60,10 @@ final class MetricsApi implements Service, Registerable {
 	 */
 	private function send_metrics(): void {
 		$range   = isset( $_GET['range'] ) ? (int) $_GET['range'] : 7;
-		$ability = isset( $_GET['ability'] ) && is_string( $_GET['ability'] ) ? sanitize_text_field( $_GET['ability'] ) : null;
+		// Unslashed before sanitizing: WordPress slashes request superglobals, so a
+		// name carrying a quote or a namespace separator arrives escaped and would
+		// otherwise be compared in its escaped form and match nothing.
+		$ability = isset( $_GET['ability'] ) && is_string( $_GET['ability'] ) ? sanitize_text_field( wp_unslash( $_GET['ability'] ) ) : null;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( $range <= 0 || $range > 365 ) {
@@ -86,24 +89,40 @@ final class MetricsApi implements Service, Registerable {
 	/**
 	 * Compute aggregate metrics from rollups.
 	 *
+	 * Counts stay as recorded. The error rate does not: failures bypass sampling
+	 * while everything else is thinned, so the recorded ratio climbs as the rate
+	 * falls. Each rollup contributes its own `sample_rate` to the denominator via
+	 * DailyRollup::estimated_call_count(), which makes a window mixing rates the
+	 * sum of per-day estimates rather than one blended rate applied to the whole
+	 * window.
+	 *
 	 * @param list<\Saltus\WP\Framework\MCP\Audit\DailyRollup> $rollups
 	 * @return array<string, mixed>
 	 */
 	private function compute_aggregates( array $rollups ): array {
-		$total_calls    = 0;
-		$total_errors   = 0;
-		$total_duration = 0;
-		$duration_count = 0;
-		$per_ability    = [];
-		$daily_calls    = [];
-		$sample_rates   = [];
+		$total_calls     = 0;
+		$estimated_calls = 0.0;
+		$total_errors    = 0;
+		$total_duration  = 0;
+		$duration_count  = 0;
+		$per_ability     = [];
+		$daily_calls     = [];
+		$calls_by_rate   = [];
 
 		foreach ( $rollups as $rollup ) {
-			$total_calls    += $rollup->call_count();
-			$total_errors   += $rollup->error_count() + $rollup->exception_count();
-			$total_duration += $rollup->avg_duration_ms() * $rollup->call_count();
-			$duration_count += $rollup->call_count();
-			$sample_rates[]  = $rollup->sample_rate();
+			$total_calls     += $rollup->call_count();
+			$estimated_calls += $rollup->estimated_call_count();
+			$total_errors    += $rollup->error_count() + $rollup->exception_count();
+			$total_duration  += $rollup->avg_duration_ms() * $rollup->call_count();
+			$duration_count  += $rollup->call_count();
+
+			$rate     = $rollup->sample_rate();
+			$rate_key = (string) $rate;
+
+			$calls_by_rate[ $rate_key ] = [
+				'rate'       => $rate,
+				'call_count' => ( $calls_by_rate[ $rate_key ]['call_count'] ?? 0 ) + $rollup->call_count(),
+			];
 
 			// Daily aggregates
 			$date = $rollup->date();
@@ -142,27 +161,49 @@ final class MetricsApi implements Service, Registerable {
 			];
 		}
 
-		// Determine sampling metadata
-		$unique_rates = array_unique( $sample_rates );
-		$is_sampled   = count( $unique_rates ) === 1 && $unique_rates[0] < 1.0;
-		$sample_rate  = count( $unique_rates ) === 1 ? $unique_rates[0] : null;
-
-		$sampling = [
-			'is_sampled'  => $is_sampled,
-			'sample_rate' => $sample_rate,
-		];
-
-		if ( $is_sampled && $sample_rate !== null && $sample_rate > 0.0 ) {
-			$sampling['estimated_total_calls'] = (int) round( $total_calls / $sample_rate );
-		}
-
 		return [
 			'total_calls'    => $total_calls,
-			'error_rate'     => $total_calls > 0 ? $total_errors / $total_calls : 0.0,
+			'error_rate'     => $estimated_calls > 0.0 ? $total_errors / $estimated_calls : 0.0,
 			'avg_latency_ms' => $duration_count > 0 ? $total_duration / $duration_count : 0.0,
 			'daily_calls'    => $daily_calls,
 			'per_ability'    => $per_ability_final,
-			'sampling'       => $sampling,
+			'sampling'       => $this->describe_sampling( $calls_by_rate, $estimated_calls ),
+		];
+	}
+
+	/**
+	 * Describe the sampling that produced a window.
+	 *
+	 * Reported whenever any rollup in the window was sampled, not only when the
+	 * whole window shares one rate. A window spanning a configuration change is
+	 * exactly where the disclosure matters, and collapsing it to "not sampled"
+	 * presented thinned counts as exact. `sample_rate` therefore stays a single
+	 * value only when the window has one, and the breakdown carries the rest.
+	 *
+	 * @param array<array-key, array{rate: float, call_count: int}> $calls_by_rate   Recorded calls per distinct rate, keyed by the
+	 *                                                                              rate's string form. PHP coerces a numeric-string
+	 *                                                                              key back to int, so the key type is array-key
+	 *                                                                              and is never read; only the values are used.
+	 * @param float                                                 $estimated_calls Calls the window stands for once sampling is undone.
+	 * @return array<string, mixed>
+	 */
+	private function describe_sampling( array $calls_by_rate, float $estimated_calls ): array {
+		$rates = array_values( $calls_by_rate );
+		usort( $rates, static fn( array $a, array $b ): int => $a['rate'] <=> $b['rate'] );
+
+		$is_sampled = false;
+		foreach ( $rates as $entry ) {
+			if ( $entry['rate'] < 1.0 ) {
+				$is_sampled = true;
+				break;
+			}
+		}
+
+		return [
+			'is_sampled'            => $is_sampled,
+			'sample_rate'           => count( $rates ) === 1 ? $rates[0]['rate'] : null,
+			'sample_rates'          => $rates,
+			'estimated_total_calls' => $estimated_calls,
 		];
 	}
 
@@ -180,7 +221,13 @@ final class MetricsApi implements Service, Registerable {
 				continue;
 			}
 			if ( ! isset( $grouped[ $client ] ) ) {
-				$grouped[ $client ] = [ 'client_identifier' => $client, 'call_count' => 0, 'error_count' => 0, 'total_duration' => 0.0, 'max_p95' => 0.0 ];
+				$grouped[ $client ] = [
+					'client_identifier' => $client,
+					'call_count' => 0,
+					'error_count' => 0,
+					'total_duration' => 0.0,
+					'max_p95' => 0.0,
+				];
 			}
 			$grouped[ $client ]['call_count']     += $rollup->call_count();
 			$grouped[ $client ]['error_count']    += $rollup->error_count() + $rollup->exception_count();

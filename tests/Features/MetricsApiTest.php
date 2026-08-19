@@ -375,6 +375,136 @@ class MetricsApiTest extends TestCase {
 	}
 
 	/**
+	 * WordPress slashes request superglobals, so a namespaced ability name arrives
+	 * with its separators doubled. Sanitizing without unslashing first compares the
+	 * doubled form against the stored single-backslash name and filters to nothing.
+	 */
+	public function test_unslashes_the_ability_filter_before_comparing(): void {
+		$today = gmdate( 'Y-m-d' );
+
+		$this->seedRollup(
+			[
+				'rollup_date' => $today,
+				'ability'     => 'Saltus\Models\Post',
+				'call_count'  => 5,
+			]
+		);
+
+		$_GET['ability'] = 'Saltus\\\\Models\\\\Post';
+
+		$result = $this->capture( $this->api() );
+
+		$this->assertSame( 5, $result['data']['metrics']['total_calls'] );
+		$this->assertSame( [ 'Saltus\Models\Post' ], $result['data']['abilities'] );
+	}
+
+	/**
+	 * A window spanning a sampling configuration change used to collapse to
+	 * `is_sampled: false` with a null rate, presenting thinned counts as exact in
+	 * the one case where the notice matters most.
+	 */
+	public function test_a_window_mixing_sampled_and_unsampled_days_discloses_sampling(): void {
+		$today     = gmdate( 'Y-m-d' );
+		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+
+		$this->seedRollup(
+			[
+				'rollup_date'  => $yesterday,
+				'sample_rate'  => 0.1,
+				'call_count'   => 20,
+				'error_count'  => 0,
+			]
+		);
+		$this->seedRollup(
+			[
+				'rollup_date'  => $today,
+				'sample_rate'  => 1.0,
+				'call_count'   => 30,
+				'error_count'  => 0,
+			]
+		);
+
+		$sampling = $this->capture( $this->api() )['data']['metrics']['sampling'];
+
+		$this->assertTrue( $sampling['is_sampled'], 'one sampled day in the window is still a sampled window' );
+		$this->assertNull( $sampling['sample_rate'], 'no single rate describes a mixed window' );
+		$this->assertSame(
+			[
+				[ 'rate' => 0.1, 'call_count' => 20 ],
+				[ 'rate' => 1.0, 'call_count' => 30 ],
+			],
+			$sampling['sample_rates']
+		);
+		// 200 estimated from the sampled day, 30 recorded exactly.
+		$this->assertSame( 230.0, $sampling['estimated_total_calls'] );
+	}
+
+	public function test_a_single_rate_window_still_reports_that_one_rate(): void {
+		$this->seedRollup(
+			[
+				'sample_rate' => 0.5,
+				'call_count'  => 10,
+				'error_count' => 0,
+			]
+		);
+
+		$sampling = $this->capture( $this->api() )['data']['metrics']['sampling'];
+
+		$this->assertTrue( $sampling['is_sampled'] );
+		$this->assertSame( 0.5, $sampling['sample_rate'] );
+		$this->assertSame( [ [ 'rate' => 0.5, 'call_count' => 10 ] ], $sampling['sample_rates'] );
+	}
+
+	/**
+	 * The estimate ships on every window, not only sampled ones, so the dashboard
+	 * has one field to read. With nothing sampled it equals the recorded count.
+	 */
+	public function test_an_unsampled_window_reports_the_recorded_count_as_the_estimate(): void {
+		$this->seedRollup( [ 'call_count' => 12, 'error_count' => 0 ] );
+
+		$sampling = $this->capture( $this->api() )['data']['metrics']['sampling'];
+
+		$this->assertFalse( $sampling['is_sampled'] );
+		$this->assertSame( 1.0, $sampling['sample_rate'] );
+		$this->assertSame( 12.0, $sampling['estimated_total_calls'] );
+	}
+
+	/**
+	 * The window error rate is weighted by each day's own recorded rate. Summing
+	 * failures over recorded calls would read 2/50 here; the sampled day's 2
+	 * failures were kept whole and its 18 successes stand for 180, so the window
+	 * covers 212 calls and the true rate is 2/212.
+	 */
+	public function test_window_error_rate_is_weighted_by_each_days_sample_rate(): void {
+		$today     = gmdate( 'Y-m-d' );
+		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+
+		$this->seedRollup(
+			[
+				'rollup_date'     => $yesterday,
+				'sample_rate'     => 0.1,
+				'call_count'      => 20,
+				'error_count'     => 1,
+				'exception_count' => 1,
+			]
+		);
+		$this->seedRollup(
+			[
+				'rollup_date'     => $today,
+				'sample_rate'     => 1.0,
+				'call_count'      => 30,
+				'error_count'     => 0,
+				'exception_count' => 0,
+			]
+		);
+
+		$metrics = $this->capture( $this->api() )['data']['metrics'];
+
+		$this->assertSame( 50, $metrics['total_calls'], 'reported counts stay the recorded rows' );
+		$this->assertEqualsWithDelta( 2 / 212, $metrics['error_rate'], 1e-12 );
+	}
+
+	/**
 	 * An out-of-band range falls back to the 7-day default rather than being
 	 * clamped to the bound: a negative or absurd range is a malformed request,
 	 * and answering with the default is what the dashboard expects.
@@ -431,5 +561,66 @@ class MetricsApiTest extends TestCase {
 		$result = $this->capture( $this->api() );
 
 		$this->assertSame( 11, $result['data']['metrics']['total_calls'] );
+	}
+
+	/**
+	 * Roll up one day of audit traffic and return the metrics payload.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function metricsForRolledUpTraffic( bool $client_mode ): array {
+		global $wp_filter_values;
+
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_by_client'] = $client_mode;
+
+		$this->db = new RollupTestDatabase();
+
+		$date = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+		$this->db->addAuditRow( 'list_models', 'success', 10.0, $date . ' 09:00:00.000', 'webmcp:user:1' );
+		$this->db->addAuditRow( 'list_models', 'error', 30.0, $date . ' 09:00:01.000', 'webmcp:user:2' );
+		$this->db->addAuditRow( 'get_content', 'success', 20.0, $date . ' 09:00:02.000', 'webmcp:user:1' );
+
+		$store = new RollupStore( $this->db );
+		$store->compute_and_store_rollup( $date );
+
+		$payload = $this->capture( new MetricsApi( $store ) )['data'];
+
+		return is_array( $payload ) && isset( $payload['metrics'] ) && is_array( $payload['metrics'] )
+			? $payload['metrics']
+			: [];
+	}
+
+	/**
+	 * The client filter chooses which series exist, never what a total means.
+	 * Client mode used to write only per-client rows, so the aggregate series the
+	 * totals are read from went empty and every number on the dashboard depended
+	 * on whether the filter happened to be on.
+	 */
+	public function test_totals_are_identical_with_client_mode_on_and_off(): void {
+		$without = $this->metricsForRolledUpTraffic( false );
+		$with    = $this->metricsForRolledUpTraffic( true );
+
+		$this->assertSame( 3, $without['total_calls'] );
+		$this->assertSame( $without['total_calls'], $with['total_calls'] );
+		$this->assertSame( $without['error_rate'], $with['error_rate'] );
+		$this->assertSame( $without['avg_latency_ms'], $with['avg_latency_ms'] );
+		$this->assertSame( $without['daily_calls'], $with['daily_calls'] );
+		$this->assertSame( $without['per_ability'], $with['per_ability'] );
+	}
+
+	/**
+	 * The per-client view is the added series, and it must stay out of the total:
+	 * summing client rows into `total_calls` would count the same traffic twice.
+	 */
+	public function test_client_mode_adds_the_per_client_series_without_inflating_the_total(): void {
+		$with = $this->metricsForRolledUpTraffic( true );
+
+		$this->assertSame( 3, $with['total_calls'] );
+		$this->assertCount( 2, $with['per_client'] );
+
+		$client_calls = array_sum( array_column( $with['per_client'], 'call_count' ) );
+
+		$this->assertSame( 3, $client_calls, 'the client series covers the same traffic, not extra traffic' );
+		$this->assertSame( [], $this->metricsForRolledUpTraffic( false )['per_client'] );
 	}
 }
