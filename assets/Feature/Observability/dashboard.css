@@ -122,6 +122,36 @@
 	font-size: 0.9375rem;
 }
 
+.saltus-metrics-sampling-notice p {
+	margin: 0;
+}
+
+.saltus-sampling-rates {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 0.25rem 1rem;
+	margin: 0.75rem 0 0;
+}
+
+.saltus-sampling-rates dt {
+	font-weight: 600;
+}
+
+.saltus-sampling-rates dd {
+	margin: 0;
+	color: #50575e;
+}
+
+.saltus-metric-hint {
+	margin: 0.5rem 0 0;
+	font-size: 0.8125rem;
+	color: #646970;
+}
+
+.saltus-metric-unavailable {
+	color: #646970;
+}
+
 .saltus-metrics-chart {
 	margin-bottom: 2rem;
 	padding: 1.5rem;
@@ -137,9 +167,62 @@
 	color: #1d2327;
 }
 
-.saltus-metrics-chart canvas {
+.saltus-chart-svg {
+	display: block;
+	width: 100%;
 	max-height: 300px;
-	max-width: 100%;
+	overflow: visible;
+}
+
+.saltus-chart-bar {
+	fill: #2271b1;
+}
+
+.saltus-chart-gridline line {
+	stroke: #dcdcde;
+	stroke-width: 1;
+}
+
+.saltus-chart-gridline text,
+.saltus-chart-axis-label {
+	fill: #646970;
+	font-size: 11px;
+}
+
+.saltus-chart-state {
+	margin: 0;
+	padding: 3rem 1rem;
+	text-align: center;
+	color: #646970;
+}
+
+.saltus-chart-data {
+	margin-top: 1rem;
+}
+
+.saltus-chart-data summary {
+	padding: 0.5rem 0;
+	cursor: pointer;
+	font-size: 0.875rem;
+	color: #2271b1;
+}
+
+.saltus-chart-data summary:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.saltus-chart-data table {
+	width: 100%;
+	margin-top: 0.75rem;
+	border-collapse: collapse;
+}
+
+.saltus-chart-data th,
+.saltus-chart-data td {
+	padding: 0.5rem 1rem;
+	text-align: left;
+	border-top: 1px solid #dcdcde;
 }
 
 .saltus-chart-summary {
