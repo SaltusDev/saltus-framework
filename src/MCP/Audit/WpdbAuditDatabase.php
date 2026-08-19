@@ -71,9 +71,13 @@ class WpdbAuditDatabase implements AuditDatabase {
 	/**
 	 * Execute a SELECT query and return results.
 	 *
+	 * `ARRAY_A` is normalized to associative rows here so the declared shape is
+	 * a guarantee callers can rely on; every other format is passed through as
+	 * wpdb produced it.
+	 *
 	 * @param string $query  The SQL SELECT query.
 	 * @param mixed $output  The output format constant (e.g. ARRAY_A, OBJECT).
-	 * @return list<array<string, mixed>>|object|null
+	 * @return ($output is 'ARRAY_A' ? list<array<string, mixed>>|null : array<array-key, mixed>|object|null)
 	 */
 	public function get_results( string $query, $output = null ) {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is assembled internally by AuditLogger with an integer limit.
@@ -82,8 +86,11 @@ class WpdbAuditDatabase implements AuditDatabase {
 			return $rows;
 		}
 
-		if ( ! defined( 'ARRAY_A' ) || $output !== ARRAY_A ) {
-			/** @phpstan-ignore-next-line Return type varies by $output format (OBJECT returns array<stdClass>, etc.) */
+		// Tested against the format's value rather than the ARRAY_A constant.
+		// WordPress defines that constant as this identical string, so the value
+		// test holds equally before wpdb is loaded, where a caller asking for
+		// associative rows would otherwise be handed the raw wpdb shape.
+		if ( $output !== 'ARRAY_A' ) {
 			return $rows;
 		}
 

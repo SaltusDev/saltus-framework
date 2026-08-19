@@ -80,7 +80,7 @@ class RollupWriteWatcher implements AuditDatabase {
 
 	/**
 	 * @param mixed $output
-	 * @return list<array<string, mixed>>|object|null
+	 * @return ($output is 'ARRAY_A' ? list<array<string, mixed>>|null : array<array-key, mixed>|object|null)
 	 */
 	public function get_results( string $query, $output = null ) {
 		return $this->database->get_results( $query, $output );

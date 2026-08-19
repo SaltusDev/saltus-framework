@@ -41,9 +41,12 @@ interface AuditDatabase {
 	/**
 	 * Execute a SELECT query and return results.
 	 *
+	 * The row shape is decided by the requested format, so the return type is
+	 * conditional on it rather than claiming associative rows for every format.
+	 *
 	 * @param string $query  The SQL SELECT query.
 	 * @param mixed $output  The output format constant (e.g. ARRAY_A, OBJECT).
-	 * @return list<array<string, mixed>>|object|null
+	 * @return ($output is 'ARRAY_A' ? list<array<string, mixed>>|null : array<array-key, mixed>|object|null)
 	 */
 	public function get_results( string $query, $output = null );
 
