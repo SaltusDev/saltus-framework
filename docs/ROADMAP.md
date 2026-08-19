@@ -1,11 +1,11 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` bumped to 1.8.4 (2026-08-10); all 1.8.x work currently sits under `CHANGELOG.md`'s `[Unreleased]` heading with no `[1.8.x]` release sections cut; relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
+- Version: `package.json` is at 2.1.0; 1.8.x/2.x work still sits under `CHANGELOG.md`'s `[Unreleased]` heading with no release sections cut; relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
-- Phases 11–14 scoped 2026-08-11: Security & Compliance, Developer Experience, Enhanced UX, Observability. **Phase 11 delivered 2026-08-11** (field-level permissions across all four surfaces, per-field encryption, GDPR export/erase, distinct denial auditing). **Phase 12 delivered 2026-08-11** (config-time validation with schema derivation, health integration, CLI command, generated reference docs). Phase 13 is 11 of 12 items. Phase 14 not started. There is no Phase 9 — see [Phase Numbering](#phase-numbering).
-- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11.
+- **Phase 14 delivered 2026-08-16** (daily rollups, retention ordering, aggregate and per-client metrics, admin dashboard, `wp saltus metrics`, audit health states, error hand-off, sampling, slow-call logging, rollup freshness, and coverage). There is no Phase 9 — see [Phase Numbering](#phase-numbering).
+- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Open review backlogs: [Phase 15 — v1.8.5 Review](#phase-15--v185-review--05) (0/5) and [Phase 16 — v2.1.0 Review](#phase-16--v210-review--09) (0/9, approved 2026-08-17 as the next work).
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface
 - WordPress-native MCP/Abilities surface with 25 tools
 - REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
@@ -824,14 +824,140 @@ The internal RFC — still at RFC status as of 2026-08-11 — split Phase 10 int
 | Sub-phase | Scope | State |
 |-----------|-------|-------|
 | **10A** Relationships | Data model, storage, REST/MCP/WP-CLI surfaces | ✓ Done 2026-08-08 |
-| **10A** follow-ups | Admin metabox picker UI, query-builder facade (`Relations::for()->with()`), ACF/Toolset/Pods migration scripts | Not started — declared non-goals when 10A shipped |
-| **10B** Workflows | Custom approval states beyond draft/publish, transition validation, dashboard, notifications | Not scoped here; RFC only |
-| **10C** Scheduled Actions | Scheduled publish/unpublish, auto-archival rules, monitoring | Not scoped here; RFC only |
+| **10A** follow-ups | Admin metabox picker UI (✓ Done 2026-08-11, delivered in Phase 13), query-builder facade (`Relations::for()->with()`), ACF/Toolset/Pods migration scripts (in progress as task #2) | Picker done; query facade and migrations in progress |
+| **10B** Workflows | Custom approval states beyond draft/publish, transition validation, dashboard, notifications — **should generalize Phase 6B's `ProposalService` state machine** | Scoped below; approved 2026-08-14 |
+| **10C** Scheduled Actions | Scheduled publish/unpublish, auto-archival rules, monitoring | Scoped below; approved 2026-08-14 |
 | **10.5** Migration tools | ACF relationship field importer with dry-run preview | Optional; contingent on 10A adoption |
 
 **Where the RFC has drifted from the code:** it specifies a `src/Migrations/` system with `up()`/`down()` classes and a nested `src/MCP/Tools/Relationships/` directory. Neither exists — `RelationshipStore` follows the lazy `ensure_table()` pattern already used by `ProposalStore` and `AuditLogger`, and tools sit flat in `src/MCP/Tools/` so `WpCliFeatureTest`'s parity check covers them. The RFC's `README.md` still points at those uncreated paths. Read it for intent, not for structure.
 
 **Relevance to 10B:** the RFC's workflow engine overlaps Phase 6B's editorial review queue, which already has proposal states (`pending` → `approved`/`rejected`), a `ProposalStore`, a review dashboard at Tools → AI Review Queue, and audit events on every transition. 10B should generalize that state machine rather than build a second one beside it.
+
+---
+
+### Phase 10B: Workflows (v2.10+)
+
+**Theme:** Generalize the Phase 6B proposal queue into a flexible workflow engine that serves both AI review and general content approval flows.
+
+**Premise:** Phase 6B built `ProposalService` for AI-originated changes: `pending` proposals await human approval before applying. The service is hardcoded to two terminal states (`approved`/`rejected`) and knows nothing about transitions beyond "pending → done". Sites that need multi-stage approval (draft → legal review → editorial review → published), conditional routing, or rejection-with-revision have no path. This phase generalizes the state machine without breaking the existing AI review queue.
+
+**Design constraints:**
+- **Do not break the existing queue.** The Phase 6B dashboard and `ProposalService::should_queue()` must work unchanged after this ships. A migration that forces every site to reconfigure is a non-starter.
+- **States are site-defined, not framework-defined.** Beyond `pending` (the entry state) and two reserved terminal flags (`approved`, `rejected`), states come from model config. A legal site and an e-commerce site need different flows.
+- **Transition validation lives in config, not code.** "Draft → Published" is valid; "Published → Draft" might not be. The rules belong in the model config where editors can see them.
+- **Audit every transition.** The existing audit trail records proposal creation and terminal states; it must also log every intermediate transition, who initiated it, and when.
+- **Notifications are a filter, not a bundled system.** Sites have their own notification infrastructure (email, Slack, MS Teams). The framework emits a `saltus/framework/workflow/transition` action with the proposal, old state, and new state; the site decides what to send.
+
+**Config shape (proposed):**
+```yaml
+workflows:
+  approval:
+    states:
+      - name: draft
+        label: "Draft"
+      - name: legal_review
+        label: "Legal Review"
+      - name: editorial_review
+        label: "Editorial Review"
+      - name: approved
+        label: "Approved"
+        terminal: true
+      - name: rejected
+        label: "Rejected"
+        terminal: true
+    transitions:
+      - from: draft
+        to: legal_review
+        capability: edit_posts
+      - from: legal_review
+        to: [editorial_review, rejected]
+        capability: review_legal
+      - from: editorial_review
+        to: [approved, rejected, draft]
+        capability: review_editorial
+    default_state: draft
+```
+
+| Item | Status |
+|------|--------|
+| Generalize `ProposalStore` schema to support arbitrary states beyond pending/approved/rejected | [ ] |
+| `WorkflowDefinition` value object parsed from model config `workflows` section | [ ] |
+| Transition validation: `WorkflowEngine::can_transition(from, to, user)` checks capability and config | [ ] |
+| `ProposalService` refactored to delegate state logic to `WorkflowEngine` | [ ] |
+| Phase 6B dashboard updated to render workflow-aware states and available transitions | [ ] |
+| Audit logging extended to record every state transition with timestamp and user | [ ] |
+| `saltus/framework/workflow/transition` action for notification integration | [ ] |
+| REST endpoints: `POST /proposals/{id}/transition` with `new_state` parameter | [ ] |
+| MCP tool: `transition_proposal` wrapping the REST controller | [ ] |
+| WP-CLI: `wp saltus proposal transition <id> <new_state>` | [ ] |
+| Backward compatibility: existing two-state proposals migrate transparently | [ ] |
+| PHPUnit coverage: transition validation, capability checks, audit entries, terminal state detection | [ ] |
+
+**Exit criteria:** A model can declare a multi-state workflow in config, and proposals move through it via REST/MCP/WP-CLI/dashboard with transition validation and audit logging. The Phase 6B AI review queue continues to work without reconfiguration, treating `approved`/`rejected` as the terminal states it already knows.
+
+**Non-goals:** a visual workflow editor (config is YAML), email/Slack/Teams notification delivery (sites wire the action to their own systems), scheduled state transitions (that's Phase 10C), and workflow analytics beyond what the audit log already records.
+
+---
+
+### Phase 10C: Scheduled Actions (v2.11+)
+
+**Theme:** Let models declare time-based rules for automatic state changes — scheduled publish, auto-archival, expiration reminders.
+
+**Premise:** Sites routinely need "publish this post at 9am Monday" or "archive posts 90 days after publication" or "send a reminder when a draft sits untouched for a week." WordPress core has a scheduled publish date, but nothing for unpublish, archival, or model-specific rules. This phase adds a declarative scheduled-action system that runs through WP-Cron and applies via the same governed paths as manual changes.
+
+**Design constraints:**
+- **Declarative, not programmatic.** Rules live in model config as YAML, not scattered across theme code as cron callbacks. A rule change is a config change, not a code deploy.
+- **WP-Cron, not a custom scheduler.** WordPress already has a cron system; use it. High-traffic sites already replace it with real cron, and that replacement will work here too.
+- **Actions route through the same governance as manual ones.** A scheduled publish of a post with AI-generated content goes through `ProposalService::should_queue()` just like a manual publish from MCP. A scheduled action bypassing review is a bypass, not automation.
+- **Execution is audited and visible.** Every triggered action logs an audit row with status (succeeded/failed/skipped), and failed runs surface in health output so a broken rule does not silently stop running.
+- **Rules are evaluated per post, not per model.** "Archive posts in the 'news' category 30 days after publication" applies only to matching posts, not every post of the type.
+
+**Config shape (proposed):**
+```yaml
+scheduled_actions:
+  - name: auto_archive_old_news
+    trigger: after_publish
+    delay: 30 days
+    condition:
+      taxonomy: category
+      term: news
+    action:
+      set_status: archive
+  - name: unpublish_expired
+    trigger: meta_field
+    field: expiration_date
+    action:
+      set_status: draft
+  - name: reminder_stale_draft
+    trigger: after_status_change
+    status: draft
+    delay: 7 days
+    action:
+      notify:
+        message: "Draft post {{title}} has been untouched for a week"
+        recipients: [author, editor]
+```
+
+| Item | Status |
+|------|--------|
+| `ScheduledActionDefinition` parsed from model config `scheduled_actions` section | [ ] |
+| `ScheduledActionEngine` registers WP-Cron events per rule and evaluates conditions per post | [ ] |
+| Trigger types: `after_publish`, `after_status_change`, `meta_field` (date field), `fixed_schedule` (cron expression) | [ ] |
+| Action types: `set_status`, `set_meta`, `delete_post`, `notify` (hook for external systems) | [ ] |
+| Condition matching: taxonomy terms, meta field values, author role, date ranges | [ ] |
+| Governance integration: scheduled writes route through `ProposalService` when `should_queue()` says so | [ ] |
+| Health monitoring: failed action rate, last successful run per rule, rules with no eligible posts | [ ] |
+| Audit logging: every triggered action with result, timestamp, and the rule that fired it | [ ] |
+| Dashboard: "Scheduled Actions" page listing rules, eligible posts, next run times | [ ] |
+| REST endpoints: `GET /scheduled-actions`, `GET /scheduled-actions/{rule_id}/eligible` | [ ] |
+| MCP tools: `list_scheduled_actions`, `preview_scheduled_action` | [ ] |
+| WP-CLI: `wp saltus scheduled-action {list|preview|run-now}` | [ ] |
+| Dry-run mode: preview what would happen without applying changes | [ ] |
+| PHPUnit coverage: trigger evaluation, condition matching, governance routing, cron registration | [ ] |
+
+**Exit criteria:** A model can declare scheduled actions in config, and they fire through WP-Cron, route through governance, log audits, and surface execution health. A rule can be previewed (dry-run) before enabling, and failed runs appear in health output.
+
+**Non-goals:** sub-minute granularity (WP-Cron is minute-based), distributed lock coordination for high-traffic multi-instance sites (that's an infrastructure concern, not a framework one), a visual rule builder, and real-time triggers (use WordPress hooks directly for that — this is for time-based rules only).
 
 ---
 
@@ -891,7 +1017,7 @@ fields:
 
 **Verification:** 667 tests, 1834 assertions; 32 JS tests; PHPStan Level 7 and PHPCS clean; stable across 20 random orderings. Eleven guards mutation-tested — parent inheritance, the no-rule default, any-vs-all capability matching, the write rejection, read filtering, the WebMCP composition ordering, nonce reuse, key length refusal, the double-encrypt guard, the query-guard wiring, and the distinct audit status each fail at least one test.
 
-**Deferred within scope:** `FieldPermissionPolicy` is not yet consulted by the Phase 13 relationship picker or post-list column. Those surface *relationships*, not meta fields, so the policy has nothing to say about them until field-level rules extend to relationship visibility — which is not in this phase's scope. The Phase 13 row tracking that integration stays open.
+**Deferred within scope:** `FieldPermissionPolicy` is not yet consulted by the Phase 13 relationship picker or post-list column. Those surface *relationships*, not meta fields, so the policy has nothing to say about them. Relationships gained their own permission system in Phase 13 (2026-08-14) via `RelationshipPermissionPolicy` and the `capabilities` config key, which is separate from field-level rules and enforced at the manager choke-point.
 
 **Exit criteria:** A field declaring `permissions` is unreadable and unwritable through REST, MCP, WP-CLI, and WebMCP by a caller lacking the capability, with one policy resolving all four. A field declaring `encrypted: true` is stored as ciphertext and rejected from query arguments. A core privacy request exports and erases model meta.
 
@@ -956,7 +1082,7 @@ fields:
 | Codestar: vendored-change log so a Codestar upgrade can replay the patches | ✓ Done 2026-08-11 |
 | Relationship metabox picker — search, select, reorder, detach; one component across all four cardinalities | ✓ Done 2026-08-11 |
 | Picker writes through `RelationshipManager::sync()`, matching what `RelationshipsController` already does — see the constraint above on where queueing actually lives | ✓ Done 2026-08-11 |
-| Picker respects `FieldPermissionPolicy` from [Phase 11](#phase-11-security--compliance-v27) when that lands | [ ] — unblocked; the policy shipped 2026-08-11, but it governs meta fields and the picker surfaces relationships, so this needs field-level rules to extend to relationship visibility first |
+| Picker respects per-relationship permissions via `RelationshipPermissionPolicy` | ✓ Done 2026-08-14 — relationship `capabilities` enforced at the manager and metabox; `FieldPermissionPolicy` for meta fields is separate |
 | Relationship column on the post list table, with eager loading so the list stays one query per relationship | ✓ Done 2026-08-11 |
 | Bulk attach/detach from the post list, delegating to the same service classes `wp saltus relationship` uses | ✓ Done 2026-08-11 |
 | Keyboard operability and screen-reader labels verified on the picker specifically | ✓ Done 2026-08-11 |
@@ -1016,20 +1142,20 @@ fields:
 
 | Item | Status |
 |------|--------|
-| Pre-aggregated daily rollups per ability: call count, error count, latency percentiles | [ ] |
-| Rollups computed on the existing retention cron, before pruning removes the source rows | [ ] |
-| Admin dashboard: per-tool call volume, error rate, and latency over a selectable window | [ ] |
-| Per-tool and per-client breakdown, reusing `ClientIdentity` so no raw visitor IP is surfaced | [ ] |
-| Audit table health check that reports "unavailable" distinctly from "zero errors" | [ ] |
-| `wp saltus metrics [--ability=<name>] [--since=<date>] [--format=table\|json\|yaml]` | [ ] |
-| Error tracking hand-off filter (`saltus/framework/observability/error`) for an external collector, no SDK bundled | [ ] |
-| Audit sampling rate filter for high-traffic sites, with the sample rate recorded alongside the aggregates | [ ] |
-| Slow-call log: calls exceeding a filterable duration threshold, retained separately from the sampled set | [ ] |
-| Health payload extended with rollup freshness, so a stalled cron is visible | [ ] |
-| Dashboard accessibility verified against the [Phase 13](#phase-13-enhanced-ux-v29) markup fixes | [ ] |
-| PHPUnit coverage for rollup arithmetic, retention interaction, and the missing-table case | [ ] |
+| Pre-aggregated daily rollups per ability: call count, error count, latency percentiles | ✓ Done 2026-08-14 |
+| Rollups computed on the existing retention cron, before pruning removes the source rows | ✓ Done 2026-08-14 |
+| Admin dashboard: per-tool call volume, error rate, and latency over a selectable window | ✓ Done 2026-08-14 |
+| Per-tool and per-client breakdown, reusing `ClientIdentity` so no raw visitor IP is surfaced | ✓ Done 2026-08-16 — aggregate and client rows are queried separately; client output uses opaque persisted identifiers |
+| Audit table health check that reports "unavailable" distinctly from "zero errors" | ✓ Done 2026-08-14 |
+| `wp saltus metrics [--ability=<name>] [--since=<date>] [--format=table\|json\|yaml]` | ✓ Done 2026-08-14 |
+| Error tracking hand-off filter (`saltus/framework/observability/error`) for an external collector, no SDK bundled | ✓ Done 2026-08-16 |
+| Audit sampling rate filter for high-traffic sites, with the sample rate recorded alongside the aggregates | ✓ Done 2026-08-16 |
+| Slow-call log: calls exceeding a filterable duration threshold, retained separately from the sampled set | ✓ Done 2026-08-16 |
+| Health payload extended with rollup freshness, so a stalled cron is visible | ✓ Done 2026-08-16 |
+| Dashboard accessibility verified against the [Phase 13](#phase-13-enhanced-ux-v29) markup fixes | ✓ Done 2026-08-16 — tables retain scoped sortable headers, keyboard buttons, live status, and empty/error states |
+| PHPUnit coverage for rollup arithmetic, retention interaction, and the missing-table case | ✓ Done 2026-08-16 — includes error hand-off, sampling, slow-call, freshness, API, CLI, and runtime wiring contracts |
 
-**Exit criteria:** An operator can see per-tool call volume, error rate, and latency over a chosen window from wp-admin and from `wp saltus metrics`, without a full table scan. A missing or broken audit table reports as unavailable rather than healthy. Aggregates survive retention pruning. Nothing leaves the site unless a filter is wired to send it.
+**Exit criteria:** An operator can see per-tool and per-client call volume, error rate, and latency over a chosen window from wp-admin and from `wp saltus metrics`, without a full table scan. Aggregate and client-scoped rows are queried separately and are never double-counted. A missing or broken audit table reports as unavailable rather than healthy. Aggregates survive retention pruning. Slow calls remain visible even when normal audit sampling excludes a call. Rollup freshness and stalled retention work are visible in health. Nothing leaves the site unless a filter is wired to send it.
 
 **Non-goals:** APM-grade tracing, a bundled third-party error-tracking SDK, request-level profiling of non-Saltus code, alerting or notification delivery (the hand-off filter is the integration point; a site's existing alerting owns the rest), and multisite network-wide aggregation.
 
@@ -1053,7 +1179,7 @@ All 19 service ids are treated as valid top-level model config keys, but 12 are 
 
 ### 15.2 [medium] Roadmap marks `--model` and `--strict` for `wp saltus config validate` as done; the command implements neither
 
-> docs/ROADMAP.md:106 (✓ Done 2026-08-11) vs src/Features/WpCli/Commands/ConfigCommand.php:34 — only `--format` is implemented
+> docs/ROADMAP.md:920 (✓ Done 2026-08-11) vs src/Features/WpCli/Commands/ConfigCommand.php:34 — only `--format` is implemented
 
 The Phase 12 roadmap item promises `wp saltus config validate [--model=<name>] [--strict]`. The implemented command has no `--model` filter and no `--strict` mode, so warnings can never fail CI — the advertised CI use case is absent.
 
@@ -1085,5 +1211,269 @@ The trait's docblock says it exists so `ConfigValidator` and every contributor a
 WP-CLI accepts `--format=csv` (it is in the declared options list), then `AbstractCommand::format()` falls back to `table`, so a caller asking for CSV gets a table with no error.
 
 - [ ] Add `csv` to the accepted formats in `AbstractCommand::format()`, or drop `csv` from the ConfigCommand docblock options
+
+---
+
+## Phase 16 — v2.1.0 Review [✗] (0/9)
+
+@priority high @owner OmensUI
+
+Code review findings from the v2.1.0 cycle. Each finding is an open task to fix in a later cycle.
+
+### 16.1 [high] Make the rollup schema migration portable
+
+> src/MCP/Audit/RollupStore.php:687 — the rollup schema migration relies on database-specific DDL behavior rather than a WordPress-supported portable migration path.
+
+Impact: Schema upgrades can fail or diverge on supported database configurations, leaving rollup storage unavailable or partially migrated.
+
+- [ ] Replace the database-specific migration with a portable WordPress-compatible schema upgrade, preserve existing rollup data, and cover fresh installs plus upgrades from the prior schema.
+
+### 16.2 [high] Make relationship synchronization atomic
+
+> src/Features/Relationships/RelationshipManager.php:298 — relationship synchronization performs a multi-step mutation without an atomic boundary.
+
+Impact: A failure between writes can leave the forward and reciprocal relationship state partially updated and internally inconsistent.
+
+- [ ] Execute the complete relationship sync atomically, roll back every mutation on failure, and verify that interrupted attach, detach, and reorder operations preserve the prior state.
+
+### 16.3 [high] Reconcile reciprocal relationship permissions explicitly
+
+> src/Features/Relationships/RelationshipRegistry.php:211 — synthesized reciprocal relationships do not explicitly reconcile permission rules from both sides.
+
+Impact: Reciprocal access can inherit ambiguous or asymmetric permissions, potentially exposing or permitting relationship operations that one side intended to restrict.
+
+- [ ] Define and implement deterministic reciprocal permission reconciliation that preserves the stricter applicable policy, and cover conflicting and one-sided capability declarations.
+
+### 16.4 [high] Bypass user-facing read filtering during privacy cascade erasure
+
+> src/Features/Privacy/Privacy.php:321 — privacy cascade discovery uses a user-facing relationship read path whose visibility filters can hide records from erasure.
+
+Impact: Personal data in filtered or otherwise non-visible relationships can survive an erasure request, producing an incomplete privacy cascade.
+
+- [ ] Route cascade discovery through an internal unfiltered erasure query while retaining authorization at the erasure entry point, and prove hidden related records are deleted without widening user-facing reads.
+
+### 16.5 [high] Allow aggregate rollups to coexist with client mode
+
+> src/MCP/Audit/RollupStore.php:67; src/Features/Observability/MetricsApi.php:74 — client-scoped mode displaces or conflates aggregate rollups instead of allowing both datasets to coexist.
+
+Impact: Enabling client metrics can remove or distort the aggregate series, so dashboard and API totals become incomplete or mode-dependent.
+
+- [ ] Store and query aggregate and client-scoped rollups as distinct coexisting series, prevent double-counting, and cover API results with client mode both enabled and disabled.
+
+### 16.6 [medium] Make error-rate calculation sampling-aware
+
+> src/MCP/Audit/AuditLogger.php:331 — error-rate inputs do not consistently account for the sampling rate attached to recorded calls.
+
+Impact: Sampled traffic can produce materially misleading error rates and cause operators to misjudge service health.
+
+- [ ] Weight or normalize sampled call and error counts using the recorded sampling metadata, define behavior for mixed sampling rates, and add arithmetic coverage for sampled and unsampled windows.
+
+### 16.7 [medium] Decouple slow-call retention cleanup
+
+> src/MCP/Audit/AuditLogger.php:249 — `cleanup_expired_entries()` returns when normal `retention_days <= 0` before running the separately configured slow-call cleanup.
+
+Impact: Configuring normal audit retention as unlimited also disables pruning of the slow-call store, allowing it to grow without honoring its own retention policy.
+
+- [ ] Run slow-call cleanup independently of normal audit retention, and cover unlimited normal retention combined with finite slow-call retention.
+
+### 16.8 [medium] Update rollup freshness only after successful rollups
+
+> src/MCP/Audit/AuditLogger.php:281 — rollup freshness can advance even when rollup computation or persistence does not complete successfully.
+
+Impact: Health reporting can claim rollups are fresh while metrics are stale or incomplete, masking a failed retention job.
+
+- [ ] Record the freshness timestamp only after all required rollup writes succeed, leave the prior value unchanged on every failure path, and cover partial and total rollup failures.
+
+### 16.9 [medium] Implement or remove the blank metrics chart
+
+> assets/Feature/Observability/dashboard.js:58; src/Features/Observability/ObservabilityDashboard.php:81 — the dashboard emits a metrics chart surface that has no implemented visualization.
+
+Impact: Operators see an empty chart region that implies missing data or a broken dashboard and provides no usable metrics insight.
+
+- [ ] Either render an accessible chart from the supplied metrics with loading, empty, and error states, or remove the unused chart markup and JavaScript path so the dashboard exposes no blank control.
+
+---
+
+## Phase 17 — v2.1.1 Review [✗] (0/22)
+
+@priority high @owner OmensUI
+
+Code review findings from the v2.1.1 cycle. Each finding is an open task to fix in a later cycle. Findings already recorded in Phase 16 (v2.1.0) against the same working tree are not repeated here.
+
+### 17.1 [high] Correct the audit sampling random range
+
+> src/MCP/Audit/AuditLogger.php:371 — `sample_value()` divides `wp_rand()` by `getrandmax()`, but the two functions do not share an upper bound, so the produced value is not confined to 0..1.
+
+Impact: The effective retention fraction is materially lower than the configured `sample_rate`, audit rows are discarded faster than intended, and the `sample_rate` persisted with every rollup misstates what was actually kept.
+
+- [ ] Derive the sampling value from a single bounded source so it is uniform over 0..1 inclusive of the configured rate, and cover the boundary rates 0, 1, and an intermediate value with a deterministic seam.
+
+### 17.2 [high] Make the rollup upsert atomic and unique
+
+> src/MCP/Audit/RollupStore.php:378 — `store_rollup()` performs a separate existence check, delete, and insert, and the unique key covering `client_identifier` does not constrain rows where that column is null.
+
+Impact: Overlapping or repeated rollup runs can persist more than one aggregate row for the same date and ability, so every dashboard, REST, and CLI total silently double-counts.
+
+- [ ] Replace the read-then-delete-then-insert sequence with a single atomic write whose uniqueness also holds for aggregate rows, and cover concurrent and repeated rollups of the same date.
+
+### 17.3 [medium] Create the slow-call table before pruning it
+
+> src/MCP/Audit/AuditLogger.php:432 — `cleanup_slow_calls()` deletes from a table that is only ever created inside `record_slow_call()`.
+
+Impact: On every install that has not yet recorded a slow call, the retention cron issues a delete against a missing table and logs a database error on each run.
+
+- [ ] Ensure the slow-call table exists on the same schema path as the audit table, and cover retention on an install with no recorded slow calls.
+
+### 17.4 [medium] Throttle the slow-call schema check
+
+> src/MCP/Audit/AuditLogger.php:385 — `record_slow_call()` issues `CREATE TABLE IF NOT EXISTS` on every slow call, with none of the transient throttling `ensure_db()` applies to the audit table.
+
+Impact: A burst of slow calls turns each one into an additional schema statement, adding database work to exactly the requests already identified as slow.
+
+- [ ] Move the slow-call schema check behind the same verified-transient throttle used for the audit table, and cover that repeated slow calls issue the schema statement once.
+
+### 17.5 [medium] Reduce global static-analysis strictness back
+
+> phpstan.neon:5 — `treatPhpDocTypesAsCertain: false` was added, applying to every path under `src/`.
+
+Impact: A whole class of type contradictions stops being reported repository-wide, so unrelated existing and future code loses analysis coverage to accommodate the new files.
+
+- [ ] Remove the global setting and resolve the specific contradictions it hides, narrowing to per-file ignores only where a documented stub limitation makes that impossible.
+
+### 17.6 [medium] Bound the rollup read queries
+
+> src/MCP/Audit/RollupStore.php:479; src/MCP/Audit/RollupStore.php:536 — `get_rollups()` and `get_client_rollups()` select every matching row with no limit, and both are called on each metrics request over windows of up to 365 days.
+
+Impact: A long window on a busy site loads an unbounded result set into memory per dashboard request, with the client-scoped query growing by distinct client identifier as well as by ability.
+
+- [ ] Apply an explicit bound to both rollup reads with deterministic ordering and a way to page beyond it, and cover a window that exceeds the bound.
+
+### 17.7 [medium] Backfill rollups for missed retention runs
+
+> src/MCP/Audit/AuditLogger.php:274 — `compute_recent_rollups()` rolls up only the previous two days before retention prunes older rows.
+
+Impact: Any gap in the retention schedule permanently loses the metrics for the skipped days, because the source audit rows are deleted with no path to recompute them.
+
+- [ ] Roll up every date not yet covered by the recorded completion marker before pruning, bound the catch-up work per run, and cover a multi-day gap.
+
+### 17.8 [medium] Disclose sampling when rates differ across a window
+
+> src/Features/Observability/MetricsApi.php:146 — a window containing more than one distinct `sample_rate` collapses to `is_sampled: false` with a null rate.
+
+Impact: Metrics spanning a sampling configuration change are presented as exact counts with no sampling notice, which is the one case where the disclosure matters most.
+
+- [ ] Report sampling whenever any rollup in the window is sampled, expose the per-rate breakdown rather than a single value, and cover a window mixing sampled and unsampled days.
+
+### 17.9 [medium] Answer denied relationship reads with a refusal
+
+> src/Features/Relationships/RelationshipManager.php:116; src/Features/Relationships/RelationshipPermissionPolicy.php:132 — denied reads return an empty list, so REST responds 200 with an empty set, while `reject_denied_read()` exists to produce the 403 and is never called from anywhere.
+
+Impact: A caller cannot distinguish a relationship it may not read from one that is genuinely empty, and the read half of the policy diverges from the write half, which refuses loudly.
+
+- [ ] Refuse denied reads through the existing rejection path at the surfaces that can carry an error, keep the filtered-list behaviour only where a hard error would hide permitted relationships, and cover both shapes.
+
+### 17.10 [medium] Cover the new sampling and slow-call logic with tests
+
+> src/MCP/Audit/AuditLogger.php:331; src/MCP/Audit/AuditLogger.php:355; src/MCP/Audit/AuditLogger.php:371; src/MCP/Audit/AuditLogger.php:385 — `should_record()`, `is_slow()`, `sample_value()`, `record_slow_call()`, and the new error action have no tests; the only added assertion counts delete statements.
+
+Impact: The sampling decision, the failure bypass, the slow-call threshold, and the error hook can all regress without any test failing.
+
+- [ ] Add coverage for the sampling decision at its boundaries, the error and exception bypass, the slow-call threshold and its persistence, and the error action firing only after a successful insert.
+
+### 17.11 [medium] Discard stale metrics responses
+
+> assets/Feature/Observability/dashboard.js:15 — the fetch effect refires on every range and ability change with no cancellation or request-sequence guard.
+
+Impact: A slower earlier request can resolve after a newer one and overwrite the displayed metrics with data for a filter the operator has already changed.
+
+- [ ] Abort or ignore superseded requests so only the newest response updates state, and cover an out-of-order resolution.
+
+### 17.12 [low] Unslash the ability filter before sanitizing
+
+> src/Features/Observability/MetricsApi.php:63 — `$_GET['ability']` is passed to `sanitize_text_field()` without `wp_unslash()`.
+
+Impact: WordPress-added slashes survive into the comparison value, so an ability name containing a quote silently matches nothing instead of filtering.
+
+- [ ] Unslash the request value before sanitizing it, matching the convention used by the other request-reading surfaces.
+
+### 17.13 [low] Render or drop the estimated call total
+
+> src/Features/Observability/MetricsApi.php:155 — `estimated_total_calls` is computed and sent, and no consumer reads it; the dashboard notice states the opposite, that counts are not estimated.
+
+Impact: The payload carries a field nothing displays while the visible notice contradicts it, so the extrapolation is both unused and misdescribed.
+
+- [ ] Either surface the estimate alongside the recorded count with its own label, or remove the field and keep the notice as the single statement about sampling.
+
+### 17.14 [low] Validate the `--since` argument
+
+> src/Features/WpCli/Commands/MetricsCommand.php:80; src/Features/WpCli/Commands/MetricsCommand.php:155; src/Features/WpCli/Commands/MetricsCommand.php:232 — `--since` is cast to string and used as a date bound with no format check.
+
+Impact: An empty value widens the window to every stored rollup, and a malformed value reports no metrics rather than a bad argument, so both failure modes look like absent data.
+
+- [ ] Validate `--since` as a calendar date and fail with a clear message otherwise, and cover an empty and a malformed value.
+
+### 17.15 [low] Prepare the table existence check
+
+> src/Features/WpCli/Commands/MetricsCommand.php:291 — `SHOW TABLES LIKE '{$table}'` interpolates the table name into the statement instead of passing it through `$wpdb->prepare()`.
+
+Impact: This is the one unprepared interpolation among the new audit queries, so the file no longer demonstrates the pattern the rest of the tree follows.
+
+- [ ] Pass the table name as a prepared value, matching the prepared form used by the other audit queries.
+
+### 17.16 [low] Make the audit staleness threshold configurable
+
+> src/Features/WpCli/Commands/MetricsCommand.php:320; src/Features/WpCli/Commands/MetricsCommand.php:335 — a one-hour gap since the newest audit row is hardcoded as the staleness bound.
+
+Impact: A site with legitimately low MCP traffic is reported as stale and unhealthy whenever an hour passes without a call.
+
+- [ ] Make the staleness bound filterable with the current value as the default, and cover a quiet site reporting healthy.
+
+### 17.17 [low] Guard the observability error action
+
+> src/MCP/Audit/AuditLogger.php:88 — `do_action()` is called without the `function_exists()` guard the rest of the class applies to WordPress functions.
+
+Impact: The class fatals rather than degrading in the non-WordPress contexts its other guards are written to tolerate, so the file is inconsistent with its own convention.
+
+- [ ] Guard the action emission like the other WordPress calls in the class, and cover recording a failure with the function absent.
+
+### 17.18 [low] Reject unrecognized capability operations at normalization
+
+> src/Features/Relationships/RelationshipDefinition.php:83 — `normalize_capabilities()` keeps any non-empty string key, so a misspelled operation is stored and never consulted.
+
+Impact: A typo in an operation name produces a stored rule that silently never applies, and only config validation reports it, so a site that does not run validation believes the relationship is protected.
+
+- [ ] Narrow normalization to the operations the policy defines, and cover an unrecognized operation being dropped rather than stored.
+
+### 17.19 [low] Consider read permission when registering the metabox
+
+> src/Features/Relationships/RelationshipManager.php:158 — `has_relationships()` reports on declared relationships without consulting the read policy, and the metabox uses it to decide registration.
+
+Impact: A post type whose every relationship the caller may not read still registers a relationships metabox that renders no fields.
+
+- [ ] Base the registration decision on relationships the caller may actually read, and cover a post type where every relationship is read-denied.
+
+### 17.20 [low] Use a valid ARIA role for the sampling notice
+
+> assets/Feature/Observability/dashboard.js:57 — the sampling notice is given `role="note"`, which is not a defined ARIA role.
+
+Impact: The role is ignored by assistive technology, so the notice carries no semantics and the invalid value fails accessibility validation.
+
+- [ ] Replace the invalid role with a defined one or with native markup that conveys the same meaning, and check it against the project accessibility notes.
+
+### 17.21 [low] Guard the numeric formatting in the dashboard
+
+> assets/Feature/Observability/dashboard.js:53; assets/Feature/Observability/dashboard.js:81 — `toLocaleString()` and `toFixed()` are called directly on values taken from the response.
+
+Impact: A single absent or non-numeric field throws during render and blanks the entire dashboard instead of degrading that one cell.
+
+- [ ] Coerce and default the response values before formatting them, and cover a response missing a numeric field.
+
+### 17.22 [low] Generate or remove the dashboard asset manifest
+
+> assets/Feature/Observability/dashboard.asset.php:1; src/Features/Observability/ObservabilityDashboard.php:60 — the manifest is hand-maintained for a plain script that no build step produces, and the inline fallback repeats its dependencies with a different version.
+
+Impact: The version and dependency list exist in two places that drift apart, and the manifest implies a build pipeline that does not run for this asset.
+
+- [ ] Either generate the manifest from a real build step or drop it and read the version from the single existing source, removing the duplicated fallback.
 
 ---
