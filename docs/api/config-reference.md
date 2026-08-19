@@ -130,7 +130,7 @@ Every key a model may declare at depth 0. Anything else warns with a nearest-mat
 suggestion. Note that `register_post_type()` arguments are **not** top-level keys — they are
 read from `options` only, so a top-level `public:` or `hierarchical:` really is inert.
 
-`active`, `admin_cols`, `admin_filters`, `ai_assistant`, `ai_context`, `associations`, `block_editor`, `blocks`, `description`, `draganddrop`, `duplicate`, `editorial_review`, `features`, `frontend`, `labels`, `mcp`, `meta`, `name`, `options`, `privacy`, `quick_edit`, `relationships`, `remember_tabs`, `settings`, `single_export`, `slug`, `supported_post_types`, `supports`, `type`, `webmcp`, `wp_cli`
+`active`, `ai_context`, `associations`, `block_editor`, `blocks`, `description`, `features`, `frontend`, `labels`, `meta`, `name`, `options`, `relationships`, `settings`, `slug`, `supported_post_types`, `supports`, `type`, `webmcp`
 
 ---
 
