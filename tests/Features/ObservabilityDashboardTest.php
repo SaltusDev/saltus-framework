@@ -146,4 +146,91 @@ class ObservabilityDashboardTest extends TestCase {
 
 		$this->assertStringContainsString( 'id="saltus-metrics-dashboard"', $html );
 	}
+
+	/**
+	 * The asset version has to be the generated manifest's, not a second copy
+	 * inlined here. There used to be a hardcoded fallback carrying a different
+	 * version, and whichever one loaded decided the cache key.
+	 */
+	public function test_the_asset_version_comes_from_the_generated_manifest(): void {
+		global $wp_scripts_enqueued, $wp_styles_enqueued;
+
+		$root     = dirname( __DIR__, 2 );
+		$manifest = require $root . '/assets/Feature/Observability/dashboard.asset.php';
+
+		( new ObservabilityDashboard() )->enqueue_assets( 'tools_page_saltus-metrics' );
+
+		$script = $this->enqueued( $wp_scripts_enqueued, 'saltus-observability-dashboard' );
+		$style  = $this->enqueued( $wp_styles_enqueued, 'saltus-observability-dashboard' );
+
+		$this->assertSame( $manifest['version'], $script['ver'] );
+		$this->assertSame( $manifest['version'], $style['ver'] );
+		$this->assertSame( $manifest['dependencies'], $script['deps'] );
+	}
+
+	/**
+	 * The manifest is generated, so it is only true while it matches its sources.
+	 * Editing dashboard.js or dashboard.css without re-running the generator
+	 * leaves a version that no longer busts the browser cache — the exact silent
+	 * drift the hand-maintained manifest suffered from.
+	 *
+	 * Recomputed here rather than shelled out to node, so the assertion holds
+	 * wherever PHPUnit runs. Keep in step with bin/generate-asset-manifests.mjs.
+	 */
+	public function test_the_manifest_matches_the_assets_it_versions(): void {
+		$root     = dirname( __DIR__, 2 );
+		$manifest = require $root . '/assets/Feature/Observability/dashboard.asset.php';
+
+		$script   = (string) file_get_contents( $root . '/assets/Feature/Observability/dashboard.js' );
+		$style    = (string) file_get_contents( $root . '/assets/Feature/Observability/dashboard.css' );
+		$expected = substr( hash( 'sha256', $script . $style ), 0, 20 );
+
+		$this->assertSame(
+			$expected,
+			$manifest['version'],
+			'dashboard.asset.php is stale — run `npm run assets:manifest`.'
+		);
+
+		preg_match_all( '/\bwp\.([A-Za-z][A-Za-z0-9]*)/', $script, $matches );
+
+		$handles = array_map(
+			static fn( string $namespace ): string => 'wp-' . strtolower( (string) preg_replace( '/([a-z0-9])([A-Z])/', '$1-$2', $namespace ) ),
+			$matches[1]
+		);
+		$handles = array_values( array_unique( $handles ) );
+		sort( $handles );
+
+		$this->assertSame(
+			$handles,
+			$manifest['dependencies'],
+			'dashboard.js reads wp.* namespaces the manifest does not declare — run `npm run assets:manifest`.'
+		);
+	}
+
+	/**
+	 * The chart is inline SVG built from the payload, so core's Chart.js is not a
+	 * dependency of this screen. Leaving the handle enqueued would ship a charting
+	 * library nothing on the page constructs.
+	 */
+	public function test_no_charting_library_is_enqueued(): void {
+		global $wp_scripts_enqueued;
+
+		( new ObservabilityDashboard() )->enqueue_assets( 'tools_page_saltus-metrics' );
+
+		$this->assertNotContains( 'chart', array_column( $wp_scripts_enqueued, 'handle' ) );
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $enqueued
+	 * @return array<string, mixed>
+	 */
+	private function enqueued( array $enqueued, string $handle ): array {
+		foreach ( $enqueued as $entry ) {
+			if ( $entry['handle'] === $handle ) {
+				return $entry;
+			}
+		}
+
+		$this->fail( "{$handle} was not enqueued" );
+	}
 }

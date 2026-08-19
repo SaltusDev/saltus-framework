@@ -54,13 +54,14 @@ final class ObservabilityDashboard implements Service, Registerable {
 			return;
 		}
 
-		$root_path  = rtrim( (string) ( $this->project['root_path'] ?? '' ), '/' );
-		$root_url   = rtrim( (string) ( $this->project['root_url'] ?? '' ), '/' );
-		$asset_file = $root_path . '/assets/Feature/Observability/dashboard.asset.php';
-		$asset      = file_exists( $asset_file ) ? require $asset_file : [
-			'dependencies' => [ 'wp-element', 'wp-i18n' ],
-			'version'      => '1.0.0',
-		];
+		$root_url = rtrim( (string) ( $this->project['root_url'] ?? '' ), '/' );
+
+		// The manifest ships in this package beside the assets it versions, so it
+		// is located from here rather than from the project's configured root: a
+		// missing or misconfigured root_path would otherwise silently fall back to
+		// a second, drifting copy of the dependencies and version.
+		/** @var array{dependencies: list<non-empty-string>, version: non-empty-string} $asset */
+		$asset = require dirname( __DIR__, 3 ) . '/assets/Feature/Observability/dashboard.asset.php';
 
 		wp_enqueue_script(
 			'saltus-observability-dashboard',
@@ -77,8 +78,6 @@ final class ObservabilityDashboard implements Service, Registerable {
 			$asset['version']
 		);
 
-		// WordPress core Chart.js
-		wp_enqueue_script( 'chart' );
 		wp_enqueue_style( 'wp-components' );
 
 		wp_localize_script(
