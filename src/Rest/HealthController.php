@@ -5,6 +5,7 @@ namespace Saltus\WP\Framework\Rest;
 use Saltus\WP\Framework\Features\AiAssistant\AiClient;
 use Saltus\WP\Framework\Features\WebMcp\WebMcpPolicy;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
+use Saltus\WP\Framework\MCP\Audit\RollupStore;
 use Saltus\WP\Framework\MCP\MCPConfig;
 use WP_Error;
 use WP_REST_Controller;
@@ -22,12 +23,14 @@ class HealthController extends WP_REST_Controller {
 	private AuditLogger $audit_logger;
 	private ?WebMcpPolicy $webmcp;
 	private ?\Saltus\WP\Framework\Modeler $modeler;
+	private RollupStore $rollup_store;
 
-	public function __construct( string $version, ?AuditLogger $audit_logger = null, ?WebMcpPolicy $webmcp = null, ?\Saltus\WP\Framework\Modeler $modeler = null ) {
+	public function __construct( string $version, ?AuditLogger $audit_logger = null, ?WebMcpPolicy $webmcp = null, ?\Saltus\WP\Framework\Modeler $modeler = null, ?RollupStore $rollup_store = null ) {
 		$this->version      = $version;
 		$this->audit_logger = $audit_logger ?? new AuditLogger();
 		$this->webmcp       = $webmcp;
 		$this->modeler      = $modeler;
+		$this->rollup_store = $rollup_store ?? new RollupStore();
 		$this->namespace    = MCPConfig::get_namespace();
 		$this->rest_base    = 'health';
 	}
@@ -77,13 +80,17 @@ class HealthController extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ): WP_REST_Response {
-		$limit   = max( 1, min( 1000, (int) $this->filter( 'saltus/framework/health/audit_sample_size', 100 ) ) );
-		$entries = $this->audit_logger->get_recent_entries( $limit );
-		$audit   = $this->audit_stats( $entries );
+		$limit     = max( 1, min( 1000, (int) $this->filter( 'saltus/framework/health/audit_sample_size', 100 ) ) );
+		$entries   = $this->audit_logger->get_recent_entries( $limit );
+		$audit     = $this->audit_stats( $entries );
+		$freshness = $this->rollup_store->get_freshness();
+
+		$is_degraded = $audit['error_rate'] > 0.1
+			|| ( $freshness['enabled'] && $freshness['stale'] && $audit['sample_size'] > 0 );
 
 		return rest_ensure_response(
 			[
-				'status'       => $audit['error_rate'] > 0.1 ? 'degraded' : 'ok',
+				'status'       => $is_degraded ? 'degraded' : 'ok',
 				'version'      => $this->version,
 				'generated_at' => gmdate( 'Y-m-d\TH:i:s\Z' ),
 				'abilities'    => [
@@ -94,6 +101,7 @@ class HealthController extends WP_REST_Controller {
 					'connectors_available' => function_exists( 'wp_get_connectors' ),
 				],
 				'audit'        => $audit,
+				'rollups'      => $freshness,
 				'webmcp'       => $this->webmcp_stats(),
 				'rate_limit'   => [
 					'enabled' => (bool) $this->filter( 'saltus/framework/mcp/rate_limit/enabled', true ),

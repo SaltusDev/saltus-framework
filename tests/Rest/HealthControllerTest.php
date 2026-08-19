@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\Tests\Rest;
 
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\MCP\Audit\AuditLogger;
+use Saltus\WP\Framework\MCP\Audit\RollupStore;
 use Saltus\WP\Framework\Models\ConfigError;
 use Saltus\WP\Framework\Models\ConfigValidationResult;
 use Saltus\WP\Framework\Models\ConfigValidationSummary;
@@ -143,6 +144,63 @@ class HealthControllerTest extends TestCase {
 		$this->assertSame( 0.0, $data['audit']['error_rate'] );
 		$this->assertNull( $data['audit']['latency_ms']['average'] );
 		$this->assertNull( $data['audit']['latency_ms']['p95'] );
+	}
+
+	/**
+	 * Rollup freshness is a second, independent degradation signal: a site whose
+	 * nightly rollups stopped running is reporting metrics from a frozen window,
+	 * even though every recent call succeeded. The payload has to carry the
+	 * freshness detail too, or a client cannot tell why the status dropped.
+	 */
+	public function testStaleRollupsDegradeHealthWithACleanAuditSample(): void {
+		$logger = $this->createStub( AuditLogger::class );
+		$logger->method( 'get_recent_entries' )->willReturn( [ [ 'status' => 'success' ] ] );
+
+		$freshness = [
+			'enabled'                => true,
+			'expected_through'       => '2026-08-18',
+			'last_completed_through' => '2026-08-16',
+			'last_completed_at'      => '2026-08-17T03:00:00Z',
+			'stale'                  => true,
+			'status'                 => 'stale',
+		];
+
+		$store = $this->createStub( RollupStore::class );
+		$store->method( 'get_freshness' )->willReturn( $freshness );
+
+		$data = ( new HealthController( '2.0.0', $logger, null, null, $store ) )->get_item( null )->get_data();
+
+		$this->assertSame( 'degraded', $data['status'] );
+		$this->assertEqualsWithDelta( 0.0, $data['audit']['error_rate'], 0.0 );
+		$this->assertSame( $freshness, $data['rollups'] );
+	}
+
+	/**
+	 * With no audited calls there is nothing for the rollups to be behind on, so
+	 * staleness alone must not degrade the site. Without the sample-size guard a
+	 * freshly installed site would report degraded until its first nightly run.
+	 */
+	public function testStaleRollupsDoNotDegradeHealthWithoutAuditEntries(): void {
+		$logger = $this->createStub( AuditLogger::class );
+		$logger->method( 'get_recent_entries' )->willReturn( [] );
+
+		$store = $this->createStub( RollupStore::class );
+		$store->method( 'get_freshness' )->willReturn(
+			[
+				'enabled'                => true,
+				'expected_through'       => '2026-08-18',
+				'last_completed_through' => '2026-08-16',
+				'last_completed_at'      => '2026-08-17T03:00:00Z',
+				'stale'                  => true,
+				'status'                 => 'stale',
+			]
+		);
+
+		$data = ( new HealthController( '2.0.0', $logger, null, null, $store ) )->get_item( null )->get_data();
+
+		$this->assertSame( 'ok', $data['status'] );
+		$this->assertSame( 0, $data['audit']['sample_size'] );
+		$this->assertSame( 'stale', $data['rollups']['status'] );
 	}
 
 	public function testWebMcpStateReportsUnavailableWithoutAPolicy(): void {
