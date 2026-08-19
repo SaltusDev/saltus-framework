@@ -4,15 +4,24 @@ namespace Saltus\WP\Framework\Tests\MCP\Tools;
 use PHPUnit\Framework\TestCase;
 use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 use Saltus\WP\Framework\Features\EditorialReview\ProposalStore;
+use Saltus\WP\Framework\Features\Relationships\RelationshipManager;
+use Saltus\WP\Framework\Features\Relationships\RelationshipRegistry;
+use Saltus\WP\Framework\Features\Relationships\RelationshipStore;
 use Saltus\WP\Framework\MCP\Tools\AttachRelated;
 use Saltus\WP\Framework\MCP\Tools\DetachRelated;
 use Saltus\WP\Framework\MCP\Tools\GetRelated;
 use Saltus\WP\Framework\MCP\Tools\ListRelationships;
 use Saltus\WP\Framework\MCP\Tools\SyncRelated;
+use Saltus\WP\Framework\Models\Model;
 use Saltus\WP\Framework\Rest\ModelRestPolicy;
+use Saltus\WP\Framework\Rest\RelationshipsController;
+use Saltus\WP\Framework\Tests\Rest\RestRelationshipModeler;
 use WP_REST_Request;
 
 require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
+// `RestRelationshipModeler` lives here; the MCP read tool is dispatched against the
+// same controller that test class builds.
+require_once dirname( __DIR__, 2 ) . '/Rest/RelationshipsControllerTest.php';
 
 /**
  * @covers \Saltus\WP\Framework\MCP\Tools\ListRelationships
@@ -24,10 +33,12 @@ require_once dirname( __DIR__, 2 ) . '/Rest/functions.php';
 class RelationshipToolsTest extends TestCase {
 
 	protected function setUp(): void {
-		global $wp_posts, $wp_current_user_can, $wp_post_type_objects;
-		$wp_posts             = [];
-		$wp_post_type_objects = [];
-		$wp_current_user_can  = true;
+		global $wp_posts, $wp_current_user_can, $wp_post_type_objects, $wp_filter_values, $wp_filters_registered;
+		$wp_posts              = [];
+		$wp_post_type_objects  = [];
+		$wp_current_user_can   = true;
+		$wp_filter_values      = [];
+		$wp_filters_registered = [];
 	}
 
 	/**
@@ -40,10 +51,12 @@ class RelationshipToolsTest extends TestCase {
 	 * pointing back here.
 	 */
 	protected function tearDown(): void {
-		global $wp_posts, $wp_post_type_objects, $wp_current_user_can;
-		$wp_posts             = [];
-		$wp_post_type_objects = [];
-		$wp_current_user_can  = true;
+		global $wp_posts, $wp_post_type_objects, $wp_current_user_can, $wp_filter_values, $wp_filters_registered;
+		$wp_posts              = [];
+		$wp_post_type_objects  = [];
+		$wp_current_user_can   = true;
+		$wp_filter_values      = [];
+		$wp_filters_registered = [];
 	}
 
 	public function testEveryToolDeclaresItsNameDescriptionAndRelationshipCapability(): void {
@@ -182,6 +195,135 @@ class RelationshipToolsTest extends TestCase {
 
 		$this->assertInstanceOf( WP_REST_Request::class, $request );
 		$this->assertSame( '/saltus-framework/v1/posts/1/relationships/a%20b%2Fc', $request->get_route() );
+	}
+
+	/**
+	 * The MCP read tool is REST-backed, so its refusal is the controller's refusal.
+	 *
+	 * Asserting the route shape alone would not show that, which is the failure mode
+	 * this suite exists to catch: a gate written and tested but never reached. The
+	 * tool's own request is resolved against the routes the controller registers and
+	 * dispatched through the matching callback, so the denial travels the whole path
+	 * an ability takes.
+	 */
+	public function testDeniedReadIsRefusedThroughTheMcpReadTool(): void {
+		global $wp_current_user_can, $wp_posts, $wp_rest_routes_registered;
+
+		$wp_rest_routes_registered = [];
+		$post                      = new \WP_Post( [ 'post_type' => 'movie' ] );
+		$post->ID                  = 12;
+		$wp_posts[12]              = $post;
+
+		$controller = $this->relationship_controller();
+		$controller->register_routes();
+
+		$wp_current_user_can = [ 'view_cast' => false ];
+
+		$request = ( new GetRelated() )->build_rest_request(
+			[
+				'post_id'      => 12,
+				'relationship' => 'actors',
+			]
+		);
+		$this->assertInstanceOf( WP_REST_Request::class, $request );
+
+		$refused = $this->dispatch( $request );
+
+		$this->assertInstanceOf( \WP_Error::class, $refused );
+		$this->assertSame( 'rest_relationship_forbidden', $refused->get_error_code() );
+		$this->assertSame( 403, $refused->get_error_data()['status'] );
+	}
+
+	/** A controller whose `actors` relationship declares a read rule. */
+	private function relationship_controller(): RelationshipsController {
+		$models = [
+			'movie'  => $this->rest_model(
+				'movie',
+				[
+					'relationships' => [
+						'actors' => [
+							'type'         => 'has_many',
+							'model'        => 'person',
+							'capabilities' => [ 'read' => [ 'view_cast' ] ],
+						],
+					],
+				]
+			),
+			'person' => $this->rest_model( 'person', [] ),
+		];
+
+		$modeler = new RestRelationshipModeler( $models );
+
+		return new RelationshipsController(
+			$modeler,
+			new ModelRestPolicy( $modeler ),
+			new RelationshipManager( new RelationshipRegistry( $modeler ), new RelationshipStore( null ) )
+		);
+	}
+
+	/**
+	 * Minimal REST-enabled post-type model.
+	 *
+	 * @param array<string, mixed> $config Raw model configuration.
+	 */
+	private function rest_model( string $name, array $config ): Model {
+		$model = $this->createStub( Model::class );
+		$model->method( 'get_name' )->willReturn( $name );
+		$model->method( 'get_type' )->willReturn( 'post_type' );
+		$model->method( 'get_options' )->willReturn( [ 'show_in_rest' => true ] );
+		$model->method( 'get_args' )->willReturn( [] );
+		$model->method( 'get_config' )->willReturn( $config );
+
+		return $model;
+	}
+
+	/**
+	 * Resolve a request against the registered routes and invoke the callback.
+	 *
+	 * Stands in for `rest_do_request()`, which the stubs answer with a canned response
+	 * rather than routing. Matching the tool's route against the registered patterns is
+	 * what proves the tool and the gated handler are the same endpoint.
+	 *
+	 * @return mixed
+	 */
+	private function dispatch( WP_REST_Request $request ) {
+		global $wp_rest_routes_registered;
+
+		foreach ( $wp_rest_routes_registered as $registered ) {
+			$pattern = '#^/' . trim( (string) $registered['namespace'], '/' ) . (string) $registered['route'] . '$#';
+			if ( preg_match( $pattern, $request->get_route(), $matches ) !== 1 ) {
+				continue;
+			}
+
+			foreach ( $matches as $key => $value ) {
+				if ( is_string( $key ) ) {
+					$request->set_param( $key, $value );
+				}
+			}
+
+			foreach ( $this->endpoints( $registered['args'] ) as $endpoint ) {
+				if ( (string) ( $endpoint['methods'] ?? '' ) !== $request->get_method() ) {
+					continue;
+				}
+
+				return ( $endpoint['callback'] )( $request );
+			}
+		}
+
+		$this->fail( 'No registered route matched ' . $request->get_route() );
+	}
+
+	/**
+	 * Normalize a route's args to a list of endpoints.
+	 *
+	 * `register_rest_route()` accepts either one endpoint or a list of them, and the
+	 * per-post route uses the list form to carry GET, POST, and PUT.
+	 *
+	 * @param array<string, mixed> $args Registered route args.
+	 * @return list<array<string, mixed>>
+	 */
+	private function endpoints( array $args ): array {
+		return isset( $args['methods'] ) ? [ $args ] : array_values( $args );
 	}
 
 	public function testWriteToolsRequireEditPermissionOnTheOwningPost(): void {
