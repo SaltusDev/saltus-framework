@@ -37,6 +37,23 @@ class EditorialReviewControllerTest extends TestCase {
 		$this->controller = new EditorialReviewController( $this->proposals );
 	}
 
+	/**
+	 * Clean the shared globals this class writes to.
+	 *
+	 * Resetting in setUp only protects this class. The namespace override set by
+	 * testRoutesFollowTheFilteredMcpNamespace would otherwise survive into
+	 * whichever class the randomised order runs next.
+	 */
+	protected function tearDown(): void {
+		global $wp_posts, $wp_rest_routes_registered, $wp_current_user_can, $wp_filter_values, $wp_rest_response_override;
+
+		$wp_posts                  = [];
+		$wp_rest_routes_registered = [];
+		$wp_current_user_can       = true;
+		$wp_filter_values          = [];
+		$wp_rest_response_override = null;
+	}
+
 	private function request( array $params ): WP_REST_Request {
 		return new WP_REST_Request( $params );
 	}

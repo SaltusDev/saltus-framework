@@ -55,6 +55,23 @@ class RestToolContractTest extends TestCase {
 		};
 	}
 
+	/**
+	 * Clean the shared globals this class writes to.
+	 *
+	 * Resetting in setUp only protects this class; the namespace override set by
+	 * testMcpRouteUsesTheConfiguredNamespace would otherwise survive into
+	 * whichever class the randomised order runs next, rewriting the REST routes
+	 * that class expects.
+	 */
+	protected function tearDown(): void {
+		global $wp_post_type_objects, $wp_taxonomy_objects, $wp_current_user_can, $wp_filter_values;
+
+		$wp_post_type_objects = [];
+		$wp_taxonomy_objects  = [];
+		$wp_current_user_can  = true;
+		$wp_filter_values     = [];
+	}
+
 	public function testDefaultsAreConservative(): void {
 		$this->assertFalse( $this->tool->is_cacheable(), 'Tools must opt in to caching, not out.' );
 		$this->assertSame( 300, $this->tool->cache_ttl() );
