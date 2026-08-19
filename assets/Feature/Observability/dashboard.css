@@ -1,0 +1,255 @@
+:root {
+	--saltus-surface-0: #05070C;
+	--saltus-surface-1: #0A0D12;
+	--saltus-surface-2: #0F131C;
+	--saltus-surface-3: #161D2B;
+	--saltus-surface-4: #1E2636;
+	--saltus-accent: #38BDF8;
+	--saltus-text: #E2E8F0;
+	--saltus-text-muted: #94A3B8;
+	--saltus-radius: 8px;
+	--saltus-radius-sm: 4px;
+}
+
+.saltus-metrics-container {
+	max-width: 1400px;
+	margin: 2rem 0;
+}
+
+.saltus-metrics-status {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	border: 0;
+}
+
+.saltus-metrics-filters {
+	display: flex;
+	gap: 2rem;
+	margin-bottom: 2rem;
+	padding: 1.5rem;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: var(--saltus-radius-sm);
+	flex-wrap: wrap;
+}
+
+.saltus-metrics-filters label {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+}
+
+.saltus-metrics-filters select {
+	padding: 0.5rem 1rem;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	font-size: 1rem;
+}
+
+.saltus-metrics-filters select:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+	border-color: #2271b1;
+}
+
+.saltus-metrics-filters select:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.saltus-metrics-error {
+	padding: 1rem 1.5rem;
+	margin-bottom: 2rem;
+	background: #fcf0f1;
+	border-left: 4px solid #d63638;
+	color: #1d2327;
+	border-radius: var(--saltus-radius-sm);
+}
+
+.saltus-metrics-content {
+	animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+.saltus-metrics-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 1.5rem;
+	margin-bottom: 2rem;
+}
+
+.saltus-metric-card {
+	padding: 1.5rem;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: var(--saltus-radius-sm);
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.saltus-metric-card h3 {
+	margin: 0 0 1rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #646970;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.saltus-metric-value {
+	font-size: 2rem;
+	font-weight: 700;
+	color: #1d2327;
+	line-height: 1;
+}
+
+.saltus-metrics-sampling-notice {
+	padding: 1rem 1.5rem;
+	margin-bottom: 2rem;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	color: #1d2327;
+	border-radius: var(--saltus-radius-sm);
+	font-size: 0.9375rem;
+}
+
+.saltus-metrics-chart {
+	margin-bottom: 2rem;
+	padding: 1.5rem;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: var(--saltus-radius-sm);
+}
+
+.saltus-metrics-chart h2 {
+	margin: 0 0 1.5rem;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.saltus-metrics-chart canvas {
+	max-height: 300px;
+	max-width: 100%;
+}
+
+.saltus-chart-summary {
+	margin-top: 1rem;
+	padding: 0.75rem 1rem;
+	background: #f6f7f7;
+	border-radius: var(--saltus-radius-sm);
+	font-size: 0.875rem;
+	color: #646970;
+}
+
+.saltus-metrics-table {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: var(--saltus-radius-sm);
+	padding: 1.5rem;
+	overflow-x: auto;
+}
+
+.saltus-metrics-table h2 {
+	margin: 0 0 1.5rem;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.saltus-metrics-table table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.saltus-metrics-table table th {
+	text-align: left;
+	padding: 0;
+}
+
+.saltus-sort-button {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	text-align: left;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: #1d2327;
+	transition: background-color 0.15s ease;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.saltus-sort-button:hover {
+	background-color: #f6f7f7;
+}
+
+.saltus-sort-button:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: -2px;
+	background-color: #f0f6fc;
+}
+
+.saltus-sort-button .sortable-indicator {
+	margin-left: 0.5rem;
+	font-size: 1rem;
+	line-height: 1;
+}
+
+.saltus-metrics-table table td {
+	padding: 0.75rem 1rem;
+	border-top: 1px solid #dcdcde;
+}
+
+.saltus-metrics-loading {
+	padding: 3rem;
+	text-align: center;
+	color: #646970;
+	font-size: 1.125rem;
+}
+
+@media (max-width: 782px) {
+	.saltus-metrics-filters {
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.saltus-metrics-filters label {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.saltus-metrics-filters select {
+		width: 100%;
+	}
+
+	.saltus-metrics-cards {
+		grid-template-columns: 1fr;
+	}
+
+	.saltus-metric-value {
+		font-size: 1.5rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.saltus-metrics-content {
+		animation: none;
+	}
+
+	.saltus-sort-button {
+		transition: none;
+	}
+}
