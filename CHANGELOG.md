@@ -3,7 +3,7 @@
 
 ## [Unreleased]
 
-Thirty-three review findings across Phases 15, 16, and 17. Nothing here has been tagged; the observability surface described under [2.1.1] is what a 2.1.1 site actually runs.
+Thirty-seven review findings across Phases 15, 16, and 17, leaving two open that need a design decision before code. Nothing here has been tagged; the observability surface described under [2.1.1] is what a 2.1.1 site actually runs.
 
 ### Added
 	- **Metrics chart.** The dashboard draws one bar per rolled-up day as inline SVG, with distinct error, loading, empty, and plotted states. It previously emitted a chart surface with no visualization, so an operator saw an empty region that read as missing data or a broken screen. No charting dependency and no build step were added. Bar height is not a value assistive technology can read, so the same figures ship as a data table inside a native `<details>` disclosure — keyboard-reachable without a custom widget — and the SVG is labelled by its heading and summary.
@@ -25,6 +25,7 @@ Thirty-three review findings across Phases 15, 16, and 17. Nothing here has been
 	- `ConfigValidator` uses the shared nearest-key trait instead of a private copy of the same logic, so the validator and every contributor agree on one distance threshold. No behaviour change: the trait's threshold is the value the deleted constant held.
 	- `docs/guides/relationships.md` no longer describes read-denied relationships as returning empty from every read method and from the REST GET route. It states which surfaces refuse and which filter, why the distinction exists, and that `read` and `write` are the only recognized operations.
 	- The generated config key reference lists nineteen top-level keys rather than thirty-one, dropping the twelve it advertised that nothing reads at depth zero.
+	- PHPStan treats PHPDoc types as certain again. 2.1.1 shipped with `treatPhpDocTypesAsCertain: false` set globally, which stopped a whole class of type contradictions being reported for every path under `src/`, so unrelated code lost analysis coverage to accommodate a handful of new files. The contradictions it hid are fixed at the source instead: the audit database seam declares a return type conditional on the requested row format, and the wpdb adapter normalizes the associative case so that declaration is a guarantee rather than a claim. Three checks that re-tested what the seam and a native `?string` parameter already guarantee are gone, as are two branches handling a `WP_Error` from `rest_do_request()` that core's own dispatch cannot produce. No per-file ignore was added to reach this; three were removed. Level 7 is clean with the setting absent.
 
 ### Fixed
 	- The rollup 1.2.0 migration guarded its column and index statements with `IF NOT EXISTS` and `IF EXISTS`, which MariaDB accepts and MySQL rejects, so a MySQL site recorded 1.2.0 while the index half never applied. The version was written unconditionally, so a table whose version option was absent was stamped without being repaired and the guard then refused to retry. The repair is now decided by reading `information_schema` and issuing plain portable DDL, and the version is recorded only after a second read confirms the schema converged. An advisory lock means one runner repairs.

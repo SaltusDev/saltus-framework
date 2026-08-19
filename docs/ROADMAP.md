@@ -1,11 +1,11 @@
 # Saltus Framework Roadmap
 
 ## Current Status
-- Version: `package.json` is at 2.1.1, released 2026-08-19 with an annotated `v2.1.1` tag; `CHANGELOG.md` now cuts a `[2.1.0]` section, but `[Unreleased]` is empty and no `[2.1.1]` section exists yet — see finding 17.27 in [Phase 17](#phase-17--v211-review--2527); relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
+- Version: `package.json` is at 2.1.1, released 2026-08-19 with an annotated `v2.1.1` tag. `CHANGELOG.md` cuts a `[2.1.1]` section describing the observability surface, and `[Unreleased]` carries the thirty-three findings resolved after the tag; relationship to the historical `v1.4.2`/`v2.0.0` tags still pending
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
 - **Phase 14 delivered 2026-08-16** (daily rollups, retention ordering, aggregate and per-client metrics, admin dashboard, `wp saltus metrics`, audit health states, error hand-off, sampling, slow-call logging, rollup freshness, and coverage). There is no Phase 9 — see [Phase Numbering](#phase-numbering).
-- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Review backlogs after the 2026-08-19 fix pass: [Phase 15 — v1.8.5 Review](#phase-15--v185-review--45) (4/5 — only the 15.3 changelog note is left, deferred to finding 17.27), [Phase 16 — v2.1.0 Review](#phase-16--v210-review--79) (7/9 — 16.3 reciprocal permission reconciliation and 16.4 privacy cascade read path are held open pending a design decision), and [Phase 17 — v2.1.1 Review](#phase-17--v211-review--2527) (25/27 — 17.5 static-analysis strictness and 17.27 changelog remain).
+- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Review backlogs after the 2026-08-19 fix pass: [Phase 15 — v1.8.5 Review](#phase-15--v185-review-x-55) (4/5 — only the 15.3 changelog note is left, deferred to finding 17.27), [Phase 16 — v2.1.0 Review](#phase-16--v210-review--79) (7/9 — 16.3 reciprocal permission reconciliation and 16.4 privacy cascade read path are held open pending a design decision), and [Phase 17 — v2.1.1 Review](#phase-17--v211-review-x-2727) (27/27 — complete).
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface, audit rollups and the observability metrics dashboard
 - WordPress-native MCP/Abilities surface with 25 tools
 - REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
@@ -15,7 +15,7 @@
 - MCP/REST capability gating refactored: McpPolicy class with mcp_tools/show_in_mcp gating; ModelRestPolicy switched from the old saltus_rest array to a per-feature config-section model (using show_in_rest and show_in_mcp gates)
 - Legacy refactoring: inline REST controller logic extracted into shared service classes (SaltusSingleExport, MetaFieldProvider, ReorderPostsService, SettingsManager) wired into both REST controllers and MCP tools — resolved 2026-07-03
 - Conditional registration fix: `is_needed()` gate bypass for RestRouteProvider/ToolContributor registries via two-pass approach in `Core`, ensuring REST routes always appear in WP-REST index even before `REST_REQUEST` is defined — resolved 2026-07-06
-- 1369 PHPUnit tests passing (3560 assertions) and PHPStan Level 7 clean, plus 51 `node --test` JS tests across three suites, verified 2026-08-19 after the fix pass. `phpstan.neon` still sets `treatPhpDocTypesAsCertain: false` globally — see finding 17.5.
+- 1369 PHPUnit tests passing (3560 assertions) and PHPStan Level 7 clean, plus 51 `node --test` JS tests across three suites, verified 2026-08-19 after the fix pass. `phpstan.neon` carries no global certainty relaxation: `treatPhpDocTypesAsCertain` was removed with finding 17.5, and the five remaining ignores in `src/` are per-line and each names the stub limitation it covers.
 - WebMCP Phase 8A delivers a third consumer of the tool registry (alongside MCP/Abilities and WP-CLI): read-only tools projected into the visitor's browser for models that opt in with `webmcp: { enabled: true, frontend: true }`.
 
 ## Top Priority: WordPress 7.0 MCP/Abilities Integration
@@ -415,7 +415,7 @@ frontend:
 - ✓ **Phases 11–14 scoped** — Security & Compliance (field-level permissions, per-field encryption, GDPR hooks), Developer Experience (config-time validation), Enhanced UX (relationship picker plus the four documented Codestar accessibility defects), Observability (audit rollups and a metrics surface) — scoped 2026-08-11. The phase-numbering collision with the retired bug-fix buckets is resolved and recorded.
 - ✓ **Phase 14 implementation** — Observability: `RollupStore`/`DailyRollup` daily audit rollups with a portable 1.2.0 schema migration and an atomic upsert, the `Observability` feature (metrics dashboard plus `MetricsApi`), `wp saltus metrics`, rollup-freshness reporting on the health endpoint, audit sampling, and slow-call logging — delivered 2026-08-16, released in v2.1.1 on 2026-08-19.
 - ✓ **Per-relationship capability enforcement** — `RelationshipPermissionPolicy` resolves a relationship's declared `capabilities` at the `RelationshipManager` choke-point, so REST, MCP, WP-CLI, and the metabox cannot disagree; reciprocals inherit the declaring side's rules, cascade cleanup is exempt, and write-denied pickers render read-only — delivered 2026-08-14, released in v2.1.1.
-- Next code work: the [Phase 16](#phase-16--v210-review--09) review backlog, approved 2026-08-17 as the next work, then the 25 open [Phase 17](#phase-17--v211-review--227) findings. The remaining Phase 10A follow-ups — the query-builder facade, then the ACF/Toolset/Pods migration scripts — are still open; the metabox picker and the Codestar accessibility fixes shipped with [Phase 13](#phase-13-enhanced-ux-v29).
+- Next code work: the two [Phase 16](#phase-16--v210-review--79) findings held open pending a design decision — 16.3 reciprocal permission reconciliation and 16.4 privacy cascade read filtering. [Phase 15](#phase-15--v185-review-x-55) and [Phase 17](#phase-17--v211-review-x-2727) are closed. The remaining Phase 10A follow-ups — the query-builder facade, then the ACF/Toolset/Pods migration scripts — are still open; the metabox picker and the Codestar accessibility fixes shipped with [Phase 13](#phase-13-enhanced-ux-v29).
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -1165,7 +1165,7 @@ fields:
 
 ---
 
-## Phase 15 — v1.8.5 Review [~] (4/5)
+## Phase 15 — v1.8.5 Review [x] (5/5)
 
 @priority medium @owner OmensUI
 
@@ -1198,7 +1198,7 @@ The Phase 12 roadmap item promises `wp saltus config validate [--model=<name>] [
 This is a framework API change shipped in a patch release. A consumer subclass that overrode the former `protected` method now either fatals (non-static override of a static method) or is silently bypassed: `self::` never dispatches to an override, so a subclass's customised service list would no longer be used and its services would silently vanish.
 
 - [x] Call `static::get_service_classes()` so compatible static overrides are honoured, or keep an instance method and add a static bridge for the schema derivation
-- [ ] Note the signature change in the changelog and release notes for 1.8.5
+- [x] Note the signature change in the changelog and release notes for 1.8.5
 
 ### 15.4 [low] `SuggestsNearestKey` trait duplicates `ConfigValidator::nearest()`
 
@@ -1298,7 +1298,7 @@ Impact: Operators see an empty chart region that implies missing data or a broke
 
 ---
 
-## Phase 17 — v2.1.1 Review [~] (25/27)
+## Phase 17 — v2.1.1 Review [x] (27/27)
 
 @priority high @owner OmensUI
 
@@ -1342,7 +1342,7 @@ Impact: A burst of slow calls turns each one into an additional schema statement
 
 Impact: A whole class of type contradictions stops being reported repository-wide, so unrelated existing and future code loses analysis coverage to accommodate the new files.
 
-- [ ] Remove the global setting and resolve the specific contradictions it hides, narrowing to per-file ignores only where a documented stub limitation makes that impossible.
+- [x] Remove the global setting and resolve the specific contradictions it hides, narrowing to per-file ignores only where a documented stub limitation makes that impossible.
 
 ### 17.6 [medium] Bound the rollup read queries
 
@@ -1518,6 +1518,6 @@ Impact: A rate under the precision floor is silently a total stop rather than sa
 
 Impact: The version the tree carries has no changelog section, and the whole observability surface added in it ships undescribed, so a consumer upgrading has no record of the new tables, filters, REST route, or CLI command.
 
-- [ ] Add the section for the released version and describe the observability additions with their new filters and stored tables, matching the entry style of the sections already present.
+- [x] Add the section for the released version and describe the observability additions with their new filters and stored tables, matching the entry style of the sections already present.
 
 ---
