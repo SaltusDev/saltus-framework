@@ -5,6 +5,7 @@ use Saltus\WP\Framework\Features\WpCli\Commands\BlockCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\ConfigCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\ContextCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\MetaCommand;
+use Saltus\WP\Framework\Features\WpCli\Commands\MetricsCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\ModelCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\PostCommand;
 use Saltus\WP\Framework\Features\WpCli\Commands\RelationshipCommand;
@@ -54,6 +55,7 @@ final class WpCli implements Service, Conditional, Registerable {
 		$this->cli->add_command( 'saltus context', new ContextCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus webmcp', new WebMcpCommand( $this->cli, $resolver ) );
 		$this->cli->add_command( 'saltus config', new ConfigCommand( $this->cli, $resolver ) );
+		$this->cli->add_command( 'saltus metrics', new MetricsCommand( $this->cli, $resolver ) );
 	}
 
 	/** Expose the gateway so Modeler can use it for config problem reporting. */

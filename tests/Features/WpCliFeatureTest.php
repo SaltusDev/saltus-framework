@@ -57,6 +57,7 @@ class WpCliFeatureTest extends TestCase {
 			'saltus context',
 			'saltus webmcp',
 			'saltus config',
+			'saltus metrics',
 		], array_keys( $this->cli->commands ) );
 	}
 
