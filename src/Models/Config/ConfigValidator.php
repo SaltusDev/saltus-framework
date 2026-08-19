@@ -23,14 +23,9 @@ use Saltus\WP\Framework\Models\ConfigValidationResult;
  */
 final class ConfigValidator {
 
-	/**
-	 * Maximum edit distance for a "did you mean" suggestion.
-	 *
-	 * Two lets `has_meny` reach `has_many` and `taxonomys` reach `taxonomies`
-	 * without `meta` suggesting `beta`. Above this, no suggestion is offered — a
-	 * wrong guess is worse than none, because it sends the author to the wrong key.
-	 */
-	private const SUGGESTION_MAX_DISTANCE = 2;
+	// The distance threshold lives with the suggestion, so a section's typo cannot
+	// get a suggestion here and none from a contributor.
+	use SuggestsNearestKey;
 
 	private SchemaBuilder $schema_builder;
 
@@ -219,7 +214,7 @@ final class ConfigValidator {
 					sprintf( '"%s" is not a model type this framework recognizes.', $found ),
 					$type,
 					$accepted,
-					$this->nearest( $found, $accepted )
+					$this->nearest_key( $found, $accepted )
 				),
 			];
 		}
@@ -329,7 +324,7 @@ final class ConfigValidator {
 				sprintf( 'Nothing reads "%s", so this key has no effect.', $key ),
 				$data[ $key ] ?? null,
 				[],
-				$this->nearest( $key, $known )
+				$this->nearest_key( $key, $known )
 			);
 		}
 
@@ -536,7 +531,7 @@ final class ConfigValidator {
 				sprintf( '"%s" is not a field type this framework ships. If a filter registers it, ignore this.', $type ),
 				$type,
 				[],
-				$this->nearest( $type, $known )
+				$this->nearest_key( $type, $known )
 			);
 		}
 
@@ -621,34 +616,6 @@ final class ConfigValidator {
 				$data['associations']
 			),
 		];
-	}
-
-	/**
-	 * The closest accepted value, when one is close enough to be worth naming.
-	 *
-	 * Beyond the distance threshold this returns null. Suggesting a distant key
-	 * sends the author to the wrong place, which costs more than saying nothing.
-	 *
-	 * @param list<string> $candidates
-	 */
-	private function nearest( string $value, array $candidates ): ?string {
-		if ( $value === '' || $candidates === [] ) {
-			return null;
-		}
-
-		$best     = null;
-		$shortest = PHP_INT_MAX;
-
-		foreach ( $candidates as $candidate ) {
-			$distance = levenshtein( strtolower( $value ), strtolower( $candidate ) );
-
-			if ( $distance > 0 && $distance < $shortest ) {
-				$shortest = $distance;
-				$best     = $candidate;
-			}
-		}
-
-		return $shortest <= self::SUGGESTION_MAX_DISTANCE ? $best : null;
 	}
 
 	/**

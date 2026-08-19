@@ -177,6 +177,26 @@ class ConfigValidatorTest extends TestCase {
 		$this->assertContains( 'unknown_key', $this->rules( $result ) );
 	}
 
+	/**
+	 * The validator's own suggestions come from the shared trait.
+	 *
+	 * It once carried a private copy of the distance logic beside
+	 * `SuggestsNearestKey`, free to drift from what contributors used, so the same
+	 * typo could be named in one section and not another. These two cover both
+	 * validator-owned paths that suggest — an unknown key and an unrecognized type.
+	 */
+	public function testAMisspelledTopLevelKeyIsNamedInTheWarning(): void {
+		$result = $this->validate( [ 'type' => 'cpt', 'name' => 'movie', 'labelz' => [] ] );
+
+		$this->assertSame( 'labels', $result->get_warnings()[0]->get_suggestion() );
+	}
+
+	public function testAMisspelledTypeIsNamedInTheError(): void {
+		$result = $this->validate( [ 'type' => 'taxonomi', 'name' => 'genre' ] );
+
+		$this->assertSame( 'taxonomy', $result->get_errors()[0]->get_suggestion() );
+	}
+
 	public function testTruthyNonTrueActiveIsAWarningThatExplainsTheInversion(): void {
 		$result = $this->validate( [ 'type' => 'cpt', 'name' => 'movie', 'active' => 1 ] );
 
