@@ -427,8 +427,17 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	}
 }
 
+/**
+ * Records what was fired rather than dispatching it. `add_action()` here only
+ * remembers registrations, so running the callbacks would fire hooks that no
+ * test asked for; a test that cares about a hook asserts against this list.
+ */
 if ( ! function_exists( 'do_action' ) ) {
-	function do_action( string $tag, ...$args ): void {}
+	function do_action( string $tag, ...$args ): void {
+		global $wp_actions_fired;
+		$wp_actions_fired   = is_array( $wp_actions_fired ) ? $wp_actions_fired : [];
+		$wp_actions_fired[] = compact( 'tag', 'args' );
+	}
 }
 
 if ( ! function_exists( 'add_action' ) ) {
