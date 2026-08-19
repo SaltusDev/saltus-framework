@@ -1294,7 +1294,7 @@ Impact: Operators see an empty chart region that implies missing data or a broke
 
 ---
 
-## Phase 17 — v2.1.1 Review [✗] (0/22)
+## Phase 17 — v2.1.1 Review [~] (2/27)
 
 @priority high @owner OmensUI
 
@@ -1306,7 +1306,7 @@ Code review findings from the v2.1.1 cycle. Each finding is an open task to fix 
 
 Impact: The effective retention fraction is materially lower than the configured `sample_rate`, audit rows are discarded faster than intended, and the `sample_rate` persisted with every rollup misstates what was actually kept.
 
-- [ ] Derive the sampling value from a single bounded source so it is uniform over 0..1 inclusive of the configured rate, and cover the boundary rates 0, 1, and an intermediate value with a deterministic seam.
+- [x] Derive the sampling value from a single bounded source so it is uniform over 0..1 inclusive of the configured rate, and cover the boundary rates 0, 1, and an intermediate value with a deterministic seam.
 
 ### 17.2 [high] Make the rollup upsert atomic and unique
 
@@ -1314,7 +1314,7 @@ Impact: The effective retention fraction is materially lower than the configured
 
 Impact: Overlapping or repeated rollup runs can persist more than one aggregate row for the same date and ability, so every dashboard, REST, and CLI total silently double-counts.
 
-- [ ] Replace the read-then-delete-then-insert sequence with a single atomic write whose uniqueness also holds for aggregate rows, and cover concurrent and repeated rollups of the same date.
+- [x] Replace the read-then-delete-then-insert sequence with a single atomic write whose uniqueness also holds for aggregate rows, and cover concurrent and repeated rollups of the same date.
 
 ### 17.3 [medium] Create the slow-call table before pruning it
 
@@ -1475,5 +1475,45 @@ Impact: A single absent or non-numeric field throws during render and blanks the
 Impact: The version and dependency list exist in two places that drift apart, and the manifest implies a build pipeline that does not run for this asset.
 
 - [ ] Either generate the manifest from a real build step or drop it and read the version from the single existing source, removing the duplicated fallback.
+
+### 17.23 [medium] Keep the aggregate sentinel out of the client identifier space
+
+> src/MCP/Audit/RollupStore.php:436; src/MCP/Audit/RollupStore.php:141 — the empty string now means "every client", but it is also a value a real identifier can take: `compute_and_store_rollup()` keeps an audit identifier of `''` as a client (only NULL becomes the aggregate), and `client_identifier() ?? AGGREGATE_CLIENT` then writes that client's row into the aggregate slot.
+
+Impact: With client mode on, one client whose identifier sanitizes to empty collides with the aggregate row on the unique key, so the upsert overwrites the day's total with that single client's subtotal. The row hydrates back as the aggregate and is excluded from `get_client_rollups()`, so the corrupted total is presented as exact and the client vanishes from the per-client view.
+
+- [ ] Normalize an empty identifier to the aggregate case before the pair list is built, or reserve a sentinel no identifier can produce, and cover an audit row whose identifier is the empty string under client mode.
+
+### 17.24 [medium] Record the rollup schema version only when the 1.2.0 repair applied
+
+> src/MCP/Audit/RollupStore.php:701; src/MCP/Audit/RollupStore.php:746 — the NULL normalization and duplicate collapse run only when a stored version option is present and non-empty, while `update_option()` writes the new version unconditionally on every path.
+
+Impact: A table at the old schema whose version option is absent — a partial restore, a deleted option, a table created in a context without the options API — is stamped 1.2.0 without the repair ever running, and the guard then refuses to retry. The duplicate aggregate rows the fix exists to collapse survive permanently, and the deliberate `IS NULL` tolerance in the aggregate read keeps serving them, so the double-counting continues with no failing signal.
+
+- [ ] Decide the repair from the table's own state rather than from the presence of the option, advance the recorded version only after the normalization is confirmed applied, and cover an old-schema table with no version option.
+
+### 17.25 [low] Bound and guard the duplicate-collapse migration
+
+> src/MCP/Audit/RollupStore.php:725; src/MCP/Audit/RollupStore.php:731 — the self-join delete and the `MODIFY` table rebuild run inline from `ensure_table()`, which every metrics read calls, with no advisory lock, no batch bound, and no distinction between a request and an upgrade routine.
+
+Impact: The first dashboard or CLI read after the upgrade pays for an unbounded self-join delete plus a table rebuild inside the request, and concurrent readers each start the same repair before any of them records the new version, serializing on metadata locks.
+
+- [ ] Move the repair to an upgrade routine, take a lock so only one runner performs it, bound the delete per pass, and cover a table carrying many duplicate rows.
+
+### 17.26 [low] State the sampling precision floor the draw actually has
+
+> src/MCP/Audit/AuditLogger.php:24; src/MCP/Audit/AuditLogger.php:392 — the docblock describes a value "uniform over 0..1", but `wp_rand( 1, SAMPLE_PRECISION ) / SAMPLE_PRECISION` never yields 0, so the retained fraction is `floor( rate * SAMPLE_PRECISION ) / SAMPLE_PRECISION` and any rate below one millionth retains nothing.
+
+Impact: A rate under the precision floor is silently a total stop rather than sampling, while the rate persisted with each rollup still claims that proportion was kept, so the extrapolation downstream reads a rate that was never applied.
+
+- [ ] Say in the docblock what floor the constant imposes, clamp or refuse a configured rate below it rather than treating it as zero, and cover a rate under the floor.
+
+### 17.27 [low] Document the release in the changelog
+
+> CHANGELOG.md:4 — `[Unreleased]` is empty and the newest section is `[2.1.0]`, while package.json:3 is at 2.1.1; the file never mentions the rollup store, the metrics dashboard, the metrics CLI command, the slow-call table, or audit sampling.
+
+Impact: The version the tree carries has no changelog section, and the whole observability surface added in it ships undescribed, so a consumer upgrading has no record of the new tables, filters, REST route, or CLI command.
+
+- [ ] Add the section for the released version and describe the observability additions with their new filters and stored tables, matching the entry style of the sections already present.
 
 ---
