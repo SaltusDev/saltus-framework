@@ -171,21 +171,24 @@ class RelationshipPermissionPolicyTest extends TestCase {
 		];
 	}
 
-	public function testUnknownOperationIsStoredButNeverConsulted(): void {
-		$definition = $this->definition( [ 'capabilities' => [ 'delete' => [ 'manage_cast' ] ] ] );
-
-		// The definition stays faithful to the config rather than quietly dropping the
-		// key: `RelationshipConfigRules` owns the complaint, and a definition that
-		// silently discarded it would leave the author's mistake invisible in both
-		// places. The policy only ever asks about `read` and `write`, so the key is
-		// inert — an unknown operation restricts nothing.
-		$this->assertSame( [ 'manage_cast' ], $definition->get_capabilities_for( 'delete' ) );
-		$this->assertTrue( $this->policy( false )->can_write( $definition ) );
-		$this->assertTrue( $this->policy( false )->can_read( $definition ) );
-		$this->assertFalse(
-			$this->policy( false )->has_rules( $definition ),
-			'An unknown operation is not a rule, so a surface may skip resolution entirely.'
+	public function testUnrecognizedOperationIsDroppedAtNormalization(): void {
+		$definition = $this->definition(
+			[
+				'capabilities' => [
+					'delete' => [ 'manage_cast' ],
+					'read'   => [ 'view_cast' ],
+				],
+			]
 		);
+
+		// A stored rule the policy never asks about reads as protection that does not
+		// exist: the author sees `delete` in the config and believes the relationship is
+		// gated, while only `RelationshipConfigRules` would say otherwise and a site
+		// need never run it. Dropping the key makes what is stored exactly what is
+		// enforced.
+		$this->assertNull( $definition->get_capabilities_for( 'delete' ) );
+		$this->assertSame( [ 'read' => [ 'view_cast' ] ], $definition->get_capabilities(), 'A defined operation beside it survives.' );
+		$this->assertTrue( $this->policy( false )->can_write( $definition ) );
 	}
 
 	// -- Reciprocal inheritance -------------------------------------------

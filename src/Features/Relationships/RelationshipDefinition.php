@@ -72,12 +72,17 @@ final class RelationshipDefinition {
 	}
 
 	/**
-	 * Keep only operations declaring at least one usable capability string.
+	 * Keep only defined operations declaring at least one usable capability string.
 	 *
 	 * An unparseable rule is dropped rather than kept as an empty list. An empty
 	 * list would satisfy nothing and deny everyone, turning a config typo into a
 	 * lockout; dropping it preserves current access and leaves the complaint to
 	 * `RelationshipConfigRules`, where the author can act on it.
+	 *
+	 * An operation the policy does not define is dropped for the same reason it is
+	 * not kept: a stored `delete` rule reads as protection that is never consulted,
+	 * so the author believes the relationship is gated when nothing gates it. Keeping
+	 * only `read` and `write` makes what is stored exactly what is enforced.
 	 *
 	 * Accepts a bare string (`read: editor`) as well as a list, because a
 	 * single-capability rule is the common case and requiring a one-item list for it
@@ -93,7 +98,7 @@ final class RelationshipDefinition {
 
 		$normalized = [];
 		foreach ( $capabilities as $operation => $declared ) {
-			if ( ! is_string( $operation ) || $operation === '' ) {
+			if ( ! is_string( $operation ) || ! in_array( $operation, RelationshipPermissionPolicy::OPERATIONS, true ) ) {
 				continue;
 			}
 
