@@ -43,7 +43,7 @@ final class DailyRollup {
 	public function __construct( array $data ) {
 		$this->date                   = $data['date'];
 		$this->ability                = $data['ability'];
-		$this->client_identifier      = isset( $data['client_identifier'] ) && is_string( $data['client_identifier'] ) ? $data['client_identifier'] : null;
+		$this->client_identifier      = $data['client_identifier'] ?? null;
 		$this->sample_rate            = isset( $data['sample_rate'] ) ? max( 0.0, min( 1.0, (float) $data['sample_rate'] ) ) : 1.0;
 		$this->call_count             = $data['call_count'];
 		$this->error_count            = $data['error_count'];

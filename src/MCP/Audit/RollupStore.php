@@ -206,7 +206,7 @@ class RollupStore {
 		// can be spelled two ways.
 		$pairs = [];
 		foreach ( $ability_rows as $ability_row ) {
-			if ( ! is_array( $ability_row ) || ! isset( $ability_row['ability'] ) ) {
+			if ( ! isset( $ability_row['ability'] ) ) {
 				continue;
 			}
 
@@ -1284,12 +1284,14 @@ class RollupStore {
 	}
 
 	/**
-	 * The associative row format, tolerating a non-WordPress context.
+	 * The associative row format. WordPress defines `ARRAY_A` as this exact
+	 * string, so naming the value directly carries the same meaning to wpdb
+	 * while staying readable in a context where the constant is absent.
 	 *
-	 * @return mixed
+	 * @return 'ARRAY_A'
 	 */
-	private function array_output() {
-		return defined( 'ARRAY_A' ) ? ARRAY_A : 'ARRAY_A';
+	private function array_output(): string {
+		return 'ARRAY_A';
 	}
 
 	/**

@@ -318,7 +318,7 @@ class MetricsCommand {
 		}
 
 		$table  = $wpdb->prefix() . 'saltus_mcp_audit';
-		$output = defined( 'ARRAY_A' ) ? ARRAY_A : 'ARRAY_A';
+		$output = $this->array_output();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table presence is the thing being checked, so it cannot come from cache.
 		$exists = $wpdb->get_results( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ), $output );
@@ -333,7 +333,7 @@ class MetricsCommand {
 		$rows = $wpdb->get_results( "SELECT created_at FROM {$table} ORDER BY created_at DESC LIMIT 1", $output );
 
 		$last_entry = null;
-		if ( is_array( $rows ) && isset( $rows[0] ) && is_array( $rows[0] ) && isset( $rows[0]['created_at'] ) ) {
+		if ( is_array( $rows ) && isset( $rows[0]['created_at'] ) ) {
 			$last_entry = (string) $rows[0]['created_at'];
 		}
 
@@ -425,5 +425,16 @@ class MetricsCommand {
 		}
 
 		return null;
+	}
+
+	/**
+	 * The associative row format. WordPress defines `ARRAY_A` as this exact
+	 * string, so naming the value directly carries the same meaning to wpdb
+	 * while staying readable in a context where the constant is absent.
+	 *
+	 * @return 'ARRAY_A'
+	 */
+	private function array_output(): string {
+		return 'ARRAY_A';
 	}
 }
