@@ -118,12 +118,25 @@ final class RelationshipMetabox {
 			return;
 		}
 
+		// Read and write are separate verdicts, so there are three outcomes rather
+		// than two: absent, read-only, or editable. Rendering a write-denied
+		// relationship as read-only is the whole reason the split exists — collapsing
+		// it back to "hidden" would make `capabilities` no more expressive than the
+		// single `capability` key it sits beside.
+		$editable = ! $definition_object instanceof RelationshipDefinition
+			|| $this->manager->permissions()->can_write( $definition_object );
+
 		$multiple = ! empty( $definition['multiple'] );
 		$target   = isset( $definition['to'] ) ? (string) $definition['to'] : '';
 		$field_id = 'saltus-rel-' . $name;
 		$desc_id  = $field_id . '-desc';
 
 		$selected = $this->manager->get_related( (int) $post->ID, $post_type, $name );
+
+		if ( ! $editable ) {
+			$this->render_readonly_field( $name, $selected );
+			return;
+		}
 
 		// The definition has no label of its own; derive a readable one from the
 		// relationship name so the <label for> has something meaningful to say.
@@ -186,6 +199,73 @@ final class RelationshipMetabox {
 		);
 
 		echo '</div></div>';
+	}
+
+	/**
+	 * Render a relationship the user may see but not change.
+	 *
+	 * Three omissions matter. There is no `data-saltus-relationship` attribute, which
+	 * is what the picker script binds to, so no interactive control is attached rather
+	 * than one being attached and then disabled — a disabled control is still a
+	 * control, and re-enabling it in devtools must not produce a submittable field.
+	 * There are no hidden inputs, so nothing is submitted for this relationship. And
+	 * there is no remove button. `save()` skips it regardless, but the markup should
+	 * not depend on that for its correctness.
+	 *
+	 * Rendered as a plain list rather than a disabled picker so a screen reader
+	 * announces values instead of a form control the user cannot operate.
+	 *
+	 * @param string                     $name     Relationship name.
+	 * @param list<array<string, mixed>> $selected Currently related rows.
+	 */
+	private function render_readonly_field( string $name, array $selected ): void {
+		$label = ucwords( str_replace( [ '_', '-' ], ' ', $name ) );
+
+		echo '<div class="saltus-relationship-field saltus-relationship-field--readonly">';
+
+		printf(
+			'<span class="saltus-relationship-label">%s</span>',
+			esc_html( $label )
+		);
+
+		printf(
+			'<p class="description saltus-relationship-desc">%s</p>',
+			esc_html__( 'You can view these but not change them.', 'saltus-framework' )
+		);
+
+		if ( $selected === [] ) {
+			// Matches the list-table empty cell: the dash is decorative and hidden
+			// from assistive technology, which gets the word instead.
+			printf(
+				'<p class="saltus-relationship-empty"><span aria-hidden="true">&mdash;</span><span class="screen-reader-text">%s</span></p>',
+				esc_html__( 'None', 'saltus-framework' )
+			);
+			echo '</div>';
+			return;
+		}
+
+		printf(
+			'<ul class="saltus-relationship-selected saltus-relationship-selected--readonly" aria-label="%s">',
+			esc_attr__( 'Related items', 'saltus-framework' )
+		);
+
+		foreach ( $selected as $row ) {
+			$related_id = isset( $row['post_id'] ) ? (int) $row['post_id'] : 0;
+			if ( $related_id <= 0 ) {
+				continue;
+			}
+
+			$title = isset( $row['title'] ) && $row['title'] !== ''
+				? (string) $row['title']
+				: sprintf( '#%d', $related_id );
+
+			printf(
+				'<li class="saltus-relationship-item"><span class="saltus-relationship-item-title">%s</span></li>',
+				esc_html( $title )
+			);
+		}
+
+		echo '</ul></div>';
 	}
 
 	/**
@@ -318,10 +398,18 @@ final class RelationshipMetabox {
 	 */
 	private function user_can_edit_relationship( string $post_type, string $name ): bool {
 		$definition = $this->manager->get_definition( $post_type, $name );
-		$capability = $definition instanceof RelationshipDefinition
-			? (string) $definition->get_capability()
-			: '';
+		if ( ! $definition instanceof RelationshipDefinition ) {
+			return true;
+		}
 
+		// A read-only render submits no inputs, so without this the relationship
+		// would look emptied and be cleared — the same failure the absent-nonce
+		// guard prevents for the whole picker, one relationship at a time.
+		if ( ! $this->manager->permissions()->can_write( $definition ) ) {
+			return false;
+		}
+
+		$capability = (string) $definition->get_capability();
 		if ( $capability === '' ) {
 			return true;
 		}

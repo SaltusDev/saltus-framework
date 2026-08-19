@@ -224,10 +224,20 @@ final class RelationshipBulkActions {
 		);
 	}
 
-	/** Whether the current user may write one relationship. */
+	/**
+	 * Whether the current user may write one relationship.
+	 *
+	 * The manager refuses a denied write anyway, so this is about not offering a
+	 * bulk action that would fail on every selected post. Both keys must pass — see
+	 * the note in `RelationshipColumn::user_can_read()` on why there are two.
+	 */
 	private function user_can_write( string $post_type, string $name ): bool {
 		$definition = $this->manager->get_definition( $post_type, $name );
 		if ( ! $definition instanceof RelationshipDefinition ) {
+			return false;
+		}
+
+		if ( ! $this->manager->permissions()->can_write( $definition ) ) {
 			return false;
 		}
 

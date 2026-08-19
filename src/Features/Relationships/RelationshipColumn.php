@@ -164,13 +164,27 @@ final class RelationshipColumn {
 		return strpos( $column, 'saltus_rel_' ) === 0 ? substr( $column, 11 ) : '';
 	}
 
-	/** Whether the current user may see one relationship. */
+	/**
+	 * Whether the current user may see one relationship.
+	 *
+	 * Both keys are consulted and both must pass. `capability` is the older
+	 * admin-UI-only affordance and keeps that meaning; `capabilities.read` is the
+	 * enforced rule `RelationshipPermissionPolicy` also applies on REST, MCP, and
+	 * WP-CLI. Checking the policy here as well is not redundant: the column would
+	 * otherwise advertise a relationship whose rows the manager returns empty,
+	 * rendering a column that is always blank rather than not offering it.
+	 */
 	private function user_can_read( string $post_type, string $name ): bool {
 		$definition = $this->manager->get_definition( $post_type, $name );
-		$capability = $definition instanceof RelationshipDefinition
-			? (string) $definition->get_capability()
-			: '';
+		if ( ! $definition instanceof RelationshipDefinition ) {
+			return true;
+		}
 
+		if ( ! $this->manager->permissions()->can_read( $definition ) ) {
+			return false;
+		}
+
+		$capability = (string) $definition->get_capability();
 		if ( $capability === '' ) {
 			return true;
 		}
