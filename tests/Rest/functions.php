@@ -537,6 +537,20 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 	}
 }
 
+/**
+ * Mirrors `wp_rand()`: both bounds optional, an omitted maximum meaning
+ * PHP_INT_MAX rather than `getrandmax()`. The gap between those two is what the
+ * audit sampling draw got wrong, so the stub must not quietly narrow it.
+ */
+if ( ! function_exists( 'wp_rand' ) ) {
+	function wp_rand( ?int $min = null, ?int $max = null ): int {
+		$low  = $min ?? 0;
+		$high = $max ?? PHP_INT_MAX;
+
+		return random_int( min( $low, $high ), max( $low, $high ) );
+	}
+}
+
 if ( ! function_exists( 'get_locale' ) ) {
 	function get_locale(): string {
 		return 'en_US';
