@@ -1,6 +1,6 @@
 {
   "name": "saltus-framework-git",
-  "version": "1.8.5",
+  "version": "2.1.1",
   "description": "Saltus Framework helps you develop WordPress plugins that are based on Custom Post Types.",
   "main": "index.js",
   "directories": {
