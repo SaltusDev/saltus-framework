@@ -13,6 +13,11 @@ use Saltus\WP\Framework\MCP\Audit\WpdbAuditDatabase;
  */
 class MetricsCommand {
 
+	use \Saltus\WP\Framework\Infrastructure\Services\FilterAwareTrait;
+
+	/** Hours since the newest audit row before the table is reported stale. */
+	private const STALENESS_HOURS = 1.0;
+
 	private CliGateway $cli;
 
 	private RollupStore $rollup_store;
@@ -77,7 +82,12 @@ class MetricsCommand {
 	 * @param array<string, mixed> $assoc_args Named arguments.
 	 */
 	public function summary( array $args, array $assoc_args ): void {
-		$since   = isset( $assoc_args['since'] ) ? (string) $assoc_args['since'] : gmdate( 'Y-m-d', strtotime( '-7 days' ) );
+		$since = $this->resolve_since( $assoc_args );
+
+		if ( $since === null ) {
+			return;
+		}
+
 		$ability = isset( $assoc_args['ability'] ) ? (string) $assoc_args['ability'] : null;
 		$format  = isset( $assoc_args['format'] ) ? (string) $assoc_args['format'] : 'table';
 
@@ -89,18 +99,26 @@ class MetricsCommand {
 			return;
 		}
 
-		$total_calls    = 0;
-		$total_errors   = 0;
-		$total_duration = 0;
+		$total_calls     = 0;
+		$estimated_calls = 0.0;
+		$total_errors    = 0;
+		$total_duration  = 0;
 
 		foreach ( $rollups as $rollup ) {
-			$total_calls    += $rollup->call_count();
-			$total_errors   += $rollup->error_count() + $rollup->exception_count();
-			$total_duration += $rollup->avg_duration_ms() * $rollup->call_count();
+			$total_calls     += $rollup->call_count();
+			$estimated_calls += $rollup->estimated_call_count();
+			$total_errors    += $rollup->error_count() + $rollup->exception_count();
+			$total_duration  += $rollup->avg_duration_ms() * $rollup->call_count();
 		}
 
 		$avg_latency = $total_calls > 0 ? $total_duration / $total_calls : 0.0;
-		$error_rate  = $total_calls > 0 ? $total_errors / $total_calls : 0.0;
+
+		// Weighted by each rollup's own sample_rate, matching MetricsApi. Failures
+		// bypass the sampling draw while everything else is thinned, so dividing
+		// the whole failure count by the thinned call count overstates the rate by
+		// roughly 1/rate — a 1%-error day at rate 0.1 would print as 10%. The two
+		// counts printed above stay the recorded rows.
+		$error_rate = $estimated_calls > 0.0 ? $total_errors / $estimated_calls : 0.0;
 
 		$summary = [
 			[
@@ -152,7 +170,12 @@ class MetricsCommand {
 	 * @param array<string, mixed> $assoc_args Named arguments.
 	 */
 	public function per_tool( array $args, array $assoc_args ): void {
-		$since  = isset( $assoc_args['since'] ) ? (string) $assoc_args['since'] : gmdate( 'Y-m-d', strtotime( '-7 days' ) );
+		$since = $this->resolve_since( $assoc_args );
+
+		if ( $since === null ) {
+			return;
+		}
+
 		$format = isset( $assoc_args['format'] ) ? (string) $assoc_args['format'] : 'table';
 
 		$end_date = gmdate( 'Y-m-d' );
@@ -229,7 +252,12 @@ class MetricsCommand {
 	 * @param array<string, mixed> $assoc_args Named arguments.
 	 */
 	public function per_client( array $args, array $assoc_args ): void {
-		$since   = isset( $assoc_args['since'] ) ? (string) $assoc_args['since'] : gmdate( 'Y-m-d', strtotime( '-7 days' ) );
+		$since = $this->resolve_since( $assoc_args );
+
+		if ( $since === null ) {
+			return;
+		}
+
 		$ability = isset( $assoc_args['ability'] ) ? (string) $assoc_args['ability'] : null;
 		$format  = isset( $assoc_args['format'] ) ? (string) $assoc_args['format'] : 'table';
 		$rollups = $this->rollup_store->get_client_rollups( $since, gmdate( 'Y-m-d' ), $ability );
@@ -246,7 +274,13 @@ class MetricsCommand {
 				continue;
 			}
 			if ( ! isset( $grouped[ $client ] ) ) {
-				$grouped[ $client ] = [ 'client' => $client, 'calls' => 0, 'errors' => 0, 'total_duration' => 0.0, 'max_p95' => 0.0 ];
+				$grouped[ $client ] = [
+					'client' => $client,
+					'calls' => 0,
+					'errors' => 0,
+					'total_duration' => 0.0,
+					'max_p95' => 0.0,
+				];
 			}
 			$grouped[ $client ]['calls']          += $rollup->call_count();
 			$grouped[ $client ]['errors']         += $rollup->error_count() + $rollup->exception_count();
@@ -286,9 +320,8 @@ class MetricsCommand {
 		$table  = $wpdb->prefix() . 'saltus_mcp_audit';
 		$output = defined( 'ARRAY_A' ) ? ARRAY_A : 'ARRAY_A';
 
-		// Check table exists
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$exists = $wpdb->get_results( "SHOW TABLES LIKE '{$table}'", $output );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table presence is the thing being checked, so it cannot come from cache.
+		$exists = $wpdb->get_results( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ), $output );
 
 		if ( ! is_array( $exists ) || $exists === [] ) {
 			$this->cli->error( 'Audit table does not exist. Status: missing' );
@@ -316,10 +349,12 @@ class MetricsCommand {
 		$freshness    = $this->rollup_store->get_freshness();
 		$rollup_stale = $freshness['enabled'] && $freshness['stale'];
 
-		$status = 'available';
-		if ( $staleness_hours > 1 ) {
-			$status = 'stale';
-		}
+		// A quiet site is not a broken one, so the bound a site calls "too long
+		// without a call" belongs to that site, not to this command.
+		$threshold   = (float) $this->filter( 'saltus/framework/mcp/audit/staleness_threshold_hours', self::STALENESS_HOURS );
+		$audit_stale = $staleness_hours > $threshold;
+
+		$status = $audit_stale ? 'stale' : 'available';
 
 		$this->cli->line( sprintf( 'Audit table status: %s', $status ) );
 		$this->cli->line( sprintf( 'Last entry: %s (%.1f hours ago)', $last_entry, $staleness_hours ) );
@@ -332,11 +367,41 @@ class MetricsCommand {
 			}
 		}
 
-		if ( $staleness_hours > 1 || $rollup_stale ) {
+		if ( $audit_stale || $rollup_stale ) {
 			$this->cli->warning( 'Health check detected issues.' );
 		} else {
 			$this->cli->success( 'Audit and rollup systems are healthy.' );
 		}
+	}
+
+	/**
+	 * Resolve `--since` into a `Y-m-d` bound, or halt on an unusable value.
+	 *
+	 * The bound reaches the store as a string compared against `rollup_date`, so
+	 * an empty value widens the window to every row ever stored and a malformed
+	 * one narrows it to nothing. Both then read as "no data" in the output, which
+	 * is the one answer the operator cannot distinguish from a working query.
+	 *
+	 * @param array<string, mixed> $assoc_args Named arguments.
+	 * @return string|null The validated bound, or null once the error is reported.
+	 */
+	private function resolve_since( array $assoc_args ): ?string {
+		if ( ! isset( $assoc_args['since'] ) ) {
+			return gmdate( 'Y-m-d', strtotime( '-7 days' ) );
+		}
+
+		$since = (string) $assoc_args['since'];
+		$date  = \DateTimeImmutable::createFromFormat( '!Y-m-d', $since, new \DateTimeZone( 'UTC' ) );
+
+		// Round-tripping rejects what the format alone accepts: an out-of-range
+		// day rolls over into the next month, and an unpadded month still sorts
+		// wrongly against the zero-padded dates the column holds.
+		if ( ! $date instanceof \DateTimeImmutable || $date->format( 'Y-m-d' ) !== $since ) {
+			$this->cli->error( sprintf( '--since must be a date in Y-m-d format, got "%s".', $since ) );
+			return null;
+		}
+
+		return $since;
 	}
 
 	/**

@@ -124,6 +124,34 @@ class MetricsCommandTest extends TestCase {
 		$this->assertSame( '20.0 ms', $rows['Avg Latency'] );
 	}
 
+	/**
+	 * The printed rate is weighted by the rollup's own sample_rate, matching the
+	 * dashboard. Failures bypass the sampling draw, so at rate 0.1 these 2 kept
+	 * failures sit beside 18 sampled successes standing for 180 calls: 2/182, not
+	 * the 2/20 the recorded counts alone would read. Counts stay recorded rows.
+	 */
+	public function test_summary_error_rate_is_weighted_by_the_sample_rate(): void {
+		$this->seedRollup(
+			[
+				'sample_rate'     => 0.1,
+				'call_count'      => 20,
+				'error_count'     => 1,
+				'exception_count' => 1,
+			]
+		);
+
+		$this->command()->summary( [], [] );
+
+		$rows = [];
+		foreach ( $this->cli->formats[0]['items'] as $row ) {
+			$rows[ $row['metric'] ] = $row['value'];
+		}
+
+		$this->assertSame( '20', $rows['Total Calls'] );
+		$this->assertSame( '2', $rows['Total Errors'] );
+		$this->assertSame( '1.10%', $rows['Error Rate'] );
+	}
+
 	public function test_summary_warns_when_no_metrics_exist(): void {
 		$this->command()->summary( [], [] );
 
@@ -366,5 +394,154 @@ class MetricsCommandTest extends TestCase {
 		} finally {
 			$wpdb = $original;
 		}
+	}
+
+	/**
+	 * An empty `--since` compares as less than every stored date, so the window
+	 * silently becomes "everything ever recorded" while still reading as a
+	 * bounded query in the output.
+	 */
+	public function test_summary_rejects_an_empty_since(): void {
+		$this->seedRollup(
+			[
+				'rollup_date' => gmdate( 'Y-m-d', strtotime( '-400 days' ) ),
+				'call_count'  => 9,
+			]
+		);
+
+		try {
+			$this->command()->summary( [], [ 'since' => '' ] );
+			$this->fail( 'an empty --since must halt the command' );
+		} catch ( \RuntimeException $error ) {
+			$this->assertStringContainsString( '--since must be a date', $error->getMessage() );
+		}
+
+		$this->assertSame( [], $this->cli->formats, 'a rejected bound must not report the whole table' );
+	}
+
+	public function test_summary_rejects_a_malformed_since(): void {
+		$this->seedRollup();
+
+		try {
+			$this->command()->summary( [], [ 'since' => 'last tuesday' ] );
+			$this->fail( 'a malformed --since must halt the command' );
+		} catch ( \RuntimeException $error ) {
+			$this->assertStringContainsString( '--since must be a date', $error->getMessage() );
+			$this->assertStringContainsString( 'last tuesday', $error->getMessage() );
+		}
+
+		$this->assertStringNotContainsString( 'No metrics found', $this->cli->output(), 'a bad argument is not absent data' );
+	}
+
+	/**
+	 * A date the format accepts but the calendar does not would roll over into the
+	 * following month, moving the bound the operator asked for.
+	 */
+	public function test_summary_rejects_an_impossible_calendar_date(): void {
+		try {
+			$this->command()->summary( [], [ 'since' => '2026-02-31' ] );
+			$this->fail( 'a non-existent date must halt the command' );
+		} catch ( \RuntimeException $error ) {
+			$this->assertStringContainsString( '--since must be a date', $error->getMessage() );
+		}
+	}
+
+	public function test_per_tool_rejects_a_malformed_since(): void {
+		$this->seedRollup();
+
+		try {
+			$this->command()->per_tool( [], [ 'since' => 'yesterday' ] );
+			$this->fail( 'a malformed --since must halt the command' );
+		} catch ( \RuntimeException $error ) {
+			$this->assertStringContainsString( '--since must be a date', $error->getMessage() );
+		}
+
+		$this->assertSame( [], $this->cli->formats );
+	}
+
+	public function test_per_client_rejects_an_empty_since(): void {
+		$this->seedRollup( [ 'client_identifier' => 'webmcp:user:1' ] );
+
+		try {
+			$this->command()->per_client( [], [ 'since' => '' ] );
+			$this->fail( 'an empty --since must halt the command' );
+		} catch ( \RuntimeException $error ) {
+			$this->assertStringContainsString( '--since must be a date', $error->getMessage() );
+		}
+
+		$this->assertSame( [], $this->cli->formats );
+	}
+
+	/**
+	 * Interpolating the table name and preparing it produce the same statement
+	 * text, so only the template reaching prepare() distinguishes them.
+	 */
+	public function test_health_prepares_the_table_existence_check(): void {
+		$this->command()->health();
+
+		$this->assertContains( 'SHOW TABLES LIKE %s', $this->db->prepared );
+	}
+
+	/**
+	 * A site that legitimately goes hours between MCP calls is quiet, not broken.
+	 * The bound is the site's to set, so raising it must make that site healthy.
+	 */
+	public function test_health_honors_a_filtered_staleness_threshold(): void {
+		global $wp_filter_values;
+
+		$wp_filter_values['saltus/framework/mcp/audit/staleness_threshold_hours'] = 24.0;
+
+		$this->db->addAuditRow( 'list_models', 'success', 10.0, gmdate( 'Y-m-d H:i:s.000', time() - 7200 ) );
+
+		$this->command()->health();
+
+		$this->assertStringContainsString( 'Audit table status: available', $this->cli->output() );
+		$this->assertStringContainsString( 'healthy', $this->cli->output() );
+	}
+
+	/**
+	 * Roll up one day of audit traffic and return the `summary` rows by metric.
+	 *
+	 * @return array<string, string>
+	 */
+	private function summaryForRolledUpTraffic( bool $client_mode ): array {
+		global $wp_filter_values;
+
+		$wp_filter_values['saltus/framework/mcp/audit/rollup_by_client'] = $client_mode;
+
+		$this->cli = new TestCliGateway();
+		$this->db  = new RollupTestDatabase();
+
+		$date = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
+		$this->db->addAuditRow( 'list_models', 'success', 10.0, $date . ' 09:00:00.000', 'webmcp:user:1' );
+		$this->db->addAuditRow( 'list_models', 'error', 30.0, $date . ' 09:00:01.000', 'webmcp:user:2' );
+		$this->db->addAuditRow( 'get_content', 'success', 20.0, $date . ' 09:00:02.000', 'webmcp:user:1' );
+
+		( new RollupStore( $this->db ) )->compute_and_store_rollup( $date );
+
+		$this->command()->summary( [], [] );
+
+		// An empty `formats` means the command warned instead of reporting. Read as
+		// no rows rather than indexed into, so a series that went missing fails as
+		// a comparison of totals rather than an undefined key.
+		$rows = [];
+		foreach ( $this->cli->formats[0]['items'] ?? [] as $row ) {
+			$rows[ $row['metric'] ] = $row['value'];
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * `summary` reads the aggregate series, so the client filter must not move
+	 * its numbers. Client mode used to write only per-client rows, which left the
+	 * aggregate series empty and the command warning that no metrics existed.
+	 */
+	public function test_summary_totals_are_identical_with_client_mode_on_and_off(): void {
+		$without = $this->summaryForRolledUpTraffic( false );
+		$with    = $this->summaryForRolledUpTraffic( true );
+
+		$this->assertSame( '3', $without['Total Calls'] );
+		$this->assertSame( $without, $with );
 	}
 }
