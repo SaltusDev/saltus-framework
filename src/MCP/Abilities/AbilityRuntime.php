@@ -140,11 +140,6 @@ class AbilityRuntime {
 				try {
 					$response = \rest_do_request( $request );
 
-					/** @phpstan-ignore-next-line rest_do_request can return WP_Error (WordPress stubs may not include it in the return type) */
-					if ( \is_wp_error( $response ) ) {
-						return \Saltus\WP\Framework\MCP\Error\ErrorResponse::dispatch_error( $response );
-					}
-
 					$status = (int) $response->get_status();
 					$data   = $response->get_data();
 					$result = \is_array( $data ) ? $data : [ 'result' => $data ];
@@ -266,13 +261,6 @@ class AbilityRuntime {
 
 		try {
 			$response = rest_do_request( $request );
-
-			/** @phpstan-ignore-next-line rest_do_request can return WP_Error (WordPress stubs may not include it in the return type) */
-			if ( is_wp_error( $response ) ) {
-				$error = $this->error( 'rest_dispatch_error', $response->get_error_message(), 500 );
-				$this->record_error( $entry, 'error', $error );
-				return $error;
-			}
 
 			$status = (int) $response->get_status();
 			$data   = $response->get_data();
