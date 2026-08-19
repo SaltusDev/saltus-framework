@@ -126,6 +126,12 @@ final class RelationshipManager {
 	 * This is the eager-loading entry point: resolving a relationship for a
 	 * whole result set costs one query here rather than one per post.
 	 *
+	 * Denial filters to an empty map rather than refusing, the same call the
+	 * `describe()` above makes. A caller here is resolving one relationship across a
+	 * page of posts it is already rendering, so a hard error would take down a list
+	 * screen whose other relationships the caller may read. `RelationshipsController`
+	 * refuses instead, because a single-relationship read has nothing else to hide.
+	 *
 	 * @param list<int> $post_ids Post ids to resolve.
 	 * @return array<int, list<array<string, mixed>>>
 	 */
@@ -154,9 +160,23 @@ final class RelationshipManager {
 		return $grouped;
 	}
 
-	/** Whether a post type declares any relationship. */
-	public function has_relationships( string $post_type ): bool {
-		return $this->registry->get_for_model( $post_type ) !== [];
+	/**
+	 * Whether a post type declares a relationship the caller may read.
+	 *
+	 * Read-gated rather than a bare declaration count, because every caller uses this
+	 * to decide whether to put a surface on screen — a metabox, a list column, the
+	 * picker's assets. A post type whose every relationship is read-denied would
+	 * otherwise register a metabox that renders no fields, which is the registration
+	 * gate disagreeing with the render gate one layer down.
+	 */
+	public function has_readable_relationships( string $post_type ): bool {
+		foreach ( $this->registry->get_for_model( $post_type ) as $definition ) {
+			if ( $this->permissions->can_read( $definition ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -295,21 +315,9 @@ final class RelationshipManager {
 			}
 		}
 
-		$this->store->delete_for_post( $definition->get_key(), $definition->own_column(), $post_id, $ids );
-
-		$order = 0;
-		foreach ( $ids as $related_id ) {
-			$existing = $this->assert_capacity( $definition, $post_id, $related_id );
-			if ( $existing instanceof \WP_Error ) {
-				return $existing;
-			}
-
-			$this->store->upsert(
-				array_merge(
-					$this->row_for( $definition, $post_id, $related_id ),
-					[ 'order_index' => $order++ ]
-				)
-			);
+		$failure = $this->apply_sync( $definition, $post_id, $ids );
+		if ( $failure instanceof \WP_Error ) {
+			return $failure;
 		}
 
 		$this->emit( 'synced', $definition, $post_id, 0 );
@@ -320,6 +328,52 @@ final class RelationshipManager {
 			'related_ids'  => $ids,
 			'synced'       => true,
 		];
+	}
+
+	/**
+	 * Clear and rewrite a post's related set inside one atomic boundary.
+	 *
+	 * The clear and every rewrite land together or not at all. Both sides of a
+	 * relationship share one row, so a sequence that stopped halfway would leave
+	 * the forward and reciprocal views disagreeing about the same pair — a state
+	 * no later read can tell from a legitimate one.
+	 *
+	 * Capacity is still checked per id inside the boundary rather than up front,
+	 * because the clear is what frees the capacity a replacement id needs.
+	 *
+	 * @param list<int> $ids Related ids to keep, in order.
+	 * @return \WP_Error|null The error that rolled the sequence back, if any.
+	 */
+	private function apply_sync( RelationshipDefinition $definition, int $post_id, array $ids ): ?\WP_Error {
+		/** @var \WP_Error|null $failure Set by the closure below through its reference. */
+		$failure = null;
+
+		$this->store->transact(
+			function () use ( $definition, $post_id, $ids, &$failure ): bool {
+				$this->store->delete_for_post( $definition->get_key(), $definition->own_column(), $post_id, $ids );
+
+				$order = 0;
+				foreach ( $ids as $related_id ) {
+					$exceeded = $this->assert_capacity( $definition, $post_id, $related_id );
+					if ( $exceeded instanceof \WP_Error ) {
+						$failure = $exceeded;
+
+						return false;
+					}
+
+					$this->store->upsert(
+						array_merge(
+							$this->row_for( $definition, $post_id, $related_id ),
+							[ 'order_index' => $order++ ]
+						)
+					);
+				}
+
+				return true;
+			}
+		);
+
+		return $failure;
 	}
 
 	/**

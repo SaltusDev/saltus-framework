@@ -603,6 +603,224 @@ class RelationshipsTest extends TestCase {
 		$this->assertSame( [], $manager->get_related_ids( 1, 'movie', 'actors' ) );
 	}
 
+	/**
+	 * A manager whose reciprocal side accepts only one movie per person.
+	 *
+	 * Syncing `movie.stars` therefore fails on any person already starring in
+	 * another movie, which interrupts the sequence after earlier ids have
+	 * already been written — the mid-sequence failure these tests need.
+	 */
+	private function star_manager(): RelationshipManager {
+		return $this->manager(
+			[
+				'movie'  => [],
+				'person' => [
+					'stars_in' => [
+						'type'       => 'has_one',
+						'model'      => 'movie',
+						'reciprocal' => 'stars',
+					],
+				],
+			]
+		);
+	}
+
+	public function testAnInterruptedSyncAttachLeavesThePriorSetIntact(): void {
+		$manager = $this->star_manager();
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 2, 'movie' );
+		foreach ( [ 10, 11, 12 ] as $person_id ) {
+			$this->seed_post( $person_id, 'person' );
+		}
+
+		$manager->attach( 1, 'movie', 'stars', 10 );
+		$manager->attach( 2, 'movie', 'stars', 11 );
+
+		// 12 is written, then 11 fails because it already stars in movie 2.
+		$rejected = $manager->sync( 1, 'movie', 'stars', [ 10, 12, 11 ] );
+
+		$this->assertInstanceOf( \WP_Error::class, $rejected );
+		$this->assertSame( 'saltus_relationship_cardinality', $rejected->get_error_code() );
+		$this->assertSame(
+			[ 10 ],
+			$manager->get_related_ids( 1, 'movie', 'stars' ),
+			'The attach of 12 must roll back with the failed sequence.'
+		);
+		$this->assertSame( [], $manager->get_related_ids( 12, 'person', 'stars_in' ) );
+		$this->assertSame( [ 11 ], $manager->get_related_ids( 2, 'movie', 'stars' ) );
+	}
+
+	public function testAnInterruptedSyncDetachRestoresTheRemovedRelationship(): void {
+		$manager = $this->star_manager();
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 2, 'movie' );
+		foreach ( [ 10, 11, 12 ] as $person_id ) {
+			$this->seed_post( $person_id, 'person' );
+		}
+
+		$manager->attach( 1, 'movie', 'stars', 10 );
+		$manager->attach( 1, 'movie', 'stars', 12 );
+		$manager->attach( 2, 'movie', 'stars', 11 );
+
+		// Dropping 12 is the first mutation; 11 then fails on capacity.
+		$rejected = $manager->sync( 1, 'movie', 'stars', [ 10, 11 ] );
+
+		$this->assertInstanceOf( \WP_Error::class, $rejected );
+		$this->assertSame(
+			[ 10, 12 ],
+			$manager->get_related_ids( 1, 'movie', 'stars' ),
+			'The detach of 12 must roll back with the failed sequence.'
+		);
+		$this->assertSame( [ 1 ], $manager->get_related_ids( 12, 'person', 'stars_in' ), 'The reciprocal view must agree.' );
+	}
+
+	public function testAnInterruptedSyncReorderRestoresThePriorOrder(): void {
+		$manager = $this->star_manager();
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 2, 'movie' );
+		foreach ( [ 10, 11, 12 ] as $person_id ) {
+			$this->seed_post( $person_id, 'person' );
+		}
+
+		$manager->attach( 1, 'movie', 'stars', 10 );
+		$manager->attach( 1, 'movie', 'stars', 12 );
+		$manager->attach( 2, 'movie', 'stars', 11 );
+
+		// 12 and 10 are reordered before 11 fails on capacity.
+		$rejected = $manager->sync( 1, 'movie', 'stars', [ 12, 10, 11 ] );
+
+		$this->assertInstanceOf( \WP_Error::class, $rejected );
+		$this->assertSame(
+			[ 10, 12 ],
+			$manager->get_related_ids( 1, 'movie', 'stars' ),
+			'The reorder must roll back with the failed sequence.'
+		);
+	}
+
+	public function testSyncOpensItsTransactionAfterTheTableExistsAndRollsBackOnFailure(): void {
+		$database = new RecordingRelationshipDatabase();
+		// Person 11 already stars in movie 2, so syncing it into movie 1 fails.
+		$database->canned['from_post_id IN (11)'] = [
+			[
+				'id'               => 7,
+				'relationship_key' => 'movie_person_stars_stars_in',
+				'from_post_id'     => 11,
+				'to_post_id'       => 2,
+				'pivot_data'       => '{}',
+				'order_index'      => 0,
+			],
+		];
+
+		$manager = $this->manager(
+			[
+				'movie'  => [],
+				'person' => [
+					'stars_in' => [
+						'type'       => 'has_one',
+						'model'      => 'movie',
+						'reciprocal' => 'stars',
+					],
+				],
+			],
+			new RelationshipStore( $database )
+		);
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 10, 'person' );
+		$this->seed_post( 11, 'person' );
+
+		$rejected = $manager->sync( 1, 'movie', 'stars', [ 10, 11 ] );
+
+		$this->assertInstanceOf( \WP_Error::class, $rejected );
+
+		$begin = array_search( 'START TRANSACTION', $database->queries, true );
+		$this->assertIsInt( $begin, 'The sequence must run inside a transaction.' );
+		$this->assertSame( 'ROLLBACK', end( $database->queries ), 'A failed sequence must roll back.' );
+		$this->assertNotContains( 'COMMIT', $database->queries );
+
+		// DDL implicitly commits in MySQL, so a CREATE TABLE inside the boundary
+		// would end it and leave the writes before the failure already published.
+		$ddl = array_values(
+			array_filter(
+				array_keys( $database->queries ),
+				static function ( int $index ) use ( $database ): bool {
+					return strpos( $database->queries[ $index ], 'CREATE TABLE' ) !== false;
+				}
+			)
+		);
+		$this->assertNotSame( [], $ddl, 'The table is still created.' );
+		foreach ( $ddl as $index ) {
+			$this->assertLessThan( $begin, $index, 'The table must exist before the boundary opens.' );
+		}
+	}
+
+	public function testANestedRollbackDiscardsOnlyItsOwnWritesInProcess(): void {
+		$store = new RelationshipStore( null );
+
+		$committed = $store->transact(
+			function () use ( $store ): bool {
+				$store->upsert( [ 'relationship_key' => 'k', 'from_post_id' => 1, 'to_post_id' => 10 ] );
+
+				$store->transact(
+					function () use ( $store ): bool {
+						$store->upsert( [ 'relationship_key' => 'k', 'from_post_id' => 1, 'to_post_id' => 11 ] );
+
+						return false;
+					}
+				);
+
+				return true;
+			}
+		);
+
+		$this->assertTrue( $committed );
+		$this->assertNotNull( $store->find( 'k', 1, 10 ), 'The outer write must survive an inner rollback.' );
+		$this->assertNull( $store->find( 'k', 1, 11 ), 'The inner write must be discarded.' );
+	}
+
+	public function testANestedTransactionTakesASavepointRatherThanRestarting(): void {
+		$database = new RecordingRelationshipDatabase();
+		$store    = new RelationshipStore( $database );
+
+		$store->transact(
+			function () use ( $store ): bool {
+				$store->transact(
+					static function (): bool {
+						return false;
+					}
+				);
+
+				return true;
+			}
+		);
+
+		// A second START TRANSACTION would commit the outer one in MySQL, so the
+		// inner boundary must unwind through a savepoint instead.
+		$this->assertSame( [ 'START TRANSACTION' ], array_values( array_filter( $database->queries, static fn( string $query ): bool => $query === 'START TRANSACTION' ) ) );
+		$this->assertContains( 'SAVEPOINT saltus_rel_2', $database->queries );
+		$this->assertContains( 'ROLLBACK TO SAVEPOINT saltus_rel_2', $database->queries );
+		$this->assertSame( 'COMMIT', end( $database->queries ) );
+	}
+
+	public function testAThrownFailureRollsBackAndPropagates(): void {
+		$store = new RelationshipStore( null );
+		$store->upsert( [ 'relationship_key' => 'k', 'from_post_id' => 1, 'to_post_id' => 10 ] );
+
+		try {
+			$store->transact(
+				function () use ( $store ): bool {
+					$store->delete( 'k', 1, 10 );
+
+					throw new \RuntimeException( 'interrupted' );
+				}
+			);
+			$this->fail( 'The exception must reach the caller.' );
+		} catch ( \RuntimeException $error ) {
+			$this->assertSame( 'interrupted', $error->getMessage() );
+		}
+
+		$this->assertNotNull( $store->find( 'k', 1, 10 ), 'An interrupted sequence must roll back.' );
+	}
+
 	public function testDetachRemovesOnlyTheGivenPair(): void {
 		$manager = $this->manager(
 			[
@@ -805,8 +1023,8 @@ class RelationshipsTest extends TestCase {
 		$this->assertSame( 'acted_in', $person[0]['name'] );
 		$this->assertTrue( $person[0]['inverse'] );
 
-		$this->assertTrue( $manager->has_relationships( 'movie' ) );
-		$this->assertFalse( $manager->has_relationships( 'unrelated' ) );
+		$this->assertTrue( $manager->has_readable_relationships( 'movie' ) );
+		$this->assertFalse( $manager->has_readable_relationships( 'unrelated' ) );
 	}
 
 	public function testStoreReportsWhetherRowsArePersisted(): void {
@@ -829,6 +1047,13 @@ class RecordingRelationshipDatabase implements \Saltus\WP\Framework\MCP\Audit\Au
 
 	/** @var list<string> */
 	public array $queries = [];
+
+	/**
+	 * Rows to answer a SELECT with, keyed by a fragment of the query.
+	 *
+	 * @var array<string, list<array<string, mixed>>>
+	 */
+	public array $canned = [];
 
 	public function prefix(): string {
 		return 'wp_';
@@ -862,6 +1087,12 @@ class RecordingRelationshipDatabase implements \Saltus\WP\Framework\MCP\Audit\Au
 	 */
 	public function get_results( string $query, $output = null ): array {
 		$this->queries[] = $query;
+
+		foreach ( $this->canned as $fragment => $rows ) {
+			if ( strpos( $query, (string) $fragment ) !== false ) {
+				return $rows;
+			}
+		}
 
 		return [];
 	}

@@ -26,6 +26,16 @@ final class RelationshipStore {
 	private bool $initialized = false;
 	private ?AuditDatabase $database;
 
+	/** Depth of nested transactions opened through transact(). */
+	private int $depth = 0;
+
+	/**
+	 * In-process state captured per open transaction, newest last.
+	 *
+	 * @var list<array{rows: list<array<string, mixed>>, next_id: int}>
+	 */
+	private array $snapshots = [];
+
 	/** @param AuditDatabase|null $database Optional database adapter. */
 	public function __construct( ?AuditDatabase $database = null ) {
 		global $wpdb;
@@ -35,6 +45,47 @@ final class RelationshipStore {
 	/** Whether rows are persisted to a database rather than held in process. */
 	public function is_persistent(): bool {
 		return $this->database instanceof AuditDatabase;
+	}
+
+	/**
+	 * Run a sequence of mutations as one atomic unit.
+	 *
+	 * The callable reports its own outcome: returning false discards every
+	 * mutation it made, as does a thrown exception, which is re-thrown once the
+	 * rollback has been issued. Both backends honour this, so a caller gets the
+	 * same all-or-nothing guarantee in process as it does against a database.
+	 *
+	 * Nesting is deliberate. MySQL has no nested transactions — a second
+	 * START TRANSACTION commits the first — so only the outermost call opens
+	 * one and each inner call takes a savepoint, letting an inner failure
+	 * unwind just its own writes. Depth is tracked here because the
+	 * AuditDatabase seam cannot report whether a transaction is already open;
+	 * at depth zero the store therefore treats the connection as its own,
+	 * which holds under WordPress because core opens no transaction spanning
+	 * a request.
+	 *
+	 * @param callable(): bool $mutations Mutations to apply; false rolls back.
+	 * @return bool Whether the sequence was committed.
+	 */
+	public function transact( callable $mutations ): bool {
+		// Created before the boundary opens, never inside it: the table is DDL,
+		// and DDL implicitly commits an open transaction in MySQL, which would
+		// end the very boundary the first write is relying on.
+		$this->ensure_table();
+
+		$this->begin();
+
+		try {
+			$committed = $mutations();
+		} catch ( \Throwable $error ) {
+			$this->finish( false );
+
+			throw $error;
+		}
+
+		$this->finish( $committed );
+
+		return $committed;
 	}
 
 	/**
@@ -362,6 +413,61 @@ final class RelationshipStore {
 	/** Whether a name is one of the two post id columns. */
 	private function is_column( string $column ): bool {
 		return in_array( $column, [ 'from_post_id', 'to_post_id' ], true );
+	}
+
+	/** Open a transaction, or a savepoint when one is already open. */
+	private function begin(): void {
+		++$this->depth;
+
+		if ( $this->database instanceof AuditDatabase ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Savepoint names are identifiers, not values, and carry only the internal depth counter.
+			$this->database->query( $this->depth === 1 ? 'START TRANSACTION' : 'SAVEPOINT ' . $this->savepoint() );
+
+			return;
+		}
+
+		$this->snapshots[] = [
+			'rows'    => $this->memory,
+			'next_id' => $this->next_id,
+		];
+	}
+
+	/** Close the innermost boundary, keeping or discarding its writes. */
+	private function finish( bool $commit ): void {
+		// Named before the depth drops, so it matches the name begin() used.
+		$savepoint = $this->savepoint();
+		$nested    = $this->depth > 1;
+		--$this->depth;
+
+		if ( $this->database instanceof AuditDatabase ) {
+			if ( $nested ) {
+				// RELEASE, not COMMIT: committing here would end the outer
+				// transaction too and publish writes it has not finished making.
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Savepoint names are identifiers, not values, and carry only the internal depth counter.
+				$this->database->query( ( $commit ? 'RELEASE SAVEPOINT ' : 'ROLLBACK TO SAVEPOINT ' ) . $savepoint );
+
+				return;
+			}
+
+			$this->database->query( $commit ? 'COMMIT' : 'ROLLBACK' );
+
+			return;
+		}
+
+		$snapshot = array_pop( $this->snapshots );
+		if ( $commit || ! is_array( $snapshot ) ) {
+			return;
+		}
+
+		// Ids are restored along with the rows so a rolled back insert does not
+		// leave a gap that makes a later id look like it belongs to an older row.
+		$this->memory  = $snapshot['rows'];
+		$this->next_id = $snapshot['next_id'];
+	}
+
+	/** Savepoint name for the current depth. */
+	private function savepoint(): string {
+		return 'saltus_rel_' . $this->depth;
 	}
 
 
