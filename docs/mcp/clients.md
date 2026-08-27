@@ -33,7 +33,14 @@ For narrow workflows where the client already knows the post type, it can skip t
 
 ## Discovery
 
-Clients should discover abilities from WordPress and filter for the `saltus/` prefix. On WordPress 7.1 and later, a client can instead ask core for abilities intended for it, using `wp_get_abilities( [ 'meta' => [ 'public' => true ] ] )` or the equivalent filter on the REST listing, since every Saltus ability declares that intent.
+Clients should discover abilities from WordPress and filter for the `saltus/` prefix. On WordPress 7.1 and later, a client can instead ask core for abilities intended for it, since every Saltus ability declares that intent:
+
+```
+GET /wp-json/wp-abilities/v1/abilities?meta[public]=true
+GET /wp-json/wp-abilities/v1/abilities?meta[annotations][readonly]=true
+```
+
+In PHP the same two queries are `wp_get_abilities( [ 'meta' => [ 'public' => true ] ] )` and the equivalent for `annotations`. The REST form needs the framework to declare `public` as a boolean on the listing's collection parameters, which it does: core declares `annotations` itself but leaves `public` to `additionalProperties`, where a query string stays a string and loses the strict comparison against the registered boolean.
 
 Every Saltus ability includes metadata similar to:
 
