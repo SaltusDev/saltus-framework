@@ -291,16 +291,34 @@ class WebMcpAdminToolTest extends TestCase {
 	}
 
 	/**
-	 * Without the review service the mutation list is unavailable, so anything
-	 * that is not a cacheable REST read is assumed to write.
+	 * A read dispatches whether or not the review service is wired.
+	 *
+	 * The answer used to be inferred from cacheability when the service was
+	 * absent, on the assumption that every read is cacheable. `get_context` and
+	 * `export_post` are reads that are not, so both were refused as unreviewable
+	 * writes. The tool table answers the same way in either arrangement.
 	 */
-	public function testWithoutTheServiceANonCacheableToolIsAssumedToMutate(): void {
-		$uncacheable = $this->createMock( RestBackedToolInterface::class );
-		$uncacheable->method( 'get_name' )->willReturn( 'get_context' );
-		$uncacheable->method( 'get_description' )->willReturn( 'Fetch.' );
-		$uncacheable->method( 'is_cacheable' )->willReturn( false );
+	public function testAReadDispatchesWithoutTheReviewService(): void {
+		$uncacheable_read = $this->createMock( RestBackedToolInterface::class );
+		$uncacheable_read->method( 'get_name' )->willReturn( 'get_context' );
+		$uncacheable_read->method( 'get_description' )->willReturn( 'Fetch.' );
+		$uncacheable_read->method( 'is_cacheable' )->willReturn( false );
+		$uncacheable_read->method( 'build_rest_request' )->willReturn( new \WP_REST_Request( 'GET', '/context' ) );
 
-		$result = ( new AdminTool( $uncacheable, null ) )->execute( [] );
+		$result = ( new AdminTool( $uncacheable_read, null ) )->execute( [] );
+
+		$this->assertArrayNotHasKey( 'error', $result, 'A read must not be refused for want of a review queue.' );
+	}
+
+	/**
+	 * A write with no review queue is refused rather than written directly.
+	 */
+	public function testAWriteIsRefusedWithoutTheReviewService(): void {
+		$write = $this->createMock( RestBackedToolInterface::class );
+		$write->method( 'get_name' )->willReturn( 'delete_post' );
+		$write->method( 'get_description' )->willReturn( 'Delete.' );
+
+		$result = ( new AdminTool( $write, null ) )->execute( [] );
 
 		$this->assertSame( 'saltus_webmcp_review_unavailable', $result['error']['code'] );
 	}

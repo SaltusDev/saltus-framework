@@ -4,6 +4,7 @@ namespace Saltus\WP\Framework\WebMcp\Tools;
 
 use Saltus\WP\Framework\Features\EditorialReview\ProposalService;
 use Saltus\WP\Framework\MCP\Tools\RestBackedToolInterface;
+use Saltus\WP\Framework\MCP\Tools\ToolAnnotations;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\WebMcp\WebMcpAnnotated;
 use Saltus\WP\Framework\WebMcp\WebMcpTool;
@@ -146,16 +147,15 @@ final class AdminTool implements WebMcpTool, WebMcpAnnotated {
 
 	/**
 	 * Whether this tool changes state.
+	 *
+	 * Asks the tool table rather than the review service, so the answer does not
+	 * depend on a service being wired. The previous fallback inferred it from
+	 * cacheability, on the assumption that every read tool is cacheable;
+	 * `export_post` is a read that is not, so it was reported as a write and
+	 * refused with a 503 whenever the service was absent.
 	 */
 	private function is_mutating(): bool {
-		if ( ! $this->proposals instanceof ProposalService ) {
-			// Without the service the mutation list is unavailable, so a
-			// non-read-backed tool is assumed to write. Every Saltus read tool
-			// is REST-backed and cacheable; mutating ones are not.
-			return ! ( $this->tool instanceof RestBackedToolInterface && $this->tool->is_cacheable() );
-		}
-
-		return $this->proposals->is_mutating( $this->get_name() );
+		return ToolAnnotations::is_mutating( $this->get_name() );
 	}
 
 	/**
