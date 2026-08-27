@@ -88,6 +88,35 @@ class AbilityRegistrar {
 	}
 
 	/**
+	 * Declare the `public` meta key so a client can filter the listing by it.
+	 *
+	 * WordPress declares `annotations` under `meta.properties` but leaves
+	 * `public` to `additionalProperties`, which does not coerce. A query string
+	 * carries `?meta[public]=true` as the string `'true'`, the meta matcher
+	 * compares with `!==` against the real boolean the ability registered, and
+	 * the request answers with nothing. Naming the type is what lets REST convert
+	 * the value before the match, which is the stated purpose of this filter.
+	 *
+	 * Registering the callback is harmless on WordPress versions without the
+	 * hook: it simply never fires.
+	 *
+	 * @param array<string, mixed> $params Collection parameters.
+	 * @return array<string, mixed>
+	 */
+	public function declare_public_query_param( array $params ): array {
+		if ( ! isset( $params['meta']['properties'] ) || ! is_array( $params['meta']['properties'] ) ) {
+			return $params;
+		}
+
+		$params['meta']['properties']['public'] = [
+			'description' => __( 'Limit results to abilities meant for clients such as the REST API, MCP, or AI agents.', 'saltus-framework' ),
+			'type'        => 'boolean',
+		];
+
+		return $params;
+	}
+
+	/**
 	 * Check whether a tool is enabled based on the MCP policy.
 	 *
 	 * @param ToolInterface $tool  The tool to check.

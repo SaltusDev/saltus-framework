@@ -346,6 +346,36 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertSame( [], $wp_abilities_registered );
 	}
 
+	/**
+	 * Declaring the type is what makes intent filtering work over REST.
+	 *
+	 * WordPress leaves `public` to `additionalProperties`, which does not coerce,
+	 * so a query string arrives as `'true'` and loses the meta matcher's strict
+	 * comparison against the registered boolean. Naming the type lets REST
+	 * convert it first.
+	 */
+	public function testThePublicMetaKeyIsDeclaredAsABoolean(): void {
+		$shipped = [
+			'meta' => [
+				'type'                 => 'object',
+				'properties'           => [ 'annotations' => [ 'type' => 'object' ] ],
+				'additionalProperties' => true,
+			],
+		];
+
+		$params = ( new AbilityRegistrar() )->declare_public_query_param( $shipped );
+
+		$this->assertSame( 'boolean', $params['meta']['properties']['public']['type'] );
+		$this->assertArrayHasKey( 'annotations', $params['meta']['properties'], 'The core keys must survive.' );
+	}
+
+	/** A params array without the expected shape is handed back untouched. */
+	public function testUnexpectedCollectionParamsAreLeftAlone(): void {
+		$params = ( new AbilityRegistrar() )->declare_public_query_param( [ 'context' => [ 'type' => 'string' ] ] );
+
+		$this->assertSame( [ 'context' => [ 'type' => 'string' ] ], $params );
+	}
+
 	private function defaultToolProvider( ?Modeler $modeler = null ): ToolProvider {
 		$tool_modeler = new Modeler( $this->createStub( ModelFactory::class ) );
 		$modeler ??= $tool_modeler;
