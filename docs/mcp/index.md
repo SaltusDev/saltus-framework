@@ -16,7 +16,7 @@ Saltus Framework exposes its AI-facing tool surface through the WordPress-native
 
 ## Requirements
 
-- WordPress 7.0+ or a WordPress build that includes the Abilities API
+- WordPress 6.9+ or a WordPress build that includes the Abilities API. WordPress 7.1 adds intent-based discovery and derives an ability's HTTP verb from its annotations
 - An active plugin that loads and registers Saltus Framework
 - A WordPress-native MCP/Abilities client
 - A WordPress user with the capabilities required by the requested operation
@@ -63,12 +63,24 @@ Each ability definition includes:
 - `description`
 - `category`
 - `input_schema`
-- `inputSchema`
 - `execute_callback`
 - `permission_callback`
 - `meta`
 
-The ability `meta` identifies the MCP tool name, REST namespace, transport, and REST visibility.
+Only these keys are published. `WP_Ability` hands the whole argument array to its
+constructor and raises a notice for anything that is not one of its properties,
+so a camelCase alias such as `inputSchema` is a notice on every registration
+rather than a harmless convenience. A client reads `input_schema` from the REST
+listing.
+
+The `input_schema` is a JSON Schema object with a `default` of `{}`, which is what
+lets a client call a tool that takes no arguments: without it the ability receives
+`null`, which is not an object, and answers 400.
+
+The ability `meta` carries the MCP tool name, REST namespace, transport, the
+`public` intent flag, REST visibility, and the `annotations` that state whether a
+tool reads or writes. See [Clients](/mcp/clients) for how a client uses them and
+which HTTP verb each implies.
 
 ## Available Abilities
 

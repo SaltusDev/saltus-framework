@@ -144,6 +144,14 @@ If `show_in_rest` is explicitly `false`, Saltus does not register the model-scop
 
 ## Compatibility Matrix
 
+Every `show_in_rest` on this page is the Saltus model option, which governs the
+`saltus-framework/v1` routes only. It is not the ability `meta.show_in_rest` that
+core reads to decide whether an ability is listed and runnable on
+`wp-abilities/v1`; abilities always declare that one true. A model with
+`show_in_rest => false` still has its abilities discoverable and runnable through
+core, provided `mcp_tools` enabled the tool. See
+[Clients](/mcp/clients) for the ability meta keys.
+
 | Environment | Behavior |
 |-------------|----------|
 | WordPress with Abilities API | Saltus registers `saltus/*` abilities |

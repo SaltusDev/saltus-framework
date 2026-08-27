@@ -33,7 +33,7 @@ For narrow workflows where the client already knows the post type, it can skip t
 
 ## Discovery
 
-Clients should discover abilities from WordPress and filter for the `saltus/` prefix.
+Clients should discover abilities from WordPress and filter for the `saltus/` prefix. On WordPress 7.1 and later, a client can instead ask core for abilities intended for it, using `wp_get_abilities( [ 'meta' => [ 'public' => true ] ] )` or the equivalent filter on the REST listing, since every Saltus ability declares that intent.
 
 Every Saltus ability includes metadata similar to:
 
@@ -43,12 +43,49 @@ Every Saltus ability includes metadata similar to:
     "mcp_tool": "list_models",
     "namespace": "saltus-framework/v1",
     "transport": "wordpress-rest",
-    "show_in_rest": true
+    "public": true,
+    "show_in_rest": true,
+    "annotations": { "readonly": true, "destructive": false, "idempotent": true }
   }
 }
 ```
 
+`public` states that the ability is meant for clients such as the REST API, MCP, or AI agents. `show_in_rest` governs the REST channel specifically and is set explicitly, so it stays authoritative rather than inheriting from `public`. A site can narrow either one through core's `wp_register_ability_args` filter, so a client should treat both as advisory and still handle a permission error on execution.
+
 Use `meta.mcp_tool` for user-facing tool names and logs. Use the ability name, such as `saltus/list-models`, for native client execution.
+
+## Annotations and HTTP Verbs
+
+`annotations` says what a tool does before you call it. `readonly` is true for the
+fourteen read tools and false for the eleven that write. `destructive` is true only
+where existing data can be overwritten or removed, so it is true for
+`update_post`, `update_settings`, `update_meta_fields`, `reorder_posts`,
+`sync_related`, `delete_post` and `detach_related`, and false for the additive
+`create_post`, `create_term`, `duplicate_post` and `attach_related`.
+
+`idempotent` is stated only for reads. WordPress reads `destructive` and
+`idempotent` together as a request for the DELETE verb, and its run route takes a
+DELETE payload from the query string rather than the request body, so claiming it
+for a write would put a post's content in a URL.
+
+That matters because the annotations decide the verb WordPress accepts on its own
+run route. It answers 405 on a mismatch:
+
+| Annotations | Verb | Where `input` goes |
+|-------------|------|--------------------|
+| `readonly: true` | `GET` | query string |
+| `destructive` and `idempotent` both true | `DELETE` | query string |
+| anything else | `POST` | JSON body |
+
+So a read is fetched and a write is posted:
+
+```
+GET  /wp-json/wp-abilities/v1/abilities/saltus%2Fget-post/run?input[post_id]=42
+POST /wp-json/wp-abilities/v1/abilities/saltus%2Fupdate-post/run
+```
+
+A tool that takes no arguments can be called with no `input` at all, because each
+ability's schema declares a default of `{}`.
 
 ## Health First
 
