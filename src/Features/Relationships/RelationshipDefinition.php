@@ -235,6 +235,24 @@ final class RelationshipDefinition {
 		return $this->capabilities;
 	}
 
+	/**
+	 * A copy of this definition gated by the given rule.
+	 *
+	 * Exists for mutual reciprocal reconciliation, where two declarations resolve to one
+	 * stored row: both sides must then answer with the one rule that gates it, or the
+	 * row is readable around the rule through whichever side did not carry it. Returns
+	 * a new instance because a definition is immutable once registered.
+	 *
+	 * @param array<string, list<string>> $capabilities Resolved per-operation rules.
+	 */
+	public function with_capabilities( array $capabilities ): self {
+		$copy = clone $this;
+
+		$copy->capabilities = $this->normalize_capabilities( $capabilities );
+
+		return $copy;
+	}
+
 	/** @return array<string, array<string, mixed>> */
 	public function get_pivot_fields(): array {
 		return $this->pivot;

@@ -134,7 +134,7 @@ class RelationshipsTest extends TestCase {
 		$this->assertSame( $forward->get_key(), $reverse->get_key() );
 	}
 
-	public function testRegistryKeepsExplicitDeclarationOverSynthesizedReciprocal(): void {
+	public function testRegistryReconcilesMutualReciprocalDeclarationsIntoOneRow(): void {
 		$registry = $this->registry(
 			[
 				'movie'  => [
@@ -155,11 +155,334 @@ class RelationshipsTest extends TestCase {
 			]
 		);
 
-		$explicit = $registry->get( 'person', 'acted_in' );
+		$owner = $registry->get( 'movie', 'actors' );
+		$far   = $registry->get( 'person', 'acted_in' );
 
-		$this->assertInstanceOf( RelationshipDefinition::class, $explicit );
-		$this->assertFalse( $explicit->is_inverse(), 'An explicitly declared side owns its own rows.' );
-		$this->assertTrue( $explicit->cascades_delete(), 'The explicit declaration must not be overwritten.' );
+		$this->assertInstanceOf( RelationshipDefinition::class, $owner );
+		$this->assertInstanceOf( RelationshipDefinition::class, $far );
+
+		// Both name the other, so they describe one relationship and must share one
+		// row. Left as two forward sides they would share a key without sharing a
+		// row: each writing from_post_id, neither able to read the other's writes.
+		$this->assertSame( $owner->get_key(), $far->get_key(), 'A mutual pair stores one row.' );
+		$this->assertFalse( $owner->is_inverse(), 'The lower-sorting endpoint owns the row.' );
+		$this->assertTrue( $far->is_inverse(), 'The far side reads that row in reverse.' );
+
+		// Reconciliation settles orientation only. Everything that is the far side's
+		// own business survives it.
+		$this->assertTrue( $far->cascades_delete(), 'The far side keeps its own cascade rule.' );
+		$this->assertSame( 'belongs_to', $far->get_type(), 'The far side keeps its declared cardinality.' );
+	}
+
+	/**
+	 * The defect this reconciliation exists for.
+	 *
+	 * Before it, a pair where both sides named the other stored a row through one
+	 * side that the other could not see, because both read `from_post_id`. Attaching
+	 * through `movie.actors` and reading `person.acted_in` returned nothing, and
+	 * detaching from the far side silently succeeded while changing no row.
+	 */
+	public function testMutualDeclarationIsVisibleFromBothSides(): void {
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 5, 'person' );
+
+		$manager = $this->manager( $this->mutual_models() );
+
+		$this->assertNotInstanceOf( \WP_Error::class, $manager->attach( 1, 'movie', 'actors', 5 ) );
+
+		$this->assertSame( [ 5 ], $manager->get_related_ids( 1, 'movie', 'actors' ), 'The declaring side reads its own write.' );
+		$this->assertSame( [ 1 ], $manager->get_related_ids( 5, 'person', 'acted_in' ), 'The far side reads the same row.' );
+	}
+
+	public function testMutualDeclarationAcceptsWritesFromEitherSide(): void {
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 5, 'person' );
+
+		$manager = $this->manager( $this->mutual_models() );
+
+		$this->assertNotInstanceOf( \WP_Error::class, $manager->attach( 5, 'person', 'acted_in', 1 ) );
+
+		$this->assertSame( [ 1 ], $manager->get_related_ids( 5, 'person', 'acted_in' ) );
+		$this->assertSame( [ 5 ], $manager->get_related_ids( 1, 'movie', 'actors' ), 'A write through the far side is visible to the owner.' );
+	}
+
+	public function testMutualDeclarationDetachFromFarSideRemovesTheRow(): void {
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 5, 'person' );
+
+		$manager = $this->manager( $this->mutual_models() );
+		$manager->attach( 1, 'movie', 'actors', 5 );
+
+		$this->assertNotInstanceOf( \WP_Error::class, $manager->detach( 5, 'person', 'acted_in', 1 ) );
+
+		// The silent no-op was the worst symptom: a detach reporting success while
+		// leaving the row in place.
+		$this->assertSame( [], $manager->get_related_ids( 1, 'movie', 'actors' ), 'A detach through the far side removes the shared row.' );
+	}
+
+	/**
+	 * A self-referential mutual pair has the same defect through the same config, and
+	 * reaches it a second way: both endpoints are the same model, so the endpoint sort
+	 * cannot order the name pair and each side derives a different key. Left alone the
+	 * two sides store rows in separate keyspaces, invisible to each other.
+	 */
+	public function testSelfReferentialMutualDeclarationSharesOneRow(): void {
+		$this->seed_post( 5, 'person' );
+		$this->seed_post( 7, 'person' );
+
+		$models  = [
+			'person' => [
+				'parents'  => [
+					'type'       => 'has_many',
+					'model'      => 'person',
+					'reciprocal' => 'children',
+				],
+				'children' => [
+					'type'       => 'has_many',
+					'model'      => 'person',
+					'reciprocal' => 'parents',
+				],
+			],
+		];
+		$manager = $this->manager( $models );
+
+		$this->assertNotInstanceOf( \WP_Error::class, $manager->attach( 5, 'person', 'parents', 7 ) );
+
+		$this->assertSame( [ 7 ], $manager->get_related_ids( 5, 'person', 'parents' ) );
+		$this->assertSame( [ 5 ], $manager->get_related_ids( 7, 'person', 'children' ), 'The reciprocal side reads the same row.' );
+
+		$this->assertNotInstanceOf( \WP_Error::class, $manager->detach( 7, 'person', 'children', 5 ) );
+		$this->assertSame( [], $manager->get_related_ids( 5, 'person', 'parents' ), 'A detach through the reciprocal removes the shared row.' );
+	}
+
+	/**
+	 * An explicit `key` is the author placing the row deliberately. Two explicitly and
+	 * differently keyed self-referential declarations are two relationships, so the
+	 * derived-key relaxation must not merge them and move stored data.
+	 */
+	public function testSelfReferentialPairWithExplicitDifferentKeysStaysSeparate(): void {
+		$registry = $this->registry(
+			[
+				'person' => [
+					'parents'  => [
+						'type'       => 'has_many',
+						'model'      => 'person',
+						'reciprocal' => 'children',
+						'key'        => 'lineage_up',
+					],
+					'children' => [
+						'type'       => 'has_many',
+						'model'      => 'person',
+						'reciprocal' => 'parents',
+						'key'        => 'lineage_down',
+					],
+				],
+			]
+		);
+
+		$this->assertSame( 'lineage_up', $registry->get( 'person', 'parents' )->get_key() );
+		$this->assertSame( 'lineage_down', $registry->get( 'person', 'children' )->get_key() );
+		$this->assertFalse( $registry->get( 'person', 'children' )->is_inverse(), 'An explicitly keyed declaration is not rebuilt as an inverse.' );
+	}
+
+	/**
+	 * Which side owns the row must not depend on the order models loaded in.
+	 *
+	 * Orientation decides how stored rows are read, so if load order picked the owner,
+	 * a new plugin or a changed hook priority would reverse every existing row.
+	 */
+	public function testMutualReconciliationIsIndependentOfModelLoadOrder(): void {
+		$models = $this->mutual_models();
+
+		$forward  = $this->registry( $models );
+		$reversed = $this->registry( array_reverse( $models, true ) );
+
+		$this->assertFalse( $forward->get( 'movie', 'actors' )->is_inverse() );
+		$this->assertFalse( $reversed->get( 'movie', 'actors' )->is_inverse(), 'The same side owns the row either way.' );
+		$this->assertTrue( $reversed->get( 'person', 'acted_in' )->is_inverse() );
+		$this->assertSame(
+			$forward->get( 'person', 'acted_in' )->get_key(),
+			$reversed->get( 'person', 'acted_in' )->get_key()
+		);
+	}
+
+	public function testMutualDeclarationIsReportedAsAWarning(): void {
+		$warnings = $this->registry( $this->mutual_models() )->get_warnings();
+
+		$this->assertCount( 1, $warnings );
+		$this->assertTrue( $warnings[0]->is_warning(), 'An existing site must keep working, so this never blocks.' );
+		$this->assertSame( 'person', $warnings[0]->get_model_name() );
+		$this->assertSame( 'relationships.acted_in.reciprocal', $warnings[0]->get_path() );
+	}
+
+	/**
+	 * Two mutual `has_many` declarations cannot both be true of one row.
+	 */
+	public function testContradictoryMutualCardinalityResolvesToTheInverseAndWarns(): void {
+		$models                            = $this->mutual_models();
+		$models['person']['acted_in']['type'] = 'has_many';
+
+		$registry = $this->registry( $models );
+
+		$this->assertSame( 'belongs_to', $registry->get( 'person', 'acted_in' )->get_type() );
+
+		$paths = array_map(
+			static function ( $warning ) {
+				return $warning->get_path();
+			},
+			$registry->get_warnings()
+		);
+
+		$this->assertContains( 'relationships.acted_in.type', $paths );
+	}
+
+	/**
+	 * One shared row has one access rule, so a second `capabilities` set cannot be
+	 * honoured and saying so is better than picking one silently.
+	 */
+	public function testMutualCapabilitiesConflictTakesTheOwnersRuleAndWarns(): void {
+		$models = $this->mutual_models();
+
+		$models['movie']['actors']['capabilities']     = [ 'read' => 'read_movies' ];
+		$models['person']['acted_in']['capabilities']  = [ 'read' => 'read_people' ];
+
+		$registry = $this->registry( $models );
+
+		$this->assertSame(
+			[ 'read' => [ 'read_movies' ] ],
+			$registry->get( 'person', 'acted_in' )->get_capabilities(),
+			'The row owner\'s rule gates the row.'
+		);
+
+		$paths = array_map(
+			static function ( $warning ) {
+				return $warning->get_path();
+			},
+			$registry->get_warnings()
+		);
+
+		$this->assertContains( 'relationships.acted_in.capabilities', $paths );
+	}
+
+	/**
+	 * A rule declared only on the side that loses row ownership still has to gate the
+	 * row. Taking the owner's empty rule would leave the row reachable through the
+	 * side that never restricted it - the bypass reciprocal capability inheritance
+	 * exists to close.
+	 */
+	public function testMutualReconciliationKeepsACapabilityDeclaredOnlyOnTheFarSide(): void {
+		$models = $this->mutual_models();
+
+		$models['person']['acted_in']['capabilities'] = [ 'read' => 'read_people' ];
+
+		$registry = $this->registry( $models );
+
+		$this->assertSame(
+			[ 'read' => [ 'read_people' ] ],
+			$registry->get( 'person', 'acted_in' )->get_capabilities(),
+			'A declared rule is never discarded by reconciliation.'
+		);
+		$this->assertSame(
+			[ 'read' => [ 'read_people' ] ],
+			$registry->get( 'movie', 'actors' )->get_capabilities(),
+			'The owning side inherits it too, so the row cannot be written around it.'
+		);
+	}
+
+	/**
+	 * Both sides declared and neither naming `reciprocal` is a legitimate way to
+	 * declare two independent one-way relationships. It must keep working, and it
+	 * must not warn.
+	 */
+	public function testIndependentDeclarationsOnBothSidesAreLeftAlone(): void {
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 5, 'person' );
+
+		$models = [
+			'movie'  => [
+				'actors' => [
+					'type'  => 'has_many',
+					'model' => 'person',
+				],
+			],
+			'person' => [
+				'acted_in' => [
+					'type'  => 'belongs_to',
+					'model' => 'movie',
+				],
+			],
+		];
+
+		$registry = $this->registry( $models );
+
+		$this->assertNotSame(
+			$registry->get( 'movie', 'actors' )->get_key(),
+			$registry->get( 'person', 'acted_in' )->get_key(),
+			'Independent relationships keep separate keys.'
+		);
+		$this->assertFalse( $registry->get( 'person', 'acted_in' )->is_inverse() );
+		$this->assertSame( [], $registry->get_warnings(), 'Nothing was asked for that was not delivered.' );
+
+		$manager = $this->manager( $models );
+		$manager->attach( 1, 'movie', 'actors', 5 );
+
+		$this->assertSame( [], $manager->get_related_ids( 5, 'person', 'acted_in' ), 'The two do not share rows.' );
+	}
+
+	/**
+	 * One side naming a `reciprocal` the far model declares itself: the request for a
+	 * shared row is dropped, because the two derived different keys. The result is
+	 * correct - two independent relationships - but it is not what was written.
+	 */
+	public function testDroppedReciprocalRequestIsReportedAsAWarning(): void {
+		$models = $this->mutual_models();
+		unset( $models['person']['acted_in']['reciprocal'] );
+
+		$registry = $this->registry( $models );
+		$warnings = $registry->get_warnings();
+
+		$this->assertFalse( $registry->get( 'person', 'acted_in' )->is_inverse(), 'Nothing is reoriented here.' );
+		$this->assertCount( 1, $warnings );
+		$this->assertSame( 'movie', $warnings[0]->get_model_name() );
+		$this->assertSame( 'relationships.actors.reciprocal', $warnings[0]->get_path() );
+	}
+
+	/**
+	 * A reciprocal declared on one side only is the documented shape and the one the
+	 * warnings above steer authors toward. It must stay silent.
+	 */
+	public function testSynthesizedReciprocalRaisesNoWarning(): void {
+		$models = $this->mutual_models();
+		unset( $models['person']['acted_in'] );
+
+		$registry = $this->registry( $models );
+
+		$this->assertTrue( $registry->get( 'person', 'acted_in' )->is_inverse() );
+		$this->assertSame( [], $registry->get_warnings() );
+	}
+
+	/**
+	 * A pair where both sides name the other as `reciprocal`.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function mutual_models(): array {
+		return [
+			'movie'  => [
+				'actors' => [
+					'type'       => 'has_many',
+					'model'      => 'person',
+					'reciprocal' => 'acted_in',
+				],
+			],
+			'person' => [
+				'acted_in' => [
+					'type'       => 'belongs_to',
+					'model'      => 'movie',
+					'reciprocal' => 'actors',
+				],
+			],
+		];
 	}
 
 	public function testRegistrySkipsDeclarationsMissingModelOrWithUnknownType(): void {
