@@ -29,6 +29,7 @@ const FORBIDDEN_ROUTES = [
   'TESTING_HANDOFF.html',
   'PHASE-10-HIGHWAY.html',
   'DOCS-SPLIT-PLAN.html',
+  'UPSTREAM-REPORT.html',
   'phase10',
   'discovery',
   'olddocs',
@@ -49,6 +50,7 @@ const FORBIDDEN_STRINGS = [
   'Handoff: MCP Error Hints',
   'Discovery: WebMCP',
   'Research complete',
+  'Ten bugs in Saltus Framework',
 ]
 
 if (!existsSync(dist)) {

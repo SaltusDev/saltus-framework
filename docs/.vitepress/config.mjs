@@ -30,6 +30,7 @@ export default defineConfig({
     'TESTING_HANDOFF.md',
     'PHASE-10-HIGHWAY.md',
     'DOCS-SPLIT-PLAN.md',
+    'UPSTREAM-REPORT.md',
     'phase10/**',
     'olddocs/**',
     'discovery/**',
