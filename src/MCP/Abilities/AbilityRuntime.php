@@ -190,6 +190,11 @@ class AbilityRuntime {
 			return $error;
 		}
 
+		// Hand the tool the declared types, not the spellings that satisfied them.
+		// `'false'` is a valid boolean and a truthy string, so a tool reading it
+		// with `! empty()` would invert the caller's intent.
+		$args = Validator::coerce( $args, $tool->get_parameters() );
+
 		if ( ! $tool->has_permission( $args ) ) {
 			$error = $this->error( 'forbidden', 'You do not have permission to use this tool.', 403 );
 			$this->record_error( $entry, 'error', $error );

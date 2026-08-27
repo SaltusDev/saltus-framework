@@ -220,4 +220,66 @@ class ValidatorTest extends TestCase
         $result = Validator::validate(['f' => 'draft'], ['f' => ['type' => 'string', 'enum' => ['publish', 'pending']]]);
         $this->assertFalse($result['valid']);
     }
+
+    /**
+     * The string 'false' is a valid boolean and a truthy string.
+     *
+     * A tool reading it with `! empty()` would do the opposite of what the
+     * caller asked, so accepting the spelling obliges us to convert it. This is
+     * the case that turns `delete_post` with `force => 'false'` from a trash
+     * into a permanent delete.
+     */
+    public function testTheStringFalseCoercesToBooleanFalse(): void
+    {
+        $coerced = Validator::coerce(['force' => 'false'], ['force' => ['type' => 'boolean']]);
+
+        $this->assertFalse($coerced['force']);
+        $this->assertNotSame('false', $coerced['force']);
+    }
+
+    /**
+     * @dataProvider coercions
+     *
+     * @param mixed $sent
+     * @param mixed $expected
+     */
+    public function testAnAcceptedSpellingBecomesItsDeclaredType(string $type, $sent, $expected): void
+    {
+        $coerced = Validator::coerce(['f' => $sent], ['f' => ['type' => $type]]);
+        $this->assertSame($expected, $coerced['f']);
+    }
+
+    /** @return array<string, array{0: string, 1: mixed, 2: mixed}> */
+    public static function coercions(): array
+    {
+        return [
+            'true string'      => ['boolean', 'true', true],
+            'one string'       => ['boolean', '1', true],
+            'zero string'      => ['boolean', '0', false],
+            'zero int'         => ['boolean', 0, false],
+            'one int'          => ['boolean', 1, true],
+            'integer string'   => ['integer', '42', 42],
+            'negative integer' => ['integer', '-7', -7],
+            'number string'    => ['number', '1.5', 1.5],
+            'real bool kept'   => ['boolean', true, true],
+            'real int kept'    => ['integer', 42, 42],
+        ];
+    }
+
+    /** A value of a type the rules do not name is handed through untouched. */
+    public function testAnUnrecognisedTypeIsLeftAlone(): void
+    {
+        $args    = ['f' => ['a', 'b'], 'g' => 'text'];
+        $coerced = Validator::coerce($args, ['f' => ['type' => 'array'], 'g' => ['type' => 'string']]);
+
+        $this->assertSame($args, $coerced);
+    }
+
+    /** An argument the rules do not mention is not invented. */
+    public function testAnAbsentArgumentIsNotAdded(): void
+    {
+        $coerced = Validator::coerce([], ['force' => ['type' => 'boolean']]);
+
+        $this->assertSame([], $coerced);
+    }
 }

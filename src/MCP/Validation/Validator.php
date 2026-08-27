@@ -51,6 +51,78 @@ class Validator {
 	}
 
 	/**
+	 * Convert accepted scalar spellings to their declared type.
+	 *
+	 * Accepting a spelling is only safe if what reaches the tool means what the
+	 * caller wrote. `'false'` is a valid boolean by the rules below and by
+	 * WordPress', but it is a non-empty string, so a tool testing it with
+	 * `! empty()` reads it as true and does the opposite of what was asked. Over
+	 * REST the ability run route sanitizes to the schema before dispatch and the
+	 * problem never appears; a direct `execute()` has no such step, so the
+	 * conversion belongs here, beside the check that widened the acceptance.
+	 *
+	 * Runs after validation and only over values that passed it, which is the
+	 * order core uses. Anything absent, untyped, or of an unrecognised type is
+	 * returned untouched.
+	 *
+	 * @param array<string, mixed> $args   Arguments that already validated.
+	 * @param array<string, mixed> $schema Saltus parameter rules.
+	 * @return array<string, mixed>
+	 */
+	public static function coerce( array $args, array $schema ): array {
+		foreach ( $schema as $field => $rules ) {
+			if ( ! array_key_exists( $field, $args ) || ! is_array( $rules ) ) {
+				continue;
+			}
+
+			$type = $rules['type'] ?? null;
+			if ( ! is_string( $type ) ) {
+				continue;
+			}
+
+			$args[ $field ] = self::to_declared_type( $args[ $field ], $type );
+		}
+
+		return $args;
+	}
+
+	/**
+	 * A value in the type its rules declare.
+	 *
+	 * @param mixed  $value Value that passed `check_type()` for this type.
+	 * @param string $type  Declared JSON Schema type.
+	 * @return mixed
+	 */
+	private static function to_declared_type( $value, string $type ) {
+		if ( ! is_string( $value ) && ! is_int( $value ) ) {
+			return $value;
+		}
+
+		switch ( $type ) {
+			case 'boolean':
+				if ( is_int( $value ) ) {
+					return $value === 1;
+				}
+
+				return ! in_array( strtolower( $value ), [ 'false', '0' ], true );
+			case 'integer':
+				return is_string( $value ) ? (int) $value : $value;
+			case 'number':
+				if ( ! is_string( $value ) ) {
+					return $value;
+				}
+
+				// A whole numeric string stays an int so a tool comparing it
+				// against an int identity keeps matching.
+				return (float) $value === floor( (float) $value ) && strpos( $value, '.' ) === false
+					? (int) $value
+					: (float) $value;
+			default:
+				return $value;
+		}
+	}
+
+	/**
 	 * Check whether a value matches the expected type.
 	 *
 	 * Accepts the same scalar spellings WordPress does. `rest_is_integer()` takes
