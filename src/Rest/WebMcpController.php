@@ -294,6 +294,10 @@ final class WebMcpController extends WP_REST_Controller {
 			);
 		}
 
+		// The browser sends JSON, but an agent may still spell a boolean as a
+		// string. Coerce to the declared types before the tool reads them.
+		$args = Validator::coerce( $args, $tool->get_parameters() );
+
 		if ( ! $tool->has_permission( $args ) ) {
 			$this->record( $name, $args, 'error', $client );
 
