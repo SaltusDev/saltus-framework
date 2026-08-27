@@ -75,6 +75,12 @@ class MCP implements Service, Registerable, Activateable, Deactivateable {
 				$this->ability_registrar()->register();
 			}
 		);
+		add_filter(
+			'rest_abilities_collection_params',
+			function ( $params ): array {
+				return $this->ability_registrar()->declare_public_query_param( is_array( $params ) ? $params : [] );
+			}
+		);
 		foreach ( [ 'save_post', 'deleted_post', 'created_term', 'edited_term', 'delete_term', 'added_option', 'updated_option', 'deleted_option' ] as $hook ) {
 			add_action(
 				$hook,
