@@ -233,6 +233,88 @@ class RelationshipPermissionPolicyTest extends TestCase {
 		$this->assertSame( [ 'manage_cast' ], $reciprocal->get_capabilities_for( 'write' ) );
 	}
 
+	// -- Privacy cascade discovery ----------------------------------------
+
+	/**
+	 * A cascade relationship the erasing operator cannot read must be reported, not
+	 * silently dropped: dropping it makes an incomplete erasure look complete.
+	 */
+	public function testReachableCascadeReturnsTargetsAndNoWarning(): void {
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 7, 'person' );
+
+		$store   = new RelationshipStore( null );
+		$manager = $this->cascade_manager( true, $store );
+		$manager->attach( 1, 'movie', 'actors', 7 );
+
+		$resolved = $manager->cascade_targets_for_erasure( 1, 'movie' );
+
+		$this->assertSame( [ 7 ], $resolved['targets'] );
+		$this->assertSame( [], $resolved['unreadable'] );
+	}
+
+	public function testDeniedCascadeIsNamedAndYieldsNoTargets(): void {
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 7, 'person' );
+
+		// Attach while the rule still grants, so the row exists and only discovery is
+		// denied. That is the contradictory configuration the warning is for.
+		$store = new RelationshipStore( null );
+		$this->cascade_manager( true, $store )->attach( 1, 'movie', 'actors', 7 );
+
+		$resolved = $this->cascade_manager( false, $store )->cascade_targets_for_erasure( 1, 'movie' );
+
+		$this->assertSame( [], $resolved['targets'], 'A denied read must not silently resolve targets.' );
+		$this->assertSame( [ 'actors' ], $resolved['unreadable'], 'The relationship the erasure could not follow is named.' );
+	}
+
+	/**
+	 * Only cascade-declaring relationships are followed by an erasure, so a denied
+	 * relationship without cascade is not something the erasure missed.
+	 */
+	public function testDeniedRelationshipWithoutCascadeRaisesNoWarning(): void {
+		$this->seed_post( 1, 'movie' );
+
+		$registry = $this->registry(
+			[
+				'type'         => 'has_many',
+				'model'        => 'person',
+				'capabilities' => [ 'read' => [ 'read_cast' ] ],
+			]
+		);
+		$manager  = new RelationshipManager( $registry, new RelationshipStore( null ), $this->policy( false ) );
+
+		$resolved = $manager->cascade_targets_for_erasure( 1, 'movie' );
+
+		$this->assertSame( [], $resolved['targets'] );
+		$this->assertSame( [], $resolved['unreadable'], 'A relationship an erasure never follows must not warn.' );
+	}
+
+	private function cascade_manager( bool $granted, RelationshipStore $store ): RelationshipManager {
+		$registry = $this->registry(
+			[
+				'type'           => 'has_many',
+				'model'          => 'person',
+				'cascade_delete' => true,
+				'capabilities'   => [ 'read' => [ 'read_cast' ] ],
+			]
+		);
+
+		return new RelationshipManager( $registry, $store, $this->policy( $granted ) );
+	}
+
+	private function seed_post( int $post_id, string $post_type ): void {
+		global $wp_posts;
+		$post                 = new \WP_Post(
+			[
+				'post_type'  => $post_type,
+				'post_title' => $post_type . '-' . $post_id,
+			]
+		);
+		$post->ID             = $post_id;
+		$wp_posts[ $post_id ] = $post;
+	}
+
 	/** @param array<string, mixed> $declaration */
 	private function registry( array $declaration ): RelationshipRegistry {
 		$models = [

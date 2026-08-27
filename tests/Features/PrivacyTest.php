@@ -9,6 +9,7 @@ use Saltus\WP\Framework\Features\Meta\FieldEncryptionPolicy;
 use Saltus\WP\Framework\Features\Meta\MetaFieldProvider;
 use Saltus\WP\Framework\Features\Privacy\Privacy;
 use Saltus\WP\Framework\Features\Relationships\RelationshipManager;
+use Saltus\WP\Framework\Features\Relationships\RelationshipPermissionPolicy;
 use Saltus\WP\Framework\Features\Relationships\RelationshipRegistry;
 use Saltus\WP\Framework\Features\Relationships\RelationshipStore;
 use Saltus\WP\Framework\Modeler;
@@ -85,16 +86,29 @@ class PrivacyTest extends TestCase {
 	 * stubbed `Modeler` is stronger anyway: the cascade rule under test is the
 	 * production one, not a mock's idea of it.
 	 *
-	 * @param list<int> $related_ids Ids the relationship resolves to.
+	 * @param list<int>                        $related_ids Ids the relationship resolves to.
+	 * @param array<string, list<string>>|null $capabilities Declared per-operation rules.
+	 * @param bool                             $granted Whether the returned manager's policy grants.
 	 */
-	private function manager_with_cascade( bool $cascades, array $related_ids ): RelationshipManager {
+	private function manager_with_cascade(
+		bool $cascades,
+		array $related_ids,
+		?array $capabilities = null,
+		bool $granted = true
+	): RelationshipManager {
+		$declaration = [
+			'type'           => 'has_many',
+			'model'          => 'book',
+			'cascade_delete' => $cascades,
+		];
+
+		if ( $capabilities !== null ) {
+			$declaration['capabilities'] = $capabilities;
+		}
+
 		$config = [
 			'relationships' => [
-				'records' => [
-					'type'           => 'has_many',
-					'model'          => 'book',
-					'cascade_delete' => $cascades,
-				],
+				'records' => $declaration,
 			],
 		];
 
@@ -107,17 +121,33 @@ class PrivacyTest extends TestCase {
 		$modeler->method( 'get_models' )->willReturn( [ 'book' => $model ] );
 
 		// `RelationshipStore` is final too, so the seam is the `AuditDatabase` it
-		// accepts — the same boundary `RelationshipColumnTest` intercepts at. Rows
-		// are seeded through the manager's own `attach()` so the relationship data
-		// is created the production way.
-		$store   = new RelationshipStore( new CountingDatabase() );
-		$manager = new RelationshipManager( new RelationshipRegistry( $modeler ), $store );
+		// accepts — the same boundary `RelationshipColumnTest` intercepts at.
+		$store    = new RelationshipStore( new CountingDatabase() );
+		$registry = new RelationshipRegistry( $modeler );
+
+		// Rows are seeded through a granting policy so the relationship data exists the
+		// production way. A denial applied afterwards then isolates discovery, which is
+		// the contradictory configuration under test: the row is there and the operator
+		// erasing cannot see it.
+		$seeder = new RelationshipManager( $registry, $store, $this->relationship_policy( true ) );
 
 		foreach ( $related_ids as $related_id ) {
-			$manager->attach( 10, 'book', 'records', $related_id );
+			$seeder->attach( 10, 'book', 'records', $related_id );
 		}
 
-		return $manager;
+		if ( $granted ) {
+			return $seeder;
+		}
+
+		return new RelationshipManager( $registry, $store, $this->relationship_policy( false ) );
+	}
+
+	private function relationship_policy( bool $granted ): RelationshipPermissionPolicy {
+		return new RelationshipPermissionPolicy(
+			static function ( string $capability ) use ( $granted ): bool {
+				return $granted;
+			}
+		);
 	}
 
 	private function seed_user( string $email = 'subject@example.com', int $id = 7 ): void {
@@ -315,6 +345,69 @@ class PrivacyTest extends TestCase {
 
 		$this->assertTrue( $result['items_removed'] );
 		$this->assertSame( '', get_post_meta( 11, 'job_title', true ), 'A cascade dependent must be erased too.' );
+	}
+
+	/**
+	 * The defect: cascade discovery went through the read-filtered API, so a cascade
+	 * relationship the erasing operator could not read was skipped in silence and the
+	 * erasure reported completion having left the dependent content in place.
+	 *
+	 * `erase_others_personal_data` is authority over every relationship, so a read rule
+	 * blocking one is a contradictory configuration. Bypassing it would hide the
+	 * mistake; skipping silently hides the incomplete erasure. It is reported.
+	 */
+	public function testEraseReportsACascadeItCannotRead(): void {
+		$this->seed_user();
+		$this->seed_post( 10 );
+		$this->seed_post( 11, 99 );
+		update_post_meta( 10, 'job_title', 'Engineer' );
+		update_post_meta( 11, 'job_title', 'Dependent record' );
+
+		$manager = $this->manager_with_cascade( true, [ 11 ], [ 'read' => [ 'read_records' ] ], false );
+		$result  = $this->privacy( $manager )->erase( 'subject@example.com' );
+
+		$this->assertTrue( $result['items_retained'], 'An erasure that missed content is not complete.' );
+		$this->assertNotSame( [], $result['messages'], 'The operator is told which relationship blocked it.' );
+		$this->assertStringContainsString( 'records', $result['messages'][0] );
+		$this->assertSame(
+			'Dependent record',
+			get_post_meta( 11, 'job_title', true ),
+			'The policy is reported, not bypassed: the dependent is left for a capable account.'
+		);
+	}
+
+	/**
+	 * A cascade the operator *can* read must still erase silently. Without this the
+	 * warning path could regress into warning on every erasure.
+	 */
+	public function testEraseOfAReadableCascadeReportsNothing(): void {
+		$this->seed_user();
+		$this->seed_post( 10 );
+		$this->seed_post( 11, 99 );
+		update_post_meta( 10, 'job_title', 'Engineer' );
+		update_post_meta( 11, 'job_title', 'Dependent record' );
+
+		$manager = $this->manager_with_cascade( true, [ 11 ], [ 'read' => [ 'read_records' ] ], true );
+		$result  = $this->privacy( $manager )->erase( 'subject@example.com' );
+
+		$this->assertSame( [], $result['messages'] );
+		$this->assertSame( '', get_post_meta( 11, 'job_title', true ), 'A readable cascade dependent is erased.' );
+	}
+
+	/**
+	 * A denied relationship that does not cascade is not something an erasure would
+	 * ever have followed, so it must not produce a warning.
+	 */
+	public function testEraseDoesNotWarnForADeniedNonCascadeRelationship(): void {
+		$this->seed_user();
+		$this->seed_post( 10 );
+		$this->seed_post( 11, 99 );
+		update_post_meta( 10, 'job_title', 'Engineer' );
+
+		$manager = $this->manager_with_cascade( false, [ 11 ], [ 'read' => [ 'read_records' ] ], false );
+		$result  = $this->privacy( $manager )->erase( 'subject@example.com' );
+
+		$this->assertSame( [], $result['messages'] );
 	}
 
 	/** A non-cascade relationship must be left alone: it is shared, not dependent. */

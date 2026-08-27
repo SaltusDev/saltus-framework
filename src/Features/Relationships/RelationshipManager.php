@@ -405,6 +405,51 @@ final class RelationshipManager {
 	}
 
 	/**
+	 * Cascade dependents for a privacy erasure, naming what could not be read.
+	 *
+	 * Erasure discovery cannot go through `describe()` and `get_related_ids()`: both
+	 * filter on the current user's read permission, so a cascade would skip dependents
+	 * silently and the erasure would report success having missed them.
+	 *
+	 * It must not quietly ignore the rule either. `erase_others_personal_data` is
+	 * authority over every relationship, so a read capability the erasing operator lacks
+	 * is a contradictory configuration rather than a boundary to honour - and resolving
+	 * it silently in either direction hides the mistake. So both halves come back: the
+	 * dependents that were reachable, and the cascade relationships that were not.
+	 * Reporting the second half is the caller's job; this method does not decide to
+	 * bypass the policy.
+	 *
+	 * Only cascade-declaring relationships are considered, so a denied relationship that
+	 * erasure would never have followed raises no warning.
+	 *
+	 * @return array{targets: list<int>, unreadable: list<string>}
+	 */
+	public function cascade_targets_for_erasure( int $post_id, string $post_type ): array {
+		$targets    = [];
+		$unreadable = [];
+
+		foreach ( $this->registry->get_for_model( $post_type ) as $name => $definition ) {
+			if ( ! $definition->cascades_delete() ) {
+				continue;
+			}
+
+			if ( ! $this->permissions->can_read( $definition ) ) {
+				$unreadable[] = (string) $name;
+				continue;
+			}
+
+			foreach ( $this->stored_related_ids( $definition, $post_id ) as $related_id ) {
+				$targets[] = $related_id;
+			}
+		}
+
+		return [
+			'targets'    => array_values( array_unique( $targets ) ),
+			'unreadable' => $unreadable,
+		];
+	}
+
+	/**
 	 * Post ids that should be deleted along with a post.
 	 *
 	 * Only definitions that declare cascade on their owning side qualify, and a

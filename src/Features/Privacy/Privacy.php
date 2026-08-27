@@ -171,9 +171,19 @@ final class Privacy implements Service, Registerable {
 			// A cascade-declared relationship means the related post exists only to
 			// serve this one. Leaving its meta behind would leave the data subject's
 			// data on an orphan that the request cannot see but the site still holds.
-			foreach ( $this->cascade_targets( $post ) as $dependent ) {
-				$cascade = $this->erase_post( $dependent );
-				$removed = $removed || $cascade['removed'];
+			$cascade = $this->cascade_targets( $post );
+
+			foreach ( $cascade['dependents'] as $dependent ) {
+				$dependent_outcome = $this->erase_post( $dependent );
+				$removed           = $removed || $dependent_outcome['removed'];
+			}
+
+			// A cascade the operator cannot read is reported rather than skipped: the
+			// dependent content is still held, and an erasure that returns silence here
+			// reads as complete when it is not.
+			foreach ( $cascade['unreadable'] as $relationship ) {
+				$retained   = true;
+				$messages[] = $this->unreadable_cascade_message( $relationship, $post );
 			}
 		}
 
@@ -301,38 +311,63 @@ final class Privacy implements Service, Registerable {
 	}
 
 	/**
-	 * Posts a cascade-declared relationship makes dependent on this one.
+	 * Posts a cascade-declared relationship makes dependent on this one, plus the
+	 * cascade relationships that could not be read.
 	 *
 	 * Resolved through the manager's public API rather than by widening its private
 	 * cascade helper: the rule that matters here is "declared cascade", and
 	 * `RelationshipManager` stays the owner of what cascade means on delete.
+	 * `describe()` and `get_related_ids()` are deliberately not used: both filter on
+	 * read permission, which would drop dependents from the erasure without saying so.
 	 *
 	 * @param \WP_Post $post
-	 * @return list<\WP_Post>
+	 * @return array{dependents: list<\WP_Post>, unreadable: list<string>}
 	 */
 	private function cascade_targets( \WP_Post $post ): array {
 		if ( $this->relationships === null || ! function_exists( 'get_post' ) ) {
-			return [];
+			return [
+				'dependents' => [],
+				'unreadable' => [],
+			];
 		}
 
-		$post_type  = (string) $post->post_type;
+		$resolved   = $this->relationships->cascade_targets_for_erasure(
+			(int) $post->ID,
+			(string) $post->post_type
+		);
 		$dependents = [];
 
-		foreach ( $this->relationships->describe( $post_type ) as $definition ) {
-			$name = (string) ( $definition['name'] ?? '' );
-			if ( $name === '' || empty( $definition['cascade_delete'] ) ) {
-				continue;
-			}
-
-			foreach ( $this->relationships->get_related_ids( (int) $post->ID, $post_type, $name ) as $related_id ) {
-				$related = get_post( (int) $related_id );
-				if ( $related instanceof \WP_Post ) {
-					$dependents[] = $related;
-				}
+		foreach ( $resolved['targets'] as $related_id ) {
+			$related = get_post( (int) $related_id );
+			if ( $related instanceof \WP_Post ) {
+				$dependents[] = $related;
 			}
 		}
 
-		return $dependents;
+		return [
+			'dependents' => $dependents,
+			'unreadable' => $resolved['unreadable'],
+		];
+	}
+
+	/**
+	 * Operator warning for a cascade relationship the erasure could not read.
+	 *
+	 * Addressed to the operator, not the data subject: core shows eraser messages on the
+	 * erasure screen to whoever holds `erase_others_personal_data`. That capability is
+	 * authority over every relationship, so a read rule blocking one is a configuration
+	 * mistake to correct - but bypassing it here would hide the mistake, and skipping
+	 * silently would report an erasure that did not happen. The relationship and what is
+	 * wrong with it are named, so an operator correcting their own declaration has the
+	 * declaration in front of them.
+	 */
+	private function unreadable_cascade_message( string $relationship, \WP_Post $post ): string {
+		return sprintf(
+			/* translators: 1: relationship name, 2: post type slug. */
+			__( 'Related content was not erased: the "%1$s" relationship on "%2$s" declares a read capability this account does not have, so content it links to is still held. Re-run the erasure as an account that can read this relationship, or correct its capabilities declaration.', 'saltus-framework' ),
+			$relationship,
+			(string) $post->post_type
+		);
 	}
 
 	/**
