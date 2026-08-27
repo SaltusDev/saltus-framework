@@ -1,7 +1,7 @@
 ---
 name: saltus-mcp
 description: "Use when connecting an AI agent/client to Saltus Framework MCP/Abilities (saltus/*) on an active WordPress site — discovery, health-first flow, model/meta inspection, safe read/write patterns, permission and rate-limit handling, and write confirmation flows."
-compatibility: "Requires WordPress 7.0+ with the Abilities API and an active plugin built on Saltus Framework. Client-side skill; no PHP required on the agent side."
+compatibility: "Requires WordPress 6.9+ with the Abilities API and an active plugin built on Saltus Framework. WordPress 7.1 adds intent-based discovery and annotation-derived HTTP verbs. Client-side skill; no PHP required on the agent side."
 ---
 
 # Saltus MCP
@@ -19,7 +19,7 @@ Use this skill when the task involves:
 
 ## Prerequisites
 
-- A running WordPress site (7.0+) with the Abilities API.
+- A running WordPress site (6.9+) with the Abilities API.
 - An active plugin using Saltus Framework (registers `saltus/*` abilities on `wp_abilities_api_init`).
 - Client access to the abilities (discovery list, or a configured tool list).
 - The site URL and a user with the needed WordPress capabilities.
