@@ -293,33 +293,18 @@ Saltus wraps ability execution with WordPress-native audit logging, rate limitin
 
 ### Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `get_health` | Get Saltus Framework health, version, error rate, latency, cache, and rate-limit status |
-| `list_models` | List all registered CPTs and taxonomies |
-| `get_model` | Get details of a specific post type or taxonomy |
-| `list_posts` | Query posts with filters (status, search, pagination) |
-| `get_post` | Get a single post with all fields and meta |
-| `create_post` | Create a new post in any CPT |
-| `update_post` | Update an existing post's fields and meta |
-| `delete_post` | Trash or force delete a post |
-| `list_terms` | List terms from a taxonomy |
-| `create_term` | Create a new term in a taxonomy |
-| `duplicate_post` | Duplicate a WordPress post |
-| `export_post` | Export a post as WXR |
-| `get_settings` | Get Saltus settings for a post type |
-| `update_settings` | Update Saltus settings for a post type |
-| `reorder_posts` | Batch update post menu order |
-| `list_meta_fields` | Discover Saltus meta field definitions across all registered CPTs |
-| `get_meta_fields` | Get Saltus meta field definitions for a post type |
-| `update_meta_fields` | Update registered meta fields for a post |
-| `list_block_models` | List model-driven blocks and their attributes |
+Twenty-five tools, listed with their arguments and annotations in
+[`docs/mcp/abilities.md`](docs/mcp/abilities.md), which `composer docs:mcp`
+regenerates from the registry. Reads cover health, models, posts, terms, context,
+block models, meta fields, settings, relationships, and WXR export; writes cover
+creating, updating and deleting posts, creating terms, duplicating, reordering,
+updating meta and settings, and attaching, detaching or syncing relationships.
 
 Meta field discovery preserves the raw Saltus/Codestar configuration in `meta` and includes normalized MCP-friendly metadata in `normalized.fields` and `normalized.rest_meta_keys`. Nested fields are exposed as paths such as `points_info.coordinates.latitude`, with JSON-schema-like types and REST writability information.
 
 ### Requirements
 
-- WordPress 7.0+ or a WordPress build that provides the Abilities API
+- WordPress 6.9+ or a WordPress build that provides the Abilities API. WordPress 7.1 adds the collection filtering that lets a client discover abilities by intent
 - A WordPress-native MCP/Abilities client
 - The plugin using Saltus Framework must be active
 

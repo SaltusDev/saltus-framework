@@ -18,21 +18,23 @@
 - 1369 PHPUnit tests passing (3560 assertions) and PHPStan Level 7 clean, plus 51 `node --test` JS tests across three suites, verified 2026-08-19 after the fix pass. `phpstan.neon` carries no global certainty relaxation: `treatPhpDocTypesAsCertain` was removed with finding 17.5, and the five remaining ignores in `src/` are per-line and each names the stub limitation it covers.
 - WebMCP Phase 8A delivers a third consumer of the tool registry (alongside MCP/Abilities and WP-CLI): read-only tools projected into the visitor's browser for models that opt in with `webmcp: { enabled: true, frontend: true }`.
 
-## Top Priority: WordPress 7.0 MCP/Abilities Integration
+## Top Priority: WordPress MCP/Abilities Integration
 
-**Theme:** Make Saltus MCP tools discoverable and usable through WordPress-native MCP/Abilities infrastructure in WordPress 7.0. The standalone local stdio MCP server path has been removed.
+**Theme:** Make Saltus MCP tools discoverable and usable through WordPress-native MCP/Abilities infrastructure, which shipped in WordPress 6.9. The standalone local stdio MCP server path has been removed.
 
 | Item | Status |
 |------|--------|
-| Track WordPress 7.0 MCP/Abilities API shape and naming as it stabilizes | ✓ Done |
+| Track the WordPress MCP/Abilities API shape and naming as it stabilizes | ✓ Done through 6.9 |
+| Follow the 7.1 additions: `meta` filtering on `wp_get_abilities()`, the `public` intent flag, annotation-derived HTTP verbs, `wp_prepare_json_schema_for_client()` | ✓ Done |
 | Map each existing Saltus MCP tool to a WordPress-native ability definition | ✓ Done |
 | Register Saltus abilities from WordPress when the native API is present | ✓ Done |
 | Standalone local stdio MCP fallback | Removed |
 | Reuse existing REST permission checks so abilities honor `current_user_can()` gates | ✓ Done |
 | Add compatibility tests for native abilities and REST-backed dispatch | ✓ Done |
 | Document WordPress-native MCP client discovery | ✓ Done |
+| Declare `output_schema` so core validates ability results | Open |
 
-**Exit criteria:** On WordPress 7.0+, Saltus capabilities are exposed through the native MCP/Abilities layer. Older WordPress versions skip native ability registration.
+**Exit criteria:** On WordPress 6.9+, Saltus capabilities are exposed through the native MCP/Abilities layer. Older WordPress versions skip native ability registration.
 
 ---
 
@@ -127,7 +129,7 @@ Expose Saltus Framework capabilities through WordPress-native MCP/Abilities. Sal
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| **WordPress 7.0 MCP/Abilities integration** | Register Saltus MCP tools as WordPress-native abilities when available | ✓ |
+| **WordPress MCP/Abilities integration** | Register Saltus MCP tools as WordPress-native abilities when available (6.9+) | ✓ |
 | **Local stdio MCP server** | Run Saltus as a standalone local MCP server process | Removed |
 | **SSE transport** | Serve MCP over HTTP for remote connections | Skipped |
 | **Multi-site management** | Named site profiles, switchable at runtime | Skipped |

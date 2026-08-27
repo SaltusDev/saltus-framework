@@ -36,7 +36,7 @@ if ( class_exists( \Saltus\WP\Framework\Core::class ) ) {
 
 ### 5. WordPress-Native MCP/Abilities
 - **Purpose:** Expose Saltus model, content, settings, and metadata operations to AI clients through WordPress-native MCP/Abilities.
-- **Decision:** WordPress 7.0 Abilities is the supported MCP path. The local stdio MCP server was removed; SSE transport and standalone server distribution remain out of scope.
+- **Decision:** the WordPress Abilities API is the supported MCP path, from 6.9 where it shipped. The local stdio MCP server was removed; SSE transport and standalone server distribution remain out of scope. 7.1 is where abilities gained `meta` filtering, the `public` intent flag, and annotation-derived HTTP verbs, so it is named separately where those matter.
 - **Service Registration (Two-Pass Model):** To ensure REST endpoints and MCP tools are always available (regardless of whether the request is admin, frontend, or REST), `Core` registers `RestRouteProvider` and `ToolContributor` unconditionally on plugin boot. However, the core service activation (admin screens, scripts, hooks) remains strictly gated behind the `is_needed()` method. This prevents admin-only/frontend-only hooks and assets from running amok in contexts where they aren't needed.
 - **Documentation:** the `docs/mcp/` section is the canonical source for the MCP surface — `index.md` (setup and discovery), `permissions.md` (capability and config gating), `runtime.md` (execution, caching, audit, health), and the generated `abilities.md`.
 - **Metadata:** `list_meta_fields` exposes all registered CPT meta configs through `GET /saltus-framework/v1/meta`; `get_meta_fields` exposes one CPT through `GET /saltus-framework/v1/meta/{post_type}`.
