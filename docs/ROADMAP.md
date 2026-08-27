@@ -5,7 +5,7 @@
 - Phases 1–8 delivered. Phase 8A (WebMCP frontend browser surface) delivered 2026-08-07; Phase 8B (admin surface and governed writes) delivered 2026-08-08.
 - Phase 10A (content relationships) delivered 2026-08-08, without its metabox UI, query-builder facade, or migration scripts — see [Phase 10 Remainder](#phase-10-remainder). Phases 10B and 10C are scoped only in the internal RFC.
 - **Phase 14 delivered 2026-08-16** (daily rollups, retention ordering, aggregate and per-client metrics, admin dashboard, `wp saltus metrics`, audit health states, error hand-off, sampling, slow-call logging, rollup freshness, and coverage). There is no Phase 9 — see [Phase Numbering](#phase-numbering).
-- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Review backlogs after the 2026-08-19 fix pass: [Phase 15 — v1.8.5 Review](#phase-15--v185-review-x-55) (4/5 — only the 15.3 changelog note is left, deferred to finding 17.27), [Phase 16 — v2.1.0 Review](#phase-16--v210-review--79) (7/9 — 16.3 reciprocal permission reconciliation and 16.4 privacy cascade read path are held open pending a design decision), and [Phase 17 — v2.1.1 Review](#phase-17--v211-review-x-2727) (27/27 — complete).
+- Release maintenance: v1.8.3 findings resolved 2026-08-10, v1.8.4 finding resolved 2026-08-11. Review backlogs are closed after the 2026-08-19 fix pass and the 2026-08-20 follow-up: [Phase 15 — v1.8.5 Review](#phase-15--v185-review-x-55) (5/5), [Phase 16 — v2.1.0 Review](#phase-16--v210-review-x-99) (9/9 — 16.3 and 16.4 closed 2026-08-20, both against premises the code disproved), and [Phase 17 — v2.1.1 Review](#phase-17--v211-review-x-2727) (27/27). All 41 findings are complete.
 - Features implemented: CPT creation, taxonomies, settings pages, metaboxes, cloning, export, drag&drop reordering, model-driven blocks, frontend shortcodes, WP-CLI parity, AI governance, WebMCP frontend read surface, audit rollups and the observability metrics dashboard
 - WordPress-native MCP/Abilities surface with 25 tools
 - REST API: 23 routes registered in `saltus-framework/v1/` across 13 controllers
@@ -414,8 +414,8 @@ frontend:
 - ✓ **Maintenance pass 1.8.4** — `AuditLogger::ensure_table()` returns whether the DDL succeeded, so a failed create no longer marks the table verified and hides a missing audit table for the full TTL — delivered 2026-08-11.
 - ✓ **Phases 11–14 scoped** — Security & Compliance (field-level permissions, per-field encryption, GDPR hooks), Developer Experience (config-time validation), Enhanced UX (relationship picker plus the four documented Codestar accessibility defects), Observability (audit rollups and a metrics surface) — scoped 2026-08-11. The phase-numbering collision with the retired bug-fix buckets is resolved and recorded.
 - ✓ **Phase 14 implementation** — Observability: `RollupStore`/`DailyRollup` daily audit rollups with a portable 1.2.0 schema migration and an atomic upsert, the `Observability` feature (metrics dashboard plus `MetricsApi`), `wp saltus metrics`, rollup-freshness reporting on the health endpoint, audit sampling, and slow-call logging — delivered 2026-08-16, released in v2.1.1 on 2026-08-19.
-- ✓ **Per-relationship capability enforcement** — `RelationshipPermissionPolicy` resolves a relationship's declared `capabilities` at the `RelationshipManager` choke-point, so REST, MCP, WP-CLI, and the metabox cannot disagree; reciprocals inherit the declaring side's rules, cascade cleanup is exempt, and write-denied pickers render read-only — delivered 2026-08-14, released in v2.1.1.
-- Next code work: the two [Phase 16](#phase-16--v210-review--79) findings held open pending a design decision — 16.3 reciprocal permission reconciliation and 16.4 privacy cascade read filtering. [Phase 15](#phase-15--v185-review-x-55) and [Phase 17](#phase-17--v211-review-x-2727) are closed. The remaining Phase 10A follow-ups — the query-builder facade, then the ACF/Toolset/Pods migration scripts — are still open; the metabox picker and the Codestar accessibility fixes shipped with [Phase 13](#phase-13-enhanced-ux-v29).
+- ✓ **Per-relationship capability enforcement** — `RelationshipPermissionPolicy` resolves a relationship's declared `capabilities` at the `RelationshipManager` choke-point, so REST, MCP, WP-CLI, and the metabox cannot disagree; reciprocals inherit the declaring side's rules, cascade cleanup reads unfiltered but reports what it could not read, and write-denied pickers render read-only — delivered 2026-08-14, completed 2026-08-20 with mutual reciprocal reconciliation and the privacy cascade report.
+- Next code work: the remaining Phase 10A follow-ups — the query-builder facade, then the ACF/Toolset/Pods migration scripts. [Phase 15](#phase-15--v185-review-x-55), [Phase 16](#phase-16--v210-review-x-99) and [Phase 17](#phase-17--v211-review-x-2727) are closed; the metabox picker and the Codestar accessibility fixes shipped with [Phase 13](#phase-13-enhanced-ux-v29).
 
 ### Long-term Vision
 - Continued improvements for WordPress CPT-based plugin development.
@@ -1218,7 +1218,7 @@ WP-CLI accepts `--format=csv` (it is in the declared options list), then `Abstra
 
 ---
 
-## Phase 16 — v2.1.0 Review [~] (7/9)
+## Phase 16 — v2.1.0 Review [x] (9/9)
 
 @priority high @owner OmensUI
 
@@ -1246,7 +1246,11 @@ Impact: A failure between writes can leave the forward and reciprocal relationsh
 
 Impact: Reciprocal access can inherit ambiguous or asymmetric permissions, potentially exposing or permitting relationship operations that one side intended to restrict.
 
-- [ ] Define and implement deterministic reciprocal permission reconciliation that preserves the stricter applicable policy, and cover conflicting and one-sided capability declarations.
+The finding's premise did not hold: a *synthesized* reciprocal already inherits capabilities, and the real defect sat beside it. When both sides are hand-declared and each names the other, neither is synthesized, so both stayed forward sides writing `from_post_id` — one relationship stored as two half-relationships, invisible across the pair. Self-referential pairs reached the same break a second way, deriving two different keys because equal endpoints leave the name pair unordered.
+
+- [x] Reconcile mutual reciprocal declarations into one row: the lower-sorting endpoint owns it, the other is rebuilt as its inverse, and orientation is tied to the endpoint sort rather than model load order.
+- [x] Resolve the shared row's `capabilities` deterministically — the owner's rule when it declared one, otherwise the far side's — write it to both sides so neither reads around it, and warn on the declaration that lost.
+- [x] Treat a self-referential pair's mismatched *derived* keys as an artifact of derivation, leaving explicitly keyed declarations untouched so no stored row moves.
 
 ### 16.4 [high] Bypass user-facing read filtering during privacy cascade erasure
 
@@ -1254,7 +1258,11 @@ Impact: Reciprocal access can inherit ambiguous or asymmetric permissions, poten
 
 Impact: Personal data in filtered or otherwise non-visible relationships can survive an erasure request, producing an incomplete privacy cascade.
 
-- [ ] Route cascade discovery through an internal unfiltered erasure query while retaining authorization at the erasure entry point, and prove hidden related records are deleted without widening user-facing reads.
+The unfiltered read the task asked for already existed at `RelationshipManager::stored_related_ids()`; what was missing was a caller reaching it. Bypassing the rule silently was rejected: `erase_others_personal_data` is authority over every relationship, so a read rule blocking one is a contradictory configuration, and silently overriding it hides the mistake exactly as silently skipping hides the incomplete erasure.
+
+- [x] Resolve cascade dependents through a new `cascade_targets_for_erasure()` on the manager, which reads unfiltered and returns the cascade relationships it could not read alongside the targets it could.
+- [x] Report an unreadable cascade to the operator through core's eraser messages and retain rather than complete, naming the relationship and post type so the declaration can be corrected.
+- [x] Confine the warning to cascade-declaring relationships, so one an erasure would never follow raises nothing.
 
 ### 16.5 [high] Allow aggregate rollups to coexist with client mode
 
