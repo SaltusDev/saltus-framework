@@ -203,13 +203,14 @@ final class RelationshipManager {
 			return $capacity;
 		}
 
-		$row = $this->row_for( $definition, $post_id, $related_id );
-		$id  = $this->store->upsert(
+		$row      = $this->row_for( $definition, $post_id, $related_id );
+		$existing = $this->store->find( $row['relationship_key'], (int) $row['from_post_id'], (int) $row['to_post_id'] );
+		$id       = $this->store->upsert(
 			array_merge(
 				$row,
 				[
 					'pivot_data'  => $this->filter_pivot( $definition, $pivot ),
-					'order_index' => $order ?? $this->next_order( $definition, $post_id ),
+					'order_index' => $this->resolve_order( $definition, $post_id, $order, $existing ),
 				]
 			)
 		);
@@ -575,6 +576,29 @@ final class RelationshipManager {
 		}
 
 		return $order + 1;
+	}
+
+	/**
+	 * The ordering value an attach should store.
+	 *
+	 * An explicit `order` wins. Otherwise a new pair goes to the end of the set,
+	 * and a pair that is already stored keeps the position it has: `next_order()`
+	 * counts the existing row in its own maximum, so re-deriving it would move
+	 * the row to the end on every repeat call and make attaching the same pair
+	 * twice differ from attaching it once.
+	 *
+	 * @param array<string, mixed>|null $existing Stored row for this pair, when there is one.
+	 */
+	private function resolve_order( RelationshipDefinition $definition, int $post_id, ?int $order, ?array $existing ): int {
+		if ( $order !== null ) {
+			return $order;
+		}
+
+		if ( is_array( $existing ) ) {
+			return (int) ( $existing['order_index'] ?? 0 );
+		}
+
+		return $this->next_order( $definition, $post_id );
 	}
 
 	/**

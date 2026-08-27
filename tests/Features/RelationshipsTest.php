@@ -566,6 +566,67 @@ class RelationshipsTest extends TestCase {
 		$this->assertSame( 1, $related[1]['order_index'] );
 	}
 
+	/**
+	 * Attaching the same pair twice must not move it.
+	 *
+	 * `next_order()` takes the maximum over the post's stored rows, and a pair
+	 * that is already attached is one of them, so re-deriving the position on a
+	 * repeat attach pushed that pair to the end of the set and kept climbing on
+	 * every further call.
+	 */
+	public function testReattachingAPairLeavesItsPositionAlone(): void {
+		$manager = $this->manager(
+			[
+				'movie'  => [
+					'actors' => [
+						'type'  => 'has_many',
+						'model' => 'person',
+					],
+				],
+				'person' => [],
+			]
+		);
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 2, 'person', 'Second' );
+		$this->seed_post( 3, 'person', 'Third' );
+
+		$manager->attach( 1, 'movie', 'actors', 2 );
+		$manager->attach( 1, 'movie', 'actors', 3 );
+
+		$this->assertIsArray( $manager->attach( 1, 'movie', 'actors', 2 ) );
+		$this->assertIsArray( $manager->attach( 1, 'movie', 'actors', 2 ) );
+
+		$this->assertSame( [ 2, 3 ], $manager->get_related_ids( 1, 'movie', 'actors' ) );
+
+		$related = $manager->get_related( 1, 'movie', 'actors' );
+		$this->assertSame( 0, $related[0]['order_index'] );
+		$this->assertSame( 1, $related[1]['order_index'] );
+	}
+
+	/** An explicit order still wins over the stored position. */
+	public function testAnExplicitOrderOverridesTheStoredPosition(): void {
+		$manager = $this->manager(
+			[
+				'movie'  => [
+					'actors' => [
+						'type'  => 'has_many',
+						'model' => 'person',
+					],
+				],
+				'person' => [],
+			]
+		);
+		$this->seed_post( 1, 'movie' );
+		$this->seed_post( 2, 'person', 'Second' );
+		$this->seed_post( 3, 'person', 'Third' );
+
+		$manager->attach( 1, 'movie', 'actors', 2 );
+		$manager->attach( 1, 'movie', 'actors', 3 );
+		$manager->attach( 1, 'movie', 'actors', 2, [], 5 );
+
+		$this->assertSame( [ 3, 2 ], $manager->get_related_ids( 1, 'movie', 'actors' ) );
+	}
+
 	public function testRelationshipIsReadableFromTheReciprocalSide(): void {
 		$manager = $this->manager(
 			[
