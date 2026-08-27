@@ -4,6 +4,8 @@ namespace Saltus\WP\Framework\MCP\Abilities;
 use Saltus\WP\Framework\MCP\MCPConfig;
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
 use Saltus\WP\Framework\MCP\Tools\ToolProvider;
+use Saltus\WP\Framework\MCP\Tools\ToolAnnotations;
+use Saltus\WP\Framework\MCP\Validation\ParameterSchema;
 
 /**
  * Converts ToolInterface instances into wp_register_ability-compatible definition arrays.
@@ -14,10 +16,8 @@ use Saltus\WP\Framework\MCP\Tools\ToolProvider;
  *     description: string,
  *     category: string,
  *     input_schema: array<string, mixed>,
- *     inputSchema: array<string, mixed>,
  *     execute_callback: callable,
  *     permission_callback: callable,
- *     callback: callable,
  *     meta: array<string, mixed>
  * }
  * @api
@@ -56,7 +56,10 @@ class AbilityDefinitionFactory {
 	 * @return AbilityDefinition
 	 */
 	public function from_tool( ToolInterface $tool ): array {
-		$schema = $tool->get_parameters();
+		// Published as a JSON Schema object, not the bare parameter map: a client
+		// reads the top level as keyword slots, so an unwrapped map loses every
+		// parameter and misreads any named after a keyword. See ParameterSchema.
+		$schema = ParameterSchema::to_json_schema( $tool->get_parameters() );
 
 		return [
 			'name'                => $this->ability_name( $tool->get_name() ),
@@ -64,21 +67,30 @@ class AbilityDefinitionFactory {
 			'description'         => $tool->get_description(),
 			'category'            => MCPConfig::get_ability_category()['id'],
 			'input_schema'        => $schema,
-			'inputSchema'         => $schema,
 			'execute_callback'    => function ( array $args = [] ) use ( $tool ) {
 				return $this->runtime->execute( $tool, $args );
 			},
 			'permission_callback' => function ( $args = [] ) use ( $tool ): bool {
 				return $this->can_use_saltus_abilities( $tool, $args );
 			},
-			'callback'            => function ( array $args = [] ) use ( $tool ) {
-				return $this->runtime->execute( $tool, $args );
-			},
 			'meta'                => [
 				'mcp_tool'     => $tool->get_name(),
 				'namespace'    => MCPConfig::get_namespace(),
 				'transport'    => 'wordpress-rest',
+				// These tools exist to be called by clients, so the intent flag says
+				// so rather than leaving agent-side consumers to infer it from the
+				// REST flag. Exposure is already decided before this point: an
+				// unenabled tool is never registered, and `permission_callback` gates
+				// every call. A site narrowing further overrides both keys through
+				// core's `wp_register_ability_args` filter.
+				'public'       => true,
 				'show_in_rest' => true,
+				// Left unstated, every ability looked like a possible write and had
+				// to be called with POST, which also hid all the reads from a client
+				// filtering the collection on `annotations[readonly]`. See
+				// ToolAnnotations for what each value claims and why `idempotent`
+				// is stated only for reads.
+				'annotations'  => ToolAnnotations::for_tool( $tool->get_name() ),
 			],
 		];
 	}

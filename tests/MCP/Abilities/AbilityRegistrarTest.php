@@ -62,7 +62,6 @@ class AbilityRegistrarTest extends TestCase {
 		$this->assertSame( 'List Models', $wp_abilities_registered['saltus/list-models']['label'] );
 		$this->assertSame( 'list_models', $wp_abilities_registered['saltus/list-models']['meta']['mcp_tool'] );
 		$this->assertArrayHasKey( 'input_schema', $wp_abilities_registered['saltus/list-models'] );
-		$this->assertArrayHasKey( 'callback', $wp_abilities_registered['saltus/list-models'] );
 		$this->assertArrayHasKey( 'execute_callback', $wp_abilities_registered['saltus/list-models'] );
 		$this->assertArrayHasKey( 'permission_callback', $wp_abilities_registered['saltus/list-models'] );
 	}
