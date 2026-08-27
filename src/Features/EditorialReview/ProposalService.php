@@ -11,6 +11,7 @@ use Saltus\WP\Framework\MCP\Tools\DuplicatePost;
 use Saltus\WP\Framework\MCP\Tools\ReorderPosts;
 use Saltus\WP\Framework\MCP\Tools\SyncRelated;
 use Saltus\WP\Framework\MCP\Tools\RestTool;
+use Saltus\WP\Framework\MCP\Tools\ToolAnnotations;
 use Saltus\WP\Framework\MCP\Tools\UpdateMetaFields;
 use Saltus\WP\Framework\MCP\Tools\UpdateSettings;
 
@@ -30,27 +31,15 @@ final class ProposalService {
 	 *
 	 * Separate from should_queue() because the two answer different questions:
 	 * this one is a fact about the tool, that one is a site's policy choice about
-	 * it. Callers needing to label a tool — a `readOnlyHint` for an agent, say —
-	 * must not have the answer flip because a site disabled review.
+	 * it. Callers needing to label a tool must not have the answer flip because a
+	 * site disabled review.
+	 *
+	 * The fact itself lives in {@see ToolAnnotations}, which the abilities layer
+	 * also publishes to agents. One list, so a new write tool cannot be queued
+	 * for review while being advertised as read-only.
 	 */
 	public function is_mutating( string $tool ): bool {
-		return in_array(
-			$tool,
-			[
-				'create_post',
-				'update_post',
-				'delete_post',
-				'create_term',
-				'duplicate_post',
-				'update_meta_fields',
-				'update_settings',
-				'reorder_posts',
-				'attach_related',
-				'detach_related',
-				'sync_related',
-			],
-			true
-		);
+		return ToolAnnotations::is_mutating( $tool );
 	}
 
 	public function should_queue( string $tool ): bool {
