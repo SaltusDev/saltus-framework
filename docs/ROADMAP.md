@@ -25,7 +25,7 @@
 | Item | Status |
 |------|--------|
 | Track the WordPress MCP/Abilities API shape and naming as it stabilizes | ✓ Done through 6.9 |
-| Follow the 7.1 additions: `meta` filtering on `wp_get_abilities()`, the `public` intent flag, annotation-derived HTTP verbs, `wp_prepare_json_schema_for_client()` | ✓ Done |
+| Follow the 7.1 additions: `meta` filtering on `wp_get_abilities()`, the `public` intent flag, the execution lifecycle filters, `wp_prepare_json_schema_for_client()` | ✓ Done |
 | Map each existing Saltus MCP tool to a WordPress-native ability definition | ✓ Done |
 | Register Saltus abilities from WordPress when the native API is present | ✓ Done |
 | Standalone local stdio MCP fallback | Removed |

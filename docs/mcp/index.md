@@ -16,7 +16,7 @@ Saltus Framework exposes its AI-facing tool surface through the WordPress-native
 
 ## Requirements
 
-- WordPress 6.9+ or a WordPress build that includes the Abilities API. WordPress 7.1 adds intent-based discovery and derives an ability's HTTP verb from its annotations
+- WordPress 6.9+ or a WordPress build that includes the Abilities API. Annotations and the HTTP verb they imply are part of that 6.9 surface; WordPress 7.1 adds the `public` intent flag and the `meta` filtering that lets a client discover abilities by intent
 - An active plugin that loads and registers Saltus Framework
 - A WordPress-native MCP/Abilities client
 - A WordPress user with the capabilities required by the requested operation
