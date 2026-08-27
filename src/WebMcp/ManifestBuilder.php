@@ -3,13 +3,14 @@
 namespace Saltus\WP\Framework\WebMcp;
 
 use Saltus\WP\Framework\MCP\Tools\ToolInterface;
+use Saltus\WP\Framework\MCP\Validation\ParameterSchema;
 
 /**
  * Projects Saltus tool definitions into WebMCP descriptors.
  *
  * Saltus tools return a bare property map from `get_parameters()`. WebMCP
- * expects a full JSON Schema object, so the wrapping happens here — in one
- * place — rather than in every tool.
+ * expects a full JSON Schema object, so the map is wrapped by the shared
+ * {@see ParameterSchema} projection rather than by every tool.
  *
  * Character budgets are enforced because agents apply their own limits and
  * silently degrade past them. See docs/discovery/webmcp.md.
@@ -120,44 +121,26 @@ final class ManifestBuilder {
 	/**
 	 * Wrap a Saltus parameter map in a JSON Schema object.
 	 *
-	 * Saltus tools express `required` as a per-property boolean; JSON Schema
-	 * expects a sibling array of names, so the key is lifted out here.
+	 * The wrapping itself is shared with the abilities surface; only the agent
+	 * character budget on parameter descriptions is WebMCP's own.
 	 *
 	 * @param array<string, mixed> $parameters Saltus parameter definitions.
 	 * @return array<string, mixed> JSON Schema object.
 	 */
 	private function input_schema( array $parameters ): array {
-		$properties = [];
-		$required   = [];
-
 		foreach ( $parameters as $name => $definition ) {
 			if ( ! is_array( $definition ) ) {
 				continue;
 			}
 
-			if ( ! empty( $definition['required'] ) ) {
-				$required[] = $name;
-			}
-			unset( $definition['required'] );
-
 			$description = $definition['description'] ?? null;
 			if ( is_string( $description ) ) {
 				$definition['description'] = $this->truncate( $description, self::MAX_PARAM_DESCRIPTION );
+				$parameters[ $name ]       = $definition;
 			}
-
-			$properties[ $name ] = $definition;
 		}
 
-		$schema = [
-			'type'       => 'object',
-			'properties' => $properties,
-		];
-
-		if ( $required !== [] ) {
-			$schema['required'] = $required;
-		}
-
-		return $schema;
+		return ParameterSchema::to_json_schema( $parameters );
 	}
 
 	/**
