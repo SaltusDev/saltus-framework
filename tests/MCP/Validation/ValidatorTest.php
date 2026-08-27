@@ -135,4 +135,89 @@ class ValidatorTest extends TestCase
         $result = Validator::validate(['name' => 'test'], $schema);
         $this->assertTrue($result['valid']);
     }
+
+    /**
+     * A value core accepts must not be rejected here.
+     *
+     * Core validates an ability's input before the tool runs, so this validator
+     * always runs second. Over REST the request sanitizer coerces first and
+     * hides any disagreement, but a direct execute() from WP-CLI or another
+     * plugin passes the raw value through, and a stricter check there fails a
+     * call core deliberately allowed.
+     *
+     * @dataProvider losslessScalarSpellings
+     *
+     * @param mixed $value
+     */
+    public function testALosslessScalarSpellingIsAccepted(string $type, $value): void
+    {
+        $result = Validator::validate(['f' => $value], ['f' => ['type' => $type]]);
+        $this->assertTrue($result['valid'], var_export($value, true) . " must satisfy {$type}");
+    }
+
+    /** @return array<string, array{0: string, 1: mixed}> */
+    public static function losslessScalarSpellings(): array
+    {
+        return [
+            'integer string'      => ['integer', '12'],
+            'negative integer'    => ['integer', '-3'],
+            'whole float string'  => ['integer', '12.0'],
+            'number string'       => ['number', '1.5'],
+            'integer as number'   => ['number', '12'],
+            'boolean true string' => ['boolean', 'true'],
+            'boolean one string'  => ['boolean', '1'],
+            'boolean zero int'    => ['boolean', 0],
+        ];
+    }
+
+    /**
+     * @dataProvider valuesCoreAlsoRejects
+     *
+     * @param mixed $value
+     */
+    public function testAValueCoreRejectsIsStillRejected(string $type, $value): void
+    {
+        $result = Validator::validate(['f' => $value], ['f' => ['type' => $type]]);
+        $this->assertFalse($result['valid'], var_export($value, true) . " must not satisfy {$type}");
+    }
+
+    /** @return array<string, array{0: string, 1: mixed}> */
+    public static function valuesCoreAlsoRejects(): array
+    {
+        return [
+            'fractional integer' => ['integer', '12.5'],
+            'word as integer'    => ['integer', 'abc'],
+            'word as number'     => ['number', 'abc'],
+            'word as boolean'    => ['boolean', 'yes'],
+            'int as string'      => ['string', 12],
+            'list as object'     => ['object', ['a', 'b']],
+            'map as array'       => ['array', ['a' => 1]],
+        ];
+    }
+
+    /**
+     * Core sanitizes to the declared type before comparing an enum, so a
+     * numeric string satisfies a numeric enum.
+     */
+    public function testANumericStringSatisfiesANumericEnum(): void
+    {
+        $result = Validator::validate(['f' => '12'], ['f' => ['type' => 'integer', 'enum' => [12, 13]]]);
+        $this->assertTrue($result['valid']);
+    }
+
+    /**
+     * Normalizing for the enum comparison must not become loose comparison:
+     * '1' is not the boolean true.
+     */
+    public function testAStringDoesNotSatisfyABooleanEnum(): void
+    {
+        $result = Validator::validate(['f' => '1'], ['f' => ['type' => 'string', 'enum' => [true]]]);
+        $this->assertFalse($result['valid']);
+    }
+
+    public function testAValueOutsideAStringEnumIsRejected(): void
+    {
+        $result = Validator::validate(['f' => 'draft'], ['f' => ['type' => 'string', 'enum' => ['publish', 'pending']]]);
+        $this->assertFalse($result['valid']);
+    }
 }
